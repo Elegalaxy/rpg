@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-22  
-Next step: Step 1.2  
+Next step: Step 1.3  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -277,7 +277,7 @@ Stages 0–3 implement §18 (harness, reference simulations, revise from evidenc
   - 2026-10-22: Verified. `npm test` (2 files, 10 tests, exit 0), `npm run typecheck` (exit 0), and `npm run lint` (exit 0). Same seed repeats 1,000 `nextFloat` values for 0, 1, 2, 42, -1, -2147483648, and 2147483647. Seed 42 JSON round-trip continued the same sequence. Those seeds produced different 1,000-value sequences. 100,000 `nextFloat` values for seed 42 stayed in [0, 1) (low 0.000013538403436541557, high 0.9999961263965815, outside 0) with mean 0.49955238378273786. `centeredRoll(0.6, 1)` stayed in range (low 0.6006984421052038, high 0.9993183658923954, outside 0) with mean 0.7996582125152144. Invalid seeds throw `must be an integer from -2147483648 through 2147483647`. `src/sim/rng.ts` is not a test file and has no architecture violations. Synthetic `src/sim/fixture.ts` fails for `Math.random`, `Date`, `performance.now`, and `console`; `src/sim/fixture.test.ts` may use `console` and still fails the other three.
 
 ### Step 1.2: Derived stats and formula constants
-- Status: `todo`
+- Status: `verified`
 - Depends on: 1.1
 - Files: `src/sim/constants.ts`, `src/sim/stats.ts`, `src/sim/stats.test.ts`, `src/content/gear.ts`, `src/content/heroes.ts`
 - Change: Implement the §7 "Combat mathematics" hero formulas (max HP, physical/magical/healing power, accuracy, evasion, crit chance and damage, action time with its 0.5 s floor, cooldown reduction with its 50% cap, innate penetration with the 80% total cap, Defense reduction with its 80% cap, resource-generation bonus, XP bonus, out-of-combat regeneration, healing-received bonus) and the XP curve. Implement the §9 equipment math: weapon kinds, off-hands, armor categories, slot shares, light-set Evasion, and the 90% off-preference effectiveness. Implement §7 "Enemy balance framework" stat blocks: level, archetype, elite multipliers, per-enemy overrides, rounding after multipliers. `content/heroes.ts` defines the five §9 reference heroes as attributes plus gear specs.
@@ -285,6 +285,8 @@ Stages 0–3 implement §18 (harness, reference simulations, revise from evidenc
 - Acceptance criteria: tests reproduce every §9 reference-hero number for all five classes at the precision shown (for example Warrior 370 HP, 96 Physical Power, 116 Armor, 60 Resistance, 11.4% crit, 162% crit damage, 12.97% penetration, 12.12% resource bonus, 1.72 s action; Assassin 89.04 Physical Power and 36 Evasion). Standard level-20 enemy × Warden multipliers gives 3,840 HP, 36 Power and 68 Armor/Resistance. Each archetype multiplier has one test. Cumulative XP to level 20 is about 33,600.
 - Verification: `npx vitest run src/sim/stats.test.ts`. User: compare the passing test names with §9.
 - Progress:
+  - 2026-10-22: Added `src/sim/constants.ts`, `src/sim/stats.ts`, `src/sim/stats.test.ts`, `src/content/gear.ts`, `src/content/heroes.ts`, and `src/content/heroes.test.ts` (content check; `src/sim` tests cannot import `src/content`). Published reference-hero stats, Warden 3840/36/68, each archetype multiplier, the caps, and invalid inputs match GAME_DESIGN. Cumulative XP to level 20 is 33567 from `round(50 × level^1.5)`, about 33600. `npm test` passed (4 files, 35 tests), `npm run typecheck` passed, and `npm run lint` passed.
+  - 2026-10-22: Verified. `npx vitest run src/sim/stats.test.ts` passed (1 file, 23 tests, exit 0). `npm test` passed (4 files, 35 tests, exit 0). `npm run typecheck` and `npm run lint` exited 0. Published level-20 figures match at the shown precision for Warrior (370 HP, 96 Physical Power, 116 Armor, 60 Resistance, 16 Accuracy, 16 Evasion, 11.4% crit, 162% crit damage, 12.97% penetration, 12.12% resource bonus, 1.72 s), Assassin (310 HP, 89.04 Physical Power, 49 Armor, 56 Resistance, 30 Accuracy, 36 Evasion, 17% crit, 159% crit damage, 10.59% penetration, 8.33% resource bonus, 1.15 s), Ranger (330 HP, 96.8 Physical Power, 70/70 Armor/Resistance, 28/28 Accuracy/Evasion, 16.2% crit, 161% crit damage, 12.22% penetration, 8.33% resource bonus, 1.72 s), Mage (310 HP, 130.4 Magical Power, 35 Armor, 98 Resistance, 16/16 Accuracy/Evasion, 11.4% crit, 155% crit damage, 16.19% magical penetration, 12.14% cooldown reduction, 9.68% resource bonus, 1.72 s), and Cleric (370 HP, 88 Magical Power, 44 Healing Power, 88/88 Armor/Resistance, 14/14 Accuracy/Evasion, 10.6% crit, 155% crit damage, 11.43% magical penetration, 8.57% cooldown reduction, 15.28% resource bonus, 1.75 s). Level-20 standard × Warden multipliers is 3840 HP, 36 Power, and 68 Armor/Resistance. Swarm, skirmisher, standard, tank, burst, and support each have a multiplier test. Cumulative XP to level 20 is 33567, 33 away from about 33600. Invalid level, missing gear, an item level above the hero, and a two-handed off-hand throw the asserted messages. `src/sim` does not import content; the architecture test passed, so production sim still bans the forbidden APIs.
 
 ### Step 1.3: Combat state, log, and basic-attack duel
 - Status: `todo`
