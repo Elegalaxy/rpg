@@ -1,15 +1,28 @@
-import { BASIC_ATTACK_COEFFICIENT, CRIT_DAMAGE_BASE, STEP_MS } from './constants.ts'
+import { chooseHeroAction } from './automation.ts'
+import { BASIC_ATTACK_COEFFICIENT, CRIT_DAMAGE_BASE, STEP_MS, WEAPON_ACTION_TIME } from './constants.ts'
 import { basicHitChance, consistencyBounds, resolveDamage } from './damage.ts'
 import { centeredRoll, createRng, nextFloat } from './rng.ts'
-import { deriveEnemyStats, deriveHeroStats } from './stats.ts'
+import {
+  activeBarrier,
+  applySkillEffects,
+  assertSkillBook,
+  effectiveEvasion,
+  endUntilNextAction,
+  finalCooldownSeconds,
+  incomingDamageFactor,
+} from './skills.ts'
+import { actionTime, deriveEnemyStats, deriveHeroStats } from './stats.ts'
 import type {
   CombatActor,
+  CombatHero,
   CombatSetup,
   CombatState,
   DamageResult,
   DamageSchool,
   EnemyDef,
   GameDefs,
+  PriorityRow,
+  SkillDef,
 } from './types.ts'
 
 export { STEP_MS }
@@ -39,6 +52,7 @@ function assertDefs(defs: GameDefs): void {
   if (typeof defs.enemies !== 'object' || defs.enemies === null || Array.isArray(defs.enemies)) {
     throw new Error('combat definitions are missing enemies')
   }
+  assertSkillBook(defs.skills)
 }
 
 function assertMaxMs(maxMs: unknown): asserts maxMs is number {
@@ -104,6 +118,38 @@ function livingTarget(state: CombatState, actor: CombatActor): CombatActor {
   return best
 }
 
+function guardDefaults(): {
+  barrier: number
+  barrierExpiresMs: number
+  damageReduction: number
+  evasionBonus: number
+  incomingMultipliers: number[]
+} {
+  return {
+    barrier: 0,
+    barrierExpiresMs: 0,
+    damageReduction: 0,
+    evasionBonus: 0,
+    incomingMultipliers: [],
+  }
+}
+
+function joinNames(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? 'nobody'
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  const last = names[names.length - 1] ?? 'nobody'
+  return `${names.slice(0, -1).join(', ')}, and ${last}`
+}
+
+function consumeBarrier(target: CombatActor, absorbed: number): void {
+  if (absorbed <= 0) return
+  target.barrier -= absorbed
+  if (target.barrier <= 0) {
+    target.barrier = 0
+    target.barrierExpiresMs = 0
+  }
+}
+
 function applyHit(
   state: CombatState,
   actor: CombatActor,
@@ -115,6 +161,7 @@ function applyHit(
   let hpAfter = hpBefore - result.hpDamage
   if (hpAfter < 0) hpAfter = 0
   target.hp = hpAfter
+  consumeBarrier(target, result.barrierAbsorbed)
   state.log.push({
     type: 'damage',
     timeMs: scheduled,
@@ -160,12 +207,16 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     targetId: target.id,
     targetName: target.name,
     action: 'basicAttack',
+    skillId: null,
+    skillName: null,
     scheduledMs: scheduled,
     nextReadyMs: actor.nextReadyMs,
+    cooldownReadyMs: null,
   })
 
+  const evasion = effectiveEvasion(target)
   const hitRoll = nextFloat(state.rng)
-  const hitChance = basicHitChance(actor.accuracy, target.evasion)
+  const hitChance = basicHitChance(actor.accuracy, evasion)
   let consistencyRoll = 0
   let critRoll = 0
   if (hitRoll < hitChance) {
@@ -176,18 +227,18 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
 
   const result = resolveDamage({
     accuracy: actor.accuracy,
-    evasion: target.evasion,
+    evasion,
     power: actor.power,
     coefficient: BASIC_ATTACK_COEFFICIENT,
     outgoingModifier: 1,
     consistency: actor.consistency,
     critChance: actor.critChance,
     critDamage: actor.critDamage,
-    barrier: 0,
+    barrier: activeBarrier(target, scheduled),
     penetration: actor.penetration,
     defense: defenseOf(target, actor.school),
     attackerLevel: actor.level,
-    incomingModifier: 1,
+    incomingModifier: incomingDamageFactor(target),
     school: actor.school,
     rolls: { hitRoll, consistencyRoll, critRoll },
   })
@@ -202,7 +253,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     roll: hitRoll,
     hitChance: result.hitChance,
     accuracy: actor.accuracy,
-    evasion: target.evasion,
+    evasion,
     hit: result.hit,
   })
   if (!result.hit) return
@@ -219,9 +270,24 @@ function dueActors(state: CombatState, stepStart: number, stepEnd: number): Comb
   return due
 }
 
-/** Clock category 1. No expiries in this step. */
-function resolveExpiries(): void {
-  return
+/** Clock category 1. Barriers whose expiry falls inside this step end before actions. */
+function resolveExpiries(state: CombatState, stepStart: number, stepEnd: number): void {
+  const actors: CombatActor[] = [state.hero, ...state.enemies]
+  for (const actor of actors) {
+    if (actor.barrier <= 0) continue
+    if (actor.barrierExpiresMs <= stepStart || actor.barrierExpiresMs > stepEnd) continue
+    const amount = actor.barrier
+    const expiredAt = actor.barrierExpiresMs
+    actor.barrier = 0
+    actor.barrierExpiresMs = 0
+    state.log.push({
+      type: 'barrierExpired',
+      timeMs: expiredAt,
+      actorId: actor.id,
+      actorName: actor.name,
+      amount,
+    })
+  }
 }
 
 /** Clock category 2. No periodic ticks in this step. */
@@ -234,14 +300,121 @@ function resolveTelegraphs(): void {
   return
 }
 
-function resolveActions(state: CombatState, stepStart: number, stepEnd: number): void {
+function readSkillIdList(value: unknown, label: string): string[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) throw new Error(`${label} must be a list`)
+  const ids: string[] = []
+  const seen: { [id: string]: boolean } = {}
+  for (let index = 0; index < value.length; index += 1) {
+    const id = value[index]
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new Error(`${label} entry ${index + 1} is missing an id`)
+    }
+    if (seen[id] === true) throw new Error(`duplicate equipped skill '${id}'`)
+    seen[id] = true
+    ids.push(id)
+  }
+  return ids
+}
+
+function readPriorityRows(value: unknown): PriorityRow[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) throw new Error('priority rows must be a list')
+  const rows: PriorityRow[] = []
+  for (let index = 0; index < value.length; index += 1) {
+    const row: unknown = value[index]
+    assertObject(row, `priority row ${index + 1}`)
+    const keys = Object.keys(row)
+    if (keys.length !== 1 || keys[0] !== 'skillId') {
+      throw new Error(`priority row ${index + 1} must be { skillId } with no conditions`)
+    }
+    const skillId = row.skillId
+    if (typeof skillId !== 'string' || skillId.length === 0) {
+      throw new Error(`priority row ${index + 1} is missing a skill id`)
+    }
+    rows.push({ skillId })
+  }
+  return rows
+}
+
+function assertLoadout(equipped: readonly string[], rows: readonly PriorityRow[], defs: GameDefs): void {
+  for (const id of equipped) {
+    if (defs.skills[id] === undefined) throw new Error(`unknown skill '${id}'`)
+  }
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index]
+    if (row === undefined || defs.skills[row.skillId] === undefined) {
+      throw new Error(`priority row ${index + 1} references unknown skill '${row?.skillId ?? ''}'`)
+    }
+  }
+}
+
+function actionTarget(skill: SkillDef, targets: readonly CombatActor[]): { id: string; name: string } {
+  const first = targets[0]
+  if (first === undefined) throw new Error(`${skill.name} resolved without a target`)
+  if (targets.length === 1) return { id: first.id, name: first.name }
+  return { id: first.id, name: joinNames(targets.map((target) => target.name)) }
+}
+
+function scheduleSkill(
+  hero: CombatHero,
+  skill: SkillDef,
+  scheduled: number,
+): { nextReadyMs: number; cooldownReadyMs: number | null } {
+  const actionSeconds = actionTime(hero.baseActionSeconds, hero.agility, skill.actionTimeCoefficient)
+  const actionMs = roundDurationMs(actionSeconds, `${skill.id} action time`)
+  const nextReadyMs = scheduled + actionMs
+  let cooldownReadyMs: number | null = null
+  if (skill.cooldownSeconds > 0) {
+    const cooldownSeconds = finalCooldownSeconds(skill.cooldownSeconds, hero.cooldownReduction)
+    const cooldownMs = roundDurationMs(cooldownSeconds, `${skill.id} cooldown`)
+    cooldownReadyMs = scheduled + cooldownMs
+    hero.cooldowns[skill.id] = cooldownReadyMs
+  }
+  hero.nextReadyMs = nextReadyMs
+  return { nextReadyMs, cooldownReadyMs }
+}
+
+function resolveHeroAction(state: CombatState, defs: GameDefs): void {
+  const hero = state.hero
+  const scheduled = hero.nextReadyMs
+  endUntilNextAction(state, hero, scheduled)
+  const choice = chooseHeroAction(state, defs, hero, scheduled)
+  for (const event of choice.events) state.log.push(event)
+  if (choice.kind === 'basicAttack') {
+    resolveBasicAttack(state, hero)
+    return
+  }
+  const timing = scheduleSkill(hero, choice.skill, scheduled)
+  const target = actionTarget(choice.skill, choice.targets)
+  state.log.push({
+    type: 'action',
+    timeMs: scheduled,
+    actorId: hero.id,
+    actorName: hero.name,
+    targetId: target.id,
+    targetName: target.name,
+    action: 'skill',
+    skillId: choice.skill.id,
+    skillName: choice.skill.name,
+    scheduledMs: scheduled,
+    nextReadyMs: timing.nextReadyMs,
+    cooldownReadyMs: timing.cooldownReadyMs,
+  })
+  applySkillEffects(state, hero, choice.skill, choice.targets, scheduled, (actor, result) => {
+    applyHit(state, hero, actor, scheduled, result)
+  })
+}
+
+function resolveActions(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
   while (state.outcome === 'ongoing') {
     const due = dueActors(state, stepStart, stepEnd)
     if (due.length === 0) return
     due.sort(compareReady)
     const actor = due[0]
     if (actor === undefined) return
-    resolveBasicAttack(state, actor)
+    if (actor.side === 'hero') resolveHeroAction(state, defs)
+    else resolveBasicAttack(state, actor)
   }
 }
 
@@ -293,10 +466,11 @@ function actorFromEnemy(def: EnemyDef, slot: number): CombatActor {
     consistency: stats.consistency,
     actionTimeMs,
     nextReadyMs: actionTimeMs,
+    ...guardDefaults(),
   }
 }
 
-function actorFromHero(setup: CombatSetup): CombatActor {
+function actorFromHero(setup: CombatSetup): CombatHero {
   const hero = setup.hero
   if (typeof hero.id !== 'string' || hero.id.length === 0) {
     throw new Error('combat hero is missing an id')
@@ -312,6 +486,9 @@ function actorFromHero(setup: CombatSetup): CombatActor {
   })
   const school = heroSchool(hero.gear.mainHand.kind)
   const actionTimeMs = roundDurationMs(derived.actionTime, `${hero.id} action time`)
+  const actionRatio = WEAPON_ACTION_TIME[hero.gear.mainHand.kind]
+  const equippedSkillIds = readSkillIdList(hero.equippedSkillIds, 'equipped skills')
+  const priorityRows = readPriorityRows(hero.priorityRows)
   return {
     id: hero.id,
     name: hero.name,
@@ -334,6 +511,21 @@ function actorFromHero(setup: CombatSetup): CombatActor {
     consistency: 0,
     actionTimeMs,
     nextReadyMs: actionTimeMs,
+    ...guardDefaults(),
+    physicalPower: derived.physicalPower,
+    magicalPower: derived.magicalPower,
+    healingPower: derived.healingPower,
+    healingReceived: 1 + derived.healingReceivedBonus,
+    cooldownReduction: derived.cooldownReduction,
+    agility: hero.attributes.agility,
+    baseActionSeconds: actionRatio.numerator / actionRatio.denominator,
+    armorPenetration: derived.armorPenetration,
+    magicalPenetration: derived.magicalPenetration,
+    mainHandKind: hero.gear.mainHand.kind,
+    offHandKind: hero.gear.offHand === null ? null : hero.gear.offHand.kind,
+    equippedSkillIds,
+    priorityRows,
+    cooldowns: {},
   }
 }
 
@@ -361,6 +553,7 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
   enemies.sort((a, b) => a.slot - b.slot)
 
   const hero = actorFromHero(setup)
+  assertLoadout(hero.equippedSkillIds, hero.priorityRows, defs)
   const state: CombatState = {
     timeMs: 0,
     rng,
@@ -404,10 +597,10 @@ export function stepCombat(state: CombatState, defs: GameDefs): CombatState {
 
   const stepStart = state.timeMs
   const stepEnd = stepStart + STEP_MS
-  resolveExpiries()
+  resolveExpiries(state, stepStart, stepEnd)
   resolvePeriodicTicks()
   resolveTelegraphs()
-  resolveActions(state, stepStart, stepEnd)
+  resolveActions(state, defs, stepStart, stepEnd)
   state.timeMs = stepEnd
   return state
 }

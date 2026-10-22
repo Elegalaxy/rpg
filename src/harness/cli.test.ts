@@ -107,7 +107,7 @@ describe('harness CLI', () => {
     const list = runCli(['--list'])
     expect(list.status).toBe(0)
     expect(list.stderr).toBe('')
-    expect(list.stdout).toBe('[sim] scenarios\nduel-basic\n')
+    expect(list.stdout).toBe('[sim] scenarios\ndriving-blow\nduel-basic\n')
 
     const listValue = runCli(['--list=nope'])
     expect(listValue.status).toBe(1)
@@ -116,7 +116,7 @@ describe('harness CLI', () => {
     const unknown = runCli(['--scenario', 'nope', '--seed', '42'])
     expect(unknown.status).toBe(1)
     expect(unknown.stderr).toContain("unknown scenario 'nope'")
-    expect(unknown.stderr).toContain('valid scenarios: duel-basic')
+    expect(unknown.stderr).toContain('valid scenarios: driving-blow, duel-basic')
 
     const seed = runCli(['--scenario', 'duel-basic', '--seed', '1.5'])
     expect(seed.status).toBe(1)

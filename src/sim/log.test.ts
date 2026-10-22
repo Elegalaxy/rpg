@@ -65,8 +65,11 @@ describe('formatEvent', () => {
         targetId: 'dummy-standard-20#0',
         targetName: 'Standard Dummy',
         action: 'basicAttack',
+        skillId: null,
+        skillName: null,
         scheduledMs: 1724,
         nextReadyMs: 3448,
+        cooldownReadyMs: null,
       },
       {
         type: 'hitRoll',

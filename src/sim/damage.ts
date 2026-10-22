@@ -136,9 +136,10 @@ export function resolveDamage(input: DamageInput): DamageResult {
   assertUnitInterval(input.rolls.consistencyRoll, 'consistency roll')
   assertUnitInterval(input.rolls.critRoll, 'crit roll')
 
-  const hitChance = basicHitChance(input.accuracy, input.evasion)
+  const guaranteed = input.guaranteedHit === true
+  const hitChance = guaranteed ? 1 : basicHitChance(input.accuracy, input.evasion)
   const bounds = consistencyBounds(input.consistency)
-  const hit = input.rolls.hitRoll < hitChance
+  const hit = guaranteed || input.rolls.hitRoll < hitChance
   if (!hit) return missedResult(input, hitChance, bounds)
 
   const raw = input.power * input.coefficient

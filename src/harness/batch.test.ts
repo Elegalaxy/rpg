@@ -156,7 +156,7 @@ describe('runBatch', () => {
       {
         label: 'unknown scenario',
         run: () => runBatch('nope', 1, 1),
-        pattern: /unknown scenario 'nope'; valid scenarios: duel-basic/,
+        pattern: /unknown scenario 'nope'; valid scenarios: driving-blow, duel-basic/,
       },
       {
         label: 'non-integer seed',

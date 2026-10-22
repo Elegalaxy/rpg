@@ -5,7 +5,7 @@ import { formatEvent } from '../sim/log.ts'
 import { deriveHeroStats } from '../sim/stats.ts'
 import type { CombatState, DamageEvent } from '../sim/types.ts'
 
-import { DUEL_BASIC_ID, gameDefs, setupForScenario } from './scenarios.ts'
+import { DRIVING_BLOW_ID, DUEL_BASIC_ID, gameDefs, setupForScenario } from './scenarios.ts'
 
 const FIGHT_MS = 180_000
 
@@ -101,5 +101,51 @@ describe('duel-basic', () => {
     logRun('resumed from 5000', resumed)
     expect(resumed.log).toEqual(uninterrupted.log)
     expect(resumed).toEqual(uninterrupted)
+  })
+})
+
+describe('driving-blow', () => {
+  it('uses Driving Blow without a hit roll and still rolls basic attacks', () => {
+    const setup = setupForScenario(DRIVING_BLOW_ID)
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setup, defs, 42), defs, FIGHT_MS)
+    const firstAction = state.log.find((event) => event.type === 'action')
+    const skillAction = state.log.find((event) => event.type === 'action' && event.skillId === 'driving-blow')
+    const heroBasic = state.log.find(
+      (event) => event.type === 'action' && event.actorId === state.hero.id && event.action === 'basicAttack',
+    )
+    const heroHitOnSkill =
+      firstAction?.type === 'action'
+        ? state.log.find(
+            (event) =>
+              event.type === 'hitRoll' && event.actorId === state.hero.id && event.timeMs === firstAction.timeMs,
+          )
+        : undefined
+    const heroHitOnBasic =
+      heroBasic?.type === 'action'
+        ? state.log.find(
+            (event) =>
+              event.type === 'hitRoll' && event.actorId === state.hero.id && event.timeMs === heroBasic.timeMs,
+          )
+        : undefined
+    const enemyHit = state.log.find((event) => event.type === 'hitRoll' && event.actorId !== state.hero.id)
+    const end = state.log[state.log.length - 1]
+    console.log('[skills] driving-blow seed 42', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+      events: state.log.length,
+    })
+    expect(firstAction).toBe(skillAction)
+    expect(firstAction).toMatchObject({
+      action: 'skill',
+      skillName: 'Driving Blow',
+      skillId: 'driving-blow',
+      timeMs: 1724,
+    })
+    expect(heroHitOnSkill).toBeUndefined()
+    expect(heroHitOnBasic).toMatchObject({ type: 'hitRoll' })
+    expect(enemyHit).toBeDefined()
+    expect(state.outcome).toBe('victory')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 17_240 })
   })
 })

@@ -178,7 +178,14 @@ export const CONSISTENCY_MIN = 0
 export const CONSISTENCY_MAX = 100
 export const DAMAGE_ROLL_CEILING = 1
 
-/** Weapon basic attack uses 100% of the relevant Power. Skills are not in this step. */
+/** Weapon basic attacks use 100% of the relevant Power. */
 export const BASIC_ATTACK_COEFFICIENT = 1
+
+/**
+ * Direct healing uses the centered roll on [0.90, 1.00).
+ * Q7 is unanswered; this is the recommended distribution, matching `centeredRoll`.
+ */
+export const HEALING_ROLL_FLOOR = 0.9
+export const HEALING_ROLL_CEILING = 1
 
 export const MIN_UNSHIELDED_DAMAGE = 1
