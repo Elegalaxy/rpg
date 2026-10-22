@@ -183,11 +183,30 @@ describe('unconditional priority rows', () => {
     const lines = state.log.map(formatEvent)
     console.log('[skills] fallback', lines)
     expect(lines.some((line) => line.includes('skips row 1 Paid Strike (paid): unaffordable'))).toBe(true)
-    expect(lines.some((line) => line.includes('uses a basic attack because no priority row was eligible'))).toBe(
-      true,
-    )
+    expect(lines.some((line) => line.includes('falls back because no priority row was eligible'))).toBe(true)
     expect(state.log.some((event) => event.type === 'action' && event.action === 'basicAttack')).toBe(true)
     expect(state.log.some((event) => event.type === 'hitRoll' && event.actorId === state.hero.id)).toBe(true)
+  })
+
+  it('pays a positive cost when the meter covers it and skips the row when it does not', () => {
+    const defs = defsFor([paid])
+    const broke = createCombat(warriorSetup({ equipped: [paid.id], rows: [{ skillId: paid.id }] }), defs, 1)
+    expect(broke.hero.classResource).toBe(0)
+    untilAction(broke, defs)
+    const funded = createCombat(warriorSetup({ equipped: [paid.id], rows: [{ skillId: paid.id }] }), defs, 1)
+    funded.hero.classResource = paid.cost
+    untilAction(funded, defs)
+    const payment = funded.log.find((event) => event.type === 'resource' && event.reason === 'payment')
+    console.log('[skills] cost vs meter', {
+      broke: broke.hero.classResource,
+      fundedBefore: paid.cost,
+      fundedAfter: funded.hero.classResource,
+      payment,
+    })
+    expect(broke.log.some((event) => event.type === 'action' && event.action === 'basicAttack')).toBe(true)
+    expect(funded.log.some((event) => event.type === 'action' && event.skillId === paid.id)).toBe(true)
+    expect(payment).toMatchObject({ base: paid.cost, before: paid.cost, after: 0 })
+    expect(funded.hero.classResource).toBe(0)
   })
 
   it('rejects an unknown skill reference and an unknown row field', () => {

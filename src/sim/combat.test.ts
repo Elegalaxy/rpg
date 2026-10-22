@@ -81,7 +81,7 @@ describe('combat clock', () => {
     logRun('created', state)
     expect(state.timeMs).toBe(0)
     expect(state.outcome).toBe('ongoing')
-    expect(state.log.map((event) => event.type)).toEqual(['encounterStart'])
+    expect(state.log.map((event) => event.type)).toEqual(['encounterStart', 'resource'])
     expect(state.hero.nextReadyMs).toBe(1724)
     expect(state.hero.nextReadyMs).toBe(roundDurationMs(stats.actionTime, 'hero action time'))
     expect(state.enemies[0]?.nextReadyMs).toBe(2200)
@@ -92,7 +92,7 @@ describe('combat clock', () => {
 
     stepCombat(state, defs)
     expect(state.timeMs).toBe(10)
-    expect(state.log).toHaveLength(1)
+    expect(state.log).toHaveLength(2)
 
     while (state.log.every((event) => event.type !== 'action')) stepCombat(state, defs)
     const action = state.log.find((event) => event.type === 'action')
@@ -165,8 +165,8 @@ describe('runCombat', () => {
     logRun('timeout', state)
     expect(state.outcome).toBe('timeout')
     expect(state.timeMs).toBe(100)
-    expect(state.log.map((event) => event.type)).toEqual(['encounterStart', 'encounterEnd'])
-    const end = state.log[1]
+    expect(state.log.map((event) => event.type)).toEqual(['encounterStart', 'resource', 'encounterEnd'])
+    const end = state.log[state.log.length - 1]
     expect(end?.type).toBe('encounterEnd')
     if (end?.type !== 'encounterEnd') return
     expect(end.timeMs).toBe(100)
@@ -174,7 +174,7 @@ describe('runCombat', () => {
     const timeMs = state.timeMs
     stepCombat(state, defs)
     expect(state.timeMs).toBe(timeMs)
-    expect(state.log).toHaveLength(2)
+    expect(state.log).toHaveLength(3)
   })
 
   it('times out immediately when maxMs is 0', () => {

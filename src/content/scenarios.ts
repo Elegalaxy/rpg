@@ -19,6 +19,8 @@ export const DUEL_BASIC_ID = 'duel-basic'
 export const DRIVING_BLOW_ID = 'driving-blow'
 export const VENOM_EDGE_ID = 'venom-edge'
 export const PRIORITY_FOCUS_ID = 'priority-focus'
+export const WARRIOR_VS_STANDARD_ID = 'warrior-vs-standard'
+export const MAGE_VS_STANDARD_ID = 'mage-vs-standard'
 
 export const scenarios: { [id: string]: ScenarioDef } = {
   [DUEL_BASIC_ID]: {
@@ -56,6 +58,49 @@ export const scenarios: { [id: string]: ScenarioDef } = {
         conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 0 }],
       },
       { skillId: 'driving-blow', targetPriority: 'current' },
+    ],
+  },
+  [WARRIOR_VS_STANDARD_ID]: {
+    id: WARRIOR_VS_STANDARD_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: [{ defId: standardDummy.id, slot: 0 }],
+    equippedSkillIds: ['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'],
+    priorityRows: [
+      {
+        skillId: 'second-wind',
+        conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 40 }],
+      },
+      {
+        skillId: 'sundering-blow',
+        conditions: [
+          { kind: 'status', who: 'target', statusId: 'expose', measure: 'presence', operator: 'absent' },
+          { kind: 'classResource', operator: 'atLeast', value: 20 },
+        ],
+      },
+      { skillId: 'driving-blow' },
+    ],
+  },
+  [MAGE_VS_STANDARD_ID]: {
+    id: MAGE_VS_STANDARD_ID,
+    heroId: referenceHeroes.mage.id,
+    heroName: 'Mage',
+    enemies: [{ defId: standardDummy.id, slot: 0 }],
+    equippedSkillIds: ['fireball', 'frost-lance', 'mana-ward', 'arcane-recovery'],
+    priorityRows: [
+      {
+        skillId: 'mana-ward',
+        conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 50 }],
+      },
+      {
+        skillId: 'arcane-recovery',
+        conditions: [{ kind: 'classResource', operator: 'atMost', value: 30 }],
+      },
+      {
+        skillId: 'fireball',
+        conditions: [{ kind: 'enemyCount', operator: 'atLeast', value: 2 }],
+      },
+      { skillId: 'frost-lance' },
     ],
   },
 }

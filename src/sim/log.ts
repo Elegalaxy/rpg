@@ -1,4 +1,4 @@
-import type { LogEvent, TargetPriority } from './types.ts'
+import type { LogEvent, ResourceEvent, ResourceSnapshotEvent, TargetPriority, WaitEvent } from './types.ts'
 
 function seconds(ms: number): string {
   const negative = ms < 0
@@ -123,6 +123,29 @@ function priorityLabel(priority: TargetPriority | null): string {
   }
 }
 
+function formatResource(event: ResourceEvent): string {
+  const when = `At ${seconds(event.timeMs)}s, ${event.actorName} ${event.resourceId}`
+  if (event.reason === 'payment') {
+    return `${when} pays ${event.base}: ${event.before} to ${event.after} (max ${event.maximum}).`
+  }
+  if (event.reason === 'encounterStart') {
+    return `${when} starts at ${event.after} (max ${event.maximum}, ${event.scope}).`
+  }
+  if (event.reason === 'encounterEnd') {
+    return `${when} clears at encounter end: ${event.before} to ${event.after}.`
+  }
+  const cap = event.gainCap === null ? '' : `, cap ${event.gainCap}`
+  return `${when} ${event.reason}: base ${event.base} × ${event.multiplier} = ${event.generated}${cap}; ${event.before} to ${event.after} (max ${event.maximum}).`
+}
+
+function formatSnapshot(event: ResourceSnapshotEvent): string {
+  return `At ${seconds(event.timeMs)}s, ${event.actorName} snapshots ${event.resourceId} ${event.amount} for physical ×${event.multiplier} before paying.`
+}
+
+function formatWait(event: WaitEvent): string {
+  return `At ${seconds(event.timeMs)}s, ${event.actorName} waits because ${event.reason}.`
+}
+
 function formatRulesChanged(event: Extract<LogEvent, { type: 'rulesChanged' }>): string {
   const when = `At ${seconds(event.timeMs)}s`
   if (!event.applied) {
@@ -149,7 +172,7 @@ export function formatEvent(event: LogEvent): string {
       }
     case 'priority':
       if (event.decision === 'fallback') {
-        return `At ${seconds(event.timeMs)}s, ${event.actorName} uses a basic attack because no priority row was eligible.`
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} falls back because no priority row was eligible.`
       }
       {
         const row = (event.rowIndex ?? 0) + 1
@@ -192,6 +215,12 @@ export function formatEvent(event: LogEvent): string {
       return `At ${seconds(event.timeMs)}s, ${event.actorName}'s ${event.statusName} expires (${event.stacks} stacks).`
     case 'statusCleared':
       return `At ${seconds(event.timeMs)}s, cleanse removes ${event.statusName} from ${event.actorName} (${event.stacks} stacks).`
+    case 'resource':
+      return formatResource(event)
+    case 'resourceSnapshot':
+      return formatSnapshot(event)
+    case 'wait':
+      return formatWait(event)
     case 'death':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dies, killed by ${event.killerName}.`
     case 'encounterEnd':

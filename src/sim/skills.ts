@@ -1,3 +1,4 @@
+import { grantClassResource } from './classes/resources.ts'
 import {
   COOLDOWN_REDUCTION_CAP,
   HEALING_ROLL_CEILING,
@@ -33,6 +34,8 @@ export const SKILL_EFFECT_KINDS = [
   'evasion',
   'incomingDamage',
   'actionDelay',
+  'resource',
+  'chain',
   'applyStatus',
 ] as const
 
@@ -151,6 +154,34 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
   if (kind === 'actionDelay') {
     assertPositive(value.delaySeconds, `skill '${skillId}' action delay`)
     return { kind, delaySeconds: value.delaySeconds }
+  }
+  if (kind === 'resource') {
+    assertPositive(value.base, `skill '${skillId}' resource gain`)
+    return { kind, base: value.base }
+  }
+  if (kind === 'chain') {
+    const school = value.school
+    if (school !== 'physical' && school !== 'magical') {
+      throw new Error(
+        `skill '${skillId}' chain school must be physical or magical, received ${describeValue(school)}`,
+      )
+    }
+    assertPositive(value.coefficient, `skill '${skillId}' chain coefficient`)
+    assertPositive(value.decay, `skill '${skillId}' chain decay`)
+    if (typeof value.maxTargets !== 'number' || !Number.isInteger(value.maxTargets) || value.maxTargets < 1) {
+      throw new Error(
+        `skill '${skillId}' chain targets must be an integer of at least 1, received ${describeValue(value.maxTargets)}`,
+      )
+    }
+    assertPositive(value.delaySeconds, `skill '${skillId}' chain delay`)
+    return {
+      kind,
+      school,
+      coefficient: value.coefficient,
+      decay: value.decay,
+      maxTargets: value.maxTargets,
+      delaySeconds: value.delaySeconds,
+    }
   }
   if (kind === 'applyStatus') {
     const statusId = value.statusId
@@ -284,9 +315,9 @@ export function skillEquipped(hero: CombatHero, skillId: string): boolean {
   return hero.equippedSkillIds.includes(skillId)
 }
 
-/** A positive cost cannot be paid until class resources exist. */
-export function skillAffordable(skill: SkillDef): boolean {
-  return skill.cost <= 0
+/** A positive cost is paid from the hero's live class meter. */
+export function skillAffordable(hero: CombatHero, skill: SkillDef): boolean {
+  return skill.cost <= hero.classResource
 }
 
 /** Cooldowns are ready when simulated time has reached the stored instant. */
@@ -311,7 +342,14 @@ export function equipmentBlock(hero: CombatHero, skill: SkillDef): string | null
 
 export function skillNeedsEnemy(skill: SkillDef): boolean {
   for (const effect of skill.effects) {
-    if (effect.kind === 'damage' || effect.kind === 'actionDelay' || effect.kind === 'applyStatus') return true
+    if (
+      effect.kind === 'damage' ||
+      effect.kind === 'actionDelay' ||
+      effect.kind === 'applyStatus' ||
+      effect.kind === 'chain'
+    ) {
+      return true
+    }
   }
   return false
 }
@@ -420,6 +458,50 @@ export function endUntilNextAction(state: CombatState, hero: CombatHero, timeMs:
   state.log.push(event)
 }
 
+function chainTargets(state: CombatState, primary: CombatActor, maxTargets: number): CombatActor[] {
+  const ordered: CombatActor[] = []
+  if (primary.alive && primary.side === 'enemy') ordered.push(primary)
+  const rest = state.enemies.filter((enemy) => enemy.alive && enemy.id !== primary.id)
+  rest.sort((left, right) => left.slot - right.slot)
+  for (const enemy of rest) {
+    if (ordered.length >= maxTargets) break
+    ordered.push(enemy)
+  }
+  return ordered
+}
+
+function strike(
+  state: CombatState,
+  hero: CombatHero,
+  target: CombatActor,
+  school: DamageSchool,
+  coefficient: number,
+  outgoingModifier: number,
+  scheduledMs: number,
+): DamageResult {
+  const bounds = consistencyBounds(hero.consistency)
+  const consistencyRoll = centeredRoll(state.rng, bounds.floor, bounds.ceiling)
+  const critRoll = nextFloat(state.rng)
+  return resolveDamage({
+    accuracy: hero.accuracy,
+    evasion: effectiveEvasion(target),
+    power: powerFor(hero, school),
+    coefficient,
+    outgoingModifier,
+    consistency: hero.consistency,
+    critChance: hero.critChance,
+    critDamage: hero.critDamage,
+    barrier: activeBarrier(target, scheduledMs),
+    penetration: penetrationFor(hero, school),
+    defense: defenseOf(target, school, scheduledMs),
+    attackerLevel: hero.level,
+    incomingModifier: incomingDamageFactor(target),
+    school,
+    guaranteedHit: true,
+    rolls: { hitRoll: 0, consistencyRoll, critRoll },
+  })
+}
+
 export function applySkillEffects(
   state: CombatState,
   defs: GameDefs,
@@ -427,6 +509,7 @@ export function applySkillEffects(
   skill: SkillDef,
   targets: readonly CombatActor[],
   scheduledMs: number,
+  outgoingFor: (school: DamageSchool) => number,
   applyDamage: (target: CombatActor, result: DamageResult) => void,
 ): void {
   const hpDamageDealt: { [targetId: string]: number } = {}
@@ -434,27 +517,15 @@ export function applySkillEffects(
     if (effect.kind === 'damage') {
       for (const target of targets) {
         if (!target.alive) continue
-        const bounds = consistencyBounds(hero.consistency)
-        const consistencyRoll = centeredRoll(state.rng, bounds.floor, bounds.ceiling)
-        const critRoll = nextFloat(state.rng)
-        const result = resolveDamage({
-          accuracy: hero.accuracy,
-          evasion: effectiveEvasion(target),
-          power: powerFor(hero, effect.school),
-          coefficient: effect.coefficient,
-          outgoingModifier: 1,
-          consistency: hero.consistency,
-          critChance: hero.critChance,
-          critDamage: hero.critDamage,
-          barrier: activeBarrier(target, scheduledMs),
-          penetration: penetrationFor(hero, effect.school),
-          defense: defenseOf(target, effect.school, scheduledMs),
-          attackerLevel: hero.level,
-          incomingModifier: incomingDamageFactor(target),
-          school: effect.school,
-          guaranteedHit: true,
-          rolls: { hitRoll: 0, consistencyRoll, critRoll },
-        })
+        const result = strike(
+          state,
+          hero,
+          target,
+          effect.school,
+          effect.coefficient,
+          outgoingFor(effect.school),
+          scheduledMs,
+        )
         applyDamage(target, result)
         hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
       }
@@ -583,6 +654,47 @@ export function applySkillEffects(
           nextReadyMs: target.nextReadyMs,
         }
         state.log.push(event)
+      }
+      continue
+    }
+    if (effect.kind === 'resource') {
+      grantClassResource(state, scheduledMs, effect.base, skill.id)
+      continue
+    }
+    if (effect.kind === 'chain') {
+      const primary = targets[0]
+      if (primary === undefined) throw new Error(`${skill.name} chain resolved without a target`)
+      const jumped = chainTargets(state, primary, effect.maxTargets)
+      let coefficient = effect.coefficient
+      for (const target of jumped) {
+        if (!target.alive || state.outcome !== 'ongoing') continue
+        const result = strike(
+          state,
+          hero,
+          target,
+          effect.school,
+          coefficient,
+          outgoingFor(effect.school),
+          scheduledMs,
+        )
+        applyDamage(target, result)
+        hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
+        if (target.alive) {
+          const delayMs = roundSecondsToMs(effect.delaySeconds, `${skill.id} chain delay`)
+          target.nextReadyMs += delayMs
+          const event: ActionDelayEvent = {
+            type: 'actionDelay',
+            timeMs: scheduledMs,
+            actorId: hero.id,
+            actorName: hero.name,
+            targetId: target.id,
+            targetName: target.name,
+            delayMs,
+            nextReadyMs: target.nextReadyMs,
+          }
+          state.log.push(event)
+        }
+        coefficient *= effect.decay
       }
       continue
     }

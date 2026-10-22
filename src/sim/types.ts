@@ -549,6 +549,49 @@ export type StatusClearedEvent = {
   stacks: number
 }
 
+/** Encounter meters reset when the encounter ends. Expedition meters carry until a later expedition step. */
+export type ResourceScope = 'encounter' | 'expedition'
+
+export type ResourceEvent = {
+  type: 'resource'
+  timeMs: number
+  actorId: string
+  actorName: string
+  resourceId: string
+  scope: ResourceScope
+  reason: string
+  /** Listed base before Spirit, or the amount paid. */
+  base: number
+  /** 1 + Spirit resource-generation bonus. Payments use 1. */
+  multiplier: number
+  /** After Spirit and a per-hit cap, before the meter maximum. */
+  generated: number
+  /** Per-hit cap after Spirit. Null when this gain is not capped. */
+  gainCap: number | null
+  before: number
+  after: number
+  maximum: number
+}
+
+/** Held-resource damage bonus frozen before a spender pays. */
+export type ResourceSnapshotEvent = {
+  type: 'resourceSnapshot'
+  timeMs: number
+  actorId: string
+  actorName: string
+  resourceId: string
+  amount: number
+  multiplier: number
+}
+
+export type WaitEvent = {
+  type: 'wait'
+  timeMs: number
+  actorId: string
+  actorName: string
+  reason: string
+}
+
 export type LogEvent =
   | EncounterStartEvent
   | PriorityEvent
@@ -566,6 +609,9 @@ export type LogEvent =
   | StatusTickEvent
   | StatusExpiredEvent
   | StatusClearedEvent
+  | ResourceEvent
+  | ResourceSnapshotEvent
+  | WaitEvent
   | DeathEvent
   | EncounterEndEvent
 
@@ -608,6 +654,26 @@ export type ActionDelayEffect = {
   delaySeconds: number
 }
 
+/** Restore `base` class resource before Spirit. The meter caps at its maximum. */
+export type ResourceGainEffect = {
+  kind: 'resource'
+  base: number
+}
+
+/**
+ * Hit the chosen target, then other living enemies by slot.
+ * Each later coefficient is the previous coefficient times `decay`.
+ * Each hit uses that target's variance, crit, and defense, then pushes its next action.
+ */
+export type ChainEffect = {
+  kind: 'chain'
+  school: DamageSchool
+  coefficient: number
+  decay: number
+  maxTargets: number
+  delaySeconds: number
+}
+
 export type ApplyStatusEffect = {
   kind: 'applyStatus'
   statusId: string
@@ -630,7 +696,7 @@ export type ApplyStatusEffect = {
   durationSeconds?: number
 }
 
-/** Closed list. Resource changes are a later step. */
+/** Closed list. Add a kind only when a listed skill needs it. */
 export type SkillEffect =
   | DamageEffect
   | HealEffect
@@ -639,6 +705,8 @@ export type SkillEffect =
   | EvasionEffect
   | IncomingDamageEffect
   | ActionDelayEffect
+  | ResourceGainEffect
+  | ChainEffect
   | ApplyStatusEffect
 
 export type SkillRequirement = {
@@ -682,8 +750,18 @@ export type CombatHero = CombatActor & {
   priorityRows: PriorityRow[]
   /** Skill id → simulated time when the cooldown ends and the skill can be used. */
   cooldowns: { [skillId: string]: number }
-  /** Numeric class resource for conditions. It does not pay skill costs. */
+  classId: HeroClass
+  /** Live class meter. Conditions read it, and a positive skill cost is paid from it. */
   classResource: number
+  classResourceId: string
+  classResourceMax: number
+  classResourceScope: ResourceScope
+  /** Base resource per second before Spirit. 0 when the class does not regenerate in combat. */
+  resourceRegenPerSecond: number
+  /** Plain JSON class memory. Not a place for functions. */
+  classState: { [key: string]: number | string | boolean | null }
+  /** Set while the hero is waiting for a resource. The wait does not spend action time. */
+  waiting: boolean
   /** Equipped special-ammunition count for conditions. */
   specialAmmo: number
   /** Null selects the first living enemy by slot. */
@@ -741,4 +819,59 @@ export type GameDefs = {
   enemies: { [id: string]: EnemyDef }
   skills: { [id: string]: SkillDef }
   statuses: { [id: string]: StatusDef }
+}
+
+/**
+ * Fixed class and race extension points.
+ * Combat calls a hook only when this step's modules use it.
+ * Modules do not reach into combat scheduling.
+ */
+export const CLASS_HOOK_NAMES = [
+  'encounterStart',
+  'encounterEnd',
+  'actionChosen',
+  'actionResolved',
+  'damageDealt',
+  'damageTaken',
+  'kill',
+  'outgoingModifiers',
+  'incomingModifiers',
+  'fallbackAction',
+] as const
+
+export type ClassHookName = (typeof CLASS_HOOK_NAMES)[number]
+
+export type ClassAction =
+  | { kind: 'basicAttack'; hit: boolean }
+  | { kind: 'skill'; skill: SkillDef }
+
+export type DamageNotice = {
+  hpLost: number
+  hpBefore: number
+  kind: 'hit' | 'statusTick'
+  timeMs: number
+  school: DamageSchool
+}
+
+export type OutgoingModifierQuery = {
+  school: DamageSchool
+  skill: SkillDef | null
+}
+
+export type FallbackDecision =
+  | { kind: 'basicAttack' }
+  | { kind: 'skill'; skillId: string }
+  | { kind: 'wait'; reason: string }
+
+export type ClassModule = {
+  encounterStart?: (state: CombatState, timeMs: number) => void
+  encounterEnd?: (state: CombatState, timeMs: number) => void
+  actionChosen?: (state: CombatState, action: ClassAction, timeMs: number) => void
+  actionResolved?: (state: CombatState, action: ClassAction, timeMs: number) => void
+  damageDealt?: (state: CombatState, notice: DamageNotice) => void
+  damageTaken?: (state: CombatState, notice: DamageNotice) => void
+  kill?: (state: CombatState, victimId: string, timeMs: number) => void
+  outgoingModifiers?: (state: CombatState, query: OutgoingModifierQuery) => number
+  incomingModifiers?: (state: CombatState, query: OutgoingModifierQuery) => number
+  fallbackAction?: (state: CombatState, defs: GameDefs, timeMs: number) => FallbackDecision
 }

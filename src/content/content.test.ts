@@ -57,6 +57,104 @@ describe('content integrity', () => {
         }
       }
     }
+    expect(skills['driving-blow']?.effects).toContainEqual({ kind: 'resource', base: 15 })
+    expect(skills['driving-blow']?.tags).toContain('generator')
+    expect(skills.cleave).toMatchObject({ cost: 25, tags: expect.arrayContaining(['spender']) })
+    expect(skills['reckless-strike']).toMatchObject({
+      cost: 40,
+      requires: { mainHand: 'twoHanded' },
+      effects: expect.arrayContaining([
+        { kind: 'damage', school: 'physical', coefficient: 2.2 },
+        { kind: 'incomingDamage', multiplier: 1.2 },
+      ]),
+    })
+    expect(skills['sundering-blow']?.effects[1]).toMatchObject({
+      kind: 'applyStatus',
+      statusId: 'expose',
+      baseChance: 1,
+      armorMagnitude: 0.2,
+    })
+    expect(skills['arcane-bolt']).toMatchObject({ cost: 5, cooldownSeconds: 0, actionTimeCoefficient: 0.8 })
+    expect(skills.fireball?.effects[1]).toMatchObject({
+      kind: 'applyStatus',
+      statusId: 'burn',
+      coefficient: 0.12,
+      power: 'magical',
+    })
+    expect(skills['frost-lance']?.effects[1]).toMatchObject({ kind: 'applyStatus', statusId: 'chill', baseChance: 1 })
+    expect(skills['chain-lightning']?.effects[0]).toMatchObject({
+      kind: 'chain',
+      school: 'magical',
+      coefficient: 1.2,
+      decay: 0.75,
+      maxTargets: 4,
+      delaySeconds: 0.25,
+    })
+    expect(skills['arcane-recovery']?.effects[0]).toMatchObject({ kind: 'resource', base: 30 })
+    expect(scenarios['mage-vs-standard']?.equippedSkillIds).not.toContain('arcane-bolt')
+    expect(skills['driving-blow']).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 3,
+      actionTimeCoefficient: 1,
+      target: 'single',
+    })
+    expect(skills['driving-blow']?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.1 })
+    expect(skills.cleave).toMatchObject({
+      cost: 25,
+      cooldownSeconds: 5,
+      actionTimeCoefficient: 1.15,
+      target: 'all',
+    })
+    expect(skills.cleave?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 0.8 })
+    expect(skills['reckless-strike']).toMatchObject({
+      cooldownSeconds: 8,
+      actionTimeCoefficient: 1.35,
+      target: 'single',
+    })
+    expect(skills['shield-brace']).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 8,
+      actionTimeCoefficient: 0.75,
+      requires: { offHand: 'shield' },
+      effects: [{ kind: 'damageReduction', fraction: 0.3 }],
+    })
+    expect(skills['shield-brace']?.tags).not.toContain('generator')
+    expect(skills['second-wind']).toMatchObject({
+      cost: 50,
+      cooldownSeconds: 15,
+      actionTimeCoefficient: 1,
+      tags: expect.arrayContaining(['spender']),
+      effects: [{ kind: 'heal', maxHpFraction: 0.15, healingCoefficient: 0.5 }],
+    })
+    expect(skills['sundering-blow']).toMatchObject({
+      cost: 20,
+      cooldownSeconds: 6,
+      actionTimeCoefficient: 1,
+    })
+    expect(skills['sundering-blow']?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.25 })
+    expect(skills.fireball).toMatchObject({
+      cost: 30,
+      cooldownSeconds: 6,
+      actionTimeCoefficient: 1.2,
+      target: 'all',
+    })
+    expect(skills.fireball?.effects[0]).toMatchObject({ kind: 'damage', school: 'magical', coefficient: 1 })
+    expect(skills['frost-lance']).toMatchObject({
+      cost: 20,
+      cooldownSeconds: 4,
+      actionTimeCoefficient: 1,
+    })
+    expect(skills['frost-lance']?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.1 })
+    expect(skills['chain-lightning']).toMatchObject({ cost: 25, cooldownSeconds: 6, actionTimeCoefficient: 1.1 })
+    expect(skills['mana-ward']).toMatchObject({
+      cost: 30,
+      cooldownSeconds: 10,
+      actionTimeCoefficient: 0.75,
+      effects: [{ kind: 'barrier', source: 'magical', coefficient: 1, durationSeconds: 8 }],
+    })
+    expect(skills['arcane-recovery']).toMatchObject({ cost: 0, cooldownSeconds: 10, actionTimeCoefficient: 1 })
+    expect(skills['arcane-bolt']?.effects[0]).toMatchObject({ kind: 'damage', school: 'magical', coefficient: 0.9 })
+
     const venom = skills['venom-edge']
     expect(venom?.effects[1]).toMatchObject({
       kind: 'applyStatus',

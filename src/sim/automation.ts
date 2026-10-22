@@ -377,7 +377,7 @@ export function skipReason(
 ): string | null {
   if (!skillEquipped(hero, skill.id)) return 'not equipped'
   if (!skillOffCooldown(hero, skill, timeMs)) return 'on cooldown'
-  if (!skillAffordable(skill)) return 'unaffordable'
+  if (!skillAffordable(hero, skill)) return 'unaffordable'
   const equipment = equipmentBlock(hero, skill)
   if (equipment !== null) return equipment
   if (skillNeedsEnemy(skill) && enemyTargets(state, skill).length === 0) return 'no target'
@@ -726,6 +726,19 @@ function targetsFor(
   if (!skillNeedsEnemy(skill)) return [hero]
   if (skill.target === 'all') return livingEnemies(state)
   return focus === null ? [] : [focus]
+}
+
+/** Targets for a skill chosen outside a priority row, including a class fallback. */
+export function skillActionTargets(
+  state: CombatState,
+  hero: CombatHero,
+  skill: SkillDef,
+): { targets: CombatActor[]; focus: CombatActor | null } {
+  if (!skillNeedsEnemy(skill)) return { targets: [hero], focus: null }
+  const picked = pickTarget(state, hero, hero.targetPriority)
+  if (skill.target === 'all') return { targets: livingEnemies(state), focus: picked.enemy }
+  if (picked.enemy === null) return { targets: [], focus: null }
+  return { targets: [picked.enemy], focus: picked.enemy }
 }
 
 /**

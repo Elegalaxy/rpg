@@ -8,9 +8,12 @@ import type { CombatState, DamageEvent } from '../sim/types.ts'
 import {
   DRIVING_BLOW_ID,
   DUEL_BASIC_ID,
+  MAGE_VS_STANDARD_ID,
   PRIORITY_FOCUS_ID,
   VENOM_EDGE_ID,
+  WARRIOR_VS_STANDARD_ID,
   gameDefs,
+  scenarios,
   setupForScenario,
 } from './scenarios.ts'
 
@@ -26,6 +29,29 @@ function logRun(label: string, state: CombatState): void {
     events: state.log.length,
     sample: [...lines.slice(0, 4), ...lines.slice(-2)],
   })
+}
+
+/** Same pipeline as resolveDamage, with the held-Fury outgoing multiplier removed. */
+function hpWithoutOutgoingBonus(event: DamageEvent): number {
+  const afterCrit = event.raw * event.consistencyRoll * (event.crit ? event.critDamage : 1)
+  const absorbed = Math.min(event.barrier, afterCrit)
+  const afterIncoming = (afterCrit - absorbed) * (1 - event.reduction) * event.incomingModifier
+  let hp = Math.round(afterIncoming)
+  if (event.barrier <= 0 && hp < 1) hp = 1
+  if (hp < 0) hp = 0
+  return hp
+}
+
+function killingSwing(hits: readonly DamageEvent[], maxHp: number, actual: boolean): number {
+  let hp = maxHp
+  for (let index = 0; index < hits.length; index += 1) {
+    const hit = hits[index]
+    if (hit === undefined) continue
+    const dealt = actual ? hit.hpDamage : hpWithoutOutgoingBonus(hit)
+    hp -= dealt
+    if (hp <= 0) return index
+  }
+  return -1
 }
 
 function heroDamage(state: CombatState): DamageEvent | undefined {
@@ -71,7 +97,7 @@ describe('duel-basic', () => {
     expect(sample).toBeDefined()
     if (sample === undefined) return
     expect(sample.coefficient).toBe(1)
-    expect(sample.outgoingModifier).toBe(1)
+    expect(sample.outgoingModifier).toBeGreaterThanOrEqual(1)
     expect(sample.incomingModifier).toBe(1)
     expect(sample.barrier).toBe(0)
     expect(sample.consistency).toBe(0)
@@ -223,10 +249,171 @@ describe('priority-focus', () => {
   })
 })
 
+describe('class reference fights', () => {
+  it('runs warrior-vs-standard and mage-vs-standard to an outcome inside 10 minutes', () => {
+    const defs = gameDefs()
+    const limit = 600_000
+    for (const id of [WARRIOR_VS_STANDARD_ID, MAGE_VS_STANDARD_ID]) {
+      for (const seed of [1, 42]) {
+        const state = runCombat(createCombat(setupForScenario(id), defs, seed), defs, limit)
+        const end = state.log[state.log.length - 1]
+        const tag = id.startsWith('mage') ? '[mage]' : '[warrior]'
+        console.log(tag, {
+          scenario: id,
+          seed,
+          outcome: state.outcome,
+          durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+          resource: state.hero.classResource,
+          scope: state.hero.classResourceScope,
+        })
+        expect(state.outcome === 'victory' || state.outcome === 'defeat').toBe(true)
+        expect(end?.type).toBe('encounterEnd')
+        if (end?.type === 'encounterEnd') expect(end.timeMs).toBeLessThanOrEqual(limit)
+        if (id === MAGE_VS_STANDARD_ID) {
+          const heroActions = state.log.filter((event) => event.type === 'action' && event.actorId === state.hero.id)
+          expect(heroActions.some((event) => event.type === 'action' && event.action === 'basicAttack')).toBe(false)
+          expect(heroActions.some((event) => event.type === 'action' && event.skillId === 'arcane-bolt')).toBe(true)
+          expect(state.hero.equippedSkillIds).not.toContain('arcane-bolt')
+          const regenTimes = state.log.flatMap((event) =>
+            event.type === 'resource' && event.reason === 'regen' ? [event.timeMs] : [],
+          )
+          expect(regenTimes.length).toBeGreaterThan(0)
+          expect(regenTimes.every((timeMs) => timeMs % 1000 === 0)).toBe(true)
+          expect(new Set(regenTimes).size).toBe(regenTimes.length)
+        }
+      }
+    }
+    const warrior = scenarios[WARRIOR_VS_STANDARD_ID]
+    const mage = scenarios[MAGE_VS_STANDARD_ID]
+    expect(warrior?.equippedSkillIds).toEqual(['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'])
+    expect(mage?.equippedSkillIds).toEqual(['fireball', 'frost-lance', 'mana-ward', 'arcane-recovery'])
+    expect(mage?.equippedSkillIds).not.toContain('arcane-bolt')
+  })
+})
+
+describe('held fury seed 42', () => {
+  it('keeps the killing swing while later hits are larger than the same rolls at ×1', () => {
+    const defs = gameDefs()
+    const cases = [
+      { id: DUEL_BASIC_ID, durationMs: 20_688 },
+      { id: DRIVING_BLOW_ID, durationMs: 17_240 },
+      { id: PRIORITY_FOCUS_ID, durationMs: 17_240 },
+    ]
+    for (const entry of cases) {
+      const state = runCombat(createCombat(setupForScenario(entry.id), defs, 42), defs, FIGHT_MS)
+      const end = state.log[state.log.length - 1]
+      const enemy = state.enemies[0]
+      const hits = state.log.filter(
+        (event): event is DamageEvent => event.type === 'damage' && event.actorId === state.hero.id,
+      )
+      const first = hits[0]
+      const last = hits[hits.length - 1]
+      const boosted = hits.filter((hit) => hit.hpDamage > hpWithoutOutgoingBonus(hit))
+      const actualSwing = killingSwing(hits, enemy?.maxHp ?? 0, true)
+      const plainSwing = killingSwing(hits, enemy?.maxHp ?? 0, false)
+      console.log('[warrior] held fury', {
+        id: entry.id,
+        outcome: state.outcome,
+        durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+        hits: hits.length,
+        firstOutgoing: first?.outgoingModifier,
+        lastOutgoing: last?.outgoingModifier,
+        boostedHits: boosted.length,
+        actualSwing,
+        plainSwing,
+        killingTimeMs: hits[actualSwing]?.timeMs,
+      })
+      expect(state.outcome).toBe('victory')
+      expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: entry.durationMs })
+      expect(first).toBeDefined()
+      expect(last).toBeDefined()
+      if (first === undefined || last === undefined) continue
+      expect(last.outgoingModifier).toBeGreaterThan(first.outgoingModifier)
+      expect(last.outgoingModifier).toBeGreaterThan(1)
+      expect(boosted.length).toBeGreaterThan(0)
+      expect(actualSwing).toBe(plainSwing)
+      expect(hits[actualSwing]?.timeMs).toBe(entry.durationMs)
+    }
+  })
+})
+
+describe('mage spell details', () => {
+  it('ticks Fireball Burn for 0.12 of the snapshotted magical power', () => {
+    const base = setupForScenario(MAGE_VS_STANDARD_ID)
+    const setup = {
+      ...base,
+      hero: {
+        ...base.hero,
+        equippedSkillIds: ['fireball'],
+        priorityRows: [{ skillId: 'fireball' }],
+      },
+    }
+    const defs = gameDefs()
+    const state = createCombat(setup, defs, 1)
+    let steps = 0
+    while (
+      state.outcome === 'ongoing' &&
+      !state.log.some((event) => event.type === 'statusTick' && event.statusId === 'burn')
+    ) {
+      stepCombat(state, defs)
+      steps += 1
+      if (steps > 20_000) throw new Error('Fireball did not tick Burn')
+    }
+    const tick = state.log.find((event) => event.type === 'statusTick' && event.statusId === 'burn')
+    console.log('[mage] fireball burn', {
+      power: state.hero.magicalPower,
+      tick,
+    })
+    expect(tick).toMatchObject({
+      type: 'statusTick',
+      coefficient: 0.12,
+      intensity: 1,
+      power: state.hero.magicalPower,
+      crit: false,
+      varianceRoll: false,
+    })
+    if (tick?.type !== 'statusTick') return
+    expect(tick.raw).toBeCloseTo(state.hero.magicalPower * 0.12, 10)
+  })
+
+  it('applies one Chill stack from Frost Lance', () => {
+    const base = setupForScenario(MAGE_VS_STANDARD_ID)
+    const setup = {
+      ...base,
+      hero: {
+        ...base.hero,
+        equippedSkillIds: ['frost-lance'],
+        priorityRows: [{ skillId: 'frost-lance' }],
+      },
+    }
+    const defs = gameDefs()
+    const state = createCombat(setup, defs, 1)
+    let steps = 0
+    while (
+      state.outcome === 'ongoing' &&
+      !state.log.some((event) => event.type === 'statusAttempt' && event.statusId === 'chill')
+    ) {
+      stepCombat(state, defs)
+      steps += 1
+      if (steps > 20_000) throw new Error('Frost Lance did not apply Chill')
+    }
+    const attempt = state.log.find((event) => event.type === 'statusAttempt' && event.statusId === 'chill')
+    console.log('[mage] frost chill', attempt)
+    expect(attempt).toMatchObject({ result: 'applied', stacks: 1 })
+  })
+})
+
 describe('harness enemies', () => {
   it('starts every scenario enemy revealed', () => {
     const defs = gameDefs()
-    for (const id of [DUEL_BASIC_ID, DRIVING_BLOW_ID, VENOM_EDGE_ID, PRIORITY_FOCUS_ID]) {
+    for (const id of [
+      DUEL_BASIC_ID,
+      DRIVING_BLOW_ID,
+      VENOM_EDGE_ID,
+      PRIORITY_FOCUS_ID,
+      WARRIOR_VS_STANDARD_ID,
+      MAGE_VS_STANDARD_ID,
+    ]) {
       const state = createCombat(setupForScenario(id), defs, 42)
       console.log('[priority] harness revealed', {
         id,

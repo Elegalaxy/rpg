@@ -1,4 +1,6 @@
-import { chooseHeroAction, parsePriorityRules } from './automation.ts'
+import { chooseHeroAction, parsePriorityRules, skillActionTargets } from './automation.ts'
+import { classModule } from './classes/index.ts'
+import { grantClassResource, payClassResource } from './classes/resources.ts'
 import { BASIC_ATTACK_COEFFICIENT, CRIT_DAMAGE_BASE, STEP_MS, WEAPON_ACTION_TIME } from './constants.ts'
 import { basicHitChance, consistencyBounds, resolveDamage } from './damage.ts'
 import { centeredRoll, createRng, nextFloat } from './rng.ts'
@@ -29,9 +31,11 @@ import type {
   CombatHero,
   CombatSetup,
   CombatState,
+  DamageNotice,
   DamageResult,
   DamageSchool,
   EnemyDef,
+  FallbackDecision,
   GameDefs,
   PriorityRow,
   SkillDef,
@@ -100,6 +104,7 @@ function endEncounter(
 ): void {
   if (state.outcome !== 'ongoing') return
   state.outcome = outcome
+  classModule(state.hero.classId)?.encounterEnd?.(state, timeMs)
   state.log.push({ type: 'encounterEnd', timeMs, outcome })
 }
 
@@ -191,6 +196,71 @@ function noteDeath(
   if (!enemiesAlive) endEncounter(state, 'victory', timeMs)
 }
 
+type PendingDeath = {
+  target: CombatActor
+  killerId: string
+  killerName: string
+  timeMs: number
+}
+
+function notifyDamageTaken(state: CombatState, notice: DamageNotice): void {
+  classModule(state.hero.classId)?.damageTaken?.(state, notice)
+}
+
+function queueDeath(
+  deaths: PendingDeath[],
+  target: CombatActor,
+  killerId: string,
+  killerName: string,
+  timeMs: number,
+): void {
+  target.alive = false
+  target.hp = 0
+  deaths.push({ target, killerId, killerName, timeMs })
+}
+
+/** Log queued deaths, then end the encounter once. Resource hooks run before this. */
+function commitDeaths(state: CombatState, deaths: readonly PendingDeath[]): void {
+  if (deaths.length === 0 || state.outcome !== 'ongoing') return
+  let heroDeath: PendingDeath | null = null
+  let lastEnemyDeath: PendingDeath | null = null
+  for (const death of deaths) {
+    state.log.push({
+      type: 'death',
+      timeMs: death.timeMs,
+      actorId: death.target.id,
+      actorName: death.target.name,
+      killerId: death.killerId,
+      killerName: death.killerName,
+    })
+    if (death.target.side === 'hero') heroDeath = death
+    else lastEnemyDeath = death
+  }
+  if (heroDeath !== null) {
+    endEncounter(state, 'defeat', heroDeath.timeMs)
+    return
+  }
+  let enemiesAlive = false
+  for (const enemy of state.enemies) {
+    if (enemy.alive) enemiesAlive = true
+  }
+  if (!enemiesAlive && lastEnemyDeath !== null) endEncounter(state, 'victory', lastEnemyDeath.timeMs)
+}
+
+function heroOutgoing(
+  state: CombatState,
+  school: DamageSchool,
+  skill: SkillDef | null,
+): number {
+  const hook = classModule(state.hero.classId)?.outgoingModifiers
+  if (hook === undefined) return 1
+  const value = hook(state, { school, skill })
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`outgoing modifier must be at least 0, received ${describeValue(value)}`)
+  }
+  return value
+}
+
 function applyStatusDamage(state: CombatState, tick: StatusTickDraft): void {
   const target = tick.target
   if (!target.alive) return
@@ -199,6 +269,15 @@ function applyStatusDamage(state: CombatState, tick: StatusTickDraft): void {
   if (hpAfter < 0) hpAfter = 0
   target.hp = hpAfter
   state.log.push(statusTickEvent(tick, hpBefore, hpAfter))
+  if (target.id === state.hero.id) {
+    notifyDamageTaken(state, {
+      hpLost: hpBefore - hpAfter,
+      hpBefore,
+      kind: 'statusTick',
+      timeMs: tick.timeMs,
+      school: tick.school,
+    })
+  }
   if (hpAfter > 0) return
   noteDeath(state, target, tick.sourceId, tick.sourceName, tick.timeMs)
 }
@@ -209,6 +288,7 @@ function applyHit(
   target: CombatActor,
   scheduled: number,
   result: DamageResult,
+  deaths: PendingDeath[],
 ): void {
   const hpBefore = target.hp
   let hpAfter = hpBefore - result.hpDamage
@@ -226,8 +306,17 @@ function applyHit(
     targetHpAfter: hpAfter,
     ...result,
   })
+  if (target.id === state.hero.id) {
+    notifyDamageTaken(state, {
+      hpLost: hpBefore - hpAfter,
+      hpBefore,
+      kind: 'hit',
+      timeMs: scheduled,
+      school: result.school,
+    })
+  }
   if (hpAfter > 0) return
-  noteDeath(state, target, actor.id, actor.name, scheduled)
+  queueDeath(deaths, target, actor.id, actor.name, scheduled)
 }
 
 function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
@@ -236,6 +325,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
   actor.nextReadyMs = scheduled + recoveryMs
   const target = livingTarget(state, actor)
   if (actor.side === 'hero' && target.side === 'enemy') state.hero.currentTargetId = target.id
+  const deaths: PendingDeath[] = []
   state.log.push({
     type: 'action',
     timeMs: scheduled,
@@ -267,7 +357,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     evasion,
     power: actor.power,
     coefficient: BASIC_ATTACK_COEFFICIENT,
-    outgoingModifier: 1,
+    outgoingModifier: actor.side === 'hero' ? heroOutgoing(state, actor.school, null) : 1,
     consistency: actor.consistency,
     critChance: actor.critChance,
     critDamage: actor.critDamage,
@@ -293,8 +383,11 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     evasion,
     hit: result.hit,
   })
-  if (!result.hit) return
-  applyHit(state, actor, target, scheduled, result)
+  if (result.hit) applyHit(state, actor, target, scheduled, result, deaths)
+  if (actor.side === 'hero') {
+    classModule(state.hero.classId)?.actionResolved?.(state, { kind: 'basicAttack', hit: result.hit }, scheduled)
+  }
+  commitDeaths(state, deaths)
 }
 
 function dueActors(state: CombatState, stepStart: number, stepEnd: number): CombatActor[] {
@@ -302,6 +395,7 @@ function dueActors(state: CombatState, stepStart: number, stepEnd: number): Comb
   const actors = [state.hero, ...state.enemies]
   for (const actor of actors) {
     if (!actor.alive) continue
+    if (actor.side === 'hero' && state.hero.waiting) continue
     if (actor.nextReadyMs > stepStart && actor.nextReadyMs <= stepEnd) due.push(actor)
   }
   return due
@@ -405,21 +499,18 @@ function scheduleSkill(
   return { nextReadyMs, cooldownReadyMs }
 }
 
-function resolveHeroAction(state: CombatState, defs: GameDefs): void {
+function resolveSkill(
+  state: CombatState,
+  defs: GameDefs,
+  skill: SkillDef,
+  targets: readonly CombatActor[],
+  scheduled: number,
+): void {
   const hero = state.hero
-  const scheduled = hero.nextReadyMs
-  endUntilNextAction(state, hero, scheduled)
-  const choice = chooseHeroAction(state, defs, hero, scheduled)
-  for (const event of choice.events) state.log.push(event)
-  if (choice.kind === 'skill' && choice.focus !== null && choice.focus.side === 'enemy') {
-    hero.currentTargetId = choice.focus.id
-  }
-  if (choice.kind === 'basicAttack') {
-    resolveBasicAttack(state, hero)
-    return
-  }
-  const timing = scheduleSkill(hero, choice.skill, scheduled)
-  const target = actionTarget(choice.skill, choice.targets)
+  classModule(hero.classId)?.actionChosen?.(state, { kind: 'skill', skill }, scheduled)
+  payClassResource(state, scheduled, skill.cost, 'payment')
+  const timing = scheduleSkill(hero, skill, scheduled)
+  const target = actionTarget(skill, targets)
   state.log.push({
     type: 'action',
     timeMs: scheduled,
@@ -428,15 +519,76 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
     targetId: target.id,
     targetName: target.name,
     action: 'skill',
-    skillId: choice.skill.id,
-    skillName: choice.skill.name,
+    skillId: skill.id,
+    skillName: skill.name,
     scheduledMs: scheduled,
     nextReadyMs: timing.nextReadyMs,
     cooldownReadyMs: timing.cooldownReadyMs,
   })
-  applySkillEffects(state, defs, hero, choice.skill, choice.targets, scheduled, (actor, result) => {
-    applyHit(state, hero, actor, scheduled, result)
+  const deaths: PendingDeath[] = []
+  applySkillEffects(state, defs, hero, skill, targets, scheduled, (school) => heroOutgoing(state, school, skill), (
+    actor,
+    result,
+  ) => {
+    applyHit(state, hero, actor, scheduled, result, deaths)
   })
+  classModule(hero.classId)?.actionResolved?.(state, { kind: 'skill', skill }, scheduled)
+  commitDeaths(state, deaths)
+}
+
+function decideFallback(state: CombatState, defs: GameDefs, timeMs: number): FallbackDecision {
+  const hook = classModule(state.hero.classId)?.fallbackAction
+  if (hook === undefined) return { kind: 'basicAttack' }
+  return hook(state, defs, timeMs)
+}
+
+function logWait(state: CombatState, timeMs: number, reason: string): void {
+  const hero = state.hero
+  if (hero.waiting) return
+  hero.waiting = true
+  state.log.push({
+    type: 'wait',
+    timeMs,
+    actorId: hero.id,
+    actorName: hero.name,
+    reason,
+  })
+}
+
+function resolveHeroAction(state: CombatState, defs: GameDefs): void {
+  const hero = state.hero
+  const scheduled = hero.nextReadyMs
+  const choice = chooseHeroAction(state, defs, hero, scheduled)
+  for (const event of choice.events) state.log.push(event)
+  if (choice.kind === 'basicAttack') {
+    const decision = decideFallback(state, defs, scheduled)
+    if (decision.kind === 'wait') {
+      logWait(state, scheduled, decision.reason)
+      return
+    }
+    if (decision.kind === 'skill') {
+      const skill = defs.skills[decision.skillId]
+      if (skill === undefined) throw new Error(`fallback skill '${decision.skillId}' is not defined`)
+      const aimed = skillActionTargets(state, hero, skill)
+      if (aimed.targets.length === 0) {
+        logWait(state, scheduled, 'no target')
+        return
+      }
+      hero.waiting = false
+      endUntilNextAction(state, hero, scheduled)
+      if (aimed.focus !== null && aimed.focus.side === 'enemy') hero.currentTargetId = aimed.focus.id
+      resolveSkill(state, defs, skill, aimed.targets, scheduled)
+      return
+    }
+    hero.waiting = false
+    endUntilNextAction(state, hero, scheduled)
+    resolveBasicAttack(state, hero)
+    return
+  }
+  hero.waiting = false
+  endUntilNextAction(state, hero, scheduled)
+  if (choice.focus !== null && choice.focus.side === 'enemy') hero.currentTargetId = choice.focus.id
+  resolveSkill(state, defs, choice.skill, choice.targets, scheduled)
 }
 
 /** Bleed ticks when the actor becomes ready, before that action. Chill was already baked into the previous recovery. */
@@ -463,14 +615,52 @@ function resolveActor(state: CombatState, defs: GameDefs, actor: CombatActor): v
   else resolveBasicAttack(state, actor)
 }
 
+function waitingCanAct(state: CombatState, defs: GameDefs, timeMs: number): boolean {
+  const saved = { a: state.rng.a, b: state.rng.b, c: state.rng.c, d: state.rng.d }
+  try {
+    const hero = state.hero
+    const choice = chooseHeroAction(state, defs, hero, timeMs)
+    if (choice.kind === 'skill') return true
+    const decision = decideFallback(state, defs, timeMs)
+    if (decision.kind === 'wait') return false
+    if (decision.kind === 'basicAttack') return true
+    const skill = defs.skills[decision.skillId]
+    if (skill === undefined) throw new Error(`fallback skill '${decision.skillId}' is not defined`)
+    return skillActionTargets(state, hero, skill).targets.length > 0
+  } finally {
+    state.rng = saved
+  }
+}
+
 function resolveActions(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
   while (state.outcome === 'ongoing') {
     const due = dueActors(state, stepStart, stepEnd)
-    if (due.length === 0) return
+    if (due.length === 0) break
     due.sort(compareReady)
     const actor = due[0]
     if (actor === undefined) return
     resolveActor(state, defs, actor)
+  }
+  if (state.outcome !== 'ongoing') return
+  const hero = state.hero
+  if (!hero.waiting || !hero.alive) return
+  if (!waitingCanAct(state, defs, stepEnd)) return
+  hero.waiting = false
+  hero.nextReadyMs = stepEnd
+  resolveActor(state, defs, hero)
+}
+
+/** One regen event per whole second. The 10 ms steps between those seconds are not logged. */
+function applyResourceRegen(state: CombatState, stepStart: number, stepEnd: number): void {
+  const hero = state.hero
+  if (!hero.alive || state.outcome !== 'ongoing') return
+  if (hero.resourceRegenPerSecond <= 0 || hero.classResourceId === '') return
+  const firstSecond = Math.floor(stepStart / 1000) + 1
+  const lastSecond = Math.floor(stepEnd / 1000)
+  for (let second = firstSecond; second <= lastSecond; second += 1) {
+    const timeMs = second * 1000
+    if (timeMs <= stepStart || timeMs > stepEnd) continue
+    grantClassResource(state, timeMs, hero.resourceRegenPerSecond, 'regen')
   }
 }
 
@@ -624,7 +814,14 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     equippedSkillIds,
     priorityRows: parsedRules.rows,
     cooldowns: {},
+    classId: hero.classId,
     classResource: 0,
+    classResourceId: '',
+    classResourceMax: 0,
+    classResourceScope: 'encounter',
+    resourceRegenPerSecond: 0,
+    classState: {},
+    waiting: false,
     specialAmmo: 0,
     targetPriority: parsedRules.targetPriority,
     currentTargetId: null,
@@ -673,6 +870,7 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
     heroName: hero.name,
     enemies: enemies.map((enemy) => ({ id: enemy.id, name: enemy.name, slot: enemy.slot })),
   })
+  classModule(hero.classId)?.encounterStart?.(state, 0)
   return state
 }
 
@@ -701,6 +899,7 @@ export function stepCombat(state: CombatState, defs: GameDefs): CombatState {
   const stepEnd = stepStart + STEP_MS
   resolveExpiries(state, stepStart, stepEnd)
   resolvePeriodicTicks(state, stepStart, stepEnd)
+  applyResourceRegen(state, stepStart, stepEnd)
   resolveTelegraphs()
   resolveActions(state, defs, stepStart, stepEnd)
   state.timeMs = stepEnd
