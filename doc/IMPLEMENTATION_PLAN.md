@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-22  
-Next step: Step 1.1  
+Next step: Step 1.2  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -250,7 +250,7 @@ Stages 0–3 implement §18 (harness, reference simulations, revise from evidenc
   - 2026-10-22: Verified. `npm install`, `npm run typecheck`, `npm test` (no test files, exit 0), `npm run lint`, and `npm run build` all exited 0. Dev server `http://localhost:5173/` served `App.tsx` with h1 text "RPG – dev build" (U+2013) and `debugLog("[ui]", "app mounted")`; served `debug.ts` calls `console.debug` only when `import.meta.env.DEV` is true. The production bundle keeps the heading and drops the debug strings. Strict mode, harness include/app exclude, gitignore, scripts, no git repo, and no premature sim/content/harness folders match this step. `rpg/doc` design text was unchanged aside from this bookkeeping.
 
 ### Step 0.2: Architecture boundary test
-- Status: `done`
+- Status: `verified`
 - Depends on: 0.1
 - Files: `rpg/tests/architecture.test.ts`
 - Change: The test walks `src/` and checks each layer against the section 6 import table using regex checks on import specifiers. For `src/sim` it also bans the forbidden APIs listed there. Failure messages name the file, the line and the rule.
@@ -259,19 +259,22 @@ Stages 0–3 implement §18 (harness, reference simulations, revise from evidenc
 - Verification: `npm test`. User: none needed beyond seeing the test listed as passing.
 - Progress:
   - 2026-10-22: Added `tests/architecture.test.ts`. It walks `src/` and checks section 6 imports with regexes; `src/sim` also bans `Math.random`, `Date`, `performance.now`, `console`, browser storage, `process`, DOM globals, React, and `node:*`. `*.test.ts` / `*.spec.ts` under `src/sim` may import `vitest`. `npm test` passed. Temporary `src/sim/architecture-probe.ts` line 2 `Math.random()` failed with `src/sim/architecture-probe.ts:2: src/sim must not use Math.random`, then the file and empty `src/sim/` were removed. Clean tree: `npm test`, `npm run typecheck`, and `npm run lint` passed.
+  - 2026-10-22: Verified. Clean tree: `npm test` (1 file, 1 test), `npm run typecheck`, and `npm run lint` all exited 0. `src/sim/architecture-probe.ts` and `src/sim/` were absent before and after. Failure text is `file:line: rule`. A recreated line-2 `Math.random()` probe failed with `src/sim/architecture-probe.ts:2: src/sim must not use Math.random`. The same run also rejected the section 6 denials (sim allowlist, content UI/persistence/harness/I/O, harness ui/persist, persist ui/harness, ui harness) and allowed sim-to-sim, content-to-sim, harness Node/sim/content, persist storage, ui sim/content/persist/React, and vitest in a sim test. Probes were removed; `npm test` passed again.
 
 ---
 
 ### Stage 1: Deterministic combat core and harness skeleton
 
 ### Step 1.1: Seeded RNG
-- Status: `todo`
+- Status: `verified`
 - Depends on: 0.2
 - Files: `src/sim/rng.ts`, `src/sim/rng.test.ts`
 - Change: sfc32 PRNG with state stored as a plain `{a,b,c,d}` object, seeded through splitmix32. Pure functions that advance the passed state: `createRng(seed)`, `nextFloat`, `chance(p)`, `uniform(min,max)`, `centeredRoll(min,max)` (the average of two uniforms, §7 "Consistency"), and `deriveSeed(base, index)` for batch and per-encounter seeds. Seeds must be integers in the 32-bit range; reject anything else.
 - Acceptance criteria: the same seed gives the same first 1,000 values. A state round-tripped through `JSON.stringify`/`JSON.parse` continues the identical sequence. Different seeds differ. 100,000 `nextFloat` values are all in [0,1) with a mean of 0.49–0.51. `centeredRoll(0.6, 1)` stays in range with a mean of about 0.8. Invalid seeds throw a clear error.
 - Verification: `npm test`.
 - Progress:
+  - 2026-10-22: Added `src/sim/rng.ts` (sfc32 seeded by splitmix32, state `{a,b,c,d}`) and `src/sim/rng.test.ts` (`[rng]` logs for seed, samples, and means). `tests/architecture.test.ts` allows `console` in `src/sim` test files so those logs pass the boundary check; production `src/sim` still bans it. `npm test` passed (2 files, 9 tests), `npm run typecheck` passed, and `npm run lint` passed.
+  - 2026-10-22: Verified. `npm test` (2 files, 10 tests, exit 0), `npm run typecheck` (exit 0), and `npm run lint` (exit 0). Same seed repeats 1,000 `nextFloat` values for 0, 1, 2, 42, -1, -2147483648, and 2147483647. Seed 42 JSON round-trip continued the same sequence. Those seeds produced different 1,000-value sequences. 100,000 `nextFloat` values for seed 42 stayed in [0, 1) (low 0.000013538403436541557, high 0.9999961263965815, outside 0) with mean 0.49955238378273786. `centeredRoll(0.6, 1)` stayed in range (low 0.6006984421052038, high 0.9993183658923954, outside 0) with mean 0.7996582125152144. Invalid seeds throw `must be an integer from -2147483648 through 2147483647`. `src/sim/rng.ts` is not a test file and has no architecture violations. Synthetic `src/sim/fixture.ts` fails for `Math.random`, `Date`, `performance.now`, and `console`; `src/sim/fixture.test.ts` may use `console` and still fails the other three.
 
 ### Step 1.2: Derived stats and formula constants
 - Status: `todo`

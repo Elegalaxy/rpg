@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 // Section 6 import table. src/sim is an allowlist. The other layers are
 // denylists of the modules they must not import. Unit tests live next to
 // source, so *.test.ts / *.spec.ts under src/sim may import vitest only.
+// Those test files may call console for debug output. Production src/sim may not.
 
 const RPG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC_DIR = join(RPG_ROOT, 'src')
@@ -306,7 +307,15 @@ function checkFile(absFile: string, text: string): { layer: Layer | null; specs:
       const rule = importRule(layer, absFile, hit.spec)
       if (rule !== null) violations.push(`${display}:${hit.line}: ${rule}`)
     }
-    const apiRules = layer === 'sim' ? SIM_API_RULES : layer === 'content' ? CONTENT_IO_RULES : []
+    let apiRules: { source: string; rule: string }[] = []
+    if (layer === 'sim') {
+      apiRules = SIM_API_RULES
+      if (isTestFile(absFile)) {
+        apiRules = SIM_API_RULES.filter((apiRule) => apiRule.rule !== 'src/sim must not use console')
+      }
+    } else if (layer === 'content') {
+      apiRules = CONTENT_IO_RULES
+    }
     for (const hit of apiHits(masked, apiRules)) {
       violations.push(`${display}:${hit.line}: ${hit.rule}`)
     }
@@ -351,5 +360,44 @@ describe('architecture boundaries', () => {
     console.log(`[DEBUG architecture] output violations=${violations.length}`)
     expect(files.length).toBeGreaterThan(0)
     expect(violations).toEqual([])
+  })
+
+  it('bans forbidden sim APIs in production files and exempts console only in sim tests', () => {
+    const banned = [
+      { source: 'Math.random()', rule: 'src/sim must not use Math.random' },
+      { source: 'Date.now()', rule: 'src/sim must not use Date' },
+      { source: 'performance.now()', rule: 'src/sim must not use performance.now' },
+      { source: 'console.log(1)', rule: 'src/sim must not use console' },
+    ] as const
+    const production = join(SRC_DIR, 'sim', 'fixture.ts')
+    const simTest = join(SRC_DIR, 'sim', 'fixture.test.ts')
+
+    for (const entry of banned) {
+      const violations = checkFile(production, entry.source).violations
+      console.log('[DEBUG architecture] production fixture', {
+        source: entry.source,
+        violations,
+      })
+      expect(violations.some((violation) => violation.includes(entry.rule))).toBe(true)
+    }
+
+    const testConsole = checkFile(simTest, 'console.log(1)').violations
+    console.log('[DEBUG architecture] test console fixture', testConsole)
+    expect(testConsole).toEqual([])
+
+    for (const entry of banned.slice(0, 3)) {
+      const violations = checkFile(simTest, entry.source).violations
+      console.log('[DEBUG architecture] test fixture', { source: entry.source, violations })
+      expect(violations.some((violation) => violation.includes(entry.rule))).toBe(true)
+    }
+
+    const rngFile = join(SRC_DIR, 'sim', 'rng.ts')
+    const rngViolations = checkFile(rngFile, readFileSync(rngFile, 'utf8')).violations
+    console.log('[DEBUG architecture] rng.ts', {
+      testFile: isTestFile(rngFile),
+      violations: rngViolations,
+    })
+    expect(isTestFile(rngFile)).toBe(false)
+    expect(rngViolations).toEqual([])
   })
 })
