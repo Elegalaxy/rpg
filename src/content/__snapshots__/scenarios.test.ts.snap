@@ -1,0 +1,63 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`duel-basic > runs the level-20 Warrior against one level-20 Standard dummy 1`] = `
+"At 0.000s, encounter started with seed 42. Warrior faces Standard Dummy.
+At 1.724s, Warrior basic attacks Standard Dummy. Next ready at 3.448s.
+At 1.724s, Warrior hit roll 0.8686135609168559 against 0.71 (Accuracy 16, Evasion 20): miss.
+At 2.200s, Standard Dummy basic attacks Warrior. Next ready at 4.400s.
+At 2.200s, Standard Dummy hit roll 0.41595513583160937 against 0.89 (Accuracy 30, Evasion 16): hit.
+At 2.200s, Standard Dummy deals 12 physical damage to Warrior (HP 370 to 358). Power 28 × 1 = 28; outgoing ×1 = 28; consistency 0 roll 0.769597307126969 (floor 0.6 ceiling 1) = 21.548724599555133; critical no (roll 0.8812672768253833 vs 0) = 21.548724599555133; barrier absorbed 0 of 0; overflow 21.548724599555133; penetration 0; defense 116; attacker level 20; reduction 0.43609022556390975; incoming ×1 = 12.151536428320565; rounded 12.
+At 3.448s, Warrior basic attacks Standard Dummy. Next ready at 5.172s.
+At 3.448s, Warrior hit roll 0.650209850165993 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 3.448s, Warrior deals 68 physical damage to Standard Dummy (HP 480 to 412). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.887478547077626 (floor 0.6 ceiling 1) = 85.19794051945209; critical no (roll 0.49469241802580655 vs 0.114) = 85.19794051945209; barrier absorbed 0 of 0; overflow 85.19794051945209; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 67.55944704714375; rounded 68.
+At 4.400s, Standard Dummy basic attacks Warrior. Next ready at 6.600s.
+At 4.400s, Standard Dummy hit roll 0.44902881793677807 against 0.89 (Accuracy 30, Evasion 16): hit.
+At 4.400s, Standard Dummy deals 12 physical damage to Warrior (HP 358 to 346). Power 28 × 1 = 28; outgoing ×1 = 28; consistency 0 roll 0.7828742661513388 (floor 0.6 ceiling 1) = 21.920479452237487; critical no (roll 0.8907801888417453 vs 0) = 21.920479452237487; barrier absorbed 0 of 0; overflow 21.920479452237487; penetration 0; defense 116; attacker level 20; reduction 0.43609022556390975; incoming ×1 = 12.361172623442192; rounded 12.
+At 5.172s, Warrior basic attacks Standard Dummy. Next ready at 6.896s.
+At 5.172s, Warrior hit roll 0.4310670436825603 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 5.172s, Warrior deals 54 physical damage to Standard Dummy (HP 412 to 358). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.7058719236869365 (floor 0.6 ceiling 1) = 67.76370467394591; critical no (roll 0.6512069271411747 vs 0.114) = 67.76370467394591; barrier absorbed 0 of 0; overflow 67.76370467394591; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 53.73461365057862; rounded 54.
+At 6.600s, Standard Dummy basic attacks Warrior. Next ready at 8.800s.
+At 6.600s, Standard Dummy hit roll 0.9914641629438847 against 0.89 (Accuracy 30, Evasion 16): miss.
+At 6.896s, Warrior basic attacks Standard Dummy. Next ready at 8.620s.
+At 6.896s, Warrior hit roll 0.2893015253357589 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 6.896s, Warrior deals 59 physical damage to Standard Dummy (HP 358 to 299). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.7797944087069482 (floor 0.6 ceiling 1) = 74.86026323586702; critical no (roll 0.11718729161657393 vs 0.114) = 74.86026323586702; barrier absorbed 0 of 0; overflow 74.86026323586702; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 59.36197470482382; rounded 59.
+At 8.620s, Warrior basic attacks Standard Dummy. Next ready at 10.344s.
+At 8.620s, Warrior hit roll 0.8147752517834306 against 0.71 (Accuracy 16, Evasion 20): miss.
+At 8.800s, Standard Dummy basic attacks Warrior. Next ready at 11.000s.
+At 8.800s, Standard Dummy hit roll 0.8713462899904698 against 0.89 (Accuracy 30, Evasion 16): hit.
+At 8.800s, Standard Dummy deals 13 physical damage to Warrior (HP 346 to 333). Power 28 × 1 = 28; outgoing ×1 = 28; consistency 0 roll 0.835819118609652 (floor 0.6 ceiling 1) = 23.402935321070256; critical no (roll 0.250900499522686 vs 0) = 23.402935321070256; barrier absorbed 0 of 0; overflow 23.402935321070256; penetration 0; defense 116; attacker level 20; reduction 0.43609022556390975; incoming ×1 = 13.197143978047137; rounded 13.
+At 10.344s, Warrior basic attacks Standard Dummy. Next ready at 12.068s.
+At 10.344s, Warrior hit roll 0.34814035054296255 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 10.344s, Warrior deals 70 physical damage to Standard Dummy (HP 299 to 229). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.9169212120119482 (floor 0.6 ceiling 1) = 88.02443635314702; critical no (roll 0.8639578947331756 vs 0.114) = 88.02443635314702; barrier absorbed 0 of 0; overflow 88.02443635314702; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 69.80077464780196; rounded 70.
+At 11.000s, Standard Dummy basic attacks Warrior. Next ready at 13.200s.
+At 11.000s, Standard Dummy hit roll 0.1747028874233365 against 0.89 (Accuracy 30, Evasion 16): hit.
+At 11.000s, Standard Dummy deals 11 physical damage to Warrior (HP 333 to 322). Power 28 × 1 = 28; outgoing ×1 = 28; consistency 0 roll 0.7119467005133628 (floor 0.6 ceiling 1) = 19.93450761437416; critical no (roll 0.5452466912101954 vs 0) = 19.93450761437416; barrier absorbed 0 of 0; overflow 19.93450761437416; penetration 0; defense 116; attacker level 20; reduction 0.43609022556390975; incoming ×1 = 11.241263692316256; rounded 11.
+At 12.068s, Warrior basic attacks Standard Dummy. Next ready at 13.792s.
+At 12.068s, Warrior hit roll 0.8134131291881204 against 0.71 (Accuracy 16, Evasion 20): miss.
+At 13.200s, Standard Dummy basic attacks Warrior. Next ready at 15.400s.
+At 13.200s, Standard Dummy hit roll 0.18785604741424322 against 0.89 (Accuracy 30, Evasion 16): hit.
+At 13.200s, Standard Dummy deals 12 physical damage to Warrior (HP 322 to 310). Power 28 × 1 = 28; outgoing ×1 = 28; consistency 0 roll 0.7823423897847532 (floor 0.6 ceiling 1) = 21.90558691397309; critical no (roll 0.12804663321003318 vs 0) = 21.90558691397309; barrier absorbed 0 of 0; overflow 21.90558691397309; penetration 0; defense 116; attacker level 20; reduction 0.43609022556390975; incoming ×1 = 12.352774575548734; rounded 12.
+At 13.792s, Warrior basic attacks Standard Dummy. Next ready at 15.516s.
+At 13.792s, Warrior hit roll 0.12402306008152664 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 13.792s, Warrior deals 68 physical damage to Standard Dummy (HP 229 to 161). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.8900018294341863 (floor 0.6 ceiling 1) = 85.44017562568189; critical no (roll 0.22645858908072114 vs 0.114) = 85.44017562568189; barrier absorbed 0 of 0; overflow 85.44017562568189; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 67.75153232212237; rounded 68.
+At 15.400s, Standard Dummy basic attacks Warrior. Next ready at 17.600s.
+At 15.400s, Standard Dummy hit roll 0.9372726241126657 against 0.89 (Accuracy 30, Evasion 16): miss.
+At 15.516s, Warrior basic attacks Standard Dummy. Next ready at 17.240s.
+At 15.516s, Warrior hit roll 0.6769152486231178 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 15.516s, Warrior deals 63 physical damage to Standard Dummy (HP 161 to 98). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.8339177317917348 (floor 0.6 ceiling 1) = 80.05610225200654; critical no (roll 0.5893781129270792 vs 0.114) = 80.05610225200654; barrier absorbed 0 of 0; overflow 80.05610225200654; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 63.482121374287225; rounded 63.
+At 17.240s, Warrior basic attacks Standard Dummy. Next ready at 18.964s.
+At 17.240s, Warrior hit roll 0.7250350734684616 against 0.71 (Accuracy 16, Evasion 20): miss.
+At 17.600s, Standard Dummy basic attacks Warrior. Next ready at 19.800s.
+At 17.600s, Standard Dummy hit roll 0.5800142057705671 against 0.89 (Accuracy 30, Evasion 16): hit.
+At 17.600s, Standard Dummy deals 14 physical damage to Warrior (HP 310 to 296). Power 28 × 1 = 28; outgoing ×1 = 28; consistency 0 roll 0.8646887741517275 (floor 0.6 ceiling 1) = 24.21128567624837; critical no (roll 0.48512082919478416 vs 0) = 24.21128567624837; barrier absorbed 0 of 0; overflow 24.21128567624837; penetration 0; defense 116; attacker level 20; reduction 0.43609022556390975; incoming ×1 = 13.65298064450096; rounded 14.
+At 18.964s, Warrior basic attacks Standard Dummy. Next ready at 20.688s.
+At 18.964s, Warrior hit roll 0.6730100933928043 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 18.964s, Warrior deals 57 physical damage to Standard Dummy (HP 98 to 41). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.7474497911985964 (floor 0.6 ceiling 1) = 71.75517995506526; critical no (roll 0.19597982172854245 vs 0.114) = 71.75517995506526; barrier absorbed 0 of 0; overflow 71.75517995506526; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 56.89973549801574; rounded 57.
+At 19.800s, Standard Dummy basic attacks Warrior. Next ready at 22.000s.
+At 19.800s, Standard Dummy hit roll 0.9323983262293041 against 0.89 (Accuracy 30, Evasion 16): miss.
+At 20.688s, Warrior basic attacks Standard Dummy. Next ready at 22.412s.
+At 20.688s, Warrior hit roll 0.3180880283471197 against 0.71 (Accuracy 16, Evasion 20): hit.
+At 20.688s, Warrior deals 70 physical damage to Standard Dummy (HP 41 to 0). Power 96 × 1 = 96; outgoing ×1 = 96; consistency 0 roll 0.9148286154028029 (floor 0.6 ceiling 1) = 87.82354707866908; critical no (roll 0.1884011544752866 vs 0.114) = 87.82354707866908; barrier absorbed 0 of 0; overflow 87.82354707866908; penetration 0.12972972972972974; defense 45; attacker level 20; reduction 0.2070295756536648; incoming ×1 = 69.64147539457257; rounded 70.
+At 20.688s, Standard Dummy dies, killed by Warrior.
+At 20.688s, encounter ended: victory."
+`;

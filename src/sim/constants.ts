@@ -159,3 +159,26 @@ export const ELITE_HP_MULTIPLIER = 3
 export const ELITE_POWER_MULTIPLIER = 1.3
 export const ELITE_DEFENSE_MULTIPLIER = 1.25
 export const ELITE_XP_MULTIPLIER = 3
+
+/** Fixed simulation step from GAME_DESIGN "Simulation clock and action timing". */
+export const STEP_MS = 10
+
+/**
+ * Hit chance is `clamp(5%, 95%, 75% + Accuracy − Evasion)`.
+ * Accuracy and Evasion are ratings in percentage points (16 Accuracy is +16%).
+ */
+export const HIT_CHANCE_BASE_POINTS = 75
+export const HIT_CHANCE_MIN_POINTS = 5
+export const HIT_CHANCE_MAX_POINTS = 95
+
+/** `60% + (0.25% × Consistency)`, ceiling 100%. Consistency is clamped to 0–100. */
+export const DAMAGE_FLOOR_BASE_POINTS = 60
+export const DAMAGE_FLOOR_POINTS_PER_CONSISTENCY = 0.25
+export const CONSISTENCY_MIN = 0
+export const CONSISTENCY_MAX = 100
+export const DAMAGE_ROLL_CEILING = 1
+
+/** Weapon basic attack uses 100% of the relevant Power. Skills are not in this step. */
+export const BASIC_ATTACK_COEFFICIENT = 1
+
+export const MIN_UNSHIELDED_DAMAGE = 1
