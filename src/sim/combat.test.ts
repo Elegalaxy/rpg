@@ -57,7 +57,7 @@ function dummy(overrides: EnemyDef['overrides'] = {}): EnemyDef {
 function defsFor(...enemies: EnemyDef[]): GameDefs {
   const record: GameDefs['enemies'] = {}
   for (const enemy of enemies) record[enemy.id] = enemy
-  return { enemies: record, skills: {} }
+  return { enemies: record, skills: {}, statuses: {} }
 }
 
 function logRun(label: string, state: CombatState): void {

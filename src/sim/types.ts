@@ -13,6 +13,133 @@ export type DamageSchool = 'physical' | 'magical'
 
 export type CombatOutcome = 'ongoing' | 'victory' | 'defeat' | 'timeout'
 
+export type StatusKind = 'bleed' | 'poison' | 'burn' | 'chill' | 'stun' | 'mark' | 'expose'
+
+/** Source values frozen when a damage-over-time stack is applied. */
+export type StatusSnapshot = {
+  power: number
+  penetration: number
+  coefficient: number
+  attackerLevel: number
+  sourceId: string
+  sourceName: string
+}
+
+export type BleedStack = StatusSnapshot & {
+  actionsRemaining: number
+}
+
+export type BleedStatus = {
+  name: string
+  stacks: BleedStack[]
+}
+
+export type PoisonStatus = {
+  name: string
+  stacks: StatusSnapshot[]
+  expiresMs: number
+  /** Interval frozen at application. Boss duration does not change this. */
+  tickMs: number
+  nextTickMs: number
+}
+
+export type BurnStatus = StatusSnapshot & {
+  name: string
+  intensity: number
+  expiresMs: number
+  tickMs: number
+  nextTickMs: number
+}
+
+export type ChillStatus = {
+  name: string
+  stacks: number
+  expiresMs: number
+  /** Additional slow at each stack, copied from the definition at the first application. */
+  slowByStack: number[]
+}
+
+export type MarkStatus = {
+  name: string
+  expiresMs: number | null
+  sourceId: string
+  sourceName: string
+}
+
+export type ExposeStatus = {
+  name: string
+  expiresMs: number
+  /** Strongest Armor reduction. 0.2 removes 20% of current Armor. */
+  armorMagnitude: number
+  /** Strongest Resistance reduction. */
+  resistanceMagnitude: number
+}
+
+export type ActorStatuses = {
+  bleed: BleedStatus | null
+  poison: PoisonStatus | null
+  burn: BurnStatus | null
+  chill: ChillStatus | null
+  mark: MarkStatus | null
+  expose: ExposeStatus | null
+}
+
+export type StatusDefBase = {
+  id: string
+  name: string
+}
+
+export type BleedStatusDef = StatusDefBase & {
+  kind: 'bleed'
+  maxStacks: number
+  actionsPerStack: number
+}
+
+export type PoisonStatusDef = StatusDefBase & {
+  kind: 'poison'
+  maxStacks: number
+  durationSeconds: number
+  tickSeconds: number
+}
+
+export type BurnStatusDef = StatusDefBase & {
+  kind: 'burn'
+  maxIntensity: number
+  durationSeconds: number
+  tickSeconds: number
+}
+
+export type ChillStatusDef = StatusDefBase & {
+  kind: 'chill'
+  maxStacks: number
+  durationSeconds: number
+  /** Additional slow fraction at stack 1, then 2, then 3. */
+  slowByStack: readonly number[]
+}
+
+export type StunStatusDef = StatusDefBase & {
+  kind: 'stun'
+  delaySeconds: number
+}
+
+export type MarkStatusDef = StatusDefBase & {
+  kind: 'mark'
+}
+
+export type ExposeStatusDef = StatusDefBase & {
+  kind: 'expose'
+  durationSeconds: number
+}
+
+export type StatusDef =
+  | BleedStatusDef
+  | PoisonStatusDef
+  | BurnStatusDef
+  | ChillStatusDef
+  | StunStatusDef
+  | MarkStatusDef
+  | ExposeStatusDef
+
 export type CombatActor = {
   id: string
   name: string
@@ -41,6 +168,19 @@ export type CombatActor = {
   damageReduction: number
   evasionBonus: number
   incomingMultipliers: number[]
+  /** Intellect. Status Potency is this plus equipment and skill potency. */
+  intellect: number
+  /** Vitality. Physical status resistance is this plus equipment and skill resistance. */
+  vitality: number
+  /** Spirit. Magical status resistance is this plus equipment and skill resistance. */
+  spirit: number
+  /** Equipment and skill potency. Added to Intellect. Affects application chance only. */
+  statusPotency: number
+  physicalStatusResistance: number
+  magicalStatusResistance: number
+  /** Boss status caps, durations, and Stun delay. Not immunity. */
+  boss: boolean
+  statuses: ActorStatuses
 }
 
 /** Inputs a caller can fix so damage tests do not draw from the RNG. */
@@ -262,6 +402,81 @@ export type ActionDelayEvent = {
   nextReadyMs: number
 }
 
+export type StatusAttemptResult = 'applied' | 'resisted' | 'contact' | 'cap' | 'guaranteed'
+
+export type StatusAttemptEvent = {
+  type: 'statusAttempt'
+  timeMs: number
+  actorId: string
+  actorName: string
+  targetId: string
+  targetName: string
+  statusId: string
+  statusName: string
+  /** School used for resistance. Mark does not roll. */
+  school: DamageSchool | 'none'
+  baseChance: number
+  potency: number
+  resistance: number
+  chance: number
+  /** Null when the attempt does not draw (Mark, or a contact status blocked by a barrier). */
+  roll: number | null
+  result: StatusAttemptResult
+  stacks: number
+  intensity: number
+  expiresMs: number | null
+  delayMs: number | null
+  nextReadyMs: number | null
+}
+
+export type StatusTickEvent = {
+  type: 'statusTick'
+  timeMs: number
+  sourceId: string
+  sourceName: string
+  targetId: string
+  targetName: string
+  statusId: string
+  statusName: string
+  school: DamageSchool
+  stacks: number
+  intensity: number
+  power: number
+  coefficient: number
+  raw: number
+  penetration: number
+  defense: number
+  attackerLevel: number
+  reduction: number
+  afterDefense: number
+  hpDamage: number
+  targetHpBefore: number
+  targetHpAfter: number
+  barrierBypassed: boolean
+  crit: boolean
+  varianceRoll: boolean
+}
+
+export type StatusExpiredEvent = {
+  type: 'statusExpired'
+  timeMs: number
+  actorId: string
+  actorName: string
+  statusId: string
+  statusName: string
+  stacks: number
+}
+
+export type StatusClearedEvent = {
+  type: 'statusCleared'
+  timeMs: number
+  actorId: string
+  actorName: string
+  statusId: string
+  statusName: string
+  stacks: number
+}
+
 export type LogEvent =
   | EncounterStartEvent
   | PriorityEvent
@@ -274,6 +489,10 @@ export type LogEvent =
   | BuffEvent
   | BuffEndedEvent
   | ActionDelayEvent
+  | StatusAttemptEvent
+  | StatusTickEvent
+  | StatusExpiredEvent
+  | StatusClearedEvent
   | DeathEvent
   | EncounterEndEvent
 
@@ -316,7 +535,29 @@ export type ActionDelayEffect = {
   delaySeconds: number
 }
 
-/** Closed list for this step. Statuses and resource changes are later steps. */
+export type ApplyStatusEffect = {
+  kind: 'applyStatus'
+  statusId: string
+  /**
+   * Fraction from 0 through 1 added as percentage points.
+   * 1 means 100 points before Potency and Resistance. Mark does not roll.
+   */
+  baseChance: number
+  /** Tick coefficient for Bleed, Poison, and Burn. */
+  coefficient?: number
+  /** Power to snapshot. Defaults to the status damage school. */
+  power?: DamageSchool
+  /** Extra Potency points from the skill. Affects application chance only. */
+  potency?: number
+  /** Fraction of Armor removed by Expose. 0.2 is 20%. */
+  armorMagnitude?: number
+  /** Fraction of Resistance removed by Expose. */
+  resistanceMagnitude?: number
+  /** Mark duration in seconds. Omitted Mark does not expire. Bosses use half. */
+  durationSeconds?: number
+}
+
+/** Closed list. Resource changes are a later step. */
 export type SkillEffect =
   | DamageEffect
   | HealEffect
@@ -325,6 +566,7 @@ export type SkillEffect =
   | EvasionEffect
   | IncomingDamageEffect
   | ActionDelayEffect
+  | ApplyStatusEffect
 
 export type SkillRequirement = {
   mainHand?: WeaponKind
@@ -405,9 +647,12 @@ export type EnemyDef = {
   elite?: boolean
   overrides?: EnemyStatOverrides
   school: DamageSchool
+  /** Uses boss stack caps, half durations, and the 35% Stun delay. Not immunity. */
+  boss?: boolean
 }
 
 export type GameDefs = {
   enemies: { [id: string]: EnemyDef }
   skills: { [id: string]: SkillDef }
+  statuses: { [id: string]: StatusDef }
 }

@@ -1,7 +1,7 @@
 import type { SkillDef } from '../sim/types.ts'
 
-// Effects that fit the current closed list. Statuses and class-resource gains come later.
-// A positive cost is stored and stays unaffordable until those resources exist.
+// A positive cost is stored and stays unaffordable until class resources exist.
+// Venom Edge has no listed resource cost. Its status chance is 100% before the application clamp.
 
 const drivingBlow = {
   id: 'driving-blow',
@@ -72,6 +72,20 @@ const smokeStep = {
   tags: ['defense'],
   target: 'single',
   effects: [{ kind: 'evasion', amount: 30 }],
+} satisfies SkillDef
+
+const venomEdge = {
+  id: 'venom-edge',
+  name: 'Venom Edge',
+  cost: 0,
+  cooldownSeconds: 4,
+  actionTimeCoefficient: 0.9,
+  tags: ['physical', 'attack'],
+  target: 'single',
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 0.9 },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.12, power: 'physical' },
+  ],
 } satisfies SkillDef
 
 const fanOfKnives = {
@@ -180,6 +194,7 @@ export const skills: { [id: string]: SkillDef } = {
   [shieldBrace.id]: shieldBrace,
   [secondWind.id]: secondWind,
   [smokeStep.id]: smokeStep,
+  [venomEdge.id]: venomEdge,
   [fanOfKnives.id]: fanOfKnives,
   [aimedShot.id]: aimedShot,
   [volley.id]: volley,

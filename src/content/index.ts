@@ -4,9 +4,11 @@ export { referenceHeroes, type ReferenceHero } from './heroes.ts'
 export {
   DRIVING_BLOW_ID,
   DUEL_BASIC_ID,
+  VENOM_EDGE_ID,
   gameDefs,
   scenarios,
   setupForScenario,
   type ScenarioDef,
 } from './scenarios.ts'
 export { skills } from './skills.ts'
+export { statuses } from './statuses.ts'

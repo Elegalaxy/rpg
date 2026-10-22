@@ -7,8 +7,10 @@ import {
 } from './constants.ts'
 import { consistencyBounds, resolveDamage } from './damage.ts'
 import { centeredRoll, nextFloat } from './rng.ts'
+import { exposedDefense, tryApplyStatus } from './statuses.ts'
 import type {
   ActionDelayEvent,
+  ApplyStatusEffect,
   BarrierEvent,
   BuffEndedEvent,
   CombatActor,
@@ -16,6 +18,7 @@ import type {
   CombatState,
   DamageResult,
   DamageSchool,
+  GameDefs,
   HealEvent,
   HealResult,
   SkillDef,
@@ -30,6 +33,7 @@ export const SKILL_EFFECT_KINDS = [
   'evasion',
   'incomingDamage',
   'actionDelay',
+  'applyStatus',
 ] as const
 
 function describeValue(value: unknown): string {
@@ -148,6 +152,58 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     assertPositive(value.delaySeconds, `skill '${skillId}' action delay`)
     return { kind, delaySeconds: value.delaySeconds }
   }
+  if (kind === 'applyStatus') {
+    const statusId = value.statusId
+    if (typeof statusId !== 'string' || statusId.length === 0) {
+      throw new Error(`skill '${skillId}' status effect is missing a status id`)
+    }
+    assertFiniteNumber(value.baseChance, `skill '${skillId}' status chance`)
+    if (value.baseChance < 0 || value.baseChance > 1) {
+      throw new Error(
+        `skill '${skillId}' status chance must be from 0 through 1, received ${describeValue(value.baseChance)}`,
+      )
+    }
+    const effect: ApplyStatusEffect = { kind, statusId, baseChance: value.baseChance }
+    if (value.coefficient !== undefined) {
+      assertPositive(value.coefficient, `skill '${skillId}' status coefficient`)
+      effect.coefficient = value.coefficient
+    }
+    if (value.power !== undefined) {
+      if (value.power !== 'physical' && value.power !== 'magical') {
+        throw new Error(
+          `skill '${skillId}' status power must be physical or magical, received ${describeValue(value.power)}`,
+        )
+      }
+      effect.power = value.power
+    }
+    if (value.potency !== undefined) {
+      assertNonNegative(value.potency, `skill '${skillId}' status potency`)
+      effect.potency = value.potency
+    }
+    if (value.armorMagnitude !== undefined) {
+      assertFiniteNumber(value.armorMagnitude, `skill '${skillId}' Armor Expose`)
+      if (value.armorMagnitude <= 0 || value.armorMagnitude > 1) {
+        throw new Error(
+          `skill '${skillId}' Armor Expose must be greater than 0 and at most 1, received ${describeValue(value.armorMagnitude)}`,
+        )
+      }
+      effect.armorMagnitude = value.armorMagnitude
+    }
+    if (value.resistanceMagnitude !== undefined) {
+      assertFiniteNumber(value.resistanceMagnitude, `skill '${skillId}' Resistance Expose`)
+      if (value.resistanceMagnitude <= 0 || value.resistanceMagnitude > 1) {
+        throw new Error(
+          `skill '${skillId}' Resistance Expose must be greater than 0 and at most 1, received ${describeValue(value.resistanceMagnitude)}`,
+        )
+      }
+      effect.resistanceMagnitude = value.resistanceMagnitude
+    }
+    if (value.durationSeconds !== undefined) {
+      assertPositive(value.durationSeconds, `skill '${skillId}' status duration`)
+      effect.durationSeconds = value.durationSeconds
+    }
+    return effect
+  }
   throw new Error(`skill '${skillId}' has unknown effect kind '${kind}'`)
 }
 
@@ -255,7 +311,7 @@ export function equipmentBlock(hero: CombatHero, skill: SkillDef): string | null
 
 export function skillNeedsEnemy(skill: SkillDef): boolean {
   for (const effect of skill.effects) {
-    if (effect.kind === 'damage' || effect.kind === 'actionDelay') return true
+    if (effect.kind === 'damage' || effect.kind === 'actionDelay' || effect.kind === 'applyStatus') return true
   }
   return false
 }
@@ -337,8 +393,8 @@ function penetrationFor(hero: CombatHero, school: DamageSchool): number {
   return school === 'physical' ? hero.armorPenetration : hero.magicalPenetration
 }
 
-function defenseOf(target: CombatActor, school: DamageSchool): number {
-  return school === 'physical' ? target.armor : target.resistance
+function defenseOf(target: CombatActor, school: DamageSchool, timeMs: number): number {
+  return exposedDefense(target, school, timeMs)
 }
 
 export function endUntilNextAction(state: CombatState, hero: CombatHero, timeMs: number): void {
@@ -366,12 +422,14 @@ export function endUntilNextAction(state: CombatState, hero: CombatHero, timeMs:
 
 export function applySkillEffects(
   state: CombatState,
+  defs: GameDefs,
   hero: CombatHero,
   skill: SkillDef,
   targets: readonly CombatActor[],
   scheduledMs: number,
   applyDamage: (target: CombatActor, result: DamageResult) => void,
 ): void {
+  const hpDamageDealt: { [targetId: string]: number } = {}
   for (const effect of skill.effects) {
     if (effect.kind === 'damage') {
       for (const target of targets) {
@@ -390,7 +448,7 @@ export function applySkillEffects(
           critDamage: hero.critDamage,
           barrier: activeBarrier(target, scheduledMs),
           penetration: penetrationFor(hero, effect.school),
-          defense: defenseOf(target, effect.school),
+          defense: defenseOf(target, effect.school, scheduledMs),
           attackerLevel: hero.level,
           incomingModifier: incomingDamageFactor(target),
           school: effect.school,
@@ -398,6 +456,7 @@ export function applySkillEffects(
           rolls: { hitRoll: 0, consistencyRoll, critRoll },
         })
         applyDamage(target, result)
+        hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
       }
       continue
     }
@@ -488,6 +547,24 @@ export function applySkillEffects(
         value: effect.multiplier,
         until: 'nextAction',
       })
+      continue
+    }
+    if (effect.kind === 'applyStatus') {
+      for (const target of targets) {
+        if (!target.alive) continue
+        const dealt = hpDamageDealt[target.id]
+        tryApplyStatus({
+          state,
+          defs,
+          source: hero,
+          target,
+          skill,
+          effect,
+          timeMs: scheduledMs,
+          applyingHit: dealt !== undefined,
+          hpDamageDealt: dealt ?? 0,
+        })
+      }
       continue
     }
     if (effect.kind === 'actionDelay') {

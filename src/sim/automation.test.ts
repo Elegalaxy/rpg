@@ -74,7 +74,7 @@ function defsFor(skillList: readonly SkillDef[]): GameDefs {
   const skills: GameDefs['skills'] = {}
   for (const skill of skillList) skills[skill.id] = skill
   const enemy = dummy()
-  return { enemies: { [enemy.id]: enemy }, skills }
+  return { enemies: { [enemy.id]: enemy }, skills, statuses: {} }
 }
 
 function untilAction(state: CombatState, defs: GameDefs): void {

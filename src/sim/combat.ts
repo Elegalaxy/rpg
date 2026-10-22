@@ -11,6 +11,18 @@ import {
   finalCooldownSeconds,
   incomingDamageFactor,
 } from './skills.ts'
+import {
+  assertStatusBook,
+  chillSlowFraction,
+  collectStatusTicks,
+  emptyStatuses,
+  expireStatuses,
+  exposedDefense,
+  slowedActionMs,
+  statusTickEvent,
+  takeBleedTicks,
+} from './statuses.ts'
+import type { StatusTickDraft } from './statuses.ts'
 import { actionTime, deriveEnemyStats, deriveHeroStats } from './stats.ts'
 import type {
   CombatActor,
@@ -53,6 +65,7 @@ function assertDefs(defs: GameDefs): void {
     throw new Error('combat definitions are missing enemies')
   }
   assertSkillBook(defs.skills)
+  assertStatusBook(defs.statuses)
 }
 
 function assertMaxMs(maxMs: unknown): asserts maxMs is number {
@@ -94,8 +107,8 @@ function heroSchool(kind: string): DamageSchool {
   return kind === 'caster' ? 'magical' : 'physical'
 }
 
-function defenseOf(target: CombatActor, school: DamageSchool): number {
-  return school === 'physical' ? target.armor : target.resistance
+function defenseOf(target: CombatActor, school: DamageSchool, timeMs: number): number {
+  return exposedDefense(target, school, timeMs)
 }
 
 function compareReady(a: CombatActor, b: CombatActor): number {
@@ -150,6 +163,46 @@ function consumeBarrier(target: CombatActor, absorbed: number): void {
   }
 }
 
+function noteDeath(
+  state: CombatState,
+  target: CombatActor,
+  killerId: string,
+  killerName: string,
+  timeMs: number,
+): void {
+  target.alive = false
+  target.hp = 0
+  state.log.push({
+    type: 'death',
+    timeMs,
+    actorId: target.id,
+    actorName: target.name,
+    killerId,
+    killerName,
+  })
+  if (target.side === 'hero') {
+    endEncounter(state, 'defeat', timeMs)
+    return
+  }
+  let enemiesAlive = false
+  for (const enemy of state.enemies) {
+    if (enemy.alive) enemiesAlive = true
+  }
+  if (!enemiesAlive) endEncounter(state, 'victory', timeMs)
+}
+
+function applyStatusDamage(state: CombatState, tick: StatusTickDraft): void {
+  const target = tick.target
+  if (!target.alive) return
+  const hpBefore = target.hp
+  let hpAfter = hpBefore - tick.hpDamage
+  if (hpAfter < 0) hpAfter = 0
+  target.hp = hpAfter
+  state.log.push(statusTickEvent(tick, hpBefore, hpAfter))
+  if (hpAfter > 0) return
+  noteDeath(state, target, tick.sourceId, tick.sourceName, tick.timeMs)
+}
+
 function applyHit(
   state: CombatState,
   actor: CombatActor,
@@ -174,30 +227,13 @@ function applyHit(
     ...result,
   })
   if (hpAfter > 0) return
-  target.alive = false
-  target.hp = 0
-  state.log.push({
-    type: 'death',
-    timeMs: scheduled,
-    actorId: target.id,
-    actorName: target.name,
-    killerId: actor.id,
-    killerName: actor.name,
-  })
-  if (target.side === 'hero') {
-    endEncounter(state, 'defeat', scheduled)
-    return
-  }
-  let enemiesAlive = false
-  for (const enemy of state.enemies) {
-    if (enemy.alive) enemiesAlive = true
-  }
-  if (!enemiesAlive) endEncounter(state, 'victory', scheduled)
+  noteDeath(state, target, actor.id, actor.name, scheduled)
 }
 
 function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
   const scheduled = actor.nextReadyMs
-  actor.nextReadyMs = scheduled + actor.actionTimeMs
+  const recoveryMs = slowedActionMs(actor.actionTimeMs, chillSlowFraction(actor, scheduled))
+  actor.nextReadyMs = scheduled + recoveryMs
   const target = livingTarget(state, actor)
   state.log.push({
     type: 'action',
@@ -236,7 +272,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     critDamage: actor.critDamage,
     barrier: activeBarrier(target, scheduled),
     penetration: actor.penetration,
-    defense: defenseOf(target, actor.school),
+    defense: defenseOf(target, actor.school, scheduled),
     attackerLevel: actor.level,
     incomingModifier: incomingDamageFactor(target),
     school: actor.school,
@@ -270,7 +306,7 @@ function dueActors(state: CombatState, stepStart: number, stepEnd: number): Comb
   return due
 }
 
-/** Clock category 1. Barriers whose expiry falls inside this step end before actions. */
+/** Clock category 1. Barriers and statuses whose expiry falls inside this step end before ticks. */
 function resolveExpiries(state: CombatState, stepStart: number, stepEnd: number): void {
   const actors: CombatActor[] = [state.hero, ...state.enemies]
   for (const actor of actors) {
@@ -288,11 +324,16 @@ function resolveExpiries(state: CombatState, stepStart: number, stepEnd: number)
       amount,
     })
   }
+  expireStatuses(state, stepStart, stepEnd)
 }
 
-/** Clock category 2. No periodic ticks in this step. */
-function resolvePeriodicTicks(): void {
-  return
+/** Clock category 2. Poison and Burn ticks. They bypass barriers and use current Defense. */
+function resolvePeriodicTicks(state: CombatState, stepStart: number, stepEnd: number): void {
+  const ticks = collectStatusTicks(state, stepStart, stepEnd)
+  for (const tick of ticks) {
+    if (state.outcome !== 'ongoing') return
+    applyStatusDamage(state, tick)
+  }
 }
 
 /** Clock category 3. No telegraph resolutions in this step. */
@@ -339,7 +380,14 @@ function readPriorityRows(value: unknown): PriorityRow[] {
 
 function assertLoadout(equipped: readonly string[], rows: readonly PriorityRow[], defs: GameDefs): void {
   for (const id of equipped) {
-    if (defs.skills[id] === undefined) throw new Error(`unknown skill '${id}'`)
+    const skill = defs.skills[id]
+    if (skill === undefined) throw new Error(`unknown skill '${id}'`)
+    for (const effect of skill.effects) {
+      if (effect.kind !== 'applyStatus') continue
+      if (defs.statuses[effect.statusId] === undefined) {
+        throw new Error(`skill '${id}' applies unknown status '${effect.statusId}'`)
+      }
+    }
   }
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index]
@@ -363,7 +411,8 @@ function scheduleSkill(
 ): { nextReadyMs: number; cooldownReadyMs: number | null } {
   const actionSeconds = actionTime(hero.baseActionSeconds, hero.agility, skill.actionTimeCoefficient)
   const actionMs = roundDurationMs(actionSeconds, `${skill.id} action time`)
-  const nextReadyMs = scheduled + actionMs
+  const slowedMs = slowedActionMs(actionMs, chillSlowFraction(hero, scheduled))
+  const nextReadyMs = scheduled + slowedMs
   let cooldownReadyMs: number | null = null
   if (skill.cooldownSeconds > 0) {
     const cooldownSeconds = finalCooldownSeconds(skill.cooldownSeconds, hero.cooldownReduction)
@@ -401,9 +450,33 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
     nextReadyMs: timing.nextReadyMs,
     cooldownReadyMs: timing.cooldownReadyMs,
   })
-  applySkillEffects(state, hero, choice.skill, choice.targets, scheduled, (actor, result) => {
+  applySkillEffects(state, defs, hero, choice.skill, choice.targets, scheduled, (actor, result) => {
     applyHit(state, hero, actor, scheduled, result)
   })
+}
+
+/** Bleed ticks when the actor becomes ready, before that action. Chill was already baked into the previous recovery. */
+function resolveActor(state: CombatState, defs: GameDefs, actor: CombatActor): void {
+  const scheduled = actor.nextReadyMs
+  const bleed = takeBleedTicks(actor, scheduled)
+  for (const tick of bleed.ticks) {
+    if (!actor.alive) break
+    applyStatusDamage(state, tick)
+  }
+  if (bleed.expired !== null) {
+    state.log.push({
+      type: 'statusExpired',
+      timeMs: scheduled,
+      actorId: actor.id,
+      actorName: actor.name,
+      statusId: 'bleed',
+      statusName: bleed.expired.name,
+      stacks: bleed.expired.stacks,
+    })
+  }
+  if (!actor.alive || state.outcome !== 'ongoing') return
+  if (actor.side === 'hero') resolveHeroAction(state, defs)
+  else resolveBasicAttack(state, actor)
 }
 
 function resolveActions(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
@@ -413,8 +486,7 @@ function resolveActions(state: CombatState, defs: GameDefs, stepStart: number, s
     due.sort(compareReady)
     const actor = due[0]
     if (actor === undefined) return
-    if (actor.side === 'hero') resolveHeroAction(state, defs)
-    else resolveBasicAttack(state, actor)
+    resolveActor(state, defs, actor)
   }
 }
 
@@ -437,6 +509,9 @@ function actorFromEnemy(def: EnemyDef, slot: number): CombatActor {
   if (def.id.length === 0) throw new Error('enemy definition is missing an id')
   if (def.name.length === 0) throw new Error(`enemy ${def.id} is missing a name`)
   assertSchool(def.school, `enemy ${def.id} school`)
+  if (def.boss !== undefined && typeof def.boss !== 'boolean') {
+    throw new Error(`enemy ${def.id} boss must be a boolean, received ${describeValue(def.boss)}`)
+  }
   const stats = deriveEnemyStats({
     level: def.level,
     archetype: def.archetype,
@@ -467,6 +542,14 @@ function actorFromEnemy(def: EnemyDef, slot: number): CombatActor {
     actionTimeMs,
     nextReadyMs: actionTimeMs,
     ...guardDefaults(),
+    intellect: 0,
+    vitality: 0,
+    spirit: 0,
+    statusPotency: 0,
+    physicalStatusResistance: 0,
+    magicalStatusResistance: 0,
+    boss: def.boss === true,
+    statuses: emptyStatuses(),
   }
 }
 
@@ -512,6 +595,14 @@ function actorFromHero(setup: CombatSetup): CombatHero {
     actionTimeMs,
     nextReadyMs: actionTimeMs,
     ...guardDefaults(),
+    intellect: hero.attributes.intellect,
+    vitality: hero.attributes.vitality,
+    spirit: hero.attributes.spirit,
+    statusPotency: 0,
+    physicalStatusResistance: 0,
+    magicalStatusResistance: 0,
+    boss: false,
+    statuses: emptyStatuses(),
     physicalPower: derived.physicalPower,
     magicalPower: derived.magicalPower,
     healingPower: derived.healingPower,
@@ -598,7 +689,7 @@ export function stepCombat(state: CombatState, defs: GameDefs): CombatState {
   const stepStart = state.timeMs
   const stepEnd = stepStart + STEP_MS
   resolveExpiries(state, stepStart, stepEnd)
-  resolvePeriodicTicks()
+  resolvePeriodicTicks(state, stepStart, stepEnd)
   resolveTelegraphs()
   resolveActions(state, defs, stepStart, stepEnd)
   state.timeMs = stepEnd

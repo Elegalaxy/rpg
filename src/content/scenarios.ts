@@ -3,6 +3,7 @@ import type { CombatHeroSetup, CombatSetup, GameDefs, PriorityRow } from '../sim
 import { enemies, standardDummy } from './enemies.ts'
 import { referenceHeroes, type ReferenceHero } from './heroes.ts'
 import { skills } from './skills.ts'
+import { statuses } from './statuses.ts'
 
 export type ScenarioDef = {
   id: string
@@ -15,6 +16,7 @@ export type ScenarioDef = {
 
 export const DUEL_BASIC_ID = 'duel-basic'
 export const DRIVING_BLOW_ID = 'driving-blow'
+export const VENOM_EDGE_ID = 'venom-edge'
 
 export const scenarios: { [id: string]: ScenarioDef } = {
   [DUEL_BASIC_ID]: {
@@ -31,10 +33,18 @@ export const scenarios: { [id: string]: ScenarioDef } = {
     equippedSkillIds: ['driving-blow'],
     priorityRows: [{ skillId: 'driving-blow' }],
   },
+  [VENOM_EDGE_ID]: {
+    id: VENOM_EDGE_ID,
+    heroId: referenceHeroes.assassin.id,
+    heroName: 'Assassin',
+    enemies: [{ defId: standardDummy.id, slot: 0 }],
+    equippedSkillIds: ['venom-edge'],
+    priorityRows: [{ skillId: 'venom-edge' }],
+  },
 }
 
 export function gameDefs(): GameDefs {
-  return { enemies: { ...enemies }, skills: { ...skills } }
+  return { enemies: { ...enemies }, skills: { ...skills }, statuses: { ...statuses } }
 }
 
 function heroSetup(hero: ReferenceHero, scenario: ScenarioDef): CombatHeroSetup {
@@ -50,14 +60,18 @@ function heroSetup(hero: ReferenceHero, scenario: ScenarioDef): CombatHeroSetup 
   }
 }
 
+function referenceHeroById(id: string): ReferenceHero {
+  for (const hero of Object.values(referenceHeroes)) {
+    if (hero.id === id) return hero
+  }
+  throw new Error(`scenario hero '${id}' is not a reference hero`)
+}
+
 export function setupForScenario(scenarioId: string): CombatSetup {
   const scenario = scenarios[scenarioId]
   if (scenario === undefined) throw new Error(`unknown scenario '${scenarioId}'`)
-  if (scenario.heroId !== referenceHeroes.warrior.id) {
-    throw new Error(`scenario '${scenarioId}' has no hero setup for '${scenario.heroId}'`)
-  }
   return {
-    hero: heroSetup(referenceHeroes.warrior, scenario),
+    hero: heroSetup(referenceHeroById(scenario.heroId), scenario),
     enemies: scenario.enemies.map((enemy) => ({ defId: enemy.defId, slot: enemy.slot })),
   }
 }

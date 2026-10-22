@@ -51,6 +51,51 @@ function formatDamage(event: Extract<LogEvent, { type: 'damage' }>): string {
   ].join(' ')
 }
 
+function formatStatusAttempt(event: Extract<LogEvent, { type: 'statusAttempt' }>): string {
+  const when = `At ${seconds(event.timeMs)}s`
+  if (event.result === 'guaranteed') {
+    const until = event.expiresMs === null ? '' : ` until ${seconds(event.expiresMs)}s`
+    return `${when}, ${event.actorName} applies ${event.statusName} to ${event.targetName} (guaranteed)${until}.`
+  }
+  if (event.result === 'contact') {
+    return `${when}, ${event.actorName}'s ${event.statusName} does not apply to ${event.targetName} because a barrier absorbed the hit.`
+  }
+  const school = event.school === 'none' ? 'resistance' : `${event.school} resistance`
+  const roll = `chance ${event.chance}, roll ${event.roll}, potency ${event.potency}, ${school} ${event.resistance}`
+  if (event.result === 'resisted') {
+    return `${when}, ${event.actorName}'s ${event.statusName} on ${event.targetName} is resisted (${roll}).`
+  }
+  if (event.result === 'cap') {
+    return `${when}, ${event.actorName}'s ${event.statusName} does not add a stack on ${event.targetName}: already at ${event.stacks} stacks (${roll}).`
+  }
+  if (event.delayMs !== null && event.nextReadyMs !== null) {
+    return `${when}, ${event.actorName} stuns ${event.targetName} for ${seconds(event.delayMs)}s (${roll}). Next ready at ${seconds(event.nextReadyMs)}s.`
+  }
+  const amount =
+    event.intensity > 0 ? `intensity ${event.intensity}` : `stacks ${event.stacks}`
+  const until = event.expiresMs === null ? '' : `, expires at ${seconds(event.expiresMs)}s`
+  return `${when}, ${event.actorName} applies ${event.statusName} to ${event.targetName} (${roll}). ${amount}${until}.`
+}
+
+function formatStatusTick(event: Extract<LogEvent, { type: 'statusTick' }>): string {
+  const scale =
+    event.intensity > 1 ? ` × intensity ${event.intensity}` : event.stacks > 1 ? ` × ${event.stacks} stacks` : ''
+  return [
+    `At ${seconds(event.timeMs)}s, ${event.statusName} on ${event.targetName} ticks for ${event.hpDamage}`,
+    `(HP ${event.targetHpBefore} to ${event.targetHpAfter}).`,
+    `Power ${event.power} × ${event.coefficient}${scale} = ${event.raw};`,
+    'no variance;',
+    'no critical;',
+    'barrier bypassed;',
+    `penetration ${event.penetration};`,
+    `defense ${event.defense};`,
+    `attacker level ${event.attackerLevel};`,
+    `reduction ${event.reduction};`,
+    `mitigated ${event.afterDefense};`,
+    `rounded ${event.hpDamage}.`,
+  ].join(' ')
+}
+
 /** Plain English for one log event. The simulation does not print; callers do. */
 export function formatEvent(event: LogEvent): string {
   switch (event.type) {
@@ -101,6 +146,14 @@ export function formatEvent(event: LogEvent): string {
       return `At ${seconds(event.timeMs)}s, ${event.actorName}'s until-next-action effects end (damage reduction ${event.damageReduction}, Evasion ${event.evasion}, incoming ×${event.incomingMultiplier}).`
     case 'actionDelay':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} delays ${event.targetName} by ${seconds(event.delayMs)}s. Next ready at ${seconds(event.nextReadyMs)}s.`
+    case 'statusAttempt':
+      return formatStatusAttempt(event)
+    case 'statusTick':
+      return formatStatusTick(event)
+    case 'statusExpired':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName}'s ${event.statusName} expires (${event.stacks} stacks).`
+    case 'statusCleared':
+      return `At ${seconds(event.timeMs)}s, cleanse removes ${event.statusName} from ${event.actorName} (${event.stacks} stacks).`
     case 'death':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dies, killed by ${event.killerName}.`
     case 'encounterEnd':

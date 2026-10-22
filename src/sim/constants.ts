@@ -189,3 +189,33 @@ export const HEALING_ROLL_FLOOR = 0.9
 export const HEALING_ROLL_CEILING = 1
 
 export const MIN_UNSHIELDED_DAMAGE = 1
+
+/**
+ * Status application uses percentage points, same as Accuracy.
+ * `clamp(5%, 95%, base chance + Potency − Resistance)`.
+ */
+export const STATUS_CHANCE_MIN_POINTS = 5
+export const STATUS_CHANCE_MAX_POINTS = 95
+
+/** Initial status set. Boss rules scale these; they are not stored on the boss. */
+export const BLEED_MAX_STACKS = 5
+export const BLEED_ACTIONS_PER_STACK = 3
+export const POISON_MAX_STACKS = 5
+export const POISON_DURATION_SECONDS = 8
+export const POISON_TICK_SECONDS = 2
+export const BURN_MAX_INTENSITY = 5
+export const BURN_DURATION_SECONDS = 5
+export const BURN_TICK_SECONDS = 1
+export const CHILL_MAX_STACKS = 3
+export const CHILL_DURATION_SECONDS = 6
+/** Additional action-speed loss at stack 1, then 2, then 3. */
+export const CHILL_SLOW_BY_STACK = [0.1, 0.07, 0.05] as const
+export const STUN_DELAY_SECONDS = 1.5
+export const EXPOSE_DURATION_SECONDS = 8
+
+/** Bosses use about 60% of normal stack caps: 5 → 3 and 3 → 2. */
+export const BOSS_STACK_CAP_FACTOR = 0.6
+/** Boss status durations are half of normal. Bleed's action count is not a duration. */
+export const BOSS_DURATION_FRACTION = 0.5
+/** Boss Stun delay is 35% of the normal 1.5 s push (0.525 s). */
+export const BOSS_STUN_FRACTION = 0.35

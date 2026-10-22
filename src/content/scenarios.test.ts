@@ -5,7 +5,7 @@ import { formatEvent } from '../sim/log.ts'
 import { deriveHeroStats } from '../sim/stats.ts'
 import type { CombatState, DamageEvent } from '../sim/types.ts'
 
-import { DRIVING_BLOW_ID, DUEL_BASIC_ID, gameDefs, setupForScenario } from './scenarios.ts'
+import { DRIVING_BLOW_ID, DUEL_BASIC_ID, VENOM_EDGE_ID, gameDefs, setupForScenario } from './scenarios.ts'
 
 const FIGHT_MS = 180_000
 
@@ -147,5 +147,26 @@ describe('driving-blow', () => {
     expect(enemyHit).toBeDefined()
     expect(state.outcome).toBe('victory')
     expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 17_240 })
+  })
+})
+
+describe('venom-edge', () => {
+  it('applies Poison and reaches an outcome', () => {
+    const setup = setupForScenario(VENOM_EDGE_ID)
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setup, defs, 42), defs, FIGHT_MS)
+    const applied = state.log.filter(
+      (event) => event.type === 'statusAttempt' && event.statusId === 'poison' && event.result === 'applied',
+    )
+    const end = state.log[state.log.length - 1]
+    console.log('[status] venom-edge seed 42', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+      applied: applied.length,
+      ticks: state.log.filter((event) => event.type === 'statusTick').length,
+    })
+    expect(applied.length).toBeGreaterThan(0)
+    expect(state.outcome).toBe('victory')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 12_346 })
   })
 })

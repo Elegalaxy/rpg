@@ -90,7 +90,7 @@ function defsFor(skillList: readonly SkillDef[], enemies: readonly EnemyDef[] = 
   for (const skill of skillList) skills[skill.id] = skill
   const book: GameDefs['enemies'] = {}
   for (const enemy of enemies) book[enemy.id] = enemy
-  return { enemies: book, skills }
+  return { enemies: book, skills, statuses: {} }
 }
 
 function damageInput(
