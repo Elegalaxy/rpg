@@ -1,4 +1,4 @@
-import { chooseHeroAction } from './automation.ts'
+import { chooseHeroAction, parsePriorityRules } from './automation.ts'
 import { BASIC_ATTACK_COEFFICIENT, CRIT_DAMAGE_BASE, STEP_MS, WEAPON_ACTION_TIME } from './constants.ts'
 import { basicHitChance, consistencyBounds, resolveDamage } from './damage.ts'
 import { centeredRoll, createRng, nextFloat } from './rng.ts'
@@ -235,6 +235,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
   const recoveryMs = slowedActionMs(actor.actionTimeMs, chillSlowFraction(actor, scheduled))
   actor.nextReadyMs = scheduled + recoveryMs
   const target = livingTarget(state, actor)
+  if (actor.side === 'hero' && target.side === 'enemy') state.hero.currentTargetId = target.id
   state.log.push({
     type: 'action',
     timeMs: scheduled,
@@ -358,26 +359,6 @@ function readSkillIdList(value: unknown, label: string): string[] {
   return ids
 }
 
-function readPriorityRows(value: unknown): PriorityRow[] {
-  if (value === undefined) return []
-  if (!Array.isArray(value)) throw new Error('priority rows must be a list')
-  const rows: PriorityRow[] = []
-  for (let index = 0; index < value.length; index += 1) {
-    const row: unknown = value[index]
-    assertObject(row, `priority row ${index + 1}`)
-    const keys = Object.keys(row)
-    if (keys.length !== 1 || keys[0] !== 'skillId') {
-      throw new Error(`priority row ${index + 1} must be { skillId } with no conditions`)
-    }
-    const skillId = row.skillId
-    if (typeof skillId !== 'string' || skillId.length === 0) {
-      throw new Error(`priority row ${index + 1} is missing a skill id`)
-    }
-    rows.push({ skillId })
-  }
-  return rows
-}
-
 function assertLoadout(equipped: readonly string[], rows: readonly PriorityRow[], defs: GameDefs): void {
   for (const id of equipped) {
     const skill = defs.skills[id]
@@ -430,6 +411,9 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
   endUntilNextAction(state, hero, scheduled)
   const choice = chooseHeroAction(state, defs, hero, scheduled)
   for (const event of choice.events) state.log.push(event)
+  if (choice.kind === 'skill' && choice.focus !== null && choice.focus.side === 'enemy') {
+    hero.currentTargetId = choice.focus.id
+  }
   if (choice.kind === 'basicAttack') {
     resolveBasicAttack(state, hero)
     return
@@ -490,7 +474,7 @@ function resolveActions(state: CombatState, defs: GameDefs, stepStart: number, s
   }
 }
 
-function readEnemySetup(value: unknown, index: number): { defId: string; slot: number } {
+function readEnemySetup(value: unknown, index: number): { defId: string; slot: number; revealed: boolean } {
   assertObject(value, `enemy setup ${index + 1}`)
   const defId = value.defId
   if (typeof defId !== 'string' || defId.length === 0) {
@@ -502,10 +486,19 @@ function readEnemySetup(value: unknown, index: number): { defId: string; slot: n
       `enemy slot must be an integer of at least 0, received ${describeValue(slot)}`,
     )
   }
-  return { defId, slot }
+  let revealed = true
+  if (value.revealed !== undefined) {
+    if (typeof value.revealed !== 'boolean') {
+      throw new Error(
+        `enemy setup ${index + 1} revealed must be a boolean, received ${describeValue(value.revealed)}`,
+      )
+    }
+    revealed = value.revealed
+  }
+  return { defId, slot, revealed }
 }
 
-function actorFromEnemy(def: EnemyDef, slot: number): CombatActor {
+function actorFromEnemy(def: EnemyDef, slot: number, revealed: boolean): CombatActor {
   if (def.id.length === 0) throw new Error('enemy definition is missing an id')
   if (def.name.length === 0) throw new Error(`enemy ${def.id} is missing a name`)
   assertSchool(def.school, `enemy ${def.id} school`)
@@ -549,11 +542,16 @@ function actorFromEnemy(def: EnemyDef, slot: number): CombatActor {
     physicalStatusResistance: 0,
     magicalStatusResistance: 0,
     boss: def.boss === true,
+    revealed,
+    archetype: def.archetype,
+    rank: 0,
+    bossPhase: 0,
+    telegraph: null,
     statuses: emptyStatuses(),
   }
 }
 
-function actorFromHero(setup: CombatSetup): CombatHero {
+function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
   const hero = setup.hero
   if (typeof hero.id !== 'string' || hero.id.length === 0) {
     throw new Error('combat hero is missing an id')
@@ -571,7 +569,11 @@ function actorFromHero(setup: CombatSetup): CombatHero {
   const actionTimeMs = roundDurationMs(derived.actionTime, `${hero.id} action time`)
   const actionRatio = WEAPON_ACTION_TIME[hero.gear.mainHand.kind]
   const equippedSkillIds = readSkillIdList(hero.equippedSkillIds, 'equipped skills')
-  const priorityRows = readPriorityRows(hero.priorityRows)
+  const parsedRules = parsePriorityRules(
+    { rows: hero.priorityRows ?? [], targetPriority: hero.targetPriority },
+    defs,
+  )
+  if (!parsedRules.ok) throw new Error(parsedRules.reason)
   return {
     id: hero.id,
     name: hero.name,
@@ -602,6 +604,11 @@ function actorFromHero(setup: CombatSetup): CombatHero {
     physicalStatusResistance: 0,
     magicalStatusResistance: 0,
     boss: false,
+    revealed: true,
+    archetype: 'standard',
+    rank: 0,
+    bossPhase: 0,
+    telegraph: null,
     statuses: emptyStatuses(),
     physicalPower: derived.physicalPower,
     magicalPower: derived.magicalPower,
@@ -615,8 +622,12 @@ function actorFromHero(setup: CombatSetup): CombatHero {
     mainHandKind: hero.gear.mainHand.kind,
     offHandKind: hero.gear.offHand === null ? null : hero.gear.offHand.kind,
     equippedSkillIds,
-    priorityRows,
+    priorityRows: parsedRules.rows,
     cooldowns: {},
+    classResource: 0,
+    specialAmmo: 0,
+    targetPriority: parsedRules.targetPriority,
+    currentTargetId: null,
   }
 }
 
@@ -639,11 +650,11 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
     seenSlots[entry.slot] = true
     const def = defs.enemies[entry.defId]
     if (def === undefined) throw new Error(`unknown enemy '${entry.defId}'`)
-    enemies.push(actorFromEnemy(def, entry.slot))
+    enemies.push(actorFromEnemy(def, entry.slot, entry.revealed))
   }
   enemies.sort((a, b) => a.slot - b.slot)
 
-  const hero = actorFromHero(setup)
+  const hero = actorFromHero(setup, defs)
   assertLoadout(hero.equippedSkillIds, hero.priorityRows, defs)
   const state: CombatState = {
     timeMs: 0,

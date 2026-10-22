@@ -5,7 +5,14 @@ import { formatEvent } from '../sim/log.ts'
 import { deriveHeroStats } from '../sim/stats.ts'
 import type { CombatState, DamageEvent } from '../sim/types.ts'
 
-import { DRIVING_BLOW_ID, DUEL_BASIC_ID, VENOM_EDGE_ID, gameDefs, setupForScenario } from './scenarios.ts'
+import {
+  DRIVING_BLOW_ID,
+  DUEL_BASIC_ID,
+  PRIORITY_FOCUS_ID,
+  VENOM_EDGE_ID,
+  gameDefs,
+  setupForScenario,
+} from './scenarios.ts'
 
 const FIGHT_MS = 180_000
 
@@ -168,5 +175,65 @@ describe('venom-edge', () => {
     expect(applied.length).toBeGreaterThan(0)
     expect(state.outcome).toBe('victory')
     expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 12_346 })
+  })
+})
+
+describe('priority-focus', () => {
+  it('falls through a failing HP condition and still uses Driving Blow', () => {
+    const setup = setupForScenario(PRIORITY_FOCUS_ID)
+    const defs = gameDefs()
+    const state = createCombat(setup, defs, 42)
+    console.log('[priority] scenario setup', {
+      id: PRIORITY_FOCUS_ID,
+      targetPriority: state.hero.targetPriority,
+      revealed: state.enemies.map((enemy) => enemy.revealed),
+      rows: state.hero.priorityRows,
+    })
+    expect(state.hero.targetPriority).toBe('lowestHpPercent')
+    expect(state.enemies[0]?.revealed).toBe(true)
+    runCombat(state, defs, FIGHT_MS)
+    const lines = state.log.map(formatEvent)
+    const end = state.log[state.log.length - 1]
+    console.log('[priority] priority-focus seed 42', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+      firstSkips: lines.filter((line) => line.includes('skips row') || line.includes('selects row')).slice(0, 4),
+    })
+    const priority = state.log.filter((event) => event.type === 'priority')
+    const firstAction = state.log.find((event) => event.type === 'action' && event.actorId === state.hero.id)
+    console.log('[priority] first decision', {
+      first: priority[0],
+      second: priority[1],
+      action: firstAction,
+    })
+    expect(priority[0]).toMatchObject({
+      decision: 'skip',
+      rowIndex: 0,
+      skillId: 'driving-blow',
+      reason: 'hero HP% 100 is above 0',
+    })
+    expect(priority[1]).toMatchObject({ decision: 'use', rowIndex: 1, skillId: 'driving-blow' })
+    expect(firstAction).toMatchObject({ action: 'skill', skillId: 'driving-blow', timeMs: 1724 })
+    expect(lines.some((line) => line.includes('skips row 1 Driving Blow (driving-blow): hero HP% 100 is above 0'))).toBe(
+      true,
+    )
+    expect(lines.some((line) => line.includes('selects row 2 Driving Blow (driving-blow)'))).toBe(true)
+    expect(state.outcome).toBe('victory')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 17_240 })
+  })
+})
+
+describe('harness enemies', () => {
+  it('starts every scenario enemy revealed', () => {
+    const defs = gameDefs()
+    for (const id of [DUEL_BASIC_ID, DRIVING_BLOW_ID, VENOM_EDGE_ID, PRIORITY_FOCUS_ID]) {
+      const state = createCombat(setupForScenario(id), defs, 42)
+      console.log('[priority] harness revealed', {
+        id,
+        revealed: state.enemies.map((enemy) => enemy.revealed),
+      })
+      expect(state.enemies.length).toBeGreaterThan(0)
+      expect(state.enemies.every((enemy) => enemy.revealed)).toBe(true)
+    }
   })
 })

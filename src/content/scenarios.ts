@@ -1,4 +1,4 @@
-import type { CombatHeroSetup, CombatSetup, GameDefs, PriorityRow } from '../sim/types.ts'
+import type { CombatHeroSetup, CombatSetup, GameDefs, PriorityRow, TargetPriority } from '../sim/types.ts'
 
 import { enemies, standardDummy } from './enemies.ts'
 import { referenceHeroes, type ReferenceHero } from './heroes.ts'
@@ -12,11 +12,13 @@ export type ScenarioDef = {
   enemies: readonly { defId: string; slot: number }[]
   equippedSkillIds?: readonly string[]
   priorityRows?: readonly PriorityRow[]
+  targetPriority?: TargetPriority
 }
 
 export const DUEL_BASIC_ID = 'duel-basic'
 export const DRIVING_BLOW_ID = 'driving-blow'
 export const VENOM_EDGE_ID = 'venom-edge'
+export const PRIORITY_FOCUS_ID = 'priority-focus'
 
 export const scenarios: { [id: string]: ScenarioDef } = {
   [DUEL_BASIC_ID]: {
@@ -41,6 +43,21 @@ export const scenarios: { [id: string]: ScenarioDef } = {
     equippedSkillIds: ['venom-edge'],
     priorityRows: [{ skillId: 'venom-edge' }],
   },
+  [PRIORITY_FOCUS_ID]: {
+    id: PRIORITY_FOCUS_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: [{ defId: standardDummy.id, slot: 0 }],
+    equippedSkillIds: ['driving-blow'],
+    targetPriority: 'lowestHpPercent',
+    priorityRows: [
+      {
+        skillId: 'driving-blow',
+        conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 0 }],
+      },
+      { skillId: 'driving-blow', targetPriority: 'current' },
+    ],
+  },
 }
 
 export function gameDefs(): GameDefs {
@@ -57,6 +74,7 @@ function heroSetup(hero: ReferenceHero, scenario: ScenarioDef): CombatHeroSetup 
     gear: hero.gear,
     equippedSkillIds: scenario.equippedSkillIds,
     priorityRows: scenario.priorityRows,
+    targetPriority: scenario.targetPriority,
   }
 }
 

@@ -180,7 +180,24 @@ export type CombatActor = {
   magicalStatusResistance: number
   /** Boss status caps, durations, and Stun delay. Not immunity. */
   boss: boolean
+  /**
+   * Armor and Resistance priorities can use this actor only when revealed.
+   * Encounter setup or a later Hunter's Mark sets it. Harness enemies start revealed.
+   */
+  revealed: boolean
+  archetype: EnemyArchetype
+  /** Rank a test or later encounter can set. Not a threat score. */
+  rank: number
+  /** Boss phase a test or later encounter can set. */
+  bossPhase: number
+  /** Telegraph a test can set. This step does not run a telegraph clock. */
+  telegraph: ActorTelegraph | null
   statuses: ActorStatuses
+}
+
+export type ActorTelegraph = {
+  tag: string
+  resolvesAtMs: number
 }
 
 /** Inputs a caller can fix so damage tests do not draw from the RNG. */
@@ -308,6 +325,50 @@ export type EncounterEndEvent = {
   outcome: 'victory' | 'defeat' | 'timeout'
 }
 
+export const TARGET_PRIORITIES = [
+  'current',
+  'lowestHpPercent',
+  'highestHpPercent',
+  'lowestArmor',
+  'lowestResistance',
+  'marked',
+  'actingSoonest',
+  'random',
+] as const
+
+export type TargetPriority = (typeof TARGET_PRIORITIES)[number]
+
+export type CompareOperator = 'atMost' | 'atLeast' | 'equal' | 'notEqual'
+
+export type PresenceOperator = 'present' | 'absent'
+
+export type ConditionOperator = CompareOperator | PresenceOperator
+
+/**
+ * One check. Every condition on a row must pass.
+ * HP values are percent points (40 means 40%). Telegraph times are milliseconds.
+ * Bleed remaining is actions. Other status remaining times are milliseconds.
+ */
+export type AutomationCondition =
+  | { kind: 'hpPercent'; who: 'hero' | 'target'; operator: CompareOperator; value: number }
+  | { kind: 'classResource'; operator: CompareOperator; value: number }
+  | { kind: 'barrier'; operator: ConditionOperator; value?: number }
+  | {
+      kind: 'status'
+      who: 'hero' | 'target'
+      statusId: string
+      measure: 'presence' | 'stacks' | 'remaining'
+      operator: ConditionOperator
+      value?: number
+    }
+  | { kind: 'specialAmmo'; operator: CompareOperator; value: number }
+  | { kind: 'enemyCount'; operator: CompareOperator; value: number }
+  | { kind: 'enemyType'; operator: 'equal' | 'notEqual'; value: string }
+  | { kind: 'rank'; operator: CompareOperator; value: number }
+  | { kind: 'mark'; operator: PresenceOperator }
+  | { kind: 'bossPhase'; operator: CompareOperator; value: number }
+  | { kind: 'telegraph'; tag?: string; operator: ConditionOperator; value?: number }
+
 export type PriorityDecision = 'skip' | 'use' | 'fallback'
 
 export type PriorityEvent = {
@@ -320,6 +381,17 @@ export type PriorityEvent = {
   skillName: string | null
   decision: PriorityDecision
   reason: string | null
+}
+
+export type RulesChangedEvent = {
+  type: 'rulesChanged'
+  timeMs: number
+  actorId: string
+  actorName: string
+  applied: boolean
+  reason: string | null
+  rowCount: number
+  targetPriority: TargetPriority | null
 }
 
 export type HealResult = {
@@ -480,6 +552,7 @@ export type StatusClearedEvent = {
 export type LogEvent =
   | EncounterStartEvent
   | PriorityEvent
+  | RulesChangedEvent
   | ActionEvent
   | HitRollEvent
   | DamageEvent
@@ -585,9 +658,12 @@ export type SkillDef = {
   effects: readonly SkillEffect[]
 }
 
-/** Unconditional priority row. Conditions arrive in a later step. */
+/** One automation row. All of its conditions must pass. The same skill on a later row is the OR. */
 export type PriorityRow = {
   skillId: string
+  conditions?: readonly AutomationCondition[]
+  /** Replaces the hero's global target priority for this row. */
+  targetPriority?: TargetPriority
 }
 
 export type CombatHero = CombatActor & {
@@ -606,6 +682,13 @@ export type CombatHero = CombatActor & {
   priorityRows: PriorityRow[]
   /** Skill id → simulated time when the cooldown ends and the skill can be used. */
   cooldowns: { [skillId: string]: number }
+  /** Numeric class resource for conditions. It does not pay skill costs. */
+  classResource: number
+  /** Equipped special-ammunition count for conditions. */
+  specialAmmo: number
+  /** Null selects the first living enemy by slot. */
+  targetPriority: TargetPriority | null
+  currentTargetId: string | null
 }
 
 export type CombatState = {
@@ -627,11 +710,14 @@ export type CombatHeroSetup = {
   gear: HeroGear
   equippedSkillIds?: readonly string[]
   priorityRows?: readonly PriorityRow[]
+  targetPriority?: TargetPriority
 }
 
 export type CombatEnemySetup = {
   defId: string
   slot: number
+  /** Omitted enemies start revealed. */
+  revealed?: boolean
 }
 
 export type CombatSetup = {

@@ -1,4 +1,4 @@
-import type { LogEvent } from './types.ts'
+import type { LogEvent, TargetPriority } from './types.ts'
 
 function seconds(ms: number): string {
   const negative = ms < 0
@@ -96,6 +96,42 @@ function formatStatusTick(event: Extract<LogEvent, { type: 'statusTick' }>): str
   ].join(' ')
 }
 
+function priorityLabel(priority: TargetPriority | null): string {
+  switch (priority) {
+    case null:
+      return 'the first living enemy'
+    case 'current':
+      return 'the current target'
+    case 'lowestHpPercent':
+      return 'lowest HP %'
+    case 'highestHpPercent':
+      return 'highest HP %'
+    case 'lowestArmor':
+      return 'lowest armor'
+    case 'lowestResistance':
+      return 'lowest resistance'
+    case 'marked':
+      return 'a marked enemy'
+    case 'actingSoonest':
+      return 'the enemy acting soonest'
+    case 'random':
+      return 'a random enemy'
+    default: {
+      const unexpected: never = priority
+      throw new Error(`unknown target priority ${JSON.stringify(unexpected)}`)
+    }
+  }
+}
+
+function formatRulesChanged(event: Extract<LogEvent, { type: 'rulesChanged' }>): string {
+  const when = `At ${seconds(event.timeMs)}s`
+  if (!event.applied) {
+    return `${when}, ${event.actorName} rejects priority rules: ${event.reason}.`
+  }
+  const rows = event.rowCount === 1 ? '1 row' : `${event.rowCount} rows`
+  return `${when}, ${event.actorName} changes priority rules to ${rows}, targeting ${priorityLabel(event.targetPriority)}.`
+}
+
 /** Plain English for one log event. The simulation does not print; callers do. */
 export function formatEvent(event: LogEvent): string {
   switch (event.type) {
@@ -124,6 +160,8 @@ export function formatEvent(event: LogEvent): string {
         }
         return `At ${seconds(event.timeMs)}s, ${event.actorName} selects row ${row} ${name} (${id}).`
       }
+    case 'rulesChanged':
+      return formatRulesChanged(event)
     case 'hitRoll':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} hit roll ${event.roll} against ${event.hitChance} (Accuracy ${event.accuracy}, Evasion ${event.evasion}): ${event.hit ? 'hit' : 'miss'}.`
     case 'damage':
