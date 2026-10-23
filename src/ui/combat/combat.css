@@ -1,0 +1,205 @@
+.combat-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 16px;
+}
+
+.actor-card {
+  box-sizing: border-box;
+  width: 260px;
+  padding: 10px;
+  border: 1px solid #c8c8c8;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.actor-card[data-side='hero'] {
+  border-color: #2f6f3e;
+}
+
+.actor-card[data-side='enemy'] {
+  border-color: #8a3d3d;
+}
+
+.actor-card[data-alive='false'] {
+  border-style: dashed;
+}
+
+.actor-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.actor-name,
+.actor-dead,
+.actor-phase,
+.actor-pressure {
+  margin: 0;
+}
+
+.actor-dead,
+.actor-phase,
+.actor-pressure {
+  margin-top: 2px;
+  font-size: 0.85rem;
+}
+
+.actor-dead {
+  font-weight: 700;
+}
+
+.actor-sprite,
+.actor-fallback {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+}
+
+.actor-sprite {
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.actor-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.meter,
+.timing,
+.skill-list,
+.status-list {
+  margin: 8px 0 0;
+}
+
+.meter-row,
+.timing-row {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.meter-track,
+.timing-track {
+  height: 8px;
+  margin-top: 2px;
+  overflow: hidden;
+  background: #e4e4e4;
+  border-radius: 4px;
+}
+
+.meter-fill,
+.timing-fill {
+  height: 100%;
+}
+
+.meter-fill-hp {
+  background: #2f8f46;
+}
+
+.meter-fill-barrier {
+  background: #3d7ea6;
+}
+
+.meter-fill-resource {
+  background: #c47b16;
+}
+
+.timing-fill-telegraph {
+  background: #d0891f;
+}
+
+.timing-fill-reaction {
+  background: #6d4bb5;
+}
+
+.skill-list,
+.status-list {
+  padding: 0;
+  list-style: none;
+}
+
+.skill-list {
+  display: grid;
+  gap: 4px;
+}
+
+.skill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 1.6rem;
+  padding: 2px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.skill-queue {
+  margin-left: auto;
+  padding: 0 6px;
+  font: inherit;
+}
+
+.skill-queued,
+.skill-queue-error {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+}
+
+.skill-queue-error {
+  color: #8a3d3d;
+}
+
+.cooldown-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  background: rgba(20, 20, 20, 0.62);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.status-badge {
+  padding: 2px 6px;
+  border: 1px solid #b9b9b9;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.75rem;
+}
+
+@keyframes act-bump {
+  0% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-7px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.actor-card.is-acting {
+  animation: act-bump 180ms ease-out;
+}

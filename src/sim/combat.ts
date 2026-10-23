@@ -1,4 +1,10 @@
-import { chooseHeroAction, parsePriorityRules, skillActionTargets } from './automation.ts'
+import {
+  chooseHeroAction,
+  evaluateManualAction,
+  parsePriorityRules,
+  skillActionTargets,
+  type HeroActionChoice,
+} from './automation.ts'
 import { classModule } from './classes/index.ts'
 import { grantClassResource, payClassResource } from './classes/resources.ts'
 import {
@@ -1615,7 +1621,15 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
   const hero = state.hero
   hero.overhealed = false
   const scheduled = hero.nextReadyMs
-  const choice = chooseHeroAction(state, defs, hero, scheduled)
+  const manual = evaluateManualAction(state, defs, hero, scheduled)
+  if (manual.kind !== 'none') {
+    state.queuedSkillId = null
+    state.log.push(manual.event)
+  }
+  const choice: HeroActionChoice =
+    manual.kind === 'use'
+      ? { kind: 'skill', skill: manual.skill, targets: manual.targets, focus: manual.focus, events: [] }
+      : chooseHeroAction(state, defs, hero, scheduled)
   for (const event of choice.events) state.log.push(event)
   if (choice.kind === 'basicAttack') {
     const decision = decideFallback(state, defs, scheduled)
@@ -1703,6 +1717,8 @@ function waitingCanAct(state: CombatState, defs: GameDefs, timeMs: number): bool
   const saved = { a: state.rng.a, b: state.rng.b, c: state.rng.c, d: state.rng.d }
   try {
     const hero = state.hero
+    const manual = evaluateManualAction(state, defs, hero, timeMs)
+    if (manual.kind === 'use') return true
     const choice = chooseHeroAction(state, defs, hero, timeMs)
     if (choice.kind === 'skill') return true
     const decision = decideFallback(state, defs, timeMs)
@@ -2111,6 +2127,7 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
     log: [],
     outcome: 'ongoing',
     seed,
+    queuedSkillId: null,
   }
   state.log.push({
     type: 'encounterStart',

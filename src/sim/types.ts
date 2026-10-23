@@ -473,6 +473,19 @@ export type RulesChangedEvent = {
   targetPriority: TargetPriority | null
 }
 
+/** A queued skill was used, or cancelled because it was ineligible at the action. */
+export type ManualEvent = {
+  type: 'manual'
+  timeMs: number
+  actorId: string
+  actorName: string
+  skillId: string
+  skillName: string
+  result: 'use' | 'cancel'
+  /** Skip reason when cancelled. Null when the queued skill is used. */
+  reason: string | null
+}
+
 export type HealResult = {
   maxHpFraction: number
   healingCoefficient: number
@@ -933,6 +946,7 @@ export type LogEvent =
   | EncounterStartEvent
   | PriorityEvent
   | RulesChangedEvent
+  | ManualEvent
   | ActionEvent
   | HitRollEvent
   | DamageEvent
@@ -1241,6 +1255,8 @@ export type CombatState = {
   log: LogEvent[]
   outcome: CombatOutcome
   seed: number
+  /** One skill id for the hero's next action. Null when nothing is queued. */
+  queuedSkillId: string | null
 }
 
 export type CombatHeroSetup = {

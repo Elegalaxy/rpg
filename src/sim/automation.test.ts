@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { chooseHeroAction, setPriorityRules } from './automation.ts'
+import { chooseHeroAction, queueManualAction, setPriorityRules, skipReason } from './automation.ts'
 import { createCombat, stepCombat } from './combat.ts'
 import { formatEvent } from './log.ts'
 import { nextFloat } from './rng.ts'
@@ -1228,5 +1228,237 @@ describe('priority conditions and target priorities', () => {
       rows: [{ skillId: ready.id, targetPriority: 'Most dangerous' as TargetPriority }],
     })
     expect(() => createCombat(rowSetup, defs, 1)).toThrow(/Most dangerous/)
+  })
+})
+
+describe('manual skill queue', () => {
+  const ready = makeSkill({
+    id: 'ready',
+    name: 'Ready Cut',
+    effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+  })
+  const follow = makeSkill({
+    id: 'follow',
+    name: 'Follow Cut',
+    effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+  })
+  const loadout = {
+    equipped: [ready.id, follow.id],
+    rows: [
+      { skillId: ready.id, conditions: [{ kind: 'hpPercent' as const, who: 'hero' as const, operator: 'atMost' as const, value: 10 }] },
+      { skillId: follow.id },
+    ],
+  }
+
+  function manualLine(state: CombatState): string | undefined {
+    for (const event of state.log) {
+      if (event.type === 'manual') return formatEvent(event)
+    }
+    return undefined
+  }
+
+  it('uses a queued skill even when its row condition would skip it', () => {
+    const defs = defsFor([ready, follow])
+    const control = openPriority(defs, loadout)
+    const state = createCombat(warriorSetup(loadout), defs, 1)
+    const readyAt = state.hero.nextReadyMs
+    const resource = state.hero.classResource
+    const logLength = state.log.length
+    queueManualAction(state, follow.id)
+    queueManualAction(state, ready.id)
+    expect(state.queuedSkillId).toBe(ready.id)
+    expect(state.hero.nextReadyMs).toBe(readyAt)
+    expect(state.hero.classResource).toBe(resource)
+    expect(state.log).toHaveLength(logLength)
+    stepCombat(state, defs)
+    expect(state.timeMs).toBe(10)
+    expect(state.queuedSkillId).toBe(ready.id)
+    const resumed = JSON.parse(JSON.stringify(state)) as CombatState
+    expect(resumed.queuedSkillId).toBe(ready.id)
+    untilAction(resumed, defs)
+    const manual = resumed.log.find((event) => event.type === 'manual')
+    console.log('[manual] queued use', {
+      control: heroAction(control),
+      queued: heroAction(resumed),
+      line: manualLine(resumed),
+      queuedSkillId: resumed.queuedSkillId,
+    })
+    expect(heroAction(control)?.skillId).toBe(follow.id)
+    expect(skipReasons(control)).toContain('hero HP% 100 is above 10')
+    expect(manual).toMatchObject({ result: 'use', skillId: ready.id, skillName: 'Ready Cut', reason: null, timeMs: 1724 })
+    expect(manualLine(resumed)).toBe('At 1.724s, Warrior manually selects Ready Cut (ready).')
+    expect(resumed.log.some((event) => event.type === 'priority')).toBe(false)
+    expect(resumed.log.some((event) => event.type === 'action' && formatEvent(event).includes('uses Ready Cut'))).toBe(true)
+    expect(heroAction(resumed)).toMatchObject({ action: 'skill', skillId: ready.id, targetId: heroAction(control)?.targetId })
+    expect(resumed.queuedSkillId).toBeNull()
+  })
+
+  it('cancels a queued skill that is ineligible and continues with the normal action', () => {
+    const defs = defsFor([ready, follow])
+    const state = createCombat(warriorSetup(loadout), defs, 1)
+    queueManualAction(state, ready.id)
+    state.hero.cooldowns[ready.id] = state.hero.nextReadyMs + 1
+    untilAction(state, defs)
+    const manual = state.log.find((event) => event.type === 'manual')
+    const selected = state.log.find((event) => event.type === 'priority' && event.decision === 'use')
+    console.log('[manual] queued cancel', {
+      line: manualLine(state),
+      action: heroAction(state),
+      selected,
+      queuedSkillId: state.queuedSkillId,
+    })
+    expect(manual).toMatchObject({ result: 'cancel', skillId: ready.id, reason: 'on cooldown', timeMs: 1724 })
+    expect(manualLine(state)).toBe('At 1.724s, Warrior cancels queued Ready Cut (ready): on cooldown.')
+    expect(selected).toMatchObject({ rowIndex: 1, skillId: follow.id })
+    expect(state.log.some((event) => event.type === 'priority' && formatEvent(event).includes('selects row 2 Follow Cut (follow)'))).toBe(
+      true,
+    )
+    expect(heroAction(state)).toMatchObject({ action: 'skill', skillId: follow.id })
+    expect(state.queuedSkillId).toBeNull()
+  })
+
+  it('rejects a skill that is not equipped and leaves the state unchanged', () => {
+    const defs = defsFor([ready, follow])
+    const state = createCombat(warriorSetup({ equipped: [ready.id], rows: [{ skillId: ready.id }] }), defs, 1)
+    const before = JSON.stringify(state)
+    console.log('[manual] reject unequipped', { equipped: state.hero.equippedSkillIds, rejected: [follow.id, 'missing'] })
+    expect(() => queueManualAction(state, follow.id)).toThrow(/cannot queue 'follow': not equipped/)
+    expect(() => queueManualAction(state, 'missing')).toThrow(/cannot queue 'missing': not equipped/)
+    expect(JSON.stringify(state)).toBe(before)
+    expect(state.queuedSkillId).toBeNull()
+  })
+
+  it('matches the previous choice when nothing is queued', () => {
+    const defs = defsFor([ready, follow])
+    const first = openPriority(defs, loadout)
+    const second = openPriority(defs, loadout)
+    const preview = createCombat(warriorSetup(loadout), defs, 1)
+    const choice = chooseHeroAction(preview, defs, preview.hero, preview.hero.nextReadyMs)
+    console.log('[manual] unqueued choice', {
+      action: heroAction(first),
+      choice: choice.kind === 'skill' ? choice.skill.id : choice.kind,
+      queuedSkillId: preview.queuedSkillId,
+      manual: first.log.some((event) => event.type === 'manual'),
+    })
+    expect(preview.queuedSkillId).toBeNull()
+    expect(first.queuedSkillId).toBeNull()
+    expect(second).toEqual(first)
+    expect(first.log.some((event) => event.type === 'manual')).toBe(false)
+    expect(choice.kind).toBe('skill')
+    if (choice.kind === 'skill') expect(choice.skill.id).toBe(follow.id)
+    expect(heroAction(first)).toMatchObject({ action: 'skill', skillId: follow.id })
+  })
+
+  it('waits for the already scheduled action instead of firing immediately', () => {
+    const defs = defsFor([ready, follow])
+    const state = createCombat(warriorSetup(loadout), defs, 1)
+    untilAction(state, defs)
+    const scheduled = state.hero.nextReadyMs
+    const timeMs = state.timeMs
+    const logLength = state.log.length
+    expect(heroAction(state)?.skillId).toBe(follow.id)
+    queueManualAction(state, ready.id)
+    console.log('[manual] queued during recovery', {
+      timeMs: state.timeMs,
+      nextReadyMs: state.hero.nextReadyMs,
+      queuedSkillId: state.queuedSkillId,
+      logLength: state.log.length,
+    })
+    expect(state.hero.nextReadyMs).toBe(scheduled)
+    expect(state.timeMs).toBe(timeMs)
+    expect(state.log).toHaveLength(logLength)
+    expect(state.queuedSkillId).toBe(ready.id)
+    const heroActions = () => state.log.filter((event) => event.type === 'action' && event.actorId === state.hero.id).length
+    const before = heroActions()
+    while (state.outcome === 'ongoing' && heroActions() === before) stepCombat(state, defs)
+    const manual = state.log.find((event) => event.type === 'manual')
+    const action = state.log.find(
+      (event) => event.type === 'action' && event.actorId === state.hero.id && event.timeMs === scheduled,
+    )
+    console.log('[manual] later action', { line: manualLine(state), action, timeMs: state.timeMs })
+    expect(manualLine(state)).toBe(`At ${(scheduled / 1000).toFixed(3)}s, Warrior manually selects Ready Cut (ready).`)
+    expect(manual).toMatchObject({ result: 'use', skillId: ready.id, timeMs: scheduled })
+    expect(action).toMatchObject({ action: 'skill', skillId: ready.id, timeMs: scheduled })
+    expect(state.queuedSkillId).toBeNull()
+    expect(state.timeMs).toBeGreaterThan(timeMs)
+  })
+
+  it('cancels a queued skill that the hero cannot afford and uses the normal action', () => {
+    const pricey = makeSkill({
+      id: 'pricey',
+      name: 'Pricey Cut',
+      cost: 25,
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+    })
+    const defs = defsFor([pricey, follow])
+    const state = createCombat(
+      warriorSetup({ equipped: [pricey.id, follow.id], rows: [{ skillId: follow.id }] }),
+      defs,
+      1,
+    )
+    queueManualAction(state, pricey.id)
+    expect(state.hero.classResource).toBeLessThan(pricey.cost)
+    untilAction(state, defs)
+    console.log('[manual] unaffordable', { line: manualLine(state), action: heroAction(state), queued: state.queuedSkillId })
+    expect(manualLine(state)).toBe('At 1.724s, Warrior cancels queued Pricey Cut (pricey): unaffordable.')
+    expect(state.log.find((event) => event.type === 'manual')).toMatchObject({
+      result: 'cancel',
+      skillId: pricey.id,
+      reason: 'unaffordable',
+    })
+    expect(heroAction(state)).toMatchObject({ action: 'skill', skillId: follow.id })
+    expect(state.queuedSkillId).toBeNull()
+  })
+
+  it('cancels a queued skill the hero gear cannot use and uses the normal action', () => {
+    const heavy = makeSkill({
+      id: 'heavy',
+      name: 'Heavy Blow',
+      requires: { mainHand: 'twoHanded' },
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+    })
+    const defs = defsFor([heavy, follow])
+    const state = createCombat(
+      warriorSetup({ equipped: [heavy.id, follow.id], rows: [{ skillId: follow.id }] }),
+      defs,
+      1,
+    )
+    queueManualAction(state, heavy.id)
+    expect(skipReason(state, state.hero, heavy, state.hero.nextReadyMs)).toBe('requires twoHanded')
+    untilAction(state, defs)
+    console.log('[manual] equipment', { line: manualLine(state), action: heroAction(state), queued: state.queuedSkillId })
+    expect(manualLine(state)).toBe('At 1.724s, Warrior cancels queued Heavy Blow (heavy): requires twoHanded.')
+    expect(heroAction(state)).toMatchObject({ action: 'skill', skillId: follow.id })
+    expect(state.queuedSkillId).toBeNull()
+  })
+
+  it('cancels a queued skill when the target helper finds nobody and uses the normal action', () => {
+    const defs = defsFor([ready, follow])
+    const state = createCombat(
+      warriorSetup({
+        equipped: [ready.id, follow.id],
+        rows: [{ skillId: follow.id, targetPriority: 'current' }],
+        targetPriority: 'marked',
+      }),
+      defs,
+      1,
+    )
+    queueManualAction(state, ready.id)
+    expect(skipReason(state, state.hero, ready, state.hero.nextReadyMs)).toBeNull()
+    untilAction(state, defs)
+    console.log('[manual] no target', {
+      line: manualLine(state),
+      action: heroAction(state),
+      queued: state.queuedSkillId,
+      skips: skipReasons(state),
+    })
+    expect(manualLine(state)).toBe('At 1.724s, Warrior cancels queued Ready Cut (ready): no target.')
+    expect(state.log.find((event) => event.type === 'manual')).toMatchObject({
+      result: 'cancel',
+      skillId: ready.id,
+      reason: 'no target',
+    })
+    expect(heroAction(state)).toMatchObject({ action: 'skill', skillId: follow.id })
+    expect(state.queuedSkillId).toBeNull()
   })
 })

@@ -19,6 +19,7 @@ import {
   type CompareOperator,
   type ConditionOperator,
   type GameDefs,
+  type ManualEvent,
   type PresenceOperator,
   type PriorityEvent,
   type PriorityRow,
@@ -329,6 +330,25 @@ export function setPriorityRules(state: CombatState, rules: unknown, defs: GameD
     rowCount: parsed.rows.length,
     targetPriority: parsed.targetPriority,
   })
+}
+
+/**
+ * Store one equipped skill for the hero's next action.
+ * Does not change the action already scheduled, its cost, or its timing.
+ * A later call replaces the queued skill.
+ * A skill that is not equipped throws and leaves the state unchanged.
+ */
+export function queueManualAction(state: CombatState, skillId: string): void {
+  if (typeof state !== 'object' || state === null) throw new Error('manual queue needs a combat state')
+  if (typeof state.hero !== 'object' || state.hero === null) throw new Error('manual queue needs a hero')
+  if (!Array.isArray(state.hero.equippedSkillIds)) throw new Error('manual queue needs equipped skills')
+  if (typeof skillId !== 'string' || skillId.length === 0) {
+    throw new Error(`manual queue skill id must be a non-empty string, received ${describeValue(skillId)}`)
+  }
+  if (!skillEquipped(state.hero, skillId)) {
+    throw new Error(`cannot queue '${skillId}': not equipped`)
+  }
+  state.queuedSkillId = skillId
 }
 
 function livingEnemies(state: CombatState): CombatActor[] {
@@ -740,6 +760,74 @@ function targetsFor(
   if (!skillNeedsEnemy(skill)) return [hero]
   if (skill.target === 'all') return livingEnemies(state)
   return focus === null ? [] : [focus]
+}
+
+function manualEvent(
+  hero: CombatHero,
+  timeMs: number,
+  skillId: string,
+  skillName: string,
+  result: ManualEvent['result'],
+  reason: string | null,
+): ManualEvent {
+  return {
+    type: 'manual',
+    timeMs,
+    actorId: hero.id,
+    actorName: hero.name,
+    skillId,
+    skillName,
+    result,
+    reason,
+  }
+}
+
+export type ManualResolution =
+  | { kind: 'none' }
+  | {
+      kind: 'use'
+      skill: SkillDef
+      targets: CombatActor[]
+      focus: CombatActor | null
+      event: ManualEvent
+    }
+  | { kind: 'cancel'; event: ManualEvent }
+
+/**
+ * Read the queued skill without removing it.
+ * An empty queue returns none. Eligibility is skipReason, then skillActionTargets.
+ * Cancel means the caller logs the event, clears the queue, and uses chooseHeroAction.
+ */
+export function evaluateManualAction(
+  state: CombatState,
+  defs: GameDefs,
+  hero: CombatHero,
+  timeMs: number,
+): ManualResolution {
+  const skillId = state.queuedSkillId
+  if (typeof skillId !== 'string' || skillId.length === 0) return { kind: 'none' }
+  const skill = defs.skills[skillId]
+  if (skill === undefined) {
+    return {
+      kind: 'cancel',
+      event: manualEvent(hero, timeMs, skillId, skillId, 'cancel', `unknown skill '${skillId}'`),
+    }
+  }
+  const reason = skipReason(state, hero, skill, timeMs)
+  if (reason !== null) {
+    return { kind: 'cancel', event: manualEvent(hero, timeMs, skill.id, skill.name, 'cancel', reason) }
+  }
+  const aimed = skillActionTargets(state, hero, skill)
+  if (aimed.targets.length === 0) {
+    return { kind: 'cancel', event: manualEvent(hero, timeMs, skill.id, skill.name, 'cancel', 'no target') }
+  }
+  return {
+    kind: 'use',
+    skill,
+    targets: aimed.targets,
+    focus: aimed.focus,
+    event: manualEvent(hero, timeMs, skill.id, skill.name, 'use', null),
+  }
 }
 
 /** Targets for a skill chosen outside a priority row, including a class fallback. */

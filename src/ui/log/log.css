@@ -1,0 +1,84 @@
+.log-panel,
+.outcome-card {
+  margin-top: 16px;
+  padding: 10px;
+  border: 1px solid #c8c8c8;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.log-panel h2,
+.outcome-card h2,
+.outcome-card h3 {
+  margin: 0 0 8px;
+}
+
+.outcome-card h3 {
+  margin-top: 12px;
+  font-size: 1rem;
+}
+
+.log-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.log-controls button[aria-pressed='true'] {
+  font-weight: 700;
+}
+
+.log-follow {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.log-count {
+  margin: 0;
+}
+
+.log-list {
+  max-height: 24rem;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.log-row-button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.log-row[data-expanded='true'] .log-row-button {
+  background: #eee;
+}
+
+.log-payload {
+  margin: 0;
+  padding: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.outcome-chain {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.outcome-statuses {
+  margin: 0;
+  padding-left: 1.2rem;
+}

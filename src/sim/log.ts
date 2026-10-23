@@ -218,6 +218,17 @@ export function formatEvent(event: LogEvent): string {
       }
     case 'rulesChanged':
       return formatRulesChanged(event)
+    case 'manual':
+      if (event.result === 'cancel') {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} cancels queued ${event.skillName} (${event.skillId}): ${event.reason}.`
+      }
+      if (event.result === 'use') {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} manually selects ${event.skillName} (${event.skillId}).`
+      }
+      {
+        const unexpected: never = event.result
+        throw new Error(`unknown manual result ${JSON.stringify(unexpected)}`)
+      }
     case 'hitRoll':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} hit roll ${event.roll} against ${event.hitChance} (Accuracy ${event.accuracy}, Evasion ${event.evasion}): ${event.hit ? 'hit' : 'miss'}.`
     case 'damage':

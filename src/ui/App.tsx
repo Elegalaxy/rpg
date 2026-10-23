@@ -1,12 +1,100 @@
 import { useEffect } from 'react'
+
+import { scenarios } from '../content/scenarios.ts'
+import type { CombatState } from '../sim/types.ts'
+
+import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
+import { LogPanel } from './log/LogPanel.tsx'
+import { OutcomeCard } from './log/OutcomeCard.tsx'
+import {
+  PLAYBACK_SPEEDS,
+  restart,
+  randomSeed,
+  selectScenario,
+  setSeedText,
+  setSpeed,
+  startCombatLoop,
+  togglePause,
+  useCombatStore,
+} from './store.ts'
+
+const scenarioIds = Object.keys(scenarios)
+
+function shownTimeMs(combat: CombatState): number {
+  if (combat.outcome === 'ongoing') return combat.timeMs
+  for (let index = combat.log.length - 1; index >= 0; index -= 1) {
+    const event = combat.log[index]
+    if (event !== undefined && event.type === 'encounterEnd') return event.timeMs
+  }
+  return combat.timeMs
+}
 
 function App() {
+  const view = useCombatStore()
+
   useEffect(() => {
     debugLog('[ui]', 'app mounted')
+    return startCombatLoop()
   }, [])
 
-  return <h1>RPG – dev build</h1>
+  return (
+    <>
+      <h1>RPG – dev build</h1>
+      <p>
+        {view.combat.outcome} at {shownTimeMs(view.combat)} ms
+      </p>
+      <div>
+        <label htmlFor="rpg-scenario">Scenario</label>{' '}
+        <select
+          id="rpg-scenario"
+          value={view.scenarioId}
+          onChange={(event) => selectScenario(event.target.value)}
+        >
+          {scenarioIds.map((id) => (
+            <option key={id} value={id}>
+              {id}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="rpg-seed">Seed</label>{' '}
+        <input
+          id="rpg-seed"
+          value={view.seedText}
+          onChange={(event) => setSeedText(event.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </div>
+      {view.seedError !== null ? <p role="alert">{view.seedError}</p> : null}
+      <div>
+        <button type="button" onClick={restart}>
+          Restart
+        </button>{' '}
+        <button type="button" onClick={randomSeed}>
+          New seed
+        </button>{' '}
+        <button type="button" onClick={togglePause}>
+          {view.paused ? 'Resume' : 'Pause'}
+        </button>{' '}
+        {PLAYBACK_SPEEDS.map((speed) => (
+          <button
+            key={speed}
+            type="button"
+            aria-pressed={view.speed === speed}
+            onClick={() => setSpeed(speed)}
+          >
+            {speed}×
+          </button>
+        ))}
+      </div>
+      <CombatPanel combat={view.combat} queueError={view.queueError} />
+      <OutcomeCard combat={view.combat} />
+      <LogPanel log={view.combat.log} />
+    </>
+  )
 }
 
 export default App
