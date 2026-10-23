@@ -150,6 +150,17 @@ describe('warrior fury', () => {
     expect(cleared.length).toBeGreaterThan(0)
   })
 
+  it('ignores a miss so an enemy basic attack that fails to hit adds no Fury', () => {
+    const state = createCombat(warriorSetup(), defsFor([]), 1)
+    const taken = warriorClass.damageTaken
+    if (taken === undefined) throw new Error('warrior damageTaken is missing')
+    taken(state, { hpLost: 0, hpBefore: 370, kind: 'miss', timeMs: 2200, school: 'physical' })
+    console.log('[warrior] miss ignored', { resource: state.hero.classResource, logs: resources(state, 'hpLoss').length })
+    expect(state.hero.classResource).toBe(0)
+    expect(resources(state, 'hpLoss')).toHaveLength(0)
+    expect(resources(state, 'shieldBrace')).toHaveLength(0)
+  })
+
   it('raises physical damage to +25% at 100 Fury and leaves magical damage unchanged', () => {
     const state = createCombat(warriorSetup(), defsFor([]), 1)
     const outgoing = warriorClass.outgoingModifiers

@@ -123,6 +123,11 @@ function priorityLabel(priority: TargetPriority | null): string {
   }
 }
 
+function formatFraction(event: ResourceEvent): string {
+  if (event.fractionBefore === undefined || event.fractionAfter === undefined) return ''
+  return `; fraction ${event.fractionBefore} to ${event.fractionAfter}`
+}
+
 function formatResource(event: ResourceEvent): string {
   const when = `At ${seconds(event.timeMs)}s, ${event.actorName} ${event.resourceId}`
   if (event.reason === 'payment') {
@@ -132,10 +137,10 @@ function formatResource(event: ResourceEvent): string {
     return `${when} starts at ${event.after} (max ${event.maximum}, ${event.scope}).`
   }
   if (event.reason === 'encounterEnd') {
-    return `${when} clears at encounter end: ${event.before} to ${event.after}.`
+    return `${when} clears at encounter end: ${event.before} to ${event.after}${formatFraction(event)}.`
   }
   const cap = event.gainCap === null ? '' : `, cap ${event.gainCap}`
-  return `${when} ${event.reason}: base ${event.base} × ${event.multiplier} = ${event.generated}${cap}; ${event.before} to ${event.after} (max ${event.maximum}).`
+  return `${when} ${event.reason}: base ${event.base} × ${event.multiplier} = ${event.generated}${cap}; ${event.before} to ${event.after} (max ${event.maximum})${formatFraction(event)}.`
 }
 
 function formatSnapshot(event: ResourceSnapshotEvent): string {
@@ -168,7 +173,11 @@ export function formatEvent(event: LogEvent): string {
         const skillName = event.skillName ?? 'a skill'
         const cooldown =
           event.cooldownReadyMs === null ? '' : ` Cooldown ready at ${seconds(event.cooldownReadyMs)}s.`
-        return `At ${seconds(event.timeMs)}s, ${event.actorName} uses ${skillName} on ${event.targetName}. Next ready at ${seconds(event.nextReadyMs)}s.${cooldown}`
+        const ammo =
+          event.ammoSpent === undefined || event.ammoSpent <= 0
+            ? ''
+            : ` Spends ${event.ammoSpent} special arrow (${event.ammoRemaining} remaining).`
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} uses ${skillName} on ${event.targetName}. Next ready at ${seconds(event.nextReadyMs)}s.${cooldown}${ammo}`
       }
     case 'priority':
       if (event.decision === 'fallback') {
@@ -214,7 +223,19 @@ export function formatEvent(event: LogEvent): string {
     case 'statusExpired':
       return `At ${seconds(event.timeMs)}s, ${event.actorName}'s ${event.statusName} expires (${event.stacks} stacks).`
     case 'statusCleared':
+      if (event.reason === 'moved') {
+        return `At ${seconds(event.timeMs)}s, Mark moves off ${event.actorName}.`
+      }
       return `At ${seconds(event.timeMs)}s, cleanse removes ${event.statusName} from ${event.actorName} (${event.stacks} stacks).`
+    case 'markRefresh':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} refreshes Mark on ${event.targetName}: ${event.remainingMs} ms remains ${event.nextRemainingMs} ms, expires at ${seconds(event.expiresMs)}s.`
+    case 'reveal':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} reveals ${event.targetName}.`
+    case 'trap':
+      if (event.replacedName === null) {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} arms a trap on ${event.targetName}.`
+      }
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} arms a trap on ${event.targetName}, replacing the trap on ${event.replacedName}.`
     case 'resource':
       return formatResource(event)
     case 'resourceSnapshot':

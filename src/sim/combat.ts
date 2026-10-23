@@ -23,14 +23,17 @@ import {
   slowedActionMs,
   statusTickEvent,
   takeBleedTicks,
+  tryApplyStatus,
 } from './statuses.ts'
 import type { StatusTickDraft } from './statuses.ts'
 import { actionTime, deriveEnemyStats, deriveHeroStats } from './stats.ts'
 import type {
   CombatActor,
   CombatHero,
+  CombatHeroSetup,
   CombatSetup,
   CombatState,
+  ClassStrike,
   DamageNotice,
   DamageResult,
   DamageSchool,
@@ -384,8 +387,21 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     hit: result.hit,
   })
   if (result.hit) applyHit(state, actor, target, scheduled, result, deaths)
+  else if (target.id === state.hero.id) {
+    notifyDamageTaken(state, {
+      hpLost: 0,
+      hpBefore: target.hp,
+      kind: 'miss',
+      timeMs: scheduled,
+      school: result.school,
+    })
+  }
   if (actor.side === 'hero') {
-    classModule(state.hero.classId)?.actionResolved?.(state, { kind: 'basicAttack', hit: result.hit }, scheduled)
+    classModule(state.hero.classId)?.actionResolved?.(
+      state,
+      { kind: 'basicAttack', hit: result.hit, crit: result.crit, targetId: target.id },
+      scheduled,
+    )
   }
   commitDeaths(state, deaths)
 }
@@ -499,6 +515,22 @@ function scheduleSkill(
   return { nextReadyMs, cooldownReadyMs }
 }
 
+function paySkillCosts(state: CombatState, skill: SkillDef, timeMs: number): { ammoSpent: number; ammoRemaining: number } {
+  const hero = state.hero
+  const ammoCost = skill.ammoCost ?? 0
+  if (!Number.isInteger(ammoCost) || ammoCost < 0) {
+    throw new Error(`${skill.name} ammo cost must be a whole number of at least 0, received ${describeValue(ammoCost)}`)
+  }
+  if (ammoCost > hero.specialAmmo || skill.cost > hero.classResource) {
+    throw new Error(
+      `${hero.name} cannot pay ${skill.name}: readiness ${hero.classResource}, special arrows ${hero.specialAmmo}, costs ${skill.cost} and ${ammoCost}`,
+    )
+  }
+  payClassResource(state, timeMs, skill.cost, 'payment')
+  if (ammoCost > 0) hero.specialAmmo -= ammoCost
+  return { ammoSpent: ammoCost, ammoRemaining: hero.specialAmmo }
+}
+
 function resolveSkill(
   state: CombatState,
   defs: GameDefs,
@@ -507,8 +539,9 @@ function resolveSkill(
   scheduled: number,
 ): void {
   const hero = state.hero
-  classModule(hero.classId)?.actionChosen?.(state, { kind: 'skill', skill }, scheduled)
-  payClassResource(state, scheduled, skill.cost, 'payment')
+  const targetId = targets[0]?.id
+  classModule(hero.classId)?.actionChosen?.(state, { kind: 'skill', skill, targetId }, scheduled)
+  const payment = paySkillCosts(state, skill, scheduled)
   const timing = scheduleSkill(hero, skill, scheduled)
   const target = actionTarget(skill, targets)
   state.log.push({
@@ -524,15 +557,19 @@ function resolveSkill(
     scheduledMs: scheduled,
     nextReadyMs: timing.nextReadyMs,
     cooldownReadyMs: timing.cooldownReadyMs,
+    ...(payment.ammoSpent > 0 ? { ammoSpent: payment.ammoSpent, ammoRemaining: payment.ammoRemaining } : {}),
   })
   const deaths: PendingDeath[] = []
+  const strikes: ClassStrike[] = []
   applySkillEffects(state, defs, hero, skill, targets, scheduled, (school) => heroOutgoing(state, school, skill), (
     actor,
     result,
   ) => {
+    strikes.push({ targetId: actor.id, hit: result.hit, crit: result.crit })
     applyHit(state, hero, actor, scheduled, result, deaths)
   })
-  classModule(hero.classId)?.actionResolved?.(state, { kind: 'skill', skill }, scheduled)
+  const crit = strikes.some((strike) => strike.hit && strike.crit)
+  classModule(hero.classId)?.actionResolved?.(state, { kind: 'skill', skill, targetId, crit, strikes }, scheduled)
   commitDeaths(state, deaths)
 }
 
@@ -591,9 +628,36 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
   resolveSkill(state, defs, choice.skill, choice.targets, scheduled)
 }
 
+/**
+ * An armed trap resolves when its target is ready, before that action.
+ * Success pushes the action. Failure leaves the ready time alone so the action happens now.
+ * Returns true when the action was postponed.
+ */
+function triggerArmedTrap(state: CombatState, defs: GameDefs, actor: CombatActor, scheduled: number): boolean {
+  const trap = actor.armedTrap
+  if (trap === null) return false
+  actor.armedTrap = null
+  const skill = defs.skills[trap.skillId]
+  if (skill === undefined) throw new Error(`armed trap skill '${trap.skillId}' is not defined`)
+  const readyBefore = actor.nextReadyMs
+  tryApplyStatus({
+    state,
+    defs,
+    source: state.hero,
+    target: actor,
+    skill,
+    effect: { kind: 'applyStatus', statusId: 'stun', baseChance: trap.baseChance },
+    timeMs: scheduled,
+    applyingHit: false,
+    hpDamageDealt: 0,
+  })
+  return actor.nextReadyMs !== readyBefore
+}
+
 /** Bleed ticks when the actor becomes ready, before that action. Chill was already baked into the previous recovery. */
 function resolveActor(state: CombatState, defs: GameDefs, actor: CombatActor): void {
   const scheduled = actor.nextReadyMs
+  if (triggerArmedTrap(state, defs, actor, scheduled)) return
   const bleed = takeBleedTicks(actor, scheduled)
   for (const tick of bleed.ticks) {
     if (!actor.alive) break
@@ -737,7 +801,32 @@ function actorFromEnemy(def: EnemyDef, slot: number, revealed: boolean): CombatA
     rank: 0,
     bossPhase: 0,
     telegraph: null,
+    armedTrap: null,
     statuses: emptyStatuses(),
+  }
+}
+
+function applySuppliedResources(hero: CombatHero, setup: CombatHeroSetup): void {
+  if (setup.startingResource !== undefined) {
+    if (
+      typeof setup.startingResource !== 'number' ||
+      !Number.isFinite(setup.startingResource) ||
+      setup.startingResource < 0
+    ) {
+      throw new Error(
+        `starting resource must be at least 0, received ${describeValue(setup.startingResource)}`,
+      )
+    }
+    hero.suppliedResource = setup.startingResource
+  }
+  if (setup.specialAmmo !== undefined) {
+    if (typeof setup.specialAmmo !== 'number' || !Number.isInteger(setup.specialAmmo) || setup.specialAmmo < 0) {
+      throw new Error(
+        `starting special ammo must be a whole number of at least 0, received ${describeValue(setup.specialAmmo)}`,
+      )
+    }
+    hero.suppliedAmmo = setup.specialAmmo
+    hero.specialAmmo = setup.specialAmmo
   }
 }
 
@@ -799,6 +888,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     rank: 0,
     bossPhase: 0,
     telegraph: null,
+    armedTrap: null,
     statuses: emptyStatuses(),
     physicalPower: derived.physicalPower,
     magicalPower: derived.magicalPower,
@@ -823,6 +913,10 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     classState: {},
     waiting: false,
     specialAmmo: 0,
+    resourceFraction: 0,
+    suppliedResource: null,
+    suppliedAmmo: null,
+    pendingCoefficient: null,
     targetPriority: parsedRules.targetPriority,
     currentTargetId: null,
   }
@@ -852,6 +946,7 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
   enemies.sort((a, b) => a.slot - b.slot)
 
   const hero = actorFromHero(setup, defs)
+  applySuppliedResources(hero, setup.hero)
   assertLoadout(hero.equippedSkillIds, hero.priorityRows, defs)
   const state: CombatState = {
     timeMs: 0,

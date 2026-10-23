@@ -156,12 +156,90 @@ describe('content integrity', () => {
     expect(skills['arcane-bolt']?.effects[0]).toMatchObject({ kind: 'damage', school: 'magical', coefficient: 0.9 })
 
     const venom = skills['venom-edge']
+    expect(venom?.effects[0]).toMatchObject({ kind: 'damage', school: 'physical', coefficient: 0.9 })
     expect(venom?.effects[1]).toMatchObject({
       kind: 'applyStatus',
       statusId: 'poison',
       baseChance: 1,
       coefficient: 0.12,
       power: 'physical',
+    })
+    expect(venom).toMatchObject({ cost: 0, cooldownSeconds: 4, actionTimeCoefficient: 0.9 })
+    expect(skills['smoke-step']).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 8,
+      actionTimeCoefficient: 0.5,
+      effects: [{ kind: 'evasion', amount: 30 }],
+    })
+    expect(skills['mark-for-death']).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 6,
+      actionTimeCoefficient: 0.5,
+      effects: [{ kind: 'applyStatus', statusId: 'mark', baseChance: 1, durationSeconds: 8 }],
+    })
+    expect(skills['shadow-cut']).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 3,
+      actionTimeCoefficient: 0.8,
+      tags: expect.arrayContaining(['markExploit']),
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 1.1 }],
+    })
+    expect(skills['fan-of-knives']).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 6,
+      actionTimeCoefficient: 1.1,
+      target: 'all',
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 0.7 }],
+    })
+    expect(skills['fan-of-knives']?.effects.some((effect) => effect.kind === 'applyStatus')).toBe(false)
+    expect(skills.execute).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 8,
+      actionTimeCoefficient: 1.1,
+      tags: expect.arrayContaining(['execute']),
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+    })
+    expect(skills['hunters-mark']).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 5,
+      actionTimeCoefficient: 0.5,
+      effects: [{ kind: 'reveal' }],
+    })
+    expect(skills['aimed-shot']).toMatchObject({
+      cost: 40,
+      cooldownSeconds: 5,
+      actionTimeCoefficient: 1.2,
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 1.8 }],
+    })
+    expect(skills.volley).toMatchObject({
+      cost: 30,
+      cooldownSeconds: 6,
+      actionTimeCoefficient: 1.2,
+      target: 'all',
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 0.65 }],
+    })
+    expect(skills['snare-trap']).toMatchObject({
+      cost: 25,
+      cooldownSeconds: 8,
+      actionTimeCoefficient: 1,
+      tags: expect.arrayContaining(['physical']),
+      effects: [{ kind: 'armTrap', baseChance: 0.75 }],
+    })
+    expect(skills['piercing-arrow']).toMatchObject({
+      cost: 20,
+      cooldownSeconds: 5,
+      actionTimeCoefficient: 1,
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 1.3, armorPenetrationBonus: 0.3 }],
+    })
+    expect(skills['flame-arrow']).toMatchObject({
+      cost: 20,
+      ammoCost: 1,
+      cooldownSeconds: 6,
+      actionTimeCoefficient: 1,
+      effects: [
+        { kind: 'damage', school: 'magical', coefficient: 1, power: 'physical' },
+        { kind: 'applyStatus', statusId: 'burn', baseChance: 1, coefficient: 0.1, power: 'physical' },
+      ],
     })
 
     const heroIds = Object.values(referenceHeroes).map((hero) => hero.id)

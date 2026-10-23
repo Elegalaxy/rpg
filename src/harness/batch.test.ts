@@ -157,7 +157,7 @@ describe('runBatch', () => {
         label: 'unknown scenario',
         run: () => runBatch('nope', 1, 1),
         pattern:
-          /unknown scenario 'nope'; valid scenarios: driving-blow, duel-basic, mage-vs-standard, priority-focus, venom-edge, warrior-vs-standard/,
+          /unknown scenario 'nope'; valid scenarios: assassin-vs-standard, driving-blow, duel-basic, mage-vs-standard, priority-focus, ranger-vs-standard, venom-edge, warrior-vs-standard/,
       },
       {
         label: 'non-integer seed',

@@ -1,3 +1,4 @@
+import { EXECUTE_TAG, MARK_EXPLOIT_TAG } from '../sim/classes/assassin.ts'
 import { FURY_GENERATOR_TAG, FURY_SPENDER_TAG } from '../sim/classes/warrior.ts'
 import type { SkillDef } from '../sim/types.ts'
 
@@ -78,6 +79,88 @@ const sunderingBlow = {
   effects: [
     { kind: 'damage', school: 'physical', coefficient: 1.25 },
     { kind: 'applyStatus', statusId: 'expose', baseChance: 1, armorMagnitude: 0.2 },
+  ],
+} satisfies SkillDef
+
+// Execute's listed coefficient is replaced by the class formula before the hit.
+const markForDeath = {
+  id: 'mark-for-death',
+  name: 'Mark for Death',
+  cost: 0,
+  cooldownSeconds: 6,
+  actionTimeCoefficient: 0.5,
+  tags: ['mark'],
+  target: 'single',
+  effects: [{ kind: 'applyStatus', statusId: 'mark', baseChance: 1, durationSeconds: 8 }],
+} satisfies SkillDef
+
+const shadowCut = {
+  id: 'shadow-cut',
+  name: 'Shadow Cut',
+  cost: 0,
+  cooldownSeconds: 3,
+  actionTimeCoefficient: 0.8,
+  tags: ['physical', 'attack', MARK_EXPLOIT_TAG],
+  target: 'single',
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 1.1 }],
+} satisfies SkillDef
+
+const execute = {
+  id: 'execute',
+  name: 'Execute',
+  cost: 0,
+  cooldownSeconds: 8,
+  actionTimeCoefficient: 1.1,
+  tags: ['physical', 'attack', EXECUTE_TAG],
+  target: 'single',
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+} satisfies SkillDef
+
+const huntersMark = {
+  id: 'hunters-mark',
+  name: "Hunter's Mark",
+  cost: 0,
+  cooldownSeconds: 5,
+  actionTimeCoefficient: 0.5,
+  tags: ['mark'],
+  target: 'single',
+  effects: [{ kind: 'reveal' }],
+} satisfies SkillDef
+
+const snareTrap = {
+  id: 'snare-trap',
+  name: 'Snare Trap',
+  cost: 25,
+  cooldownSeconds: 8,
+  actionTimeCoefficient: 1,
+  tags: ['physical', 'trap'],
+  target: 'single',
+  effects: [{ kind: 'armTrap', baseChance: 0.75 }],
+} satisfies SkillDef
+
+const piercingArrow = {
+  id: 'piercing-arrow',
+  name: 'Piercing Arrow',
+  cost: 20,
+  cooldownSeconds: 5,
+  actionTimeCoefficient: 1,
+  tags: ['physical', 'attack'],
+  target: 'single',
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 1.3, armorPenetrationBonus: 0.3 }],
+} satisfies SkillDef
+
+const flameArrow = {
+  id: 'flame-arrow',
+  name: 'Flame Arrow',
+  cost: 20,
+  cooldownSeconds: 6,
+  actionTimeCoefficient: 1,
+  tags: ['magical', 'fire', 'attack'],
+  ammoCost: 1,
+  target: 'single',
+  effects: [
+    { kind: 'damage', school: 'magical', coefficient: 1, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 1, coefficient: 0.1, power: 'physical' },
   ],
 } satisfies SkillDef
 
@@ -262,11 +345,18 @@ export const skills: { [id: string]: SkillDef } = {
   [shieldBrace.id]: shieldBrace,
   [secondWind.id]: secondWind,
   [sunderingBlow.id]: sunderingBlow,
+  [markForDeath.id]: markForDeath,
+  [shadowCut.id]: shadowCut,
   [smokeStep.id]: smokeStep,
   [venomEdge.id]: venomEdge,
   [fanOfKnives.id]: fanOfKnives,
+  [execute.id]: execute,
+  [huntersMark.id]: huntersMark,
   [aimedShot.id]: aimedShot,
   [volley.id]: volley,
+  [snareTrap.id]: snareTrap,
+  [piercingArrow.id]: piercingArrow,
+  [flameArrow.id]: flameArrow,
   [arcaneBolt.id]: arcaneBolt,
   [fireball.id]: fireball,
   [frostLance.id]: frostLance,

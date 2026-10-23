@@ -192,12 +192,21 @@ export type CombatActor = {
   bossPhase: number
   /** Telegraph a test can set. This step does not run a telegraph clock. */
   telegraph: ActorTelegraph | null
+  /** One armed Snare Trap. A new cast clears every other trap first. */
+  armedTrap: ArmedTrap | null
   statuses: ActorStatuses
 }
 
 export type ActorTelegraph = {
   tag: string
   resolvesAtMs: number
+}
+
+/** Plain JSON trap armed on one target. It resolves the next time that target is ready. */
+export type ArmedTrap = {
+  baseChance: number
+  skillId: string
+  sourceId: string
 }
 
 /** Inputs a caller can fix so damage tests do not draw from the RNG. */
@@ -283,6 +292,9 @@ export type ActionEvent = {
   nextReadyMs: number
   /** When the skill can be used again. Null for basic attacks and skills with no cooldown. */
   cooldownReadyMs: number | null
+  /** Special arrows spent with this action. Omitted when the skill spends none. */
+  ammoSpent?: number
+  ammoRemaining?: number
 }
 
 export type HitRollEvent = {
@@ -547,6 +559,40 @@ export type StatusClearedEvent = {
   statusId: string
   statusName: string
   stacks: number
+  /** Set when Mark moves to another target. Cleanse leaves this unset. */
+  reason?: string
+}
+
+export type MarkRefreshEvent = {
+  type: 'markRefresh'
+  timeMs: number
+  actorId: string
+  actorName: string
+  targetId: string
+  targetName: string
+  remainingMs: number
+  nextRemainingMs: number
+  expiresMs: number
+}
+
+export type RevealEvent = {
+  type: 'reveal'
+  timeMs: number
+  actorId: string
+  actorName: string
+  targetId: string
+  targetName: string
+}
+
+export type TrapEvent = {
+  type: 'trap'
+  timeMs: number
+  actorId: string
+  actorName: string
+  targetId: string
+  targetName: string
+  replacedId: string | null
+  replacedName: string | null
 }
 
 /** Encounter meters reset when the encounter ends. Expedition meters carry until a later expedition step. */
@@ -571,6 +617,9 @@ export type ResourceEvent = {
   before: number
   after: number
   maximum: number
+  /** Advantage accumulator before and after this change. Omitted for numeric meters. */
+  fractionBefore?: number
+  fractionAfter?: number
 }
 
 /** Held-resource damage bonus frozen before a spender pays. */
@@ -609,6 +658,9 @@ export type LogEvent =
   | StatusTickEvent
   | StatusExpiredEvent
   | StatusClearedEvent
+  | MarkRefreshEvent
+  | RevealEvent
+  | TrapEvent
   | ResourceEvent
   | ResourceSnapshotEvent
   | WaitEvent
@@ -619,6 +671,10 @@ export type DamageEffect = {
   kind: 'damage'
   school: DamageSchool
   coefficient: number
+  /** Power stat to multiply. Defaults to the damage school. */
+  power?: DamageSchool
+  /** Added to Armor penetration before the 80% cap. Physical hits only. */
+  armorPenetrationBonus?: number
 }
 
 export type HealEffect = {
@@ -674,6 +730,18 @@ export type ChainEffect = {
   delaySeconds: number
 }
 
+/** Sets the target's revealed flag for this encounter. Does not apply Mark. */
+export type RevealEffect = {
+  kind: 'reveal'
+}
+
+/** Arms one trap. A later cast replaces any trap already armed. */
+export type ArmTrapEffect = {
+  kind: 'armTrap'
+  /** Stun chance before Potency and Resistance. 0.75 is 75 percentage points. */
+  baseChance: number
+}
+
 export type ApplyStatusEffect = {
   kind: 'applyStatus'
   statusId: string
@@ -708,6 +776,8 @@ export type SkillEffect =
   | ResourceGainEffect
   | ChainEffect
   | ApplyStatusEffect
+  | RevealEffect
+  | ArmTrapEffect
 
 export type SkillRequirement = {
   mainHand?: WeaponKind
@@ -724,6 +794,8 @@ export type SkillDef = {
   requires?: SkillRequirement
   target: 'single' | 'all'
   effects: readonly SkillEffect[]
+  /** Special arrows required in addition to `cost`. Spend neither unless both can be paid. */
+  ammoCost?: number
 }
 
 /** One automation row. All of its conditions must pass. The same skill on a later row is the OR. */
@@ -762,8 +834,19 @@ export type CombatHero = CombatActor & {
   classState: { [key: string]: number | string | boolean | null }
   /** Set while the hero is waiting for a resource. The wait does not spend action time. */
   waiting: boolean
-  /** Equipped special-ammunition count for conditions. */
+  /** Equipped special-ammunition count for conditions and Flame Arrow. */
   specialAmmo: number
+  /**
+   * Advantage progress toward the next whole stack.
+   * `classResource` stays the live whole-number meter. This fraction can stay at or above 1.
+   */
+  resourceFraction: number
+  /** Starting class meter from the encounter setup. Null when the setup did not supply one. */
+  suppliedResource: number | null
+  /** Starting special ammo from the encounter setup. Null when the setup did not supply it. */
+  suppliedAmmo: number | null
+  /** When set, the next skill hit uses this coefficient instead of the effect's. */
+  pendingCoefficient: number | null
   /** Null selects the first living enemy by slot. */
   targetPriority: TargetPriority | null
   currentTargetId: string | null
@@ -789,6 +872,10 @@ export type CombatHeroSetup = {
   equippedSkillIds?: readonly string[]
   priorityRows?: readonly PriorityRow[]
   targetPriority?: TargetPriority
+  /** Ranger Readiness start. Omitted uses the harness default. Other classes ignore it. */
+  startingResource?: number
+  /** Special arrows at the start. Omitted lets the class apply its own default. */
+  specialAmmo?: number
 }
 
 export type CombatEnemySetup = {
@@ -841,14 +928,28 @@ export const CLASS_HOOK_NAMES = [
 
 export type ClassHookName = (typeof CLASS_HOOK_NAMES)[number]
 
+export type ClassStrike = {
+  targetId: string
+  hit: boolean
+  crit: boolean
+}
+
 export type ClassAction =
-  | { kind: 'basicAttack'; hit: boolean }
-  | { kind: 'skill'; skill: SkillDef }
+  | { kind: 'basicAttack'; hit: boolean; crit?: boolean; targetId?: string }
+  | {
+      kind: 'skill'
+      skill: SkillDef
+      /** Primary target. Execute reads this target's health before the hit. */
+      targetId?: string
+      crit?: boolean
+      strikes?: readonly ClassStrike[]
+    }
 
 export type DamageNotice = {
   hpLost: number
   hpBefore: number
-  kind: 'hit' | 'statusTick'
+  /** `miss` is an enemy basic attack that failed its hit roll. It is not a hit for 0 HP. */
+  kind: 'hit' | 'statusTick' | 'miss'
   timeMs: number
   school: DamageSchool
 }

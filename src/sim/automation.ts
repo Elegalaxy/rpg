@@ -1,3 +1,4 @@
+import { MISSING_SPECIAL_ARROW_REASON } from './classes/ranger.ts'
 import { nextFloat } from './rng.ts'
 import {
   activeBarrier,
@@ -378,6 +379,8 @@ export function skipReason(
   if (!skillEquipped(hero, skill.id)) return 'not equipped'
   if (!skillOffCooldown(hero, skill, timeMs)) return 'on cooldown'
   if (!skillAffordable(hero, skill)) return 'unaffordable'
+  const ammoCost = skill.ammoCost ?? 0
+  if (ammoCost > hero.specialAmmo) return MISSING_SPECIAL_ARROW_REASON
   const equipment = equipmentBlock(hero, skill)
   if (equipment !== null) return equipment
   if (skillNeedsEnemy(skill) && enemyTargets(state, skill).length === 0) return 'no target'

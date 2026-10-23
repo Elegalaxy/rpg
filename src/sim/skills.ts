@@ -4,6 +4,7 @@ import {
   HEALING_ROLL_CEILING,
   HEALING_ROLL_FLOOR,
   OFF_HAND_KINDS,
+  PENETRATION_CAP,
   WEAPON_POWER_FACTOR,
 } from './constants.ts'
 import { consistencyBounds, resolveDamage } from './damage.ts'
@@ -17,6 +18,7 @@ import type {
   CombatActor,
   CombatHero,
   CombatState,
+  DamageEffect,
   DamageResult,
   DamageSchool,
   GameDefs,
@@ -37,6 +39,8 @@ export const SKILL_EFFECT_KINDS = [
   'resource',
   'chain',
   'applyStatus',
+  'reveal',
+  'armTrap',
 ] as const
 
 function describeValue(value: unknown): string {
@@ -106,7 +110,29 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
       )
     }
     assertPositive(value.coefficient, `skill '${skillId}' damage coefficient`)
-    return { kind, school, coefficient: value.coefficient }
+    const effect: DamageEffect = {
+      kind,
+      school,
+      coefficient: value.coefficient,
+    }
+    if (value.power !== undefined) {
+      if (value.power !== 'physical' && value.power !== 'magical') {
+        throw new Error(
+          `skill '${skillId}' damage power must be physical or magical, received ${describeValue(value.power)}`,
+        )
+      }
+      effect.power = value.power
+    }
+    if (value.armorPenetrationBonus !== undefined) {
+      assertFiniteNumber(value.armorPenetrationBonus, `skill '${skillId}' Armor penetration`)
+      if (value.armorPenetrationBonus < 0) {
+        throw new Error(
+          `skill '${skillId}' Armor penetration must be at least 0, received ${describeValue(value.armorPenetrationBonus)}`,
+        )
+      }
+      effect.armorPenetrationBonus = value.armorPenetrationBonus
+    }
+    return effect
   }
   if (kind === 'heal') {
     assertNonNegative(value.maxHpFraction, `skill '${skillId}' heal max HP fraction`)
@@ -235,6 +261,16 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     }
     return effect
   }
+  if (kind === 'reveal') return { kind }
+  if (kind === 'armTrap') {
+    assertFiniteNumber(value.baseChance, `skill '${skillId}' trap chance`)
+    if (value.baseChance < 0 || value.baseChance > 1) {
+      throw new Error(
+        `skill '${skillId}' trap chance must be from 0 through 1, received ${describeValue(value.baseChance)}`,
+      )
+    }
+    return { kind, baseChance: value.baseChance }
+  }
   throw new Error(`skill '${skillId}' has unknown effect kind '${kind}'`)
 }
 
@@ -283,6 +319,11 @@ export function assertSkillDef(value: unknown): asserts value is SkillDef {
     throw new Error(`skill '${id}' has no effects`)
   }
   for (const effect of value.effects) assertEffect(effect, id)
+  if (value.ammoCost !== undefined) {
+    if (typeof value.ammoCost !== 'number' || !Number.isInteger(value.ammoCost) || value.ammoCost < 0) {
+      throw new Error(`skill '${id}' ammo cost must be a whole number of at least 0, received ${describeValue(value.ammoCost)}`)
+    }
+  }
 }
 
 export function assertSkillBook(skills: unknown): void {
@@ -346,7 +387,9 @@ export function skillNeedsEnemy(skill: SkillDef): boolean {
       effect.kind === 'damage' ||
       effect.kind === 'actionDelay' ||
       effect.kind === 'applyStatus' ||
-      effect.kind === 'chain'
+      effect.kind === 'chain' ||
+      effect.kind === 'reveal' ||
+      effect.kind === 'armTrap'
     ) {
       return true
     }
@@ -470,29 +513,43 @@ function chainTargets(state: CombatState, primary: CombatActor, maxTargets: numb
   return ordered
 }
 
+function cappedPenetration(base: number, bonus: number): number {
+  const total = base + bonus
+  if (total > PENETRATION_CAP) return PENETRATION_CAP
+  if (total < 0) return 0
+  return total
+}
+
 function strike(
   state: CombatState,
   hero: CombatHero,
   target: CombatActor,
   school: DamageSchool,
+  powerSchool: DamageSchool,
   coefficient: number,
+  armorPenetrationBonus: number,
   outgoingModifier: number,
   scheduledMs: number,
 ): DamageResult {
   const bounds = consistencyBounds(hero.consistency)
   const consistencyRoll = centeredRoll(state.rng, bounds.floor, bounds.ceiling)
   const critRoll = nextFloat(state.rng)
+  const penetration =
+    school === 'physical'
+      ? cappedPenetration(penetrationFor(hero, 'physical'), armorPenetrationBonus)
+      : penetrationFor(hero, 'magical')
+  const usedCoefficient = hero.pendingCoefficient === null ? coefficient : hero.pendingCoefficient
   return resolveDamage({
     accuracy: hero.accuracy,
     evasion: effectiveEvasion(target),
-    power: powerFor(hero, school),
-    coefficient,
+    power: powerFor(hero, powerSchool),
+    coefficient: usedCoefficient,
     outgoingModifier,
     consistency: hero.consistency,
     critChance: hero.critChance,
     critDamage: hero.critDamage,
     barrier: activeBarrier(target, scheduledMs),
-    penetration: penetrationFor(hero, school),
+    penetration,
     defense: defenseOf(target, school, scheduledMs),
     attackerLevel: hero.level,
     incomingModifier: incomingDamageFactor(target),
@@ -522,7 +579,9 @@ export function applySkillEffects(
           hero,
           target,
           effect.school,
+          effect.power ?? effect.school,
           effect.coefficient,
+          effect.armorPenetrationBonus ?? 0,
           outgoingFor(effect.school),
           scheduledMs,
         )
@@ -661,6 +720,50 @@ export function applySkillEffects(
       grantClassResource(state, scheduledMs, effect.base, skill.id)
       continue
     }
+    if (effect.kind === 'reveal') {
+      for (const target of targets) {
+        if (!target.alive) continue
+        target.revealed = true
+        state.log.push({
+          type: 'reveal',
+          timeMs: scheduledMs,
+          actorId: hero.id,
+          actorName: hero.name,
+          targetId: target.id,
+          targetName: target.name,
+        })
+      }
+      continue
+    }
+    if (effect.kind === 'armTrap') {
+      const target = targets[0]
+      if (target === undefined || !target.alive) continue
+      let replacedId: string | null = null
+      let replacedName: string | null = null
+      const actors: CombatActor[] = [state.hero, ...state.enemies]
+      for (const actor of actors) {
+        if (actor.armedTrap === null) continue
+        replacedId = actor.id
+        replacedName = actor.name
+        actor.armedTrap = null
+      }
+      target.armedTrap = {
+        baseChance: effect.baseChance,
+        skillId: skill.id,
+        sourceId: hero.id,
+      }
+      state.log.push({
+        type: 'trap',
+        timeMs: scheduledMs,
+        actorId: hero.id,
+        actorName: hero.name,
+        targetId: target.id,
+        targetName: target.name,
+        replacedId,
+        replacedName,
+      })
+      continue
+    }
     if (effect.kind === 'chain') {
       const primary = targets[0]
       if (primary === undefined) throw new Error(`${skill.name} chain resolved without a target`)
@@ -673,7 +776,9 @@ export function applySkillEffects(
           hero,
           target,
           effect.school,
+          effect.school,
           coefficient,
+          0,
           outgoingFor(effect.school),
           scheduledMs,
         )

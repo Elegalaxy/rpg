@@ -8,8 +8,10 @@ import type { CombatState, DamageEvent } from '../sim/types.ts'
 import {
   DRIVING_BLOW_ID,
   DUEL_BASIC_ID,
+  ASSASSIN_VS_STANDARD_ID,
   MAGE_VS_STANDARD_ID,
   PRIORITY_FOCUS_ID,
+  RANGER_VS_STANDARD_ID,
   VENOM_EDGE_ID,
   WARRIOR_VS_STANDARD_ID,
   gameDefs,
@@ -253,6 +255,10 @@ describe('class reference fights', () => {
   it('runs warrior-vs-standard and mage-vs-standard to an outcome inside 10 minutes', () => {
     const defs = gameDefs()
     const limit = 600_000
+    const durationMs: { [id: string]: { [seed: number]: number } } = {
+      [WARRIOR_VS_STANDARD_ID]: { 1: 13_792, 42: 15_516 },
+      [MAGE_VS_STANDARD_ID]: { 1: 9_309, 42: 9_309 },
+    }
     for (const id of [WARRIOR_VS_STANDARD_ID, MAGE_VS_STANDARD_ID]) {
       for (const seed of [1, 42]) {
         const state = runCombat(createCombat(setupForScenario(id), defs, seed), defs, limit)
@@ -266,9 +272,8 @@ describe('class reference fights', () => {
           resource: state.hero.classResource,
           scope: state.hero.classResourceScope,
         })
-        expect(state.outcome === 'victory' || state.outcome === 'defeat').toBe(true)
-        expect(end?.type).toBe('encounterEnd')
-        if (end?.type === 'encounterEnd') expect(end.timeMs).toBeLessThanOrEqual(limit)
+        expect(state.outcome).toBe('victory')
+        expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: durationMs[id]?.[seed] })
         if (id === MAGE_VS_STANDARD_ID) {
           const heroActions = state.log.filter((event) => event.type === 'action' && event.actorId === state.hero.id)
           expect(heroActions.some((event) => event.type === 'action' && event.action === 'basicAttack')).toBe(false)
@@ -288,6 +293,50 @@ describe('class reference fights', () => {
     expect(warrior?.equippedSkillIds).toEqual(['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'])
     expect(mage?.equippedSkillIds).toEqual(['fireball', 'frost-lance', 'mana-ward', 'arcane-recovery'])
     expect(mage?.equippedSkillIds).not.toContain('arcane-bolt')
+  })
+
+  it('runs assassin-vs-standard and ranger-vs-standard to an outcome inside 10 minutes', () => {
+    const defs = gameDefs()
+    const limit = 600_000
+    const durationMs: { [id: string]: { [seed: number]: number } } = {
+      [ASSASSIN_VS_STANDARD_ID]: { 1: 7_961, 42: 7_153 },
+      [RANGER_VS_STANDARD_ID]: { 1: 12_377, 42: 10_658 },
+    }
+    for (const id of [ASSASSIN_VS_STANDARD_ID, RANGER_VS_STANDARD_ID]) {
+      for (const seed of [1, 42]) {
+        const state = runCombat(createCombat(setupForScenario(id), defs, seed), defs, limit)
+        const end = state.log[state.log.length - 1]
+        const tag = id.startsWith('assassin') ? '[assassin]' : '[ranger]'
+        console.log(tag, {
+          scenario: id,
+          seed,
+          outcome: state.outcome,
+          durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+          resource: state.hero.classResource,
+          fraction: state.hero.resourceFraction,
+          ammo: state.hero.specialAmmo,
+        })
+        expect(state.outcome).toBe('victory')
+        expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: durationMs[id]?.[seed] })
+      }
+    }
+    const assassin = scenarios[ASSASSIN_VS_STANDARD_ID]
+    const ranger = scenarios[RANGER_VS_STANDARD_ID]
+    expect(assassin?.equippedSkillIds).toEqual(['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'])
+    expect(assassin?.priorityRows?.map((row) => row.skillId)).toEqual([
+      'mark-for-death',
+      'execute',
+      'execute',
+      'venom-edge',
+      'shadow-cut',
+    ])
+    expect(ranger?.equippedSkillIds).toEqual(['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'])
+    expect(ranger?.startingResource).toBe(100)
+    expect(ranger?.specialAmmo).toBe(6)
+    const rangerState = createCombat(setupForScenario(RANGER_VS_STANDARD_ID), defs, 1)
+    expect(rangerState.hero.classResource).toBe(100)
+    expect(rangerState.hero.specialAmmo).toBe(6)
+    expect(rangerState.hero.classResourceScope).toBe('expedition')
   })
 })
 

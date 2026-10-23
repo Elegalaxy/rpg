@@ -600,6 +600,21 @@ function applyMark(input: ApplyInput, def: MarkStatusDef): void {
       : input.effect.durationSeconds
     expiresMs = input.timeMs + roundMs(seconds, `${def.id} duration`)
   }
+  for (const enemy of input.state.enemies) {
+    if (enemy.id === input.target.id || enemy.statuses.mark === null) continue
+    const previous = enemy.statuses.mark
+    enemy.statuses.mark = null
+    input.state.log.push({
+      type: 'statusCleared',
+      timeMs: input.timeMs,
+      actorId: enemy.id,
+      actorName: enemy.name,
+      statusId: def.id,
+      statusName: previous.name,
+      stacks: 1,
+      reason: 'moved',
+    })
+  }
   input.target.statuses.mark = {
     name: def.name,
     expiresMs,
