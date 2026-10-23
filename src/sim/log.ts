@@ -1,4 +1,22 @@
-import type { LogEvent, ResourceEvent, ResourceSnapshotEvent, TargetPriority, WaitEvent } from './types.ts'
+import type {
+  EnemyStance,
+  LogEvent,
+  ResourceEvent,
+  ResourceSnapshotEvent,
+  TargetPriority,
+  WaitEvent,
+} from './types.ts'
+
+function plainNumber(value: number): string {
+  if (!Number.isFinite(value)) return String(value)
+  const rounded = Math.round(value * 1000) / 1000
+  if (Object.is(rounded, -0)) return '0'
+  return String(rounded)
+}
+
+function stanceName(stance: EnemyStance): string {
+  return stance === 'guard' ? 'Guard' : 'Assault'
+}
 
 function seconds(ms: number): string {
   const negative = ms < 0
@@ -209,10 +227,25 @@ export function formatEvent(event: LogEvent): string {
         return `At ${seconds(event.timeMs)}s, ${event.actorName} reduces incoming damage by ${event.value} until the next action.`
       }
       if (event.kind === 'evasion') {
+        if (event.until === 'duration' && event.expiresMs !== undefined) {
+          return `At ${seconds(event.timeMs)}s, ${event.actorName} gains ${event.value} Evasion until ${seconds(event.expiresMs)}s.`
+        }
         return `At ${seconds(event.timeMs)}s, ${event.actorName} gains ${event.value} Evasion until the next action.`
+      }
+      if (event.kind === 'defense' && event.expiresMs !== undefined) {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} gains ×${plainNumber(event.value)} Armor and Resistance until ${seconds(event.expiresMs)}s.`
       }
       return `At ${seconds(event.timeMs)}s, ${event.actorName} takes ×${event.value} incoming damage until the next action.`
     case 'buffEnded':
+      if (event.reason === 'defense') {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName}'s Armor and Resistance bonus ends.`
+      }
+      if (event.reason === 'duration') {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName}'s timed Evasion of ${event.evasion} ends.`
+      }
+      if (event.reason === 'granted') {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName}'s granted damage reduction of ${event.damageReduction} ends.`
+      }
       return `At ${seconds(event.timeMs)}s, ${event.actorName}'s until-next-action effects end (damage reduction ${event.damageReduction}, Evasion ${event.evasion}, incoming ×${event.incomingMultiplier}).`
     case 'actionDelay':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} delays ${event.targetName} by ${seconds(event.delayMs)}s. Next ready at ${seconds(event.nextReadyMs)}s.`
@@ -269,6 +302,38 @@ export function formatEvent(event: LogEvent): string {
       return formatSnapshot(event)
     case 'wait':
       return formatWait(event)
+    case 'regen':
+      if (event.paused) {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} regeneration is paused (HP ${event.hpBefore}).`
+      }
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} regenerates ${event.amount} HP (${event.hpBefore} to ${event.hpAfter}), ${event.fraction} of max HP ${event.maxHp}.`
+    case 'skillSkip':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} skips ${event.skillName} (${event.skillId}): ${event.reason}.`
+    case 'phase':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} enters phase ${event.phase}, ${event.name} (HP ${plainNumber(event.hp)} of ${plainNumber(event.maxHp)}).`
+    case 'stack':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} gains stack ${event.stacks} of ${event.maxStacks}. Power ${plainNumber(event.power)}, Armor ${plainNumber(event.armor)}, Resistance ${plainNumber(event.resistance)}.`
+    case 'telegraph':
+      if (event.phase === 'start') {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} telegraphs ${event.tag} (${event.skillName}), resolving at ${seconds(event.resolvesAtMs)}s.`
+      }
+      if (event.phase === 'cancel' && event.reason === 'interrupt') {
+        const cooldown =
+          event.cooldownReadyMs === undefined || event.cooldownReadyMs === null
+            ? ''
+            : ` Cooldown ready at ${seconds(event.cooldownReadyMs)}s.`
+        return `At ${seconds(event.timeMs)}s, ${event.actorName}'s ${event.tag} telegraph is interrupted (${plainNumber(event.hpTaken ?? 0)} of ${plainNumber(event.hpNeeded ?? 0)} HP).${cooldown}`
+      }
+      if (event.phase === 'cancel') {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName}'s ${event.tag} telegraph is cancelled.`
+      }
+      return `At ${seconds(event.timeMs)}s, ${event.actorName}'s ${event.tag} telegraph resolves.`
+    case 'stance':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} enters ${stanceName(event.stance)}. Power ${plainNumber(event.power)}, Armor ${plainNumber(event.armor)}, Resistance ${plainNumber(event.resistance)}.`
+    case 'summon':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} summons level ${event.level} ${event.summonName} in slot ${event.slot} for ${event.xp} XP.`
+    case 'encounterXp':
+      return `At ${seconds(event.timeMs)}s, the encounter awards ${event.amount} XP (sum ${event.sum}, ${event.members} enemies, discount ${event.discount}).`
     case 'death':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dies, killed by ${event.killerName}.`
     case 'encounterEnd':

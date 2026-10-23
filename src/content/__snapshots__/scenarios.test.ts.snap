@@ -75,5 +75,6 @@ At 20.688s, Warrior deals 80 physical damage to Standard Dummy (HP 9 to 0). Powe
 At 20.688s, Warrior fury basicAttack: base 5 × 1.121212121212121 = 5.6060606060606055; 61.66666666666666 to 67.27272727272727 (max 100).
 At 20.688s, Standard Dummy dies, killed by Warrior.
 At 20.688s, Warrior fury clears at encounter end: 67.27272727272727 to 0.
+At 20.688s, the encounter awards 45 XP (sum 45, 1 enemies, discount 0).
 At 20.688s, encounter ended: victory."
 `;

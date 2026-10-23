@@ -9,7 +9,7 @@ import {
 } from './constants.ts'
 import { consistencyBounds, resolveDamage } from './damage.ts'
 import { centeredRoll, nextFloat } from './rng.ts'
-import { exposedDefense, tryApplyStatus } from './statuses.ts'
+import { exposedDefense, pushActorTiming, tryApplyStatus } from './statuses.ts'
 import type {
   ActionDelayEvent,
   ApplyStatusEffect,
@@ -30,6 +30,7 @@ import type {
   LoseHpEffect,
   SkillDef,
   SkillEffect,
+  SummonEffect,
 } from './types.ts'
 
 export const SKILL_EFFECT_KINDS = [
@@ -47,6 +48,10 @@ export const SKILL_EFFECT_KINDS = [
   'armTrap',
   'field',
   'loseHp',
+  'timedEvasion',
+  'chanceGate',
+  'summon',
+  'defenseBonus',
 ] as const
 
 /** Logged when a preventFatal health loss would leave 0 HP or less. */
@@ -149,17 +154,23 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     if (value.maxHpFraction === 0 && value.healingCoefficient === 0) {
       throw new Error(`skill '${skillId}' heal must restore health`)
     }
-    return {
+    const heal = {
       kind,
       maxHpFraction: value.maxHpFraction,
       healingCoefficient: value.healingCoefficient,
+    } as const
+    if (value.maxHpOf !== undefined && value.maxHpOf !== 'target' && value.maxHpOf !== 'anchor') {
+      throw new Error(
+        `skill '${skillId}' heal max HP must be target or anchor, received ${describeValue(value.maxHpOf)}`,
+      )
     }
+    return value.maxHpOf === undefined ? heal : { ...heal, maxHpOf: value.maxHpOf }
   }
   if (kind === 'barrier') {
     const source = value.source
-    if (source !== 'magical' && source !== 'healing') {
+    if (source !== 'magical' && source !== 'healing' && source !== 'anchorMaxHp') {
       throw new Error(
-        `skill '${skillId}' barrier source must be magical or healing, received ${describeValue(source)}`,
+        `skill '${skillId}' barrier source must be magical, healing, or anchorMaxHp, received ${describeValue(source)}`,
       )
     }
     assertPositive(value.coefficient, `skill '${skillId}' barrier coefficient`)
@@ -320,6 +331,83 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     }
     return { kind, baseChance: value.baseChance }
   }
+  if (kind === 'timedEvasion') {
+    assertFiniteNumber(value.amount, `skill '${skillId}' timed Evasion`)
+    if (value.amount === 0) {
+      throw new Error(`skill '${skillId}' timed Evasion must not be 0`)
+    }
+    assertPositive(value.durationSeconds, `skill '${skillId}' timed Evasion duration`)
+    return { kind, amount: value.amount, durationSeconds: value.durationSeconds }
+  }
+  if (kind === 'chanceGate') {
+    assertFiniteNumber(value.baseChance, `skill '${skillId}' chance`)
+    if (value.baseChance < 0 || value.baseChance > 1) {
+      throw new Error(
+        `skill '${skillId}' chance must be from 0 through 1, received ${describeValue(value.baseChance)}`,
+      )
+    }
+    const school = value.school
+    if (school !== 'physical' && school !== 'magical') {
+      throw new Error(
+        `skill '${skillId}' chance school must be physical or magical, received ${describeValue(school)}`,
+      )
+    }
+    if (!Array.isArray(value.effects) || value.effects.length === 0) {
+      throw new Error(`skill '${skillId}' chance gate has no effects`)
+    }
+    const effects: SkillEffect[] = []
+    for (const nested of value.effects) {
+      const checked = assertEffect(nested, skillId)
+      if (checked.kind !== 'actionDelay' && checked.kind !== 'timedEvasion') {
+        throw new Error(`skill '${skillId}' chance gate can only delay an action or change Evasion`)
+      }
+      effects.push(checked)
+    }
+    return { kind, baseChance: value.baseChance, school, effects }
+  }
+  if (kind === 'summon') {
+    const enemyId = value.enemyId
+    if (typeof enemyId !== 'string' || enemyId.length === 0) {
+      throw new Error(`skill '${skillId}' summon is missing an enemy id`)
+    }
+    if (typeof value.level !== 'number' || !Number.isInteger(value.level) || value.level < 1) {
+      throw new Error(
+        `skill '${skillId}' summon level must be a positive integer, received ${describeValue(value.level)}`,
+      )
+    }
+    const effect: SummonEffect = { kind, enemyId, level: value.level }
+    if (value.fromSummoner !== undefined) {
+      assertObject(value.fromSummoner, `skill '${skillId}' summon stats`)
+      const stats = value.fromSummoner
+      assertPositive(stats.hpFraction, `skill '${skillId}' summon HP fraction`)
+      assertPositive(stats.armorFraction, `skill '${skillId}' summon Armor fraction`)
+      assertPositive(stats.resistanceFraction, `skill '${skillId}' summon Resistance fraction`)
+      assertPositive(stats.powerFraction, `skill '${skillId}' summon Power fraction`)
+      assertPositive(stats.actionTime, `skill '${skillId}' summon action time`)
+      effect.fromSummoner = {
+        hpFraction: stats.hpFraction,
+        armorFraction: stats.armorFraction,
+        resistanceFraction: stats.resistanceFraction,
+        powerFraction: stats.powerFraction,
+        actionTime: stats.actionTime,
+      }
+    }
+    if (value.anchorMaxHp !== undefined) {
+      if (typeof value.anchorMaxHp !== 'boolean') {
+        throw new Error(
+          `skill '${skillId}' summon anchor must be a boolean, received ${describeValue(value.anchorMaxHp)}`,
+        )
+      }
+      effect.anchorMaxHp = value.anchorMaxHp
+    }
+    return effect
+  }
+  if (kind === 'defenseBonus') {
+    assertPositive(value.multiplier, `skill '${skillId}' defense bonus`)
+    if (value.multiplier === 1) throw new Error(`skill '${skillId}' defense bonus must change Armor and Resistance`)
+    assertPositive(value.durationSeconds, `skill '${skillId}' defense bonus duration`)
+    return { kind, multiplier: value.multiplier, durationSeconds: value.durationSeconds }
+  }
   throw new Error(`skill '${skillId}' has unknown effect kind '${kind}'`)
 }
 
@@ -456,8 +544,20 @@ export function skillNeedsEnemy(skill: SkillDef): boolean {
   return false
 }
 
-export function effectiveEvasion(actor: { evasion: number; evasionBonus: number }): number {
-  return actor.evasion + actor.evasionBonus
+export function effectiveEvasion(
+  actor: {
+    evasion: number
+    evasionBonus: number
+    timedEvasion?: number
+    timedEvasionExpiresMs?: number
+  },
+  timeMs?: number,
+): number {
+  let evasion = actor.evasion + actor.evasionBonus
+  const extra = actor.timedEvasion ?? 0
+  const expiresMs = actor.timedEvasionExpiresMs ?? 0
+  if (timeMs !== undefined && extra !== 0 && expiresMs > timeMs) evasion += extra
+  return evasion
 }
 
 export function activeBarrier(actor: { barrier: number; barrierExpiresMs: number }, timeMs: number): number {
@@ -537,27 +637,53 @@ function defenseOf(target: CombatActor, school: DamageSchool, timeMs: number): n
   return exposedDefense(target, school, timeMs)
 }
 
-export function endUntilNextAction(state: CombatState, hero: CombatHero, timeMs: number): void {
-  const active =
-    hero.damageReduction > 0 || hero.evasionBonus !== 0 || hero.incomingMultipliers.length > 0
+export function endUntilNextAction(state: CombatState, actor: CombatActor, timeMs: number): void {
+  const granted = actor.damageReductionSourceId !== null && actor.damageReductionSourceId !== actor.id
+  const ownReduction = granted ? 0 : actor.damageReduction
+  const active = ownReduction > 0 || actor.evasionBonus !== 0 || actor.incomingMultipliers.length > 0
   if (!active) return
   const incomingMultiplier = incomingDamageFactor({
-    incomingMultipliers: hero.incomingMultipliers,
+    incomingMultipliers: actor.incomingMultipliers,
     damageReduction: 0,
   })
   const event: BuffEndedEvent = {
     type: 'buffEnded',
     timeMs,
-    actorId: hero.id,
-    actorName: hero.name,
-    damageReduction: hero.damageReduction,
-    evasion: hero.evasionBonus,
+    actorId: actor.id,
+    actorName: actor.name,
+    damageReduction: ownReduction,
+    evasion: actor.evasionBonus,
     incomingMultiplier,
   }
-  hero.damageReduction = 0
-  hero.evasionBonus = 0
-  hero.incomingMultipliers = []
+  if (!granted) {
+    actor.damageReduction = 0
+    actor.damageReductionSourceId = null
+  }
+  actor.evasionBonus = 0
+  actor.incomingMultipliers = []
   state.log.push(event)
+}
+
+/** End damage reduction this actor granted to someone else. */
+export function endGrantedReductions(state: CombatState, source: CombatActor, timeMs: number): void {
+  const actors: CombatActor[] = [state.hero, ...state.enemies]
+  for (const actor of actors) {
+    if (actor.id === source.id || actor.damageReductionSourceId !== source.id) continue
+    const reduction = actor.damageReduction
+    actor.damageReduction = 0
+    actor.damageReductionSourceId = null
+    if (reduction <= 0) continue
+    state.log.push({
+      type: 'buffEnded',
+      timeMs,
+      actorId: actor.id,
+      actorName: actor.name,
+      damageReduction: reduction,
+      evasion: 0,
+      incomingMultiplier: 1,
+      reason: 'granted',
+    })
+  }
 }
 
 function chainTargets(state: CombatState, primary: CombatActor, maxTargets: number): CombatActor[] {
@@ -600,7 +726,7 @@ function strike(
   const usedCoefficient = hero.pendingCoefficient === null ? coefficient : hero.pendingCoefficient
   return resolveDamage({
     accuracy: hero.accuracy,
-    evasion: effectiveEvasion(target),
+    evasion: effectiveEvasion(target, scheduledMs),
     power: powerFor(hero, powerSchool),
     coefficient: usedCoefficient,
     outgoingModifier,
@@ -762,7 +888,7 @@ export function applySkillEffects(
       const delayMs = roundSecondsToMs(effect.delaySeconds, `${skill.id} action delay`)
       for (const target of targets) {
         if (!target.alive) continue
-        target.nextReadyMs += delayMs
+        pushActorTiming(target, delayMs)
         const event: ActionDelayEvent = {
           type: 'actionDelay',
           timeMs: scheduledMs,
@@ -847,7 +973,7 @@ export function applySkillEffects(
         hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
         if (target.alive) {
           const delayMs = roundSecondsToMs(effect.delaySeconds, `${skill.id} chain delay`)
-          target.nextReadyMs += delayMs
+          pushActorTiming(target, delayMs)
           const event: ActionDelayEvent = {
             type: 'actionDelay',
             timeMs: scheduledMs,
@@ -902,6 +1028,14 @@ export function applySkillEffects(
       }
       state.log.push(event)
       continue
+    }
+    if (
+      effect.kind === 'chanceGate' ||
+      effect.kind === 'timedEvasion' ||
+      effect.kind === 'summon' ||
+      effect.kind === 'defenseBonus'
+    ) {
+      throw new Error(`skill '${skill.id}' effect '${effect.kind}' is resolved by enemy actions`)
     }
     if (effect.kind === 'loseHp') {
       const loss = hero.maxHp * effect.maxHpFraction

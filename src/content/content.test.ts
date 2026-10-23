@@ -1,10 +1,29 @@
 import { describe, expect, it } from 'vitest'
 
+import { assertEnemyDef } from '../sim/enemyAi.ts'
 import { assertStatusDef } from '../sim/statuses.ts'
 import { assertSkillDef, SKILL_EFFECT_KINDS } from '../sim/skills.ts'
 import type { SkillDef } from '../sim/types.ts'
 
-import { enemies } from './enemies.ts'
+import { encounters } from './encounters.ts'
+import {
+  blightSpider,
+  deserter,
+  enemies,
+  fallenArbalist,
+  fractureShardling,
+  fractureWisp,
+  hollowSentry,
+  bladeEcho,
+  echoKnight,
+  fracturedWarden,
+  oathboundEcho,
+  wardEcho,
+  rootmawStalker,
+  standardDummy,
+  starvedWolf,
+  thornbeast,
+} from './enemies.ts'
 import { referenceHeroes } from './heroes.ts'
 import { scenarios } from './scenarios.ts'
 import { skills } from './skills.ts'
@@ -281,6 +300,289 @@ describe('content integrity', () => {
     })
     expect(scenarios['cleric-vs-standard']?.vow).toBe('zeal')
     expect(scenarios['cleric-vs-standard']?.equippedSkillIds).toEqual(['smite', 'mend', 'ward', 'judgment'])
+
+    for (const enemy of Object.values(enemies)) assertEnemyDef(enemy)
+    expect(standardDummy).toMatchObject({
+      id: 'dummy-standard-20',
+      level: 20,
+      archetype: 'standard',
+      school: 'physical',
+      filler: { school: 'physical' },
+    })
+    expect(standardDummy.skills ?? []).toEqual([])
+    expect(standardDummy.traitIds ?? []).toEqual([])
+    expect(fractureShardling).toMatchObject({
+      levelMin: 1,
+      levelMax: 5,
+      archetype: 'swarm',
+      traitIds: ['fracture-burst'],
+      filler: { school: 'physical' },
+    })
+    expect(fractureShardling.skills?.[0]).toMatchObject({
+      id: 'fracture-burst',
+      coefficient: 0.4,
+      school: 'magical',
+      telegraphMs: 1000,
+      tag: 'fracture-burst',
+      canCrit: false,
+      trigger: 'death',
+    })
+    expect(starvedWolf).toMatchObject({
+      levelMin: 2,
+      levelMax: 6,
+      archetype: 'skirmisher',
+      traitIds: ['pack-hunter'],
+      filler: { school: 'physical' },
+    })
+    expect(starvedWolf.skills?.[0]).toMatchObject({
+      id: 'pounce',
+      coefficient: 1.6,
+      telegraphMs: 1500,
+      tag: 'pounce',
+      canCrit: true,
+      cooldownSeconds: 7,
+    })
+    expect(deserter.skills?.map((skill) => skill.id)).toEqual(['rusted-cut', 'guard'])
+    expect(deserter).toMatchObject({ levelMin: 4, levelMax: 7, archetype: 'standard', filler: { school: 'physical' } })
+    expect(deserter.skills?.[0]).toMatchObject({
+      coefficient: 0.9,
+      cooldownSeconds: 5,
+      effects: expect.arrayContaining([
+        { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.75, coefficient: 0.1, power: 'physical' },
+      ]),
+    })
+    expect(deserter.skills?.[1]).toMatchObject({
+      cooldownSeconds: 7,
+      actionTimeCoefficient: 0.75,
+      effects: [{ kind: 'damageReduction', fraction: 0.3 }],
+    })
+    expect(deserter.skills?.[1]?.telegraphMs).toBeUndefined()
+    expect(blightSpider).toMatchObject({
+      levelMin: 6,
+      levelMax: 10,
+      archetype: 'skirmisher',
+      filler: { school: 'physical' },
+    })
+    expect(blightSpider.skills?.map((skill) => skill.id)).toEqual(['venom-bite', 'web-snare'])
+    expect(blightSpider.skills?.[0]).toMatchObject({
+      coefficient: 0.85,
+      cooldownSeconds: 4,
+      effects: expect.arrayContaining([
+        { kind: 'applyStatus', statusId: 'poison', baseChance: 0.7, coefficient: 0.1, power: 'physical' },
+      ]),
+    })
+    expect(blightSpider.skills?.[1]?.effects[0]).toMatchObject({
+      kind: 'chanceGate',
+      baseChance: 0.8,
+      school: 'physical',
+    })
+    expect(thornbeast).toMatchObject({
+      levelMin: 8,
+      levelMax: 13,
+      archetype: 'tank',
+      traitIds: ['regeneration'],
+      filler: { school: 'physical' },
+    })
+    expect(thornbeast.skills?.[0]).toMatchObject({
+      id: 'bramble-slam',
+      coefficient: 1.4,
+      telegraphMs: 1000,
+      canCrit: false,
+      cooldownSeconds: 6,
+    })
+    expect(fractureWisp).toMatchObject({
+      levelMin: 10,
+      levelMax: 14,
+      archetype: 'burst',
+      filler: { school: 'magical' },
+      overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5 },
+    })
+    expect(fractureWisp.skills?.map((skill) => skill.id)).toEqual(['cold-spark', 'fracture-ray'])
+    expect(fractureWisp.skills?.[1]).toMatchObject({
+      coefficient: 1.8,
+      telegraphMs: 2000,
+      canCrit: true,
+      cooldownSeconds: 9,
+    })
+    expect(hollowSentry).toMatchObject({
+      levelMin: 8,
+      levelMax: 12,
+      archetype: 'tank',
+      filler: { school: 'physical' },
+      overrides: { armorMultiplier: 1.75, resistanceMultiplier: 1 },
+    })
+    expect(hollowSentry.skills?.map((skill) => skill.id)).toEqual(['shield-wall', 'shield-bash'])
+    expect(hollowSentry.skills?.[0]).toMatchObject({
+      allyTarget: 'lowestHpPercent',
+      affectSelf: true,
+      cooldownSeconds: 7,
+      effects: [{ kind: 'damageReduction', fraction: 0.35 }],
+    })
+    expect(fallenArbalist.skills?.[0]).toMatchObject({
+      id: 'aimed-bolt',
+      coefficient: 2.2,
+      telegraphMs: 2500,
+      canCrit: true,
+      cooldownSeconds: 10,
+      forcedRecovery: { id: 'reload', name: 'Reload', durationMs: 2000, evasion: -20 },
+    })
+    expect(fallenArbalist).toMatchObject({
+      levelMin: 11,
+      levelMax: 14,
+      archetype: 'burst',
+      filler: { school: 'physical' },
+    })
+    expect(oathboundEcho.skills?.map((skill) => skill.id)).toEqual(['echo-ward', 'echo-mend', 'echo-bolt'])
+    expect(oathboundEcho).toMatchObject({
+      levelMin: 13,
+      levelMax: 16,
+      archetype: 'support',
+      filler: { school: 'magical' },
+      overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5 },
+    })
+    expect(oathboundEcho.skills?.[2]).toMatchObject({ coefficient: 0.7, school: 'magical', cooldownSeconds: 0 })
+    expect(rootmawStalker).toMatchObject({
+      level: 14,
+      archetype: 'skirmisher',
+      elite: true,
+      traitIds: ['regeneration'],
+      filler: { school: 'physical' },
+      overrides: { maxHp: 1350, power: 29, armor: 51, resistance: 51, actionTime: 2, consistency: 25 },
+    })
+    expect(rootmawStalker.skills?.map((skill) => skill.id)).toEqual(['venomous-rend', 'grasping-roots'])
+    expect(rootmawStalker.skills?.[0]?.effects.filter((effect) => effect.kind === 'applyStatus')).toEqual([
+      { kind: 'applyStatus', statusId: 'poison', baseChance: 0.75, coefficient: 0.1, power: 'physical' },
+      { kind: 'applyStatus', statusId: 'poison', baseChance: 0.75, coefficient: 0.1, power: 'physical' },
+    ])
+    expect(rootmawStalker.skills?.[1]).toMatchObject({
+      telegraphMs: 2000,
+      cooldownSeconds: 10,
+      interruptMaxHpFraction: 0.1,
+      coefficient: 0,
+    })
+    expect(echoKnight).toMatchObject({
+      level: 16,
+      archetype: 'tank',
+      elite: true,
+      traitIds: ['stance-cycle', 'hp-summon'],
+      filler: { school: 'physical' },
+      overrides: { consistency: 25 },
+    })
+    expect(echoKnight.skills?.map((skill) => skill.id)).toEqual(['fractured-charge', 'summon-oathbound-echo'])
+    expect(echoKnight.skills?.[0]).toMatchObject({
+      coefficient: 1.8,
+      telegraphMs: 1500,
+      canCrit: true,
+      cooldownSeconds: 8,
+    })
+    expect(fracturedWarden).toMatchObject({
+      level: 20,
+      archetype: 'standard',
+      boss: true,
+      echoRank: true,
+      traitIds: ['boss-phases'],
+      filler: { school: 'physical', coefficient: 1 },
+      overrides: {
+        hpMultiplier: 8,
+        powerMultiplier: 1.3,
+        armorMultiplier: 1.5,
+        resistanceMultiplier: 1.5,
+        accuracy: 40,
+        evasion: 20,
+        consistency: 50,
+        actionTime: 2.2,
+      },
+    })
+    expect(fracturedWarden.skills?.map((skill) => skill.id)).toEqual([
+      'fracture-hammer',
+      'wardens-guard',
+      'rift-pulse',
+      'summon-warden-echoes',
+    ])
+    expect(fracturedWarden.skills?.[0]).toMatchObject({
+      coefficient: 2,
+      telegraphMs: 2000,
+      canCrit: true,
+      cooldownSeconds: 8,
+    })
+    expect(fracturedWarden.skills?.[1]).toMatchObject({
+      phases: [1],
+      cooldownSeconds: 10,
+      effects: [{ kind: 'defenseBonus', multiplier: 1.5, durationSeconds: 4 }],
+    })
+    expect(fracturedWarden.skills?.[2]).toMatchObject({
+      phases: [3],
+      coefficient: 1.2,
+      school: 'magical',
+      telegraphMs: 1500,
+      cooldownSeconds: 6,
+      effects: [
+        { kind: 'damage', school: 'magical', coefficient: 1.2 },
+        { kind: 'applyStatus', statusId: 'chill', baseChance: 1 },
+      ],
+    })
+    expect(bladeEcho.skills?.[0]).toMatchObject({
+      coefficient: 1.6,
+      telegraphMs: 1000,
+      canCrit: true,
+      cooldownSeconds: 6,
+    })
+    expect(wardEcho.skills?.map((skill) => skill.id)).toEqual(['ward-echo-ward', 'ward-echo-mend', 'rift-bolt'])
+    expect(wardEcho.skills?.[0]).toMatchObject({
+      allyTarget: 'lowestBarrier',
+      cooldownSeconds: 8,
+      effects: [{ kind: 'barrier', source: 'anchorMaxHp', coefficient: 0.05, durationSeconds: 8 }],
+    })
+    expect(wardEcho.skills?.[1]).toMatchObject({
+      allyTarget: 'woundedLowestHpPercent',
+      cooldownSeconds: 10,
+      effects: [{ kind: 'heal', maxHpFraction: 0.03, healingCoefficient: 0, maxHpOf: 'anchor' }],
+    })
+    expect(wardEcho.skills?.[2]).toMatchObject({ coefficient: 0.7, school: 'magical', cooldownSeconds: 0 })
+    expect(scenarios['warrior-vs-warden']?.equippedSkillIds).toBeUndefined()
+    expect(scenarios['warrior-vs-warden']?.enemies).toEqual([{ defId: 'fractured-warden', slot: 0 }])
+    expect(echoKnight.skills?.[1]).toMatchObject({
+      trigger: 'hp',
+      hpFraction: 0.6,
+      telegraphMs: 2000,
+      effects: [{ kind: 'summon', enemyId: 'oathbound-echo', level: 16 }],
+    })
+    expect(encounters['wolf-pair']?.members).toEqual([
+      { enemyId: 'starved-wolf', slot: 0, level: 6 },
+      { enemyId: 'starved-wolf', slot: 1, level: 6 },
+    ])
+    expect(encounters['grove-mixed']?.members).toEqual([
+      { enemyId: 'thornbeast', slot: 0, level: 10 },
+      { enemyId: 'blight-spider', slot: 1, level: 10 },
+    ])
+    expect(encounters['bastion-mixed']?.members).toEqual([
+      { enemyId: 'hollow-sentry', slot: 0, level: 12 },
+      { enemyId: 'fallen-arbalist', slot: 1, level: 12 },
+    ])
+    for (const encounter of Object.values(encounters)) {
+      for (const member of encounter.members) {
+        expect(enemies[member.enemyId], `${encounter.id} ${member.enemyId}`).toBeDefined()
+      }
+    }
+    expect(scenarios['warrior-vs-wolf-pair']?.equippedSkillIds).toBeUndefined()
+    expect(scenarios['warrior-vs-wolf-pair']?.enemies).toEqual([
+      { defId: 'starved-wolf', slot: 0, level: 6 },
+      { defId: 'starved-wolf', slot: 1, level: 6 },
+    ])
+    expect(scenarios['grove-mixed']?.equippedSkillIds).toBeUndefined()
+    expect(scenarios['grove-mixed']?.enemies).toEqual([
+      { defId: 'thornbeast', slot: 0, level: 10 },
+      { defId: 'blight-spider', slot: 1, level: 10 },
+    ])
+    expect(scenarios['bastion-mixed']?.equippedSkillIds).toBeUndefined()
+    expect(scenarios['bastion-mixed']?.enemies).toEqual([
+      { defId: 'hollow-sentry', slot: 0, level: 12 },
+      { defId: 'fallen-arbalist', slot: 1, level: 12 },
+    ])
+    expect(scenarios.rootmaw?.equippedSkillIds).toBeUndefined()
+    expect(scenarios.rootmaw?.enemies).toEqual([{ defId: 'rootmaw-stalker', slot: 0 }])
+    expect(scenarios['echo-knight']?.equippedSkillIds).toBeUndefined()
+    expect(scenarios['echo-knight']?.enemies).toEqual([{ defId: 'echo-knight', slot: 0 }])
 
     expect(skills['flame-arrow']).toMatchObject({
       cost: 20,

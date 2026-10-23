@@ -67,6 +67,7 @@ const SIM_API_RULES: { source: string; rule: string }[] = [
   { source: String.raw`\bDate\b`, rule: 'src/sim must not use Date' },
   { source: String.raw`performance\s*\.\s*now\b`, rule: 'src/sim must not use performance.now' },
   { source: String.raw`\bconsole\b`, rule: 'src/sim must not use console' },
+  { source: String.raw`\bprint\s*\(`, rule: 'src/sim must not use print' },
   { source: String.raw`\blocalStorage\b`, rule: 'src/sim must not use localStorage' },
   {
     source: String.raw`\b(?:sessionStorage|indexedDB)\b`,
@@ -368,6 +369,7 @@ describe('architecture boundaries', () => {
       { source: 'Date.now()', rule: 'src/sim must not use Date' },
       { source: 'performance.now()', rule: 'src/sim must not use performance.now' },
       { source: 'console.log(1)', rule: 'src/sim must not use console' },
+      { source: 'print(1)', rule: 'src/sim must not use print' },
     ] as const
     const production = join(SRC_DIR, 'sim', 'fixture.ts')
     const simTest = join(SRC_DIR, 'sim', 'fixture.test.ts')
@@ -399,5 +401,30 @@ describe('architecture boundaries', () => {
     })
     expect(isTestFile(rngFile)).toBe(false)
     expect(rngViolations).toEqual([])
+  })
+
+  it('does not branch combat.ts on an enemy name', () => {
+    const text = readFileSync(join(SRC_DIR, 'sim', 'combat.ts'), 'utf8')
+    const names = [
+      'Rootmaw',
+      'Echo Knight',
+      'rootmaw',
+      'echo-knight',
+      'Oathbound',
+      'grasping-roots',
+      'venomous-rend',
+      'fractured-charge',
+      'Warden',
+      'Fractured',
+      'blade-echo',
+      'ward-echo',
+      'fracture-hammer',
+      'rift-pulse',
+      'severing-dash',
+      'wardens-guard',
+    ]
+    for (const name of names) {
+      expect(text.includes(name), name).toBe(false)
+    }
   })
 })

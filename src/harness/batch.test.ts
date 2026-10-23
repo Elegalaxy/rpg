@@ -157,7 +157,7 @@ describe('runBatch', () => {
         label: 'unknown scenario',
         run: () => runBatch('nope', 1, 1),
         pattern:
-          /unknown scenario 'nope'; valid scenarios: assassin-vs-standard, cleric-vs-standard, driving-blow, duel-basic, mage-vs-standard, priority-focus, ranger-vs-standard, venom-edge, warrior-vs-standard/,
+          /unknown scenario 'nope'; valid scenarios: assassin-vs-standard, bastion-mixed, cleric-vs-standard, driving-blow, duel-basic, echo-knight, grove-mixed, mage-vs-standard, priority-focus, ranger-vs-standard, rootmaw, venom-edge, warrior-vs-standard, warrior-vs-warden, warrior-vs-wolf-pair/,
       },
       {
         label: 'non-integer seed',

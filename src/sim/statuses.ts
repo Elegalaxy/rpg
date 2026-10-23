@@ -241,6 +241,16 @@ export function scaledDurationMs(seconds: number, boss: boolean, label: string):
   return roundMs(scaled, label)
 }
 
+/**
+ * Push a scheduled action. A pending telegraph moves by the same amount.
+ * Ordinary damage does not call this.
+ */
+export function pushActorTiming(actor: CombatActor, delayMs: number): void {
+  actor.nextReadyMs += delayMs
+  if (actor.telegraph !== null) actor.telegraph.resolvesAtMs += delayMs
+  if (actor.reaction !== null) actor.reaction.resolvesAtMs += delayMs
+}
+
 export function stunDelayMs(delaySeconds: number, boss: boolean): number {
   assertPositive(delaySeconds, 'stun delay')
   const factor = boss ? BOSS_STUN_FRACTION : 1
@@ -575,7 +585,7 @@ function applyChill(input: ApplyInput, def: ChillStatusDef, chance: number, pote
 
 function applyStun(input: ApplyInput, def: StunStatusDef, school: DamageSchool, chance: number, potency: number, resistance: number, roll: number): void {
   const delayMs = stunDelayMs(def.delaySeconds, input.target.boss)
-  input.target.nextReadyMs += delayMs
+  pushActorTiming(input.target, delayMs)
   attemptEvent(input, def, {
     school,
     baseChance: input.effect.baseChance,

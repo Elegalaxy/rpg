@@ -108,7 +108,7 @@ describe('harness CLI', () => {
     expect(list.status).toBe(0)
     expect(list.stderr).toBe('')
     expect(list.stdout).toBe(
-      '[sim] scenarios\nassassin-vs-standard\ncleric-vs-standard\ndriving-blow\nduel-basic\nmage-vs-standard\npriority-focus\nranger-vs-standard\nvenom-edge\nwarrior-vs-standard\n',
+      '[sim] scenarios\nassassin-vs-standard\nbastion-mixed\ncleric-vs-standard\ndriving-blow\nduel-basic\necho-knight\ngrove-mixed\nmage-vs-standard\npriority-focus\nranger-vs-standard\nrootmaw\nvenom-edge\nwarrior-vs-standard\nwarrior-vs-warden\nwarrior-vs-wolf-pair\n',
     )
 
     const listValue = runCli(['--list=nope'])
@@ -119,7 +119,7 @@ describe('harness CLI', () => {
     expect(unknown.status).toBe(1)
     expect(unknown.stderr).toContain("unknown scenario 'nope'")
     expect(unknown.stderr).toContain(
-      'valid scenarios: assassin-vs-standard, cleric-vs-standard, driving-blow, duel-basic, mage-vs-standard, priority-focus, ranger-vs-standard, venom-edge, warrior-vs-standard',
+      'valid scenarios: assassin-vs-standard, bastion-mixed, cleric-vs-standard, driving-blow, duel-basic, echo-knight, grove-mixed, mage-vs-standard, priority-focus, ranger-vs-standard, rootmaw, venom-edge, warrior-vs-standard, warrior-vs-warden, warrior-vs-wolf-pair',
     )
 
     const seed = runCli(['--scenario', 'duel-basic', '--seed', '1.5'])

@@ -1,19 +1,50 @@
 import { chooseHeroAction, parsePriorityRules, skillActionTargets } from './automation.ts'
 import { classModule } from './classes/index.ts'
 import { grantClassResource, payClassResource } from './classes/resources.ts'
-import { BASIC_ATTACK_COEFFICIENT, CRIT_DAMAGE_BASE, STEP_MS, WEAPON_ACTION_TIME } from './constants.ts'
+import {
+  BASIC_ATTACK_COEFFICIENT,
+  CRIT_CHANCE_BASE,
+  CRIT_DAMAGE_BASE,
+  HEALING_ROLL_CEILING,
+  HEALING_ROLL_FLOOR,
+  STEP_MS,
+  WEAPON_ACTION_TIME,
+} from './constants.ts'
 import { basicHitChance, consistencyBounds, resolveDamage } from './damage.ts'
+import {
+  assertEnemyDef,
+  chooseEnemySkill,
+  applyPhaseModifiers,
+  copyBossPhases,
+  copyEnemySkills,
+  encounterXpAward,
+  enemyActionSpeedBonus,
+  gainPressureStacks,
+  enemyFiller,
+  enemyRecoveryMs,
+  enemySkillView,
+  enemySpawnLevel,
+  onEnemyDeath,
+  onEnemyHpChanged,
+  onEnemySecond,
+  onEnemySpawn,
+  reachedFraction,
+  selectAlly,
+} from './enemyAi.ts'
 import { centeredRoll, createRng, nextFloat } from './rng.ts'
 import {
   activeBarrier,
   applySkillEffects,
   assertSkillBook,
   effectiveEvasion,
+  endGrantedReductions,
   endUntilNextAction,
   finalCooldownSeconds,
   incomingDamageFactor,
+  resolveHeal,
 } from './skills.ts'
 import {
+  applicationChance,
   assertStatusBook,
   chillSlowFraction,
   collectStatusTicks,
@@ -21,13 +52,16 @@ import {
   expireStatuses,
   exposedDefense,
   mitigateStatusDamage,
+  pushActorTiming,
   slowedActionMs,
+  statusPotency,
+  statusResistance,
   statusTickEvent,
   takeBleedTicks,
   tryApplyStatus,
 } from './statuses.ts'
 import type { StatusTickDraft } from './statuses.ts'
-import { actionTime, deriveEnemyStats, deriveHeroStats } from './stats.ts'
+import { actionTime, applyEchoRank, deriveEnemyStats, deriveHeroStats } from './stats.ts'
 import type {
   ActiveField,
   CombatActor,
@@ -40,13 +74,22 @@ import type {
   FieldHealEvent,
   FieldTickEvent,
   DamageNotice,
+  ActionDelayEffect,
+  BarrierEffect,
+  ChanceGateEffect,
+  DamageEffect,
+  DefenseBonusEffect,
   DamageResult,
   DamageSchool,
   EnemyDef,
+  EnemySkillDef,
+  HealEffect,
+  TimedEvasionEffect,
   FallbackDecision,
   GameDefs,
   PriorityRow,
   SkillDef,
+  SummonEffect,
 } from './types.ts'
 
 export { STEP_MS }
@@ -105,14 +148,114 @@ function assertSchool(value: unknown, label: string): asserts value is DamageSch
   }
 }
 
+function cancelTelegraph(
+  state: CombatState,
+  actor: CombatActor,
+  timeMs: number,
+  reason?: 'interrupt',
+): void {
+  const telegraph = actor.telegraph
+  if (telegraph === null) return
+  const skill = actor.skills.find((entry) => entry.id === telegraph.skillId)
+  const hpTaken = telegraph.hpTaken ?? 0
+  const hpNeeded = actor.maxHp * (telegraph.interruptMaxHpFraction ?? 0)
+  let cooldownReadyMs: number | null = null
+  if (reason === 'interrupt' && skill !== undefined) {
+    const telegraphMs = skill.telegraphMs ?? 0
+    const startedAt = telegraph.startedAtMs ?? telegraph.resolvesAtMs - telegraphMs
+    cooldownReadyMs = armEnemyCooldown(actor, skill, startedAt)
+  }
+  actor.telegraph = null
+  state.log.push({
+    type: 'telegraph',
+    phase: 'cancel',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    skillId: skill?.id ?? telegraph.skillId ?? '',
+    skillName: skill?.name ?? telegraph.tag,
+    tag: telegraph.tag,
+    resolvesAtMs: telegraph.resolvesAtMs,
+    ...(reason === 'interrupt' ? { reason, hpTaken, hpNeeded, cooldownReadyMs } : {}),
+  })
+}
+
+function cancelReaction(state: CombatState, actor: CombatActor, timeMs: number): void {
+  const reaction = actor.reaction
+  if (reaction === null) return
+  const skill = actor.skills.find((entry) => entry.id === reaction.skillId)
+  actor.reaction = null
+  state.log.push({
+    type: 'telegraph',
+    phase: 'cancel',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    skillId: skill?.id ?? reaction.skillId ?? '',
+    skillName: skill?.name ?? reaction.tag,
+    tag: reaction.tag,
+    resolvesAtMs: reaction.resolvesAtMs,
+  })
+}
+
+function cancelPendingTelegraphs(state: CombatState, actor: CombatActor, timeMs: number): void {
+  cancelTelegraph(state, actor, timeMs)
+  cancelReaction(state, actor, timeMs)
+}
+
+/**
+ * Add hero HP damage to an interruptible telegraph.
+ * Barrier damage that never reaches HP is not passed in. A foreign damage-over-time tick is not either.
+ */
+function noteHeroHpDamage(state: CombatState, target: CombatActor, hpLost: number, timeMs: number): void {
+  if (hpLost <= 0) return
+  const telegraph = target.telegraph
+  const fraction = telegraph?.interruptMaxHpFraction
+  if (telegraph === null || fraction === undefined) return
+  const taken = (telegraph.hpTaken ?? 0) + hpLost
+  telegraph.hpTaken = taken
+  if (!reachedFraction(taken, target.maxHp, fraction)) return
+  cancelTelegraph(state, target, timeMs, 'interrupt')
+}
+
+function afterEnemyHpLoss(
+  state: CombatState,
+  target: CombatActor,
+  hpBefore: number,
+  hpAfter: number,
+  timeMs: number,
+  heroSource: boolean,
+  defs: GameDefs,
+): void {
+  const lost = hpBefore - hpAfter
+  if (lost <= 0 || target.side !== 'enemy') return
+  if (heroSource) noteHeroHpDamage(state, target, lost, timeMs)
+  if (hpAfter > 0) onEnemyHpChanged(state, target, timeMs)
+  flushPhaseSkills(state, defs)
+}
+
+function logEncounterXp(state: CombatState, timeMs: number): void {
+  const award = encounterXpAward(state.enemies)
+  state.log.push({
+    type: 'encounterXp',
+    timeMs,
+    sum: award.sum,
+    members: award.count,
+    discount: award.discount,
+    amount: award.amount,
+  })
+}
+
 function endEncounter(
   state: CombatState,
   outcome: 'victory' | 'defeat' | 'timeout',
   timeMs: number,
 ): void {
   if (state.outcome !== 'ongoing') return
+  for (const enemy of state.enemies) cancelPendingTelegraphs(state, enemy, timeMs)
   state.outcome = outcome
   classModule(state.hero.classId)?.encounterEnd?.(state, timeMs)
+  if (outcome === 'victory') logEncounterXp(state, timeMs)
   state.log.push({ type: 'encounterEnd', timeMs, outcome })
 }
 
@@ -148,15 +291,41 @@ function guardDefaults(): {
   barrier: number
   barrierExpiresMs: number
   damageReduction: number
+  damageReductionSourceId: string | null
   evasionBonus: number
+  timedEvasion: number
+  timedEvasionExpiresMs: number
+  healingReceived: number
   incomingMultipliers: number[]
 } {
   return {
     barrier: 0,
     barrierExpiresMs: 0,
     damageReduction: 0,
+    damageReductionSourceId: null,
     evasionBonus: 0,
+    timedEvasion: 0,
+    timedEvasionExpiresMs: 0,
+    healingReceived: 1,
     incomingMultipliers: [],
+  }
+}
+
+function specialDefaults(): {
+  reaction: null
+  stance: null
+  stanceBasePower: number
+  stanceBaseArmor: number
+  stanceBaseResistance: number
+  thresholdStarted: { [skillId: string]: boolean }
+} {
+  return {
+    reaction: null,
+    stance: null,
+    stanceBasePower: 0,
+    stanceBaseArmor: 0,
+    stanceBaseResistance: 0,
+    thresholdStarted: {},
   }
 }
 
@@ -193,6 +362,14 @@ function noteDeath(
     killerId,
     killerName,
   })
+  if (target.side === 'enemy') {
+    if (target.telegraph !== null && target.telegraph.persistsAfterDeath !== true) {
+      cancelTelegraph(state, target, timeMs)
+    }
+    cancelReaction(state, target, timeMs)
+    onEnemyDeath(state, target, timeMs)
+    endGrantedReductions(state, target, timeMs)
+  }
   if (target.side === 'hero') {
     endEncounter(state, 'defeat', timeMs)
     return
@@ -241,6 +418,14 @@ function commitDeaths(state: CombatState, deaths: readonly PendingDeath[]): void
       killerId: death.killerId,
       killerName: death.killerName,
     })
+    if (death.target.side === 'enemy') {
+      if (death.target.telegraph !== null && death.target.telegraph.persistsAfterDeath !== true) {
+        cancelTelegraph(state, death.target, death.timeMs)
+      }
+      cancelReaction(state, death.target, death.timeMs)
+      onEnemyDeath(state, death.target, death.timeMs)
+      endGrantedReductions(state, death.target, death.timeMs)
+    }
     if (death.target.side === 'hero') heroDeath = death
     else lastEnemyDeath = death
   }
@@ -269,7 +454,7 @@ function heroOutgoing(
   return value
 }
 
-function applyStatusDamage(state: CombatState, tick: StatusTickDraft): void {
+function applyStatusDamage(state: CombatState, defs: GameDefs, tick: StatusTickDraft): void {
   const target = tick.target
   if (!target.alive) return
   const hpBefore = target.hp
@@ -277,6 +462,7 @@ function applyStatusDamage(state: CombatState, tick: StatusTickDraft): void {
   if (hpAfter < 0) hpAfter = 0
   target.hp = hpAfter
   state.log.push(statusTickEvent(tick, hpBefore, hpAfter))
+  afterEnemyHpLoss(state, target, hpBefore, hpAfter, tick.timeMs, tick.sourceId === state.hero.id, defs)
   if (target.id === state.hero.id) {
     notifyDamageTaken(state, {
       hpLost: hpBefore - hpAfter,
@@ -293,6 +479,7 @@ function applyStatusDamage(state: CombatState, tick: StatusTickDraft): void {
 
 function applyHit(
   state: CombatState,
+  defs: GameDefs,
   actor: CombatActor,
   target: CombatActor,
   scheduled: number,
@@ -315,6 +502,7 @@ function applyHit(
     targetHpAfter: hpAfter,
     ...result,
   })
+  afterEnemyHpLoss(state, target, hpBefore, hpAfter, scheduled, actor.side === 'hero', defs)
   if (target.id === state.hero.id) {
     notifyDamageTaken(state, {
       hpLost: hpBefore - hpAfter,
@@ -329,9 +517,14 @@ function applyHit(
   queueDeath(deaths, target, actor.id, actor.name, scheduled)
 }
 
-function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
+function actorRecoveryMs(state: CombatState, actor: CombatActor, coefficient: number, timeMs: number): number {
+  const bonus = actor.side === 'enemy' ? enemyActionSpeedBonus(state.enemies, actor) : 0
+  return enemyRecoveryMs(actor.actionTimeMs, coefficient, chillSlowFraction(actor, timeMs), bonus)
+}
+
+function resolveBasicAttack(state: CombatState, defs: GameDefs, actor: CombatActor): void {
   const scheduled = actor.nextReadyMs
-  const recoveryMs = slowedActionMs(actor.actionTimeMs, chillSlowFraction(actor, scheduled))
+  const recoveryMs = actorRecoveryMs(state, actor, actor.fillerCoefficient, scheduled)
   actor.nextReadyMs = scheduled + recoveryMs
   const target = livingTarget(state, actor)
   if (actor.side === 'hero' && target.side === 'enemy') state.hero.currentTargetId = target.id
@@ -351,7 +544,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     cooldownReadyMs: null,
   })
 
-  const evasion = effectiveEvasion(target)
+  const evasion = effectiveEvasion(target, scheduled)
   const hitRoll = nextFloat(state.rng)
   const hitChance = basicHitChance(actor.accuracy, evasion)
   let consistencyRoll = 0
@@ -366,7 +559,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     accuracy: actor.accuracy,
     evasion,
     power: actor.power,
-    coefficient: BASIC_ATTACK_COEFFICIENT,
+    coefficient: actor.fillerCoefficient,
     outgoingModifier: actor.side === 'hero' ? heroOutgoing(state, actor.school, null) : 1,
     consistency: actor.consistency,
     critChance: actor.critChance,
@@ -394,7 +587,7 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     hit: result.hit,
   })
   const hpBeforeHit = target.hp
-  if (result.hit) applyHit(state, actor, target, scheduled, result, deaths)
+  if (result.hit) applyHit(state, defs, actor, target, scheduled, result, deaths)
   else if (target.id === state.hero.id) {
     notifyDamageTaken(state, {
       hpLost: 0,
@@ -476,7 +669,7 @@ function healField(state: CombatState, field: ActiveField, timeMs: number): void
 }
 
 /** Field ticks bypass barriers, skip variance and crit, and are not hero actions. */
-function applyFieldTick(state: CombatState, field: ActiveField, timeMs: number): void {
+function applyFieldTick(state: CombatState, defs: GameDefs, field: ActiveField, timeMs: number): void {
   const living = state.enemies.filter((enemy) => enemy.alive)
   const deaths: PendingDeath[] = []
   for (const enemy of living) {
@@ -512,20 +705,21 @@ function applyFieldTick(state: CombatState, field: ActiveField, timeMs: number):
       varianceRoll: false,
     }
     state.log.push(event)
+    afterEnemyHpLoss(state, enemy, hpBefore, hpAfter, timeMs, field.sourceId === state.hero.id, defs)
     if (hpAfter <= 0) queueDeath(deaths, enemy, field.sourceId, field.sourceName, timeMs)
   }
   if (state.outcome === 'ongoing') healField(state, field, timeMs)
   commitDeaths(state, deaths)
 }
 
-function resolveFieldTicks(state: CombatState, stepStart: number, stepEnd: number): void {
+function resolveFieldTicks(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
   const field = state.hero.field
   if (field === null) return
   while (field.nextTickMs > stepStart && field.nextTickMs <= stepEnd && field.nextTickMs < field.expiresMs) {
     if (state.outcome !== 'ongoing' || state.hero.field !== field) return
     const timeMs = field.nextTickMs
     field.nextTickMs = timeMs + field.tickMs
-    applyFieldTick(state, field, timeMs)
+    applyFieldTick(state, defs, field, timeMs)
   }
 }
 
@@ -549,21 +743,731 @@ function resolveExpiries(state: CombatState, stepStart: number, stepEnd: number)
     })
   }
   expireStatuses(state, stepStart, stepEnd)
+  expireTimedEvasion(state, stepStart, stepEnd)
+  expireDefenseBonuses(state, stepStart, stepEnd)
+  gainPressureStacks(state, stepStart, stepEnd)
+}
+
+function expireDefenseBonuses(state: CombatState, stepStart: number, stepEnd: number): void {
+  for (const actor of state.enemies) {
+    const expiresMs = actor.defenseBonusExpiresMs
+    if (expiresMs <= stepStart || expiresMs > stepEnd) continue
+    actor.defenseBonusMultiplier = 1
+    actor.defenseBonusExpiresMs = 0
+    applyPhaseModifiers(actor)
+    state.log.push({
+      type: 'buffEnded',
+      timeMs: expiresMs,
+      actorId: actor.id,
+      actorName: actor.name,
+      damageReduction: 0,
+      evasion: 0,
+      incomingMultiplier: 1,
+      reason: 'defense',
+    })
+  }
+}
+
+function expireTimedEvasion(state: CombatState, stepStart: number, stepEnd: number): void {
+  const actors: CombatActor[] = [state.hero, ...state.enemies]
+  for (const actor of actors) {
+    const expiresMs = actor.timedEvasionExpiresMs
+    if (expiresMs <= stepStart || expiresMs > stepEnd) continue
+    const evasion = actor.timedEvasion
+    actor.timedEvasion = 0
+    actor.timedEvasionExpiresMs = 0
+    if (evasion === 0) continue
+    state.log.push({
+      type: 'buffEnded',
+      timeMs: expiresMs,
+      actorId: actor.id,
+      actorName: actor.name,
+      damageReduction: 0,
+      evasion,
+      incomingMultiplier: 1,
+      reason: 'duration',
+    })
+  }
 }
 
 /** Clock category 2. Poison and Burn ticks. They bypass barriers and use current Defense. */
-function resolvePeriodicTicks(state: CombatState, stepStart: number, stepEnd: number): void {
+function resolvePeriodicTicks(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
   const ticks = collectStatusTicks(state, stepStart, stepEnd)
   for (const tick of ticks) {
     if (state.outcome !== 'ongoing') return
-    applyStatusDamage(state, tick)
+    applyStatusDamage(state, defs, tick)
   }
-  resolveFieldTicks(state, stepStart, stepEnd)
+  resolveFieldTicks(state, defs, stepStart, stepEnd)
 }
 
-/** Clock category 3. No telegraph resolutions in this step. */
-function resolveTelegraphs(): void {
-  return
+function armEnemyCooldown(actor: CombatActor, skill: EnemySkillDef, timeMs: number): number | null {
+  if (skill.cooldownSeconds <= 0) return null
+  const readyAt = timeMs + roundDurationMs(skill.cooldownSeconds, `${skill.id} cooldown`)
+  actor.cooldowns[skill.id] = readyAt
+  return readyAt
+}
+
+function resolveEnemyStrike(
+  state: CombatState,
+  actor: CombatActor,
+  target: CombatActor,
+  skill: EnemySkillDef,
+  effect: DamageEffect,
+  timeMs: number,
+): DamageResult {
+  const bounds = consistencyBounds(actor.consistency)
+  const consistencyRoll = centeredRoll(state.rng, bounds.floor, bounds.ceiling)
+  const critRoll = nextFloat(state.rng)
+  return resolveDamage({
+    accuracy: actor.accuracy,
+    evasion: effectiveEvasion(target, timeMs),
+    power: actor.power,
+    coefficient: effect.coefficient,
+    outgoingModifier: 1,
+    consistency: actor.consistency,
+    critChance: skill.canCrit === true ? CRIT_CHANCE_BASE : 0,
+    critDamage: actor.critDamage,
+    barrier: activeBarrier(target, timeMs),
+    penetration: actor.penetration,
+    defense: defenseOf(target, effect.school, timeMs),
+    attackerLevel: actor.level,
+    incomingModifier: incomingDamageFactor(target),
+    school: effect.school,
+    guaranteedHit: true,
+    rolls: { hitRoll: 0, consistencyRoll, critRoll },
+  })
+}
+
+function applyDamageReduction(
+  state: CombatState,
+  source: CombatActor,
+  target: CombatActor,
+  fraction: number,
+  timeMs: number,
+): void {
+  target.damageReduction = fraction
+  target.damageReductionSourceId = target.id === source.id ? null : source.id
+  state.log.push({
+    type: 'buff',
+    timeMs,
+    actorId: target.id,
+    actorName: target.name,
+    kind: 'damageReduction',
+    value: fraction,
+    until: 'nextAction',
+  })
+}
+
+function applyEnemyHeal(
+  state: CombatState,
+  actor: CombatActor,
+  target: CombatActor,
+  effect: HealEffect,
+  timeMs: number,
+): void {
+  const maxHp = effect.maxHpOf === 'anchor' ? actor.anchorMaxHp : target.maxHp
+  if (effect.maxHpOf === 'anchor' && !(maxHp > 0)) {
+    throw new Error(`${actor.name} has no anchor max HP to heal from`)
+  }
+  const roll = centeredRoll(state.rng, HEALING_ROLL_FLOOR, HEALING_ROLL_CEILING)
+  const result = resolveHeal({
+    maxHp,
+    maxHpFraction: effect.maxHpFraction,
+    healingPower: actor.power,
+    healingCoefficient: effect.healingCoefficient,
+    outgoingModifier: 1,
+    healingReceived: target.healingReceived,
+    roll,
+  })
+  const targetHpBefore = target.hp
+  let targetHpAfter = targetHpBefore + result.amount
+  if (targetHpAfter > target.maxHp) targetHpAfter = target.maxHp
+  target.hp = targetHpAfter
+  state.log.push({
+    type: 'heal',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    targetId: target.id,
+    targetName: target.name,
+    targetHpBefore,
+    targetHpAfter,
+    ...result,
+  })
+}
+
+function applyEnemyBarrier(
+  state: CombatState,
+  actor: CombatActor,
+  target: CombatActor,
+  effect: BarrierEffect,
+  timeMs: number,
+  skillId: string,
+): void {
+  const amount = effect.source === 'anchorMaxHp' ? actor.anchorMaxHp * effect.coefficient : actor.power * effect.coefficient
+  if (effect.source === 'anchorMaxHp' && !(actor.anchorMaxHp > 0)) {
+    throw new Error(`${actor.name} has no anchor max HP to ward from`)
+  }
+  const expiresMs = timeMs + roundDurationMs(effect.durationSeconds, `${skillId} barrier`)
+  const replaced = target.barrier
+  target.barrier = amount
+  target.barrierExpiresMs = expiresMs
+  state.log.push({
+    type: 'barrier',
+    timeMs,
+    actorId: target.id,
+    actorName: target.name,
+    sourceId: actor.id,
+    sourceName: actor.name,
+    amount,
+    expiresMs,
+    replaced,
+  })
+}
+
+function applyDefenseBonus(
+  state: CombatState,
+  actor: CombatActor,
+  effect: DefenseBonusEffect,
+  timeMs: number,
+  skillId: string,
+): void {
+  const durationMs = roundDurationMs(effect.durationSeconds, `${skillId} defense`)
+  actor.defenseBonusMultiplier = effect.multiplier
+  actor.defenseBonusExpiresMs = timeMs + durationMs
+  applyPhaseModifiers(actor)
+  state.log.push({
+    type: 'buff',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    kind: 'defense',
+    value: effect.multiplier,
+    until: 'duration',
+    expiresMs: actor.defenseBonusExpiresMs,
+  })
+}
+
+function applyTimedEvasion(
+  state: CombatState,
+  target: CombatActor,
+  effect: TimedEvasionEffect,
+  timeMs: number,
+  skillId: string,
+): void {
+  const durationMs = roundDurationMs(effect.durationSeconds, `${skillId} evasion`)
+  target.timedEvasion = effect.amount
+  target.timedEvasionExpiresMs = timeMs + durationMs
+  state.log.push({
+    type: 'buff',
+    timeMs,
+    actorId: target.id,
+    actorName: target.name,
+    kind: 'evasion',
+    value: effect.amount,
+    until: 'duration',
+    expiresMs: target.timedEvasionExpiresMs,
+  })
+}
+
+function applyActionDelay(
+  state: CombatState,
+  source: CombatActor,
+  target: CombatActor,
+  effect: ActionDelayEffect,
+  timeMs: number,
+  skillId: string,
+): void {
+  const delayMs = roundDurationMs(effect.delaySeconds, `${skillId} action delay`)
+  pushActorTiming(target, delayMs)
+  state.log.push({
+    type: 'actionDelay',
+    timeMs,
+    actorId: source.id,
+    actorName: source.name,
+    targetId: target.id,
+    targetName: target.name,
+    delayMs,
+    nextReadyMs: target.nextReadyMs,
+  })
+}
+
+function applyChanceGate(
+  state: CombatState,
+  actor: CombatActor,
+  skill: EnemySkillDef,
+  effect: ChanceGateEffect,
+  timeMs: number,
+): void {
+  const target = state.hero
+  if (!target.alive) return
+  const potency = statusPotency(actor, 0)
+  const resistance = statusResistance(target, effect.school)
+  const chance = applicationChance(effect.baseChance, potency, resistance)
+  const roll = nextFloat(state.rng)
+  const success = roll < chance
+  state.log.push({
+    type: 'statusAttempt',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    targetId: target.id,
+    targetName: target.name,
+    statusId: skill.id,
+    statusName: skill.name,
+    school: effect.school,
+    baseChance: effect.baseChance,
+    potency,
+    resistance,
+    chance,
+    roll,
+    result: success ? 'applied' : 'resisted',
+    stacks: 0,
+    intensity: 0,
+    expiresMs: null,
+    delayMs: null,
+    nextReadyMs: null,
+  })
+  if (!success) return
+  for (const nested of effect.effects) {
+    if (nested.kind === 'actionDelay') {
+      applyActionDelay(state, actor, target, nested, timeMs, skill.id)
+      continue
+    }
+    if (nested.kind === 'timedEvasion') {
+      applyTimedEvasion(state, target, nested, timeMs, skill.id)
+      continue
+    }
+    throw new Error(`enemy skill '${skill.id}' chance gate cannot use effect '${nested.kind}'`)
+  }
+}
+
+/**
+ * Nearest integer. `Math.round` sends a halfway value away from zero.
+ * The fraction is counted in thousandths first, so 45 × 0.70 is 31.5 rather than 31.499999999999996.
+ */
+function roundStatFraction(base: number, fraction: number): number {
+  const thousandths = Math.round(fraction * 1000)
+  return Math.round((base * thousandths) / 1000)
+}
+
+function applySummonFractions(summoned: CombatActor, summoner: CombatActor, effect: SummonEffect): void {
+  const spec = effect.fromSummoner
+  if (spec !== undefined) {
+    const maxHp = roundStatFraction(summoner.rankMaxHp, spec.hpFraction)
+    const power = roundStatFraction(summoner.rankPower, spec.powerFraction)
+    const armor = roundStatFraction(summoner.rankArmor, spec.armorFraction)
+    const resistance = roundStatFraction(summoner.rankResistance, spec.resistanceFraction)
+    summoned.maxHp = maxHp
+    summoned.hp = maxHp
+    summoned.power = power
+    summoned.armor = armor
+    summoned.resistance = resistance
+    summoned.rankMaxHp = maxHp
+    summoned.rankPower = power
+    summoned.rankArmor = armor
+    summoned.rankResistance = resistance
+    summoned.actionTimeMs = roundDurationMs(spec.actionTime, `${effect.enemyId} summon action time`)
+  }
+  if (effect.anchorMaxHp === true) summoned.anchorMaxHp = summoner.rankMaxHp
+}
+
+/** Resolve phase skills queued by an HP threshold. Summons keep the threshold's timestamp. */
+function flushPhaseSkills(state: CombatState, defs: GameDefs): void {
+  for (let guard = 0; guard < 8; guard += 1) {
+    const pending: { actor: CombatActor; skillId: string; timeMs: number }[] = []
+    for (const actor of state.enemies) {
+      if (actor.phaseSkillsDue.length === 0) continue
+      const due = actor.phaseSkillsDue.splice(0, actor.phaseSkillsDue.length)
+      for (const entry of due) pending.push({ actor, skillId: entry.skillId, timeMs: entry.timeMs })
+    }
+    if (pending.length === 0) return
+    for (const entry of pending) {
+      const skill = entry.actor.skills.find((item) => item.id === entry.skillId)
+      if (skill === undefined) throw new Error(`${entry.actor.name} is missing phase skill '${entry.skillId}'`)
+      applyEnemySkill(state, defs, entry.actor, skill, entry.timeMs)
+    }
+  }
+  throw new Error('phase skills did not finish')
+}
+
+function nextEnemySlot(enemies: readonly CombatActor[]): number {
+  const used: { [slot: number]: boolean } = {}
+  for (const enemy of enemies) used[enemy.slot] = true
+  let slot = 0
+  while (used[slot] === true) slot += 1
+  return slot
+}
+
+/**
+ * Spawn the named enemy as a summon. It adds 0 XP and does not increase the group discount.
+ * Its first action is one action time after it appears.
+ */
+function summonEnemy(
+  state: CombatState,
+  defs: GameDefs,
+  actor: CombatActor,
+  effect: SummonEffect,
+  timeMs: number,
+): void {
+  if (!actor.alive || state.outcome !== 'ongoing') return
+  const def = defs.enemies[effect.enemyId]
+  if (def === undefined) {
+    throw new Error(`${actor.name} cannot summon unknown enemy '${effect.enemyId}'`)
+  }
+  const level = enemySpawnLevel(def, effect.level)
+  const slot = nextEnemySlot(state.enemies)
+  const summoned = actorFromEnemy(def, slot, true, level, true, 0)
+  applySummonFractions(summoned, actor, effect)
+  summoned.nextReadyMs = timeMs + summoned.actionTimeMs
+  state.enemies.push(summoned)
+  state.enemies.sort((left, right) => left.slot - right.slot)
+  state.log.push({
+    type: 'summon',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    summonId: summoned.id,
+    summonName: summoned.name,
+    defId: def.id,
+    level,
+    slot,
+    xp: summoned.xp,
+    summon: true,
+  })
+  onEnemySpawn(state, summoned)
+}
+
+/** Authored skills do not roll to hit. They crit only when the skill sets canCrit. */
+function applyEnemySkill(
+  state: CombatState,
+  defs: GameDefs,
+  actor: CombatActor,
+  skill: EnemySkillDef,
+  timeMs: number,
+): void {
+  const deaths: PendingDeath[] = []
+  const view = enemySkillView(skill)
+  const hpDamageDealt: { [targetId: string]: number } = {}
+  const ally = skill.allyTarget === undefined ? null : selectAlly(state.enemies, actor, skill.allyTarget, timeMs)
+  for (const effect of skill.effects) {
+    if (state.outcome !== 'ongoing') break
+    if (effect.kind === 'damage') {
+      const target = state.hero
+      if (!target.alive) continue
+      const result = resolveEnemyStrike(state, actor, target, skill, effect, timeMs)
+      applyHit(state, defs, actor, target, timeMs, result, deaths)
+      hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
+      continue
+    }
+    if (effect.kind === 'damageReduction') {
+      if (skill.allyTarget === undefined || skill.affectSelf === true) {
+        applyDamageReduction(state, actor, actor, effect.fraction, timeMs)
+      }
+      if (ally !== null) applyDamageReduction(state, actor, ally, effect.fraction, timeMs)
+      continue
+    }
+    if (effect.kind === 'applyStatus') {
+      const target = state.hero
+      if (!target.alive) continue
+      const dealt = hpDamageDealt[target.id]
+      tryApplyStatus({
+        state,
+        defs,
+        source: actor,
+        target,
+        skill: view,
+        effect,
+        timeMs,
+        applyingHit: dealt !== undefined,
+        hpDamageDealt: dealt ?? 0,
+      })
+      continue
+    }
+    if (effect.kind === 'heal') {
+      if (ally === null) throw new Error(`${skill.name} has no ally to heal`)
+      applyEnemyHeal(state, actor, ally, effect, timeMs)
+      continue
+    }
+    if (effect.kind === 'barrier') {
+      if (ally === null) throw new Error(`${skill.name} has no ally to ward`)
+      applyEnemyBarrier(state, actor, ally, effect, timeMs, skill.id)
+      continue
+    }
+    if (effect.kind === 'chanceGate') {
+      applyChanceGate(state, actor, skill, effect, timeMs)
+      continue
+    }
+    if (effect.kind === 'timedEvasion') {
+      if (!state.hero.alive) continue
+      applyTimedEvasion(state, state.hero, effect, timeMs, skill.id)
+      continue
+    }
+    if (effect.kind === 'actionDelay') {
+      if (!state.hero.alive) continue
+      applyActionDelay(state, actor, state.hero, effect, timeMs, skill.id)
+      continue
+    }
+    if (effect.kind === 'summon') {
+      summonEnemy(state, defs, actor, effect, timeMs)
+      continue
+    }
+    if (effect.kind === 'defenseBonus') {
+      applyDefenseBonus(state, actor, effect, timeMs, skill.id)
+      continue
+    }
+    throw new Error(`enemy skill '${skill.id}' cannot use effect '${effect.kind}'`)
+  }
+  commitDeaths(state, deaths)
+}
+
+function enemyActionTarget(state: CombatState, actor: CombatActor, skill: EnemySkillDef): { id: string; name: string } {
+  const ally = skill.allyTarget === undefined ? null : selectAlly(state.enemies, actor, skill.allyTarget, actor.nextReadyMs)
+  if (skill.affectSelf === true) {
+    if (ally === null) return { id: actor.id, name: actor.name }
+    return { id: actor.id, name: `${actor.name} and ${ally.name}` }
+  }
+  if (ally !== null) {
+    for (const effect of skill.effects) {
+      if (effect.kind === 'heal' || effect.kind === 'barrier' || effect.kind === 'damageReduction') {
+        return { id: ally.id, name: ally.name }
+      }
+    }
+  }
+  for (const effect of skill.effects) {
+    if (
+      effect.kind === 'damage' ||
+      effect.kind === 'applyStatus' ||
+      effect.kind === 'chanceGate' ||
+      effect.kind === 'actionDelay' ||
+      effect.kind === 'timedEvasion'
+    ) {
+      return { id: state.hero.id, name: state.hero.name }
+    }
+  }
+  return { id: actor.id, name: actor.name }
+}
+
+/** Forced recovery is a fixed duration. Otherwise use the skill's action time. */
+function skillRecoveryMs(state: CombatState, actor: CombatActor, skill: EnemySkillDef, timeMs: number): number {
+  const forced = skill.forcedRecovery
+  if (forced !== undefined) return forced.durationMs
+  return actorRecoveryMs(state, actor, skill.actionTimeCoefficient ?? 1, timeMs)
+}
+
+function applyForcedRecovery(state: CombatState, actor: CombatActor, skill: EnemySkillDef, timeMs: number): void {
+  const forced = skill.forcedRecovery
+  if (forced === undefined || !actor.alive) return
+  actor.evasionBonus = forced.evasion
+  state.log.push({
+    type: 'buff',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    kind: 'evasion',
+    value: forced.evasion,
+    until: 'nextAction',
+  })
+  state.log.push({
+    type: 'action',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    targetId: actor.id,
+    targetName: actor.name,
+    action: 'skill',
+    skillId: forced.id,
+    skillName: forced.name,
+    scheduledMs: timeMs,
+    nextReadyMs: actor.nextReadyMs,
+    cooldownReadyMs: null,
+  })
+}
+
+/**
+ * The telegraph starts at the ready time. The next ready time is the resolution
+ * plus this skill's action time, or its forced recovery when that is set.
+ * Speed bonuses are read now and do not move later.
+ */
+function startEnemyTelegraph(state: CombatState, actor: CombatActor, skill: EnemySkillDef): void {
+  const scheduled = actor.nextReadyMs
+  const telegraphMs = skill.telegraphMs ?? 0
+  if (!Number.isInteger(telegraphMs) || telegraphMs < 1) {
+    throw new Error(`${skill.name} needs a telegraph`)
+  }
+  const resolvesAtMs = scheduled + telegraphMs
+  const recoveryMs = skillRecoveryMs(state, actor, skill, scheduled)
+  actor.nextReadyMs = resolvesAtMs + recoveryMs
+  actor.telegraph = {
+    tag: skill.tag,
+    resolvesAtMs,
+    skillId: skill.id,
+    startedAtMs: scheduled,
+    persistsAfterDeath: false,
+    ...(skill.interruptMaxHpFraction !== undefined
+      ? { hpTaken: 0, interruptMaxHpFraction: skill.interruptMaxHpFraction }
+      : {}),
+  }
+  state.log.push({
+    type: 'telegraph',
+    phase: 'start',
+    timeMs: scheduled,
+    actorId: actor.id,
+    actorName: actor.name,
+    skillId: skill.id,
+    skillName: skill.name,
+    tag: skill.tag,
+    resolvesAtMs,
+  })
+}
+
+function resolveEnemySkillNow(
+  state: CombatState,
+  defs: GameDefs,
+  actor: CombatActor,
+  skill: EnemySkillDef,
+): void {
+  const scheduled = actor.nextReadyMs
+  const recoveryMs = skillRecoveryMs(state, actor, skill, scheduled)
+  actor.nextReadyMs = scheduled + recoveryMs
+  const cooldownReadyMs = armEnemyCooldown(actor, skill, scheduled)
+  const target = enemyActionTarget(state, actor, skill)
+  state.log.push({
+    type: 'action',
+    timeMs: scheduled,
+    actorId: actor.id,
+    actorName: actor.name,
+    targetId: target.id,
+    targetName: target.name,
+    action: 'skill',
+    skillId: skill.id,
+    skillName: skill.name,
+    scheduledMs: scheduled,
+    nextReadyMs: actor.nextReadyMs,
+    cooldownReadyMs,
+  })
+  applyEnemySkill(state, defs, actor, skill, scheduled)
+  if (actor.alive && state.outcome === 'ongoing') applyForcedRecovery(state, actor, skill, scheduled)
+}
+
+function resolveEnemyAction(state: CombatState, defs: GameDefs, actor: CombatActor): void {
+  const scheduled = actor.nextReadyMs
+  endUntilNextAction(state, actor, scheduled)
+  endGrantedReductions(state, actor, scheduled)
+  if (state.outcome !== 'ongoing' || !actor.alive) return
+  const choice = chooseEnemySkill(actor, scheduled, state.enemies)
+  for (const skip of choice.skipped) {
+    state.log.push({
+      type: 'skillSkip',
+      timeMs: scheduled,
+      actorId: actor.id,
+      actorName: actor.name,
+      skillId: skip.id,
+      skillName: skip.name,
+      reason: skip.reason,
+    })
+  }
+  const skill = choice.skill
+  if (skill === null) {
+    resolveBasicAttack(state, defs, actor)
+    return
+  }
+  if ((skill.telegraphMs ?? 0) > 0) {
+    startEnemyTelegraph(state, actor, skill)
+    return
+  }
+  resolveEnemySkillNow(state, defs, actor, skill)
+}
+
+function resolveOneTelegraph(state: CombatState, defs: GameDefs, actor: CombatActor): void {
+  const telegraph = actor.telegraph
+  if (telegraph === null || telegraph.skillId === undefined) return
+  const skill = actor.skills.find((entry) => entry.id === telegraph.skillId)
+  if (skill === undefined) throw new Error(`${actor.name} is missing skill '${telegraph.skillId}'`)
+  const timeMs = telegraph.resolvesAtMs
+  const cooldownReadyMs = armEnemyCooldown(actor, skill, timeMs)
+  actor.telegraph = null
+  state.log.push({
+    type: 'telegraph',
+    phase: 'resolve',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    skillId: skill.id,
+    skillName: skill.name,
+    tag: telegraph.tag,
+    resolvesAtMs: timeMs,
+    cooldownReadyMs,
+  })
+  if (state.outcome !== 'ongoing' || !state.hero.alive) return
+  applyEnemySkill(state, defs, actor, skill, timeMs)
+  if (actor.alive && state.outcome === 'ongoing') applyForcedRecovery(state, actor, skill, timeMs)
+}
+
+/** Clock category 3. Telegraphs due in this step resolve before actions. A test tag with no skill id stays put. */
+function resolveTelegraphs(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
+  const due: CombatActor[] = []
+  for (const enemy of state.enemies) {
+    const telegraph = enemy.telegraph
+    if (telegraph === null || telegraph.skillId === undefined) continue
+    if (telegraph.resolvesAtMs > stepStart && telegraph.resolvesAtMs <= stepEnd) due.push(enemy)
+  }
+  due.sort((left, right) => {
+    const leftAt = left.telegraph?.resolvesAtMs ?? 0
+    const rightAt = right.telegraph?.resolvesAtMs ?? 0
+    if (leftAt !== rightAt) return leftAt - rightAt
+    return left.slot - right.slot
+  })
+  for (const enemy of due) {
+    if (state.outcome !== 'ongoing') return
+    if (enemy.telegraph === null) continue
+    resolveOneTelegraph(state, defs, enemy)
+  }
+  resolveReactions(state, defs, stepStart, stepEnd)
+}
+
+/** A reaction telegraph resolves without moving the actor's next ready time. */
+function resolveOneReaction(state: CombatState, defs: GameDefs, actor: CombatActor): void {
+  const reaction = actor.reaction
+  if (reaction === null || reaction.skillId === undefined) return
+  const skill = actor.skills.find((entry) => entry.id === reaction.skillId)
+  if (skill === undefined) throw new Error(`${actor.name} is missing skill '${reaction.skillId}'`)
+  const timeMs = reaction.resolvesAtMs
+  actor.reaction = null
+  state.log.push({
+    type: 'telegraph',
+    phase: 'resolve',
+    timeMs,
+    actorId: actor.id,
+    actorName: actor.name,
+    skillId: skill.id,
+    skillName: skill.name,
+    tag: reaction.tag,
+    resolvesAtMs: timeMs,
+    cooldownReadyMs: null,
+  })
+  if (state.outcome !== 'ongoing' || !actor.alive || !state.hero.alive) return
+  applyEnemySkill(state, defs, actor, skill, timeMs)
+}
+
+function resolveReactions(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
+  const due: CombatActor[] = []
+  for (const enemy of state.enemies) {
+    const reaction = enemy.reaction
+    if (reaction === null || reaction.skillId === undefined) continue
+    if (reaction.resolvesAtMs > stepStart && reaction.resolvesAtMs <= stepEnd) due.push(enemy)
+  }
+  due.sort((left, right) => {
+    const leftAt = left.reaction?.resolvesAtMs ?? 0
+    const rightAt = right.reaction?.resolvesAtMs ?? 0
+    if (leftAt !== rightAt) return leftAt - rightAt
+    return left.slot - right.slot
+  })
+  for (const enemy of due) {
+    if (state.outcome !== 'ongoing') return
+    if (enemy.reaction === null) continue
+    resolveOneReaction(state, defs, enemy)
+  }
 }
 
 function readSkillIdList(value: unknown, label: string): string[] {
@@ -680,7 +1584,7 @@ function resolveSkill(
     result,
   ) => {
     const hpBefore = actor.hp
-    applyHit(state, hero, actor, scheduled, result, deaths)
+    applyHit(state, defs, hero, actor, scheduled, result, deaths)
     strikes.push({ targetId: actor.id, hit: result.hit, crit: result.crit, hpLost: hpBefore - actor.hp })
   })
   const crit = strikes.some((strike) => strike.hit && strike.crit)
@@ -735,7 +1639,7 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
     }
     hero.waiting = false
     endUntilNextAction(state, hero, scheduled)
-    resolveBasicAttack(state, hero)
+    resolveBasicAttack(state, defs, hero)
     return
   }
   hero.waiting = false
@@ -777,7 +1681,7 @@ function resolveActor(state: CombatState, defs: GameDefs, actor: CombatActor): v
   const bleed = takeBleedTicks(actor, scheduled)
   for (const tick of bleed.ticks) {
     if (!actor.alive) break
-    applyStatusDamage(state, tick)
+    applyStatusDamage(state, defs, tick)
   }
   if (bleed.expired !== null) {
     state.log.push({
@@ -792,7 +1696,7 @@ function resolveActor(state: CombatState, defs: GameDefs, actor: CombatActor): v
   }
   if (!actor.alive || state.outcome !== 'ongoing') return
   if (actor.side === 'hero') resolveHeroAction(state, defs)
-  else resolveBasicAttack(state, actor)
+  else resolveEnemyAction(state, defs, actor)
 }
 
 function waitingCanAct(state: CombatState, defs: GameDefs, timeMs: number): boolean {
@@ -844,7 +1748,29 @@ function applyResourceRegen(state: CombatState, stepStart: number, stepEnd: numb
   }
 }
 
-function readEnemySetup(value: unknown, index: number): { defId: string; slot: number; revealed: boolean } {
+/** One regeneration event per whole second for enemies that have a regen trait. */
+function applyEnemyRegen(state: CombatState, stepStart: number, stepEnd: number): void {
+  if (state.outcome !== 'ongoing') return
+  const firstSecond = Math.floor(stepStart / 1000) + 1
+  const lastSecond = Math.floor(stepEnd / 1000)
+  for (let second = firstSecond; second <= lastSecond; second += 1) {
+    const timeMs = second * 1000
+    if (timeMs <= stepStart || timeMs > stepEnd) continue
+    for (const enemy of state.enemies) {
+      if (!enemy.alive || state.outcome !== 'ongoing') continue
+      onEnemySecond(state, enemy, timeMs)
+    }
+  }
+}
+
+function readEnemySetup(value: unknown, index: number): {
+  defId: string
+  slot: number
+  revealed: boolean
+  level: number | undefined
+  summon: boolean
+  rank: number
+} {
   assertObject(value, `enemy setup ${index + 1}`)
   const defId = value.defId
   if (typeof defId !== 'string' || defId.length === 0) {
@@ -865,33 +1791,108 @@ function readEnemySetup(value: unknown, index: number): { defId: string; slot: n
     }
     revealed = value.revealed
   }
-  return { defId, slot, revealed }
+  let level: number | undefined
+  if (value.level !== undefined) {
+    if (typeof value.level !== 'number') {
+      throw new Error(
+        `enemy setup ${index + 1} level must be a number, received ${describeValue(value.level)}`,
+      )
+    }
+    level = value.level
+  }
+  let summon = false
+  if (value.summon !== undefined) {
+    if (typeof value.summon !== 'boolean') {
+      throw new Error(
+        `enemy setup ${index + 1} summon must be a boolean, received ${describeValue(value.summon)}`,
+      )
+    }
+    summon = value.summon
+  }
+  let rank = 0
+  if (value.rank !== undefined) {
+    if (typeof value.rank !== 'number' || !Number.isInteger(value.rank) || value.rank < 0) {
+      throw new Error(
+        `enemy setup ${index + 1} rank must be an integer of at least 0, received ${describeValue(value.rank)}`,
+      )
+    }
+    rank = value.rank
+  }
+  return { defId, slot, revealed, level, summon, rank }
 }
 
-function actorFromEnemy(def: EnemyDef, slot: number, revealed: boolean): CombatActor {
+function ratingDefaults(stats: { maxHp: number; power: number; armor: number; resistance: number }): {
+  rankMaxHp: number
+  rankPower: number
+  rankArmor: number
+  rankResistance: number
+  anchorMaxHp: number
+  defenseBonusMultiplier: number
+  defenseBonusExpiresMs: number
+  pressureStacks: number
+  pressureNextMs: number
+  pressureIntervalMs: number
+  pressureMaxStacks: number
+  pressurePowerMultiplier: number
+  pressureDefenseMultiplier: number
+  pressureActionSpeed: number
+  phases: CombatActor['phases']
+  phaseSkillsDue: CombatActor['phaseSkillsDue']
+} {
+  return {
+    rankMaxHp: stats.maxHp,
+    rankPower: stats.power,
+    rankArmor: stats.armor,
+    rankResistance: stats.resistance,
+    anchorMaxHp: 0,
+    defenseBonusMultiplier: 1,
+    defenseBonusExpiresMs: 0,
+    pressureStacks: 0,
+    pressureNextMs: 0,
+    pressureIntervalMs: 0,
+    pressureMaxStacks: 0,
+    pressurePowerMultiplier: 1,
+    pressureDefenseMultiplier: 1,
+    pressureActionSpeed: 1,
+    phases: [],
+    phaseSkillsDue: [],
+  }
+}
+
+function actorFromEnemy(
+  def: EnemyDef,
+  slot: number,
+  revealed: boolean,
+  level: number,
+  summon: boolean,
+  rank: number,
+): CombatActor {
   if (def.id.length === 0) throw new Error('enemy definition is missing an id')
   if (def.name.length === 0) throw new Error(`enemy ${def.id} is missing a name`)
-  assertSchool(def.school, `enemy ${def.id} school`)
+  assertEnemyDef(def)
+  const filler = enemyFiller(def)
+  assertSchool(filler.school, `enemy ${def.id} filler school`)
   if (def.boss !== undefined && typeof def.boss !== 'boolean') {
     throw new Error(`enemy ${def.id} boss must be a boolean, received ${describeValue(def.boss)}`)
   }
-  const stats = deriveEnemyStats({
-    level: def.level,
+  const derived = deriveEnemyStats({
+    level,
     archetype: def.archetype,
     elite: def.elite,
     overrides: def.overrides,
   })
+  const stats = def.echoRank === true ? applyEchoRank(derived, rank) : derived
   const actionTimeMs = roundDurationMs(stats.actionTime, `${def.id} action time`)
   return {
     id: `${def.id}#${slot}`,
     name: def.name,
     side: 'enemy',
     slot,
-    level: def.level,
+    level,
     hp: stats.maxHp,
     maxHp: stats.maxHp,
     alive: true,
-    school: def.school,
+    school: filler.school,
     power: stats.power,
     accuracy: stats.accuracy,
     evasion: stats.evasion,
@@ -905,6 +1906,7 @@ function actorFromEnemy(def: EnemyDef, slot: number, revealed: boolean): CombatA
     actionTimeMs,
     nextReadyMs: actionTimeMs,
     ...guardDefaults(),
+    ...specialDefaults(),
     intellect: 0,
     vitality: 0,
     spirit: 0,
@@ -914,9 +1916,18 @@ function actorFromEnemy(def: EnemyDef, slot: number, revealed: boolean): CombatA
     boss: def.boss === true,
     revealed,
     archetype: def.archetype,
-    rank: 0,
+    rank,
     bossPhase: 0,
+    ...ratingDefaults(stats),
+    phases: copyBossPhases(def.phases),
     telegraph: null,
+    skills: copyEnemySkills(def),
+    defId: def.id,
+    traitIds: [...(def.traitIds ?? [])],
+    xp: summon ? 0 : stats.xp,
+    summon,
+    fillerCoefficient: filler.coefficient,
+    cooldowns: {},
     armedTrap: null,
     statuses: emptyStatuses(),
   }
@@ -998,6 +2009,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     actionTimeMs,
     nextReadyMs: actionTimeMs,
     ...guardDefaults(),
+    ...specialDefaults(),
     intellect: hero.attributes.intellect,
     vitality: hero.attributes.vitality,
     spirit: hero.attributes.spirit,
@@ -1009,7 +2021,20 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     archetype: 'standard',
     rank: 0,
     bossPhase: 0,
+    ...ratingDefaults({
+      maxHp: derived.maxHp,
+      power: school === 'physical' ? derived.physicalPower : derived.magicalPower,
+      armor: derived.armor,
+      resistance: derived.resistance,
+    }),
     telegraph: null,
+    skills: [],
+    defId: '',
+    traitIds: [],
+    xp: 0,
+    summon: false,
+    fillerCoefficient: BASIC_ATTACK_COEFFICIENT,
+    cooldowns: {},
     armedTrap: null,
     statuses: emptyStatuses(),
     physicalPower: derived.physicalPower,
@@ -1025,7 +2050,6 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     offHandKind: hero.gear.offHand === null ? null : hero.gear.offHand.kind,
     equippedSkillIds,
     priorityRows: parsedRules.rows,
-    cooldowns: {},
     classId: hero.classId,
     classResource: 0,
     classResourceId: '',
@@ -1066,9 +2090,15 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
     seenSlots[entry.slot] = true
     const def = defs.enemies[entry.defId]
     if (def === undefined) throw new Error(`unknown enemy '${entry.defId}'`)
-    enemies.push(actorFromEnemy(def, entry.slot, entry.revealed))
+    const level = enemySpawnLevel(def, entry.level)
+    enemies.push(actorFromEnemy(def, entry.slot, entry.revealed, level, entry.summon, entry.rank))
   }
   enemies.sort((a, b) => a.slot - b.slot)
+  for (const enemy of enemies) {
+    const bonus = enemyActionSpeedBonus(enemies, enemy)
+    if (bonus <= 0) continue
+    enemy.nextReadyMs = enemyRecoveryMs(enemy.actionTimeMs, 1, 0, bonus)
+  }
 
   const hero = actorFromHero(setup, defs)
   applySuppliedResources(hero, setup.hero)
@@ -1091,6 +2121,8 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
     enemies: enemies.map((enemy) => ({ id: enemy.id, name: enemy.name, slot: enemy.slot })),
   })
   classModule(hero.classId)?.encounterStart?.(state, 0)
+  for (const enemy of enemies) onEnemySpawn(state, enemy)
+  flushPhaseSkills(state, defs)
   return state
 }
 
@@ -1117,10 +2149,12 @@ export function stepCombat(state: CombatState, defs: GameDefs): CombatState {
 
   const stepStart = state.timeMs
   const stepEnd = stepStart + STEP_MS
+  flushPhaseSkills(state, defs)
   resolveExpiries(state, stepStart, stepEnd)
-  resolvePeriodicTicks(state, stepStart, stepEnd)
+  resolvePeriodicTicks(state, defs, stepStart, stepEnd)
   applyResourceRegen(state, stepStart, stepEnd)
-  resolveTelegraphs()
+  applyEnemyRegen(state, stepStart, stepEnd)
+  resolveTelegraphs(state, defs, stepStart, stepEnd)
   resolveActions(state, defs, stepStart, stepEnd)
   state.timeMs = stepEnd
   return state

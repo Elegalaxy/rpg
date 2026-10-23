@@ -23,6 +23,7 @@ import {
   ELITE_DEFENSE_MULTIPLIER,
   ELITE_HP_MULTIPLIER,
   ELITE_POWER_MULTIPLIER,
+  ECHO_RANK_GROWTH,
   ELITE_XP_MULTIPLIER,
   ENEMY_ACCURACY_BASE,
   ENEMY_ACCURACY_PER_LEVEL,
@@ -766,5 +767,25 @@ export function deriveEnemyStats(input: EnemyStatInput): EnemyDerivedStats {
     ),
     consistency: overrides.consistency ?? ENEMY_CONSISTENCY,
     xp: overridden(overrides.xp, baselineXp * (overrides.xpMultiplier ?? archetype.xp) * eliteXp, true),
+  }
+}
+
+/**
+ * Multiply already-rounded rank-0 HP, Power, Armor, and Resistance by 1.12^R.
+ * Rank 0 returns the same stats. Other stats, including XP, stay as they are.
+ */
+export function applyEchoRank(stats: EnemyDerivedStats, rank: number): EnemyDerivedStats {
+  if (typeof rank !== 'number' || !Number.isInteger(rank) || rank < 0) {
+    throw new Error(`echo rank must be an integer of at least 0, received ${describeValue(rank)}`)
+  }
+  if (rank === 0) return stats
+  let factor = 1
+  for (let step = 0; step < rank; step += 1) factor *= ECHO_RANK_GROWTH
+  return {
+    ...stats,
+    maxHp: Math.round(stats.maxHp * factor),
+    power: Math.round(stats.power * factor),
+    armor: Math.round(stats.armor * factor),
+    resistance: Math.round(stats.resistance * factor),
   }
 }

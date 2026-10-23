@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { createCombat, runCombat, stepCombat } from '../sim/combat.ts'
+import { encounterXpAward } from '../sim/enemyAi.ts'
 import { formatEvent } from '../sim/log.ts'
-import { deriveHeroStats } from '../sim/stats.ts'
+import { deriveEnemyStats, deriveHeroStats } from '../sim/stats.ts'
 import type { CombatState, DamageEvent } from '../sim/types.ts'
 
 import {
@@ -15,6 +16,12 @@ import {
   RANGER_VS_STANDARD_ID,
   VENOM_EDGE_ID,
   WARRIOR_VS_STANDARD_ID,
+  BASTION_MIXED_ID,
+  ECHO_KNIGHT_ID,
+  GROVE_MIXED_ID,
+  WARRIOR_VS_WARDEN_ID,
+  ROOTMAW_ID,
+  WARRIOR_VS_WOLF_PAIR_ID,
   gameDefs,
   scenarios,
   setupForScenario,
@@ -486,6 +493,166 @@ describe('mage spell details', () => {
     const attempt = state.log.find((event) => event.type === 'statusAttempt' && event.statusId === 'chill')
     console.log('[mage] frost chill', attempt)
     expect(attempt).toMatchObject({ result: 'applied', stacks: 1 })
+  })
+})
+
+describe('warrior-vs-wolf-pair', () => {
+  it('logs a Pounce telegraph and its resolution for seed 3', () => {
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setupForScenario(WARRIOR_VS_WOLF_PAIR_ID), defs, 3), defs, 600_000)
+    const lines = state.log.map(formatEvent)
+    const end = state.log.find((event) => event.type === 'encounterEnd')
+    const stats = deriveEnemyStats({ level: 6, archetype: 'skirmisher' })
+    const award = encounterXpAward([
+      { xp: stats.xp, summon: false },
+      { xp: stats.xp, summon: false },
+    ])
+    const xp = state.log.find((event) => event.type === 'encounterXp')
+    console.log('[enemy] wolf pair', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+      pounce: lines.filter((line) => line.includes('pounce')),
+      xp,
+    })
+    expect(state.outcome).toBe('victory')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 12_068 })
+    expect(lines).toContain('At 1.600s, Starved Wolf telegraphs pounce (Pounce), resolving at 3.100s.')
+    expect(lines).toContain("At 3.100s, Starved Wolf's pounce telegraph resolves.")
+    expect(xp).toMatchObject({
+      sum: award.sum,
+      members: award.count,
+      discount: 0.05,
+      amount: award.amount,
+    })
+  })
+})
+
+describe('grove-mixed', () => {
+  it('finishes the level-20 Warrior against a Thornbeast and a Blight Spider', () => {
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setupForScenario(GROVE_MIXED_ID), defs, 1), defs, 600_000)
+    const end = state.log.find((event) => event.type === 'encounterEnd')
+    console.log('[enemy] grove-mixed', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+    })
+    expect(state.outcome).toBe('victory')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 28_860 })
+  })
+})
+
+describe('bastion-mixed', () => {
+  it('finishes the level-20 Warrior against a Hollow Sentry and a Fallen Arbalist', () => {
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setupForScenario(BASTION_MIXED_ID), defs, 1), defs, 600_000)
+    const end = state.log.find((event) => event.type === 'encounterEnd')
+    console.log('[enemy] bastion-mixed', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+    })
+    expect(state.outcome).toBe('victory')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 28_860 })
+  })
+})
+
+describe('grove and bastion are different fights', () => {
+  it('shares a duration on seed 1 without copying one encounter log over the other', () => {
+    const defs = gameDefs()
+    const grove = runCombat(createCombat(setupForScenario(GROVE_MIXED_ID), defs, 1), defs, 600_000)
+    const bastion = runCombat(createCombat(setupForScenario(BASTION_MIXED_ID), defs, 1), defs, 600_000)
+    const groveLines = grove.log.map(formatEvent)
+    const bastionLines = bastion.log.map(formatEvent)
+    const groveEnd = grove.log.find((event) => event.type === 'encounterEnd')
+    const bastionEnd = bastion.log.find((event) => event.type === 'encounterEnd')
+    console.log('[enemy] mixed fight identity', {
+      grove: {
+        names: grove.enemies.map((enemy) => enemy.name),
+        events: groveLines.length,
+        durationMs: groveEnd?.type === 'encounterEnd' ? groveEnd.timeMs : grove.timeMs,
+      },
+      bastion: {
+        names: bastion.enemies.map((enemy) => enemy.name),
+        events: bastionLines.length,
+        durationMs: bastionEnd?.type === 'encounterEnd' ? bastionEnd.timeMs : bastion.timeMs,
+      },
+    })
+    expect(groveEnd).toMatchObject({ outcome: 'victory', timeMs: 28_860 })
+    expect(bastionEnd).toMatchObject({ outcome: 'victory', timeMs: 28_860 })
+    expect(groveLines.join('\n')).not.toBe(bastionLines.join('\n'))
+    expect(grove.enemies.map((enemy) => enemy.name)).toEqual(['Thornbeast', 'Blight Spider'])
+    expect(bastion.enemies.map((enemy) => enemy.name)).toEqual(['Hollow Sentry', 'Fallen Arbalist'])
+    expect(groveLines.some((line) => line.includes('Thornbeast'))).toBe(true)
+    expect(groveLines.some((line) => line.includes('Blight Spider'))).toBe(true)
+    expect(groveLines.some((line) => line.includes('Hollow Sentry') || line.includes('Fallen Arbalist'))).toBe(false)
+    expect(bastionLines.some((line) => line.includes('Hollow Sentry'))).toBe(true)
+    expect(bastionLines.some((line) => line.includes('Fallen Arbalist'))).toBe(true)
+    expect(bastionLines.some((line) => line.includes('Thornbeast') || line.includes('Blight Spider'))).toBe(false)
+  })
+})
+
+describe('rootmaw', () => {
+  it('finishes a level-20 Warrior with no extra skills inside 10 minutes', () => {
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setupForScenario(ROOTMAW_ID), defs, 1), defs, 600_000)
+    const end = state.log.find((event) => event.type === 'encounterEnd')
+    console.log('[enemy] rootmaw', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+      skills: state.hero.equippedSkillIds,
+    })
+    expect(state.hero.equippedSkillIds).toEqual([])
+    expect(state.outcome).toBe('defeat')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 62_000 })
+  })
+})
+
+describe('echo-knight', () => {
+  it('finishes a level-20 Warrior with no extra skills inside 10 minutes', () => {
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setupForScenario(ECHO_KNIGHT_ID), defs, 1), defs, 600_000)
+    const end = state.log.find((event) => event.type === 'encounterEnd')
+    console.log('[enemy] echo-knight', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+      skills: state.hero.equippedSkillIds,
+      enemies: state.enemies.map((enemy) => ({ name: enemy.name, summon: enemy.summon, xp: enemy.xp })),
+    })
+    expect(state.hero.equippedSkillIds).toEqual([])
+    expect(state.outcome).toBe('defeat')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 76_260 })
+    expect(state.enemies.some((enemy) => enemy.defId === 'oathbound-echo' && enemy.summon && enemy.xp === 0)).toBe(
+      true,
+    )
+  })
+})
+
+describe('warrior-vs-warden', () => {
+  it('finishes a level-20 Warrior with no extra skills inside 10 minutes on seed 7', () => {
+    const defs = gameDefs()
+    const state = runCombat(createCombat(setupForScenario(WARRIOR_VS_WARDEN_ID), defs, 7), defs, 600_000)
+    const end = state.log.find((event) => event.type === 'encounterEnd')
+    const lines = state.log.map(formatEvent)
+    const phases = state.log.filter((event) => event.type === 'phase')
+    const summons = state.log.filter((event) => event.type === 'summon')
+    console.log('[enemy] warrior-vs-warden', {
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+      skills: state.hero.equippedSkillIds,
+      phases: phases.map((event) => (event.type === 'phase' ? { phase: event.phase, name: event.name, timeMs: event.timeMs } : null)),
+      summons: summons.map((event) => (event.type === 'summon' ? event.summonName : '')),
+    })
+    expect(state.hero.equippedSkillIds).toEqual([])
+    expect(state.outcome).toBe('defeat')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 49_050 })
+    expect(phases.map((event) => (event.type === 'phase' ? { phase: event.phase, name: event.name, timeMs: event.timeMs } : null))).toEqual([
+      { phase: 1, name: "Warden's Guard", timeMs: 0 },
+      { phase: 2, name: "Warden's Echoes", timeMs: 43_100 },
+    ])
+    expect(lines.some((line) => line.includes('summons level 20 Blade Echo'))).toBe(true)
+    expect(lines.some((line) => line.includes('summons level 20 Ward Echo'))).toBe(true)
+    const warden = state.enemies.find((enemy) => enemy.defId === 'fractured-warden')
+    expect(warden?.alive).toBe(true)
+    expect((warden?.hp ?? 0) / (warden?.maxHp ?? 1)).toBeGreaterThan(0.35)
   })
 })
 

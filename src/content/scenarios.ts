@@ -1,6 +1,7 @@
 import type { CombatHeroSetup, CombatSetup, GameDefs, PriorityRow, TargetPriority } from '../sim/types.ts'
 
-import { enemies, standardDummy } from './enemies.ts'
+import { bastionMixed, groveMixed, wolfPair } from './encounters.ts'
+import { echoKnight, enemies, fracturedWarden, rootmawStalker, standardDummy } from './enemies.ts'
 import { referenceHeroes, type ReferenceHero } from './heroes.ts'
 import { skills } from './skills.ts'
 import { statuses } from './statuses.ts'
@@ -9,7 +10,7 @@ export type ScenarioDef = {
   id: string
   heroId: string
   heroName: string
-  enemies: readonly { defId: string; slot: number }[]
+  enemies: readonly { defId: string; slot: number; level?: number; summon?: boolean }[]
   equippedSkillIds?: readonly string[]
   priorityRows?: readonly PriorityRow[]
   targetPriority?: TargetPriority
@@ -28,6 +29,12 @@ export const MAGE_VS_STANDARD_ID = 'mage-vs-standard'
 export const ASSASSIN_VS_STANDARD_ID = 'assassin-vs-standard'
 export const RANGER_VS_STANDARD_ID = 'ranger-vs-standard'
 export const CLERIC_VS_STANDARD_ID = 'cleric-vs-standard'
+export const WARRIOR_VS_WOLF_PAIR_ID = 'warrior-vs-wolf-pair'
+export const GROVE_MIXED_ID = 'grove-mixed'
+export const BASTION_MIXED_ID = 'bastion-mixed'
+export const ROOTMAW_ID = 'rootmaw'
+export const ECHO_KNIGHT_ID = 'echo-knight'
+export const WARRIOR_VS_WARDEN_ID = 'warrior-vs-warden'
 
 export const scenarios: { [id: string]: ScenarioDef } = {
   [DUEL_BASIC_ID]: {
@@ -186,6 +193,54 @@ export const scenarios: { [id: string]: ScenarioDef } = {
       { skillId: 'smite' },
     ],
   },
+  [WARRIOR_VS_WOLF_PAIR_ID]: {
+    id: WARRIOR_VS_WOLF_PAIR_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: wolfPair.members.map((member) => ({
+      defId: member.enemyId,
+      slot: member.slot,
+      level: member.level,
+    })),
+  },
+  [GROVE_MIXED_ID]: {
+    id: GROVE_MIXED_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: groveMixed.members.map((member) => ({
+      defId: member.enemyId,
+      slot: member.slot,
+      level: member.level,
+    })),
+  },
+  [BASTION_MIXED_ID]: {
+    id: BASTION_MIXED_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: bastionMixed.members.map((member) => ({
+      defId: member.enemyId,
+      slot: member.slot,
+      level: member.level,
+    })),
+  },
+  [ROOTMAW_ID]: {
+    id: ROOTMAW_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: [{ defId: rootmawStalker.id, slot: 0 }],
+  },
+  [ECHO_KNIGHT_ID]: {
+    id: ECHO_KNIGHT_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: [{ defId: echoKnight.id, slot: 0 }],
+  },
+  [WARRIOR_VS_WARDEN_ID]: {
+    id: WARRIOR_VS_WARDEN_ID,
+    heroId: referenceHeroes.warrior.id,
+    heroName: 'Warrior',
+    enemies: [{ defId: fracturedWarden.id, slot: 0 }],
+  },
 }
 
 export function gameDefs(): GameDefs {
@@ -221,6 +276,11 @@ export function setupForScenario(scenarioId: string): CombatSetup {
   if (scenario === undefined) throw new Error(`unknown scenario '${scenarioId}'`)
   return {
     hero: heroSetup(referenceHeroById(scenario.heroId), scenario),
-    enemies: scenario.enemies.map((enemy) => ({ defId: enemy.defId, slot: enemy.slot })),
+    enemies: scenario.enemies.map((enemy) => ({
+      defId: enemy.defId,
+      slot: enemy.slot,
+      ...(enemy.level !== undefined ? { level: enemy.level } : {}),
+      ...(enemy.summon === true ? { summon: true } : {}),
+    })),
   }
 }

@@ -166,7 +166,17 @@ export type CombatActor = {
   barrierExpiresMs: number
   /** Fraction removed from incoming damage. 0.30 means 30% reduction. */
   damageReduction: number
+  /**
+   * Another actor whose next action ends `damageReduction`.
+   * Null means this actor's own next action ends it.
+   */
+  damageReductionSourceId: string | null
   evasionBonus: number
+  /** Added to Evasion until `timedEvasionExpiresMs`. Not cleared by the next action. */
+  timedEvasion: number
+  timedEvasionExpiresMs: number
+  /** Multiplier on healing received. Enemies start at 1. */
+  healingReceived: number
   incomingMultipliers: number[]
   /** Intellect. Status Potency is this plus equipment and skill potency. */
   intellect: number
@@ -188,18 +198,75 @@ export type CombatActor = {
   archetype: EnemyArchetype
   /** Rank a test or later encounter can set. Not a threat score. */
   rank: number
-  /** Boss phase a test or later encounter can set. */
+  /** Boss phase a test or later encounter can set. The boss-phases trait writes it. */
   bossPhase: number
-  /** Telegraph a test can set. This step does not run a telegraph clock. */
+  /** Rank-adjusted stats before Guard and phase stacks. Echo summons read these. */
+  rankMaxHp: number
+  rankPower: number
+  rankArmor: number
+  rankResistance: number
+  /** Summoner's rank-adjusted maximum HP. 0 when this actor has none. */
+  anchorMaxHp: number
+  /** 1 when no timed Armor and Resistance bonus is active. Expose reads the result. */
+  defenseBonusMultiplier: number
+  defenseBonusExpiresMs: number
+  pressureStacks: number
+  /** 0 when no pressure stack is scheduled. */
+  pressureNextMs: number
+  pressureIntervalMs: number
+  pressureMaxStacks: number
+  pressurePowerMultiplier: number
+  pressureDefenseMultiplier: number
+  pressureActionSpeed: number
+  phases: BossPhaseDef[]
+  phaseSkillsDue: PhaseSkillDue[]
+  /** Pending action telegraph. Automation reads `tag` and the time until `resolvesAtMs`. */
   telegraph: ActorTelegraph | null
+  /**
+   * A second telegraph that does not take the action slot or move `nextReadyMs`.
+   * Stun and action delay still postpone it. Ordinary damage does not cancel it.
+   */
+  reaction: ActorTelegraph | null
+  /** Active stance. Null when this actor has no stance trait. */
+  stance: EnemyStance | null
+  /** Power, Armor, and Resistance before the current stance multipliers. */
+  stanceBasePower: number
+  stanceBaseArmor: number
+  stanceBaseResistance: number
+  /** One-shot threshold skills that have already started. */
+  thresholdStarted: { [skillId: string]: boolean }
+  /** Authored skills copied at spawn. Heroes and filler-only enemies keep this empty. */
+  skills: EnemySkillDef[]
+  /** Enemy definition id. Empty for the hero. */
+  defId: string
+  traitIds: string[]
+  /** XP after archetype multipliers. Summons stay at 0. */
+  xp: number
+  summon: boolean
+  /** Filler basic-attack coefficient. Heroes use 1. */
+  fillerCoefficient: number
+  /** Skill id → simulated time when the cooldown ends and the skill can be used. */
+  cooldowns: { [skillId: string]: number }
   /** One armed Snare Trap. A new cast clears every other trap first. */
   armedTrap: ArmedTrap | null
   statuses: ActorStatuses
 }
 
+export type EnemyStance = 'guard' | 'assault'
+
 export type ActorTelegraph = {
   tag: string
   resolvesAtMs: number
+  /** Present when the simulation started this telegraph. Tests may set the tag alone. */
+  skillId?: string
+  /** When the telegraph began. An interrupt spends its cooldown from this time. */
+  startedAtMs?: number
+  /** A death burst stays armed after the actor dies. Encounter end cancels it. */
+  persistsAfterDeath?: boolean
+  /** Hero HP damage counted while this telegraph is running. Barrier damage is not included. */
+  hpTaken?: number
+  /** Cancel when `hpTaken` reaches this fraction of maximum HP. */
+  interruptMaxHpFraction?: number
 }
 
 /** Plain JSON trap armed on one target. It resolves the next time that target is ready. */
@@ -453,7 +520,7 @@ export type BarrierExpiredEvent = {
   amount: number
 }
 
-export type UntilNextActionBuff = 'damageReduction' | 'evasion' | 'incomingDamage'
+export type UntilNextActionBuff = 'damageReduction' | 'evasion' | 'incomingDamage' | 'defense'
 
 export type BuffEvent = {
   type: 'buff'
@@ -462,7 +529,9 @@ export type BuffEvent = {
   actorName: string
   kind: UntilNextActionBuff
   value: number
-  until: 'nextAction'
+  /** `duration` ends at `expiresMs`. `nextAction` ends when this actor next acts. */
+  until: 'nextAction' | 'duration'
+  expiresMs?: number
 }
 
 export type BuffEndedEvent = {
@@ -473,6 +542,8 @@ export type BuffEndedEvent = {
   damageReduction: number
   evasion: number
   incomingMultiplier: number
+  /** `duration` is a timed Evasion expiry. `granted` is a buff another actor applied. `defense` is a timed Armor and Resistance bonus. */
+  reason?: 'duration' | 'granted' | 'defense'
 }
 
 export type ActionDelayEvent = {
@@ -745,6 +816,119 @@ export type WaitEvent = {
   reason: string
 }
 
+export type TelegraphPhase = 'start' | 'resolve' | 'cancel'
+
+/** A telegraph start names the tag and the time the skill resolves. */
+export type TelegraphEvent = {
+  type: 'telegraph'
+  timeMs: number
+  actorId: string
+  actorName: string
+  skillId: string
+  skillName: string
+  tag: string
+  resolvesAtMs: number
+  phase: TelegraphPhase
+  /** Set when the skill resolves and the cooldown has started. */
+  cooldownReadyMs?: number | null
+  /** Set when hero HP damage cancels the telegraph before it resolves. */
+  reason?: 'interrupt'
+  /** Hero HP damage counted toward an interrupt. */
+  hpTaken?: number
+  /** HP damage required to interrupt. `maxHp × fraction`. */
+  hpNeeded?: number
+}
+
+/** One stance replaced the previous multipliers. It does not move a scheduled action. */
+export type StanceEvent = {
+  type: 'stance'
+  timeMs: number
+  actorId: string
+  actorName: string
+  stance: EnemyStance
+  power: number
+  armor: number
+  resistance: number
+}
+
+/** A summon joined the encounter. Its XP stays 0 and it does not increase the group discount. */
+export type SummonEvent = {
+  type: 'summon'
+  timeMs: number
+  actorId: string
+  actorName: string
+  summonId: string
+  summonName: string
+  defId: string
+  level: number
+  slot: number
+  xp: number
+  summon: true
+}
+
+/** One regeneration tick. Burn logs a paused tick instead of healing every 10 ms step. */
+export type RegenEvent = {
+  type: 'regen'
+  timeMs: number
+  actorId: string
+  actorName: string
+  maxHp: number
+  fraction: number
+  amount: number
+  hpBefore: number
+  hpAfter: number
+  paused: boolean
+}
+
+/** A ready support skill had no legal ally, so the AI moved to the next skill. */
+export type SkillSkipEvent = {
+  type: 'skillSkip'
+  timeMs: number
+  actorId: string
+  actorName: string
+  skillId: string
+  skillName: string
+  reason: string
+}
+
+/** A boss entered one phase. Each HP threshold is entered once. */
+export type PhaseEvent = {
+  type: 'phase'
+  timeMs: number
+  actorId: string
+  actorName: string
+  phase: number
+  name: string
+  hp: number
+  maxHp: number
+}
+
+/** One phase-pressure stack. It does not move an already scheduled action. */
+export type StackEvent = {
+  type: 'stack'
+  timeMs: number
+  actorId: string
+  actorName: string
+  stacks: number
+  maxStacks: number
+  power: number
+  armor: number
+  resistance: number
+}
+
+/** Victory XP after archetype multipliers and the group discount. */
+export type EncounterXpEvent = {
+  type: 'encounterXp'
+  timeMs: number
+  /** Sum of non-summon XP before the discount. */
+  sum: number
+  /** Non-summon enemies included in `sum`. */
+  members: number
+  /** Discount fraction after the 20% cap. 0.05 is 5%. */
+  discount: number
+  amount: number
+}
+
 export type LogEvent =
   | EncounterStartEvent
   | PriorityEvent
@@ -774,6 +958,14 @@ export type LogEvent =
   | ResourceEvent
   | ResourceSnapshotEvent
   | WaitEvent
+  | TelegraphEvent
+  | StanceEvent
+  | SummonEvent
+  | RegenEvent
+  | SkillSkipEvent
+  | PhaseEvent
+  | StackEvent
+  | EncounterXpEvent
   | DeathEvent
   | EncounterEndEvent
 
@@ -791,12 +983,22 @@ export type HealEffect = {
   kind: 'heal'
   maxHpFraction: number
   healingCoefficient: number
+  /** `anchor` uses the caster's anchor max HP instead of the target's maximum. */
+  maxHpOf?: 'target' | 'anchor'
 }
 
 export type BarrierEffect = {
   kind: 'barrier'
-  source: 'magical' | 'healing'
+  source: 'magical' | 'healing' | 'anchorMaxHp'
   coefficient: number
+  durationSeconds: number
+}
+
+/** Timed multiplier on Armor and Resistance. Expose reads the multiplied defense. */
+export type DefenseBonusEffect = {
+  kind: 'defenseBonus'
+  /** 1.5 means +50%. */
+  multiplier: number
   durationSeconds: number
 }
 
@@ -865,6 +1067,44 @@ export type FieldEffect = {
   healCoefficient: number
 }
 
+/** Evasion added for a duration. It is not removed when the actor next acts. */
+export type TimedEvasionEffect = {
+  kind: 'timedEvasion'
+  amount: number
+  durationSeconds: number
+}
+
+/**
+ * Roll one application chance. On success, resolve every nested effect.
+ * On failure, resolve none of them.
+ */
+export type ChanceGateEffect = {
+  kind: 'chanceGate'
+  baseChance: number
+  school: DamageSchool
+  effects: readonly SkillEffect[]
+}
+
+/** Fractions of the summoner's rank-adjusted stats. Action time is absolute seconds. */
+export type SummonerStatFractions = {
+  hpFraction: number
+  armorFraction: number
+  resistanceFraction: number
+  powerFraction: number
+  actionTime: number
+}
+
+/** Spawn one enemy from the combat definitions. The spawn is a summon. */
+export type SummonEffect = {
+  kind: 'summon'
+  enemyId: string
+  level: number
+  /** When set, replace the summon's stats from the summoner's rank-adjusted stats. */
+  fromSummoner?: SummonerStatFractions
+  /** Copy the summoner's rank-adjusted maximum HP onto the summon. */
+  anchorMaxHp?: boolean
+}
+
 /** Remove a fraction of maximum HP. Barriers and Defense do not reduce it. */
 export type LoseHpEffect = {
   kind: 'loseHp'
@@ -911,6 +1151,10 @@ export type SkillEffect =
   | ArmTrapEffect
   | FieldEffect
   | LoseHpEffect
+  | TimedEvasionEffect
+  | ChanceGateEffect
+  | SummonEffect
+  | DefenseBonusEffect
 
 export type SkillRequirement = {
   mainHand?: WeaponKind
@@ -953,8 +1197,6 @@ export type CombatHero = CombatActor & {
   offHandKind: OffHandKind | null
   equippedSkillIds: string[]
   priorityRows: PriorityRow[]
-  /** Skill id → simulated time when the cooldown ends and the skill can be used. */
-  cooldowns: { [skillId: string]: number }
   classId: HeroClass
   /** Live class meter. Conditions read it, and a positive skill cost is paid from it. */
   classResource: number
@@ -1024,6 +1266,12 @@ export type CombatEnemySetup = {
   slot: number
   /** Omitted enemies start revealed. */
   revealed?: boolean
+  /** Required when the definition's level range is wider than one level. */
+  level?: number
+  /** Summons add no encounter XP and do not increase the group discount. */
+  summon?: boolean
+  /** Echo rank. Omitted is 0. Only an enemy with echo-rank scaling uses it for stats. */
+  rank?: number
 }
 
 export type CombatSetup = {
@@ -1031,16 +1279,124 @@ export type CombatSetup = {
   enemies: readonly CombatEnemySetup[]
 }
 
+/** Basic attack used when every authored action skill is on cooldown. It rolls to hit and cannot crit. */
+export type EnemyFillerAttack = {
+  school: DamageSchool
+  /** Omitted uses the basic-attack coefficient, 1. */
+  coefficient?: number
+}
+
+export type EnemySkillTrigger = 'action' | 'death' | 'hp' | 'phase'
+
+/** One boss phase. A phase with no HP fraction is the start. Later phases are entered once. */
+export type BossPhaseDef = {
+  phase: number
+  name: string
+  /** Enter this phase the first time HP is at or below this fraction of maximum HP. */
+  atOrBelowHpFraction?: number
+  /** Milliseconds after entering this phase before the first pressure stack, then between stacks. */
+  pressureIntervalMs?: number
+  pressureMaxStacks?: number
+  /** Each stack multiplies Power by this. */
+  pressurePower?: number
+  /** Each stack multiplies Armor and Resistance by this. */
+  pressureDefense?: number
+  /** Each stack divides action time by this when the next action is scheduled. */
+  pressureActionSpeed?: number
+}
+
+/** A phase skill waiting to resolve at `timeMs`. */
+export type PhaseSkillDue = {
+  skillId: string
+  timeMs: number
+}
+
+/** Another living enemy. The acting enemy is not its own ally. */
+export type AllyTarget = 'lowestHpPercent' | 'lowestBarrier' | 'woundedLowestHpPercent'
+
+/** Recovery that replaces the skill's action time. Reload uses this. */
+export type ForcedRecovery = {
+  id: string
+  name: string
+  durationMs: number
+  /** Added to Evasion at resolution and cleared when this actor next acts. */
+  evasion: number
+}
+
+/**
+ * Numbers for one enemy skill. The AI uses `action` skills in listed order.
+ * A `death` skill starts only from a trait.
+ */
+export type EnemySkillDef = {
+  id: string
+  name: string
+  /** Primary damage coefficient. 0 when the skill deals no damage. */
+  coefficient: number
+  school: DamageSchool
+  cooldownSeconds: number
+  /** Wind-up in milliseconds. Omitted or 0 resolves on the ready time. */
+  telegraphMs?: number
+  /** Tag shown on the telegraph and to automation. */
+  tag: string
+  tags: readonly string[]
+  /** Crits only when this is true. The filler attack never sets it. */
+  canCrit?: boolean
+  /** Omitted means 1.0 × the enemy's base action time. */
+  actionTimeCoefficient?: number
+  effects: readonly SkillEffect[]
+  /**
+   * Omitted skills are chosen by the AI.
+   * `hp` starts once, from a trait, when HP is at or below `hpFraction`.
+   * `phase` runs once, immediately, when that boss phase is entered.
+   */
+  trigger?: EnemySkillTrigger
+  /** Used by an `hp` trigger. 0.6 means 60% of maximum HP. */
+  hpFraction?: number
+  /** Used by a `phase` trigger. */
+  phase?: number
+  /** Usable only while `bossPhase` is one of these. Omitted skills are available in every phase. */
+  phases?: readonly number[]
+  /**
+   * Cancel this telegraph when hero HP damage during it reaches this fraction of maximum HP.
+   * Barrier damage that never reaches HP is not counted.
+   */
+  interruptMaxHpFraction?: number
+  /** Ally chosen when the skill resolves. Omitted skills do not need an ally. */
+  allyTarget?: AllyTarget
+  /** The caster is affected even when no ally exists. */
+  affectSelf?: boolean
+  /**
+   * When set, the next ready time is the resolution plus `durationMs`,
+   * not the skill's action time. Evasion is applied at resolution.
+   */
+  forcedRecovery?: ForcedRecovery
+}
+
 export type EnemyDef = {
   id: string
   name: string
+  /**
+   * Fixed level used when the encounter omits a level and the range is one level.
+   * Ranged enemies still keep a level inside that range.
+   */
   level: number
+  /** Inclusive. Omitted means this enemy is exactly `level`. */
+  levelMin?: number
+  levelMax?: number
   archetype: EnemyArchetype
   elite?: boolean
   overrides?: EnemyStatOverrides
+  /** Filler school when `filler` is omitted. */
   school: DamageSchool
+  filler?: EnemyFillerAttack
+  skills?: readonly EnemySkillDef[]
+  traitIds?: readonly string[]
   /** Uses boss stack caps, half durations, and the 35% Stun delay. Not immunity. */
   boss?: boolean
+  /** Ordered boss phases. The trait enters each threshold once. */
+  phases?: readonly BossPhaseDef[]
+  /** Encounter rank R multiplies HP, Power, Armor, and Resistance by 1.12^R. */
+  echoRank?: boolean
 }
 
 export type GameDefs = {

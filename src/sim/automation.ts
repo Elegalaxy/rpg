@@ -11,6 +11,7 @@ import {
 } from './skills.ts'
 import {
   TARGET_PRIORITIES,
+  type ActorTelegraph,
   type AutomationCondition,
   type CombatActor,
   type CombatHero,
@@ -567,6 +568,13 @@ function rowNeedsEnemy(skill: SkillDef, row: PriorityRow): boolean {
   return false
 }
 
+/** The action telegraph wins when it matches. A reaction telegraph is visible when the action slot does not. */
+function visibleTelegraph(enemy: CombatActor, tag: string | undefined): ActorTelegraph | null {
+  if (enemy.telegraph !== null && (tag === undefined || enemy.telegraph.tag === tag)) return enemy.telegraph
+  if (enemy.reaction !== null && (tag === undefined || enemy.reaction.tag === tag)) return enemy.reaction
+  return null
+}
+
 function conditionFailure(
   state: CombatState,
   hero: CombatHero,
@@ -618,8 +626,8 @@ function conditionFailure(
       return numericFailure('boss phase', enemy.bossPhase, condition.operator, condition.value)
     case 'telegraph': {
       if (enemy === null) return 'no target'
-      const telegraph = enemy.telegraph
-      const tagged = telegraph !== null && (condition.tag === undefined || telegraph.tag === condition.tag)
+      const telegraph = visibleTelegraph(enemy, condition.tag)
+      const tagged = telegraph !== null
       const label = condition.tag === undefined ? 'telegraph' : `telegraph ${condition.tag}`
       if (condition.operator === 'present' || condition.operator === 'absent') {
         return presenceFailure(label, tagged, condition.operator)

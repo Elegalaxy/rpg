@@ -144,6 +144,31 @@ export const ENEMY_ACTION_TIME: Ratio = { numerator: 11, denominator: 5 } // 2.2
 export const ENEMY_CONSISTENCY = 0
 export const ENEMY_XP_BASE = 5
 export const ENEMY_XP_PER_LEVEL = 2
+/** 5% less encounter XP for each non-summon enemy beyond the first. */
+export const ENCOUNTER_XP_DISCOUNT_PER_EXTRA = 0.05
+/** The group discount stops growing at 20%, so a sixth enemy adds no further discount. */
+export const ENCOUNTER_XP_DISCOUNT_CAP = 0.2
+/** Pack Hunter grants this much action speed for each other living wolf. */
+export const PACK_HUNTER_SPEED_PER_ALLY = 0.1
+/** Pack Hunter action speed cannot rise by more than this. */
+export const PACK_HUNTER_SPEED_CAP = 0.2
+/** Regeneration restores this fraction of maximum HP once per combat second. */
+export const REGEN_FRACTION_PER_SECOND = 0.01
+/** Expose halves regeneration. Burn pauses it and wins when both are present. */
+export const REGEN_EXPOSED_FRACTION_PER_SECOND = 0.005
+/** Guard stance multiplies Armor and Resistance. A new stance replaces the previous one. */
+export const GUARD_DEFENSE_MULTIPLIER = 1.3
+/** Assault stance multiplies Power. */
+export const ASSAULT_POWER_MULTIPLIER = 1.25
+/** Assault stance multiplies Armor and Resistance. */
+export const ASSAULT_DEFENSE_MULTIPLIER = 0.8
+/** Stance traits switch on this clock. An already scheduled action stays where it is. */
+export const STANCE_INTERVAL_MS = 10_000
+/**
+ * Echo rank R multiplies rank-0 HP, Power, Armor, and Resistance by this to the power R.
+ * Accuracy, Evasion, Consistency, action time, and XP do not change. Authored rank modifiers wait.
+ */
+export const ECHO_RANK_GROWTH = 1.12
 
 export const ENEMY_ARCHETYPE = {
   swarm: { hp: 0.45, power: 0.65, defense: 0.6, actionTime: 0.75, xp: 0.4, evasionBonus: 0 },

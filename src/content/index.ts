@@ -1,4 +1,5 @@
 export { enemies, standardDummy } from './enemies.ts'
+export { encounters, wolfPair } from './encounters.ts'
 export { referenceGear } from './gear.ts'
 export { referenceHeroes, type ReferenceHero } from './heroes.ts'
 export {
