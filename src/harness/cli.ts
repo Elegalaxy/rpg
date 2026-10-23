@@ -1,10 +1,17 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
+import { fileURLToPath } from 'node:url'
 
 import { formatEvent } from '../sim/log.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import type { CombatState } from '../sim/types.ts'
 
 import { MAX_BATCH_RUNS, runBatch, runScenario, scenarioIds, type BatchSummary } from './batch.ts'
+import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
+
+const RPG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+const REFERENCE_CSV_PATH = resolve(RPG_ROOT, 'reports', '2026-10-23-reference.csv')
 
 const SEED_MIN = -2147483648
 const SEED_MAX = 2147483647
@@ -21,6 +28,7 @@ type ParsedArgs = {
   scenario?: string
   seed?: string
   runs?: string
+  matrix?: string
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -48,7 +56,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       parsed.list = true
       continue
     }
-    if (name !== '--scenario' && name !== '--seed' && name !== '--runs') {
+    if (name !== '--scenario' && name !== '--seed' && name !== '--runs' && name !== '--matrix') {
       throw new CliError(`unknown argument ${JSON.stringify(token)}`)
     }
     let value = inline
@@ -63,7 +71,8 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     if (value.length === 0) throw new CliError(`${name} requires a value`)
     if (name === '--scenario') parsed.scenario = value
     else if (name === '--seed') parsed.seed = value
-    else parsed.runs = value
+    else if (name === '--runs') parsed.runs = value
+    else parsed.matrix = value
   }
   return parsed
 }
@@ -141,11 +150,43 @@ function validScenarios(): string {
   return scenarioIds().join(', ')
 }
 
+function writeReferenceCsv(csv: string): void {
+  mkdirSync(dirname(REFERENCE_CSV_PATH), { recursive: true })
+  writeFileSync(REFERENCE_CSV_PATH, csv, 'utf8')
+}
+
+function printMatrix(args: ParsedArgs): void {
+  if (args.matrix !== 'reference') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference`)
+  }
+  if (args.seed === undefined) throw new CliError('missing --seed')
+  if (args.runs === undefined) throw new CliError('matrix requires --runs')
+  const seed = parseSeed(args.seed)
+  const runs = parseRuns(args.runs)
+  console.log(
+    `[sim] matrix ${args.matrix} seed ${seed} runs ${runs} report reports/2026-10-23-reference.csv`,
+  )
+  const started = performance.now()
+  const report = runReferenceMatrix(seed, runs)
+  const elapsedMs = performance.now() - started
+  const csv = formatMatrixCsv(report)
+  writeReferenceCsv(csv)
+  process.stdout.write(csv)
+  printTiming(report.rows.length * runs, elapsedMs)
+}
+
 function main(): void {
   const args = parseArgs(process.argv.slice(2))
   if (args.list) {
     console.log('[sim] scenarios')
     for (const id of scenarioIds()) console.log(id)
+    return
+  }
+  if (args.matrix !== undefined && args.scenario !== undefined) {
+    throw new CliError('choose either --matrix or --scenario')
+  }
+  if (args.matrix !== undefined) {
+    printMatrix(args)
     return
   }
   if (args.scenario === undefined) {

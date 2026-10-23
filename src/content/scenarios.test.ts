@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { createCombat, runCombat, stepCombat } from '../sim/combat.ts'
 import { encounterXpAward } from '../sim/enemyAi.ts'
 import { formatEvent } from '../sim/log.ts'
+import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { deriveEnemyStats, deriveHeroStats } from '../sim/stats.ts'
-import type { CombatState, DamageEvent } from '../sim/types.ts'
+import type { CombatState, DamageEvent, PriorityRow } from '../sim/types.ts'
 
 import {
   DRIVING_BLOW_ID,
@@ -23,9 +24,12 @@ import {
   ROOTMAW_ID,
   WARRIOR_VS_WOLF_PAIR_ID,
   gameDefs,
+  REFERENCE_MATRIX_ID,
+  referenceScenarioIds,
   scenarios,
   setupForScenario,
 } from './scenarios.ts'
+import { referenceHeroes } from './heroes.ts'
 
 const FIGHT_MS = 180_000
 
@@ -676,4 +680,234 @@ describe('harness enemies', () => {
       expect(state.enemies.every((enemy) => enemy.revealed)).toBe(true)
     }
   })
+})
+
+/** Same 10-minute cap as the harness. Timeout is an outcome. */
+const REFERENCE_LIMIT_MS = 10 * 60 * 1000
+
+const REFERENCE_SOLOS: readonly { slug: string; defId: string; level: number }[] = [
+  { slug: 'shardling', defId: 'fracture-shardling', level: 3 },
+  { slug: 'wolf', defId: 'starved-wolf', level: 4 },
+  { slug: 'deserter', defId: 'deserter', level: 6 },
+  { slug: 'spider', defId: 'blight-spider', level: 8 },
+  { slug: 'thornbeast', defId: 'thornbeast', level: 11 },
+  { slug: 'wisp', defId: 'fracture-wisp', level: 12 },
+  { slug: 'sentry', defId: 'hollow-sentry', level: 10 },
+  { slug: 'arbalist', defId: 'fallen-arbalist', level: 13 },
+  { slug: 'oathbound-echo', defId: 'oathbound-echo', level: 15 },
+]
+
+const REFERENCE_GROUPS: readonly {
+  slug: string
+  heroLevel: number
+  enemies: readonly { defId: string; slot: number; level: number; rank?: number }[]
+}[] = [
+  {
+    slug: 'road-mixed',
+    heroLevel: 5,
+    enemies: [
+      { defId: 'fracture-shardling', slot: 0, level: 5 },
+      { defId: 'starved-wolf', slot: 1, level: 5 },
+      { defId: 'deserter', slot: 2, level: 5 },
+    ],
+  },
+  {
+    slug: 'grove-mixed',
+    heroLevel: 10,
+    enemies: [
+      { defId: 'thornbeast', slot: 0, level: 10 },
+      { defId: 'blight-spider', slot: 1, level: 10 },
+    ],
+  },
+  {
+    slug: 'bastion-mixed',
+    heroLevel: 12,
+    enemies: [
+      { defId: 'hollow-sentry', slot: 0, level: 12 },
+      { defId: 'fallen-arbalist', slot: 1, level: 12 },
+    ],
+  },
+  { slug: 'rootmaw', heroLevel: 14, enemies: [{ defId: 'rootmaw-stalker', slot: 0, level: 14 }] },
+  { slug: 'echo-knight', heroLevel: 16, enemies: [{ defId: 'echo-knight', slot: 0, level: 16 }] },
+  {
+    slug: 'warden',
+    heroLevel: 20,
+    enemies: [{ defId: 'fractured-warden', slot: 0, level: 20, rank: 0 }],
+  },
+]
+
+const referenceRows: { [classId in HeroClass]: readonly PriorityRow[] } = {
+  warrior: [
+    {
+      skillId: 'second-wind',
+      conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 40 }],
+    },
+    {
+      skillId: 'shield-brace',
+      conditions: [{ kind: 'telegraph', operator: 'atMost', value: 1000 }],
+    },
+    {
+      skillId: 'sundering-blow',
+      conditions: [
+        { kind: 'status', who: 'target', statusId: 'expose', measure: 'presence', operator: 'absent' },
+      ],
+    },
+    { skillId: 'driving-blow' },
+  ],
+  assassin: [
+    { skillId: 'mark-for-death', conditions: [{ kind: 'mark', operator: 'absent' }] },
+    { skillId: 'execute', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 4 }] },
+    { skillId: 'execute', conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }] },
+    {
+      skillId: 'venom-edge',
+      conditions: [
+        { kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 4 },
+      ],
+    },
+    { skillId: 'shadow-cut' },
+  ],
+  ranger: [
+    { skillId: 'snare-trap', conditions: [{ kind: 'telegraph', operator: 'present' }] },
+    { skillId: 'volley', conditions: [{ kind: 'enemyCount', operator: 'atLeast', value: 3 }] },
+    { skillId: 'aimed-shot', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 80 }] },
+    { skillId: 'piercing-arrow' },
+  ],
+  mage: [
+    { skillId: 'mana-ward', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 50 }] },
+    { skillId: 'mana-ward', conditions: [{ kind: 'telegraph', operator: 'atMost', value: 1000 }] },
+    { skillId: 'arcane-recovery', conditions: [{ kind: 'classResource', operator: 'atMost', value: 30 }] },
+    { skillId: 'fireball', conditions: [{ kind: 'enemyCount', operator: 'atLeast', value: 2 }] },
+    { skillId: 'frost-lance' },
+  ],
+  cleric: [
+    { skillId: 'mend', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 50 }] },
+    { skillId: 'ward', conditions: [{ kind: 'telegraph', operator: 'atMost', value: 1000 }] },
+    { skillId: 'judgment', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 75 }] },
+    { skillId: 'smite' },
+  ],
+}
+
+const referenceSkills: { [classId in HeroClass]: readonly string[] } = {
+  warrior: ['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'],
+  assassin: ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'],
+  ranger: ['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'],
+  mage: ['fireball', 'frost-lance', 'mana-ward', 'arcane-recovery'],
+  cleric: ['smite', 'mend', 'ward', 'judgment'],
+}
+
+describe('reference matrix', () => {
+  it('matches the published level-20 heroes and finishes every ref- scenario on seed 1', () => {
+    expect(REFERENCE_MATRIX_ID).toBe('reference')
+    const ids = referenceScenarioIds()
+    const expectedIds = HERO_CLASSES.flatMap((classId) =>
+      [...REFERENCE_SOLOS.map((solo) => solo.slug), ...REFERENCE_GROUPS.map((group) => group.slug)].map(
+        (slug) => `ref-${classId}-${slug}`,
+      ),
+    ).sort()
+    console.log('[hero] reference ids', { count: ids.length, ids })
+    expect(ids).toEqual(expectedIds)
+    expect(ids).toHaveLength(75)
+    expect(scenarios['duel-basic']?.heroLevel).toBeUndefined()
+    expect(scenarios['warrior-vs-warden']?.heroLevel).toBeUndefined()
+    expect(scenarios['warrior-vs-standard']?.priorityRows?.[1]?.conditions).toEqual([
+      { kind: 'status', who: 'target', statusId: 'expose', measure: 'presence', operator: 'absent' },
+      { kind: 'classResource', operator: 'atLeast', value: 20 },
+    ])
+
+    const defs = gameDefs()
+    const results: { id: string; outcome: string; durationMs: number }[] = []
+    for (const classId of HERO_CLASSES) {
+      const encounters = [
+        ...REFERENCE_SOLOS.map((solo) => ({
+          slug: solo.slug,
+          heroLevel: solo.level,
+          enemies: [{ defId: solo.defId, slot: 0, level: solo.level }],
+        })),
+        ...REFERENCE_GROUPS,
+      ]
+      for (const encounter of encounters) {
+        const id = `ref-${classId}-${encounter.slug}`
+        const scenario = scenarios[id]
+        expect(scenario, id).toBeDefined()
+        if (scenario === undefined) continue
+        expect(scenario.heroLevel).toBe(encounter.heroLevel)
+        expect(scenario.enemies).toEqual(encounter.enemies)
+        expect(scenario.equippedSkillIds).toEqual(referenceSkills[classId])
+        expect(scenario.priorityRows).toEqual(referenceRows[classId])
+        expect(scenario.equippedSkillIds).not.toContain('arcane-bolt')
+        if (classId === 'ranger') {
+          expect(scenario.startingResource).toBe(100)
+          expect(scenario.specialAmmo).toBe(6)
+        } else {
+          expect(scenario.startingResource).toBeUndefined()
+          expect(scenario.specialAmmo).toBeUndefined()
+        }
+        if (classId === 'cleric') expect(scenario.vow).toBe('zeal')
+        else expect(scenario.vow).toBeUndefined()
+
+        const setup = setupForScenario(id)
+        const attributeSum =
+          setup.hero.attributes.strength +
+          setup.hero.attributes.vitality +
+          setup.hero.attributes.agility +
+          setup.hero.attributes.intellect +
+          setup.hero.attributes.spirit
+        expect(setup.hero.level).toBe(encounter.heroLevel)
+        expect(setup.hero.classId).toBe(classId)
+        expect(attributeSum).toBe(50 + 2 * (encounter.heroLevel - 1))
+        const publishedGear = referenceHeroes[classId].gear
+        const setupPieces = [
+          setup.hero.gear.mainHand,
+          setup.hero.gear.offHand,
+          setup.hero.gear.head,
+          setup.hero.gear.chest,
+          setup.hero.gear.hands,
+          setup.hero.gear.feet,
+          ...setup.hero.gear.accessories,
+        ]
+        for (const piece of setupPieces) {
+          expect(piece).not.toBeNull()
+          if (piece === null) continue
+          expect(piece.itemLevel).toBe(encounter.heroLevel)
+          expect(piece.quality).toBe(1)
+          expect('modifiers' in piece).toBe(false)
+        }
+        if (encounter.heroLevel === 20) {
+          expect(setup.hero.attributes).toEqual(referenceHeroes[classId].attributes)
+          expect(deriveHeroStats(setup.hero)).toEqual(deriveHeroStats(referenceHeroes[classId]))
+          expect(setup.hero.gear).toBe(publishedGear)
+        } else {
+          expect(setup.hero.gear).not.toBe(publishedGear)
+          expect(setup.hero.gear.mainHand.kind).toBe(publishedGear.mainHand.kind)
+          expect(setup.hero.gear.offHand?.kind).toBe(publishedGear.offHand?.kind)
+          expect(setup.hero.gear.chest.category).toBe(publishedGear.chest.category)
+        }
+
+        const state = createCombat(setup, defs, 1)
+        expect(state.hero.equippedSkillIds).toEqual([...referenceSkills[classId]])
+        expect(state.hero.equippedSkillIds).not.toContain('arcane-bolt')
+        if (classId === 'ranger') {
+          expect(state.hero.classResource).toBe(100)
+          expect(state.hero.classResourceId).toBe('readiness')
+          expect(state.hero.specialAmmo).toBe(6)
+        }
+        if (classId === 'cleric') expect(state.hero.classState.vow).toBe('zeal')
+        expect(state.enemies.map((enemy) => enemy.level)).toEqual(encounter.enemies.map((enemy) => enemy.level))
+        if (encounter.slug === 'warden') expect(state.enemies[0]?.rank).toBe(0)
+
+        runCombat(state, defs, REFERENCE_LIMIT_MS)
+        const end = state.log[state.log.length - 1]
+        expect(end, id).toMatchObject({ type: 'encounterEnd', outcome: state.outcome })
+        expect(['victory', 'defeat', 'timeout']).toContain(state.outcome)
+        const durationMs = end?.type === 'encounterEnd' ? end.timeMs : state.timeMs
+        results.push({ id, outcome: state.outcome, durationMs })
+      }
+    }
+    console.log('[hero] reference matrix seed 1', results)
+    const example = results.find((result) => result.id === 'ref-warrior-shardling')
+    console.log('[hero] example outcome', example)
+    expect(example).toEqual({ id: 'ref-warrior-shardling', outcome: 'victory', durationMs: 3_636 })
+    expect(results).toHaveLength(75)
+    expect(new Set(results.map((result) => result.id)).size).toBe(75)
+  }, 300_000)
 })

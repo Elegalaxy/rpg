@@ -637,6 +637,7 @@ Echo Knight:
   - Consistency: 50
   - Base action time: 2.2 seconds
 - Target successful-fight duration: 60-90 simulated seconds.
+- The same floor builds lost every rank-0 fight in that matrix: 0% wins, about 50 seconds to defeat, and no timeouts. That loss is accepted. The duration band remains the target for a successful fight, not a requirement that the floor build win. Enemy stacking pressure after the expected duration stays undesigned, and the harness still ends a fight at 10 simulated minutes.
 - Warden Strike fills ordinary action gaps and deals 100% Physical Power.
 - Three telegraphed phases:
   1. Warden's Guard, from 100%-70% HP:
@@ -961,6 +962,14 @@ Equal-level standard encounters target:
 
 - Approximately 8-12 simulated seconds to defeat for a reasonable build.
 - Approximately 10%-20% average hero HP attrition before out-of-combat regeneration.
+
+The 2026-10-23 reference matrix ran each level-20 floor build 300 times from seed 1. Those builds use the Q4 loadouts and have no passives, accessories, or consumables. Ranger and Warrior fights against a level-6 Deserter landed inside both bands. These misses are accepted, and no coefficients change because of them:
+
+- Assassin: 100% wins, median 7.6 seconds, 9.3% HP lost.
+- Cleric: 100% wins, median 14.7 seconds, 16.1% HP lost.
+- Mage: 100% wins, median 8.3 seconds, 9.8% HP lost.
+
+The bands remain the target for a reasonable build. They are not a requirement that the floor build hit them.
 
 Initial archetype multipliers:
 
@@ -1534,7 +1543,7 @@ Validate the first playable's combat model:
 
 1. Implement a deterministic simulation harness
 2. Run reference simulations for regular, elite, and Warden encounters
-3. Revise coefficients, skill values, and enemy benchmarks from evidence
+3. Revise coefficients, skill values, and enemy benchmarks from evidence. The 2026-10-24 review kept the current coefficients and recorded the floor-build deviations above.
 4. Return to unresolved world, economy, and presentation questions
 
 Balance values should be treated as testable starting hypotheses rather than final numbers.
@@ -1543,3 +1552,4 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 - 2026-10-21: Accepted the technical direction: TypeScript + React + Vite with no engine, a fixed 10 ms simulation clock with a fixed tie order, and actions that resolve when ready, with action time as recovery and the first action after one base action time. Linked the implementation plan.
 - 2026-10-21: Accepted the provisional combat baseline: hero/enemy formulas, resources, active skills, automation, equipment curves, class/racial passives, keystones, first-region enemies, elites, and Warden phases. Next step is deterministic simulation.
+- 2026-10-24: Accepted the first reference-matrix deviations without coefficient changes. Assassin, Cleric, and Mage floor builds miss the equal-level Deserter bands, and every floor build loses to the rank-0 Warden. Stacking pressure stays undesigned.

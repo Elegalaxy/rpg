@@ -1,8 +1,14 @@
 import type {
+  ActorStatuses,
+  CombatState,
+  DamageEvent,
   EnemyStance,
+  FieldTickEvent,
+  HpLossEvent,
   LogEvent,
   ResourceEvent,
   ResourceSnapshotEvent,
+  StatusTickEvent,
   TargetPriority,
   WaitEvent,
 } from './types.ts'
@@ -343,4 +349,62 @@ export function formatEvent(event: LogEvent): string {
       throw new Error(`unknown log event ${JSON.stringify(unexpected)}`)
     }
   }
+}
+
+/** A log line that lowered the hero's HP. */
+export type HeroHpLossEvent = DamageEvent | StatusTickEvent | FieldTickEvent | HpLossEvent
+
+/** HP losses that led to the hero's death, and the statuses still on the hero. */
+export type DefeatSummary = {
+  hpLoss: HeroHpLossEvent[]
+  statuses: ActorStatuses
+}
+
+function isHeroHpLoss(event: LogEvent, heroId: string): event is HeroHpLossEvent {
+  if (event.type === 'damage' || event.type === 'statusTick' || event.type === 'fieldTick') {
+    return event.targetId === heroId && event.targetHpAfter < event.targetHpBefore
+  }
+  if (event.type === 'hpLoss') {
+    return event.actorId === heroId && event.hpAfter < event.hpBefore
+  }
+  return false
+}
+
+function copyStatuses(statuses: ActorStatuses): ActorStatuses {
+  return {
+    bleed: statuses.bleed,
+    poison: statuses.poison,
+    burn: statuses.burn,
+    chill: statuses.chill,
+    mark: statuses.mark,
+    expose: statuses.expose,
+  }
+}
+
+/**
+ * HP-loss events that led to the defeat, in log order, and the statuses on the hero.
+ * Does not print and does not change `state`.
+ */
+export function summarizeDefeat(state: CombatState): DefeatSummary {
+  if (state.outcome !== 'defeat') {
+    throw new Error(`summarizeDefeat requires a defeat, received ${state.outcome}`)
+  }
+  const heroId = state.hero.id
+  let deathIndex = -1
+  for (let index = 0; index < state.log.length; index += 1) {
+    const event = state.log[index]
+    if (event !== undefined && event.type === 'death' && event.actorId === heroId) {
+      deathIndex = index
+      break
+    }
+  }
+  if (deathIndex < 0) {
+    throw new Error('defeat ended without a hero death event')
+  }
+  const hpLoss: HeroHpLossEvent[] = []
+  for (let index = 0; index < deathIndex; index += 1) {
+    const event = state.log[index]
+    if (event !== undefined && isHeroHpLoss(event, heroId)) hpLoss.push(event)
+  }
+  return { hpLoss, statuses: copyStatuses(state.hero.statuses) }
 }

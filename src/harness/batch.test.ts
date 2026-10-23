@@ -5,7 +5,7 @@ import { createCombat, runCombat } from '../sim/combat.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import type { CombatState } from '../sim/types.ts'
 
-import { HARNESS_LIMIT_MS, runBatch, type BatchSummary } from './batch.ts'
+import { HARNESS_LIMIT_MS, runBatch, scenarioIds, type BatchSummary } from './batch.ts'
 
 function encounterDurationMs(state: CombatState): number {
   for (let index = state.log.length - 1; index >= 0; index -= 1) {
@@ -156,8 +156,9 @@ describe('runBatch', () => {
       {
         label: 'unknown scenario',
         run: () => runBatch('nope', 1, 1),
-        pattern:
-          /unknown scenario 'nope'; valid scenarios: assassin-vs-standard, bastion-mixed, cleric-vs-standard, driving-blow, duel-basic, echo-knight, grove-mixed, mage-vs-standard, priority-focus, ranger-vs-standard, rootmaw, venom-edge, warrior-vs-standard, warrior-vs-warden, warrior-vs-wolf-pair/,
+        pattern: new RegExp(
+          `unknown scenario 'nope'; valid scenarios: ${scenarioIds().join(', ')}`,
+        ),
       },
       {
         label: 'non-integer seed',

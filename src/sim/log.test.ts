@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { formatEvent } from './log.ts'
-import type { DamageEvent, LogEvent } from './types.ts'
+import { createCombat, runCombat } from './combat.ts'
+import { formatEvent, summarizeDefeat } from './log.ts'
+import type { CombatSetup, DamageEvent, EnemyDef, GameDefs, HpLossEvent, LogEvent, StatusTickEvent } from './types.ts'
 
 function damageEvent(overrides: Partial<DamageEvent> = {}): DamageEvent {
   return {
@@ -126,5 +127,149 @@ describe('formatEvent', () => {
     expect(lines[4]).toContain(': miss.')
     expect(lines[5]).toBe('At 25.860s, Standard Dummy dies, killed by Warrior.')
     expect(lines[6]).toBe('At 25.860s, encounter ended: victory.')
+  })
+})
+
+const ITEM_LEVEL = 20
+const QUALITY = 1
+
+function defeatSetup(): CombatSetup {
+  const armor = (slot: 'head' | 'chest' | 'hands' | 'feet') => ({
+    id: `ref-heavy-${slot}`,
+    slot,
+    category: 'heavy' as const,
+    itemLevel: ITEM_LEVEL,
+    quality: QUALITY,
+  })
+  return {
+    hero: {
+      id: 'ref-human-warrior',
+      name: 'Warrior',
+      level: 20,
+      classId: 'warrior',
+      attributes: { strength: 24, vitality: 22, agility: 16, intellect: 10, spirit: 16 },
+      gear: {
+        mainHand: { id: 'ref-one-handed', kind: 'oneHanded', itemLevel: ITEM_LEVEL, quality: QUALITY },
+        offHand: { id: 'ref-shield', kind: 'shield', itemLevel: ITEM_LEVEL, quality: QUALITY },
+        head: armor('head'),
+        chest: armor('chest'),
+        hands: armor('hands'),
+        feet: armor('feet'),
+        accessories: [
+          { id: 'ref-accessory-a', itemLevel: ITEM_LEVEL, quality: QUALITY },
+          { id: 'ref-accessory-b', itemLevel: ITEM_LEVEL, quality: QUALITY },
+        ] as const,
+      },
+    },
+    enemies: [{ defId: 'dummy', slot: 0 }],
+  }
+}
+
+function defeatDefs(): GameDefs {
+  const enemy: EnemyDef = {
+    id: 'dummy',
+    name: 'Dummy',
+    level: 20,
+    archetype: 'standard',
+    school: 'physical',
+    overrides: { actionTime: 1, power: 5_000, maxHp: 1_000_000 },
+  }
+  return { enemies: { dummy: enemy }, skills: {}, statuses: {} }
+}
+
+describe('summarizeDefeat', () => {
+  it('returns the hero HP losses that led to the defeat and the statuses active at death', () => {
+    const defs = defeatDefs()
+    const state = createCombat(defeatSetup(), defs, 42)
+    state.hero.statuses.chill = {
+      name: 'Chill',
+      stacks: 2,
+      expiresMs: 60_000,
+      slowByStack: [0.1, 0.07, 0.05],
+    }
+    runCombat(state, defs, 30_000)
+    const deathIndex = state.log.findIndex((event) => event.type === 'death' && event.actorId === state.hero.id)
+    const tick: StatusTickEvent = {
+      type: 'statusTick',
+      timeMs: 1000,
+      sourceId: 'dummy',
+      sourceName: 'Dummy',
+      targetId: state.hero.id,
+      targetName: state.hero.name,
+      statusId: 'bleed',
+      statusName: 'Bleed',
+      school: 'physical',
+      stacks: 1,
+      intensity: 1,
+      power: 1,
+      coefficient: 0.1,
+      raw: 1,
+      penetration: 0,
+      defense: 0,
+      attackerLevel: 20,
+      reduction: 0,
+      afterDefense: 1,
+      hpDamage: 1,
+      targetHpBefore: 2,
+      targetHpAfter: 1,
+      barrierBypassed: true,
+      crit: false,
+      varianceRoll: false,
+    }
+    const loss: HpLossEvent = {
+      type: 'hpLoss',
+      timeMs: 1000,
+      actorId: state.hero.id,
+      actorName: state.hero.name,
+      skillId: 'reckless',
+      amount: 1,
+      hpBefore: 3,
+      hpAfter: 2,
+      barrierBypassed: true,
+      defenseBypassed: true,
+    }
+    state.log.splice(deathIndex, 0, tick, loss)
+    const sample = state.log.find((event) => event.type === 'damage' && event.targetId === state.hero.id)
+    if (sample === undefined || sample.type !== 'damage') throw new Error('defeat log has no hero damage')
+    const ignored = [
+      { ...sample, targetHpBefore: 10, targetHpAfter: 10, hpDamage: 0 },
+      { ...sample, targetId: 'dummy', targetName: 'Dummy', targetHpBefore: 5, targetHpAfter: 4 },
+      { ...sample, timeMs: 99_999, targetHpBefore: 4, targetHpAfter: 0 },
+    ]
+    state.log.splice(deathIndex, 0, ignored[0]!, ignored[1]!)
+    state.log.push(ignored[2]!)
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    let summary: ReturnType<typeof summarizeDefeat>
+    let printed = 0
+    try {
+      summary = summarizeDefeat(state)
+      printed = logSpy.mock.calls.length
+    } finally {
+      logSpy.mockRestore()
+    }
+    console.log('[sim] summarizeDefeat', {
+      outcome: state.outcome,
+      losses: summary.hpLoss.map((event) => event.type),
+      chill: summary.statuses.chill,
+      printed,
+    })
+
+    expect(printed).toBe(0)
+    expect(state.outcome).toBe('defeat')
+    expect(summary.statuses).not.toBe(state.hero.statuses)
+    expect(summary.statuses).toEqual(state.hero.statuses)
+    expect(summary.statuses.chill?.stacks).toBe(2)
+    expect(summary.hpLoss.map((event) => event.type)).toEqual(['damage', 'statusTick', 'hpLoss'])
+    expect(summary.hpLoss[0]).toMatchObject({ type: 'damage', targetId: state.hero.id, actorName: 'Dummy' })
+    const killing = summary.hpLoss[0]
+    if (killing?.type === 'damage') expect(killing.targetHpAfter).toBeLessThan(killing.targetHpBefore)
+    expect(summary.hpLoss[1]).toBe(tick)
+    expect(summary.hpLoss[2]).toBe(loss)
+    expect(summary.hpLoss.some((event) => event.type === 'damage' && event.targetId !== state.hero.id)).toBe(false)
+    expect(summary.hpLoss.includes(ignored[2]!)).toBe(false)
+
+    expect(() => summarizeDefeat({ ...state, outcome: 'victory' })).toThrow(/defeat/)
+    expect(() => summarizeDefeat({ ...state, outcome: 'timeout' })).toThrow(/defeat/)
   })
 })
