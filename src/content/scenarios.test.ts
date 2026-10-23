@@ -11,6 +11,7 @@ import {
   ASSASSIN_VS_STANDARD_ID,
   MAGE_VS_STANDARD_ID,
   PRIORITY_FOCUS_ID,
+  CLERIC_VS_STANDARD_ID,
   RANGER_VS_STANDARD_ID,
   VENOM_EDGE_ID,
   WARRIOR_VS_STANDARD_ID,
@@ -337,6 +338,42 @@ describe('class reference fights', () => {
     expect(rangerState.hero.classResource).toBe(100)
     expect(rangerState.hero.specialAmmo).toBe(6)
     expect(rangerState.hero.classResourceScope).toBe('expedition')
+  })
+
+  it('runs cleric-vs-standard to a victory inside 10 minutes', () => {
+    const defs = gameDefs()
+    const limit = 600_000
+    const durationMs: { [seed: number]: number } = { 1: 14_032, 42: 21_048 }
+    const scenario = scenarios[CLERIC_VS_STANDARD_ID]
+    expect(scenario?.equippedSkillIds).toEqual(['smite', 'mend', 'ward', 'judgment'])
+    expect(scenario?.vow).toBe('zeal')
+    expect(scenario?.priorityRows?.map((row) => row.skillId)).toEqual(['mend', 'ward', 'judgment', 'smite'])
+    for (const seed of [1, 42]) {
+      const setup = setupForScenario(CLERIC_VS_STANDARD_ID)
+      const started = createCombat(setup, defs, seed)
+      expect(started.hero.classResource).toBe(0)
+      expect(started.hero.classResourceId).toBe('faith')
+      expect(started.hero.classResourceMax).toBe(100)
+      expect(started.hero.classResourceScope).toBe('expedition')
+      expect(started.hero.classState.vow).toBe('zeal')
+      const state = runCombat(started, defs, limit)
+      const end = state.log[state.log.length - 1]
+      console.log('[cleric]', {
+        scenario: CLERIC_VS_STANDARD_ID,
+        seed,
+        outcome: state.outcome,
+        durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+        resource: state.hero.classResource,
+        scope: state.hero.classResourceScope,
+        vow: state.hero.classState.vow,
+      })
+      expect(state.outcome).toBe('victory')
+      expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: durationMs[seed] })
+      expect(end?.type === 'encounterEnd' ? end.timeMs : limit).toBeLessThanOrEqual(limit)
+      expect(state.hero.classResourceScope).toBe('expedition')
+      expect(state.hero.classState.vow).toBe('zeal')
+      expect(state.log.some((event) => event.type === 'resource' && event.reason === 'encounterEnd')).toBe(false)
+    }
   })
 })
 

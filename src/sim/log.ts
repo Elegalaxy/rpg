@@ -236,6 +236,33 @@ export function formatEvent(event: LogEvent): string {
         return `At ${seconds(event.timeMs)}s, ${event.actorName} arms a trap on ${event.targetName}.`
       }
       return `At ${seconds(event.timeMs)}s, ${event.actorName} arms a trap on ${event.targetName}, replacing the trap on ${event.replacedName}.`
+    case 'field': {
+      const replaced = event.replaced ? ' replacing the previous field' : ''
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} consecrates a field until ${seconds(event.expiresMs)}s${replaced}. Power ${event.power}, healing power ${event.healingPower}.`
+    }
+    case 'fieldTick':
+      return [
+        `At ${seconds(event.timeMs)}s, ${event.actorName}'s field ticks ${event.targetName} for ${event.hpDamage}`,
+        `(HP ${event.targetHpBefore} to ${event.targetHpAfter}).`,
+        `Power ${event.power} × ${event.coefficient} = ${event.raw};`,
+        'no variance;',
+        'no critical;',
+        'barrier bypassed;',
+        `penetration ${event.penetration};`,
+        `defense ${event.defense};`,
+        `attacker level ${event.attackerLevel};`,
+        `reduction ${event.reduction};`,
+        `mitigated ${event.afterDefense};`,
+        `rounded ${event.hpDamage}.`,
+      ].join(' ')
+    case 'fieldHeal':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName}'s field restores ${event.amount} (HP ${event.targetHpBefore} to ${event.targetHpAfter}). Healing Power ${event.healingPower} × ${event.coefficient} = ${event.raw}; no roll; healing received ×${event.healingReceived} = ${event.afterReceived}; rounded ${event.amount}.`
+    case 'fieldExpired':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName}'s field expires.`
+    case 'hpLoss':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} loses ${event.amount} HP (${event.hpBefore} to ${event.hpAfter}), bypassing barrier and Defense.`
+    case 'vow':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName}'s vow of ${event.vow} does not grant Faith: ${event.reason}.`
     case 'resource':
       return formatResource(event)
     case 'resourceSnapshot':

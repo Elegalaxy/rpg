@@ -3,6 +3,7 @@ import { nextFloat } from './rng.ts'
 import {
   activeBarrier,
   equipmentBlock,
+  fatalHpLossBlock,
   skillAffordable,
   skillEquipped,
   skillNeedsEnemy,
@@ -383,6 +384,8 @@ export function skipReason(
   if (ammoCost > hero.specialAmmo) return MISSING_SPECIAL_ARROW_REASON
   const equipment = equipmentBlock(hero, skill)
   if (equipment !== null) return equipment
+  const fatal = fatalHpLossBlock(hero, skill)
+  if (fatal !== null) return fatal
   if (skillNeedsEnemy(skill) && enemyTargets(state, skill).length === 0) return 'no target'
   return null
 }

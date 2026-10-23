@@ -1,6 +1,7 @@
 import type { HeroClass } from '../constants.ts'
 import type { ClassModule } from '../types.ts'
 import { assassinClass } from './assassin.ts'
+import { clericClass } from './cleric.ts'
 import { mageClass } from './mage.ts'
 import { rangerClass } from './ranger.ts'
 import { warriorClass } from './warrior.ts'
@@ -10,6 +11,7 @@ const CLASS_MODULES: { [id: string]: ClassModule } = {
   assassin: assassinClass,
   ranger: rangerClass,
   mage: mageClass,
+  cleric: clericClass,
 }
 
 /** Class behavior lives on the module. Combat looks up hooks here and does not branch on class id. */

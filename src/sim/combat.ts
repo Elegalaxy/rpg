@@ -20,6 +20,7 @@ import {
   emptyStatuses,
   expireStatuses,
   exposedDefense,
+  mitigateStatusDamage,
   slowedActionMs,
   statusTickEvent,
   takeBleedTicks,
@@ -28,12 +29,16 @@ import {
 import type { StatusTickDraft } from './statuses.ts'
 import { actionTime, deriveEnemyStats, deriveHeroStats } from './stats.ts'
 import type {
+  ActiveField,
   CombatActor,
   CombatHero,
   CombatHeroSetup,
   CombatSetup,
   CombatState,
   ClassStrike,
+  FieldExpiredEvent,
+  FieldHealEvent,
+  FieldTickEvent,
   DamageNotice,
   DamageResult,
   DamageSchool,
@@ -276,6 +281,7 @@ function applyStatusDamage(state: CombatState, tick: StatusTickDraft): void {
     notifyDamageTaken(state, {
       hpLost: hpBefore - hpAfter,
       hpBefore,
+      barrierAbsorbed: 0,
       kind: 'statusTick',
       timeMs: tick.timeMs,
       school: tick.school,
@@ -313,6 +319,7 @@ function applyHit(
     notifyDamageTaken(state, {
       hpLost: hpBefore - hpAfter,
       hpBefore,
+      barrierAbsorbed: result.barrierAbsorbed,
       kind: 'hit',
       timeMs: scheduled,
       school: result.school,
@@ -386,11 +393,13 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
     evasion,
     hit: result.hit,
   })
+  const hpBeforeHit = target.hp
   if (result.hit) applyHit(state, actor, target, scheduled, result, deaths)
   else if (target.id === state.hero.id) {
     notifyDamageTaken(state, {
       hpLost: 0,
       hpBefore: target.hp,
+      barrierAbsorbed: 0,
       kind: 'miss',
       timeMs: scheduled,
       school: result.school,
@@ -399,7 +408,13 @@ function resolveBasicAttack(state: CombatState, actor: CombatActor): void {
   if (actor.side === 'hero') {
     classModule(state.hero.classId)?.actionResolved?.(
       state,
-      { kind: 'basicAttack', hit: result.hit, crit: result.crit, targetId: target.id },
+      {
+        kind: 'basicAttack',
+        hit: result.hit,
+        crit: result.crit,
+        targetId: target.id,
+        hpLost: hpBeforeHit - target.hp,
+      },
       scheduled,
     )
   }
@@ -417,8 +432,106 @@ function dueActors(state: CombatState, stepStart: number, stepEnd: number): Comb
   return due
 }
 
+function expireField(state: CombatState, stepStart: number, stepEnd: number): void {
+  const field = state.hero.field
+  if (field === null) return
+  if (field.expiresMs <= stepStart || field.expiresMs > stepEnd) return
+  const event: FieldExpiredEvent = {
+    type: 'fieldExpired',
+    timeMs: field.expiresMs,
+    actorId: state.hero.id,
+    actorName: state.hero.name,
+    skillId: field.skillId,
+  }
+  state.hero.field = null
+  state.log.push(event)
+}
+
+function healField(state: CombatState, field: ActiveField, timeMs: number): void {
+  const hero = state.hero
+  if (!hero.alive) return
+  const raw = field.healingPower * field.healCoefficient
+  const afterReceived = raw * hero.healingReceived
+  let amount = Math.round(afterReceived)
+  if (amount < 0) amount = 0
+  const targetHpBefore = hero.hp
+  let targetHpAfter = targetHpBefore + amount
+  if (targetHpAfter > hero.maxHp) targetHpAfter = hero.maxHp
+  hero.hp = targetHpAfter
+  const event: FieldHealEvent = {
+    type: 'fieldHeal',
+    timeMs,
+    actorId: hero.id,
+    actorName: hero.name,
+    healingPower: field.healingPower,
+    coefficient: field.healCoefficient,
+    raw,
+    healingReceived: hero.healingReceived,
+    afterReceived,
+    amount,
+    targetHpBefore,
+    targetHpAfter,
+  }
+  state.log.push(event)
+}
+
+/** Field ticks bypass barriers, skip variance and crit, and are not hero actions. */
+function applyFieldTick(state: CombatState, field: ActiveField, timeMs: number): void {
+  const living = state.enemies.filter((enemy) => enemy.alive)
+  const deaths: PendingDeath[] = []
+  for (const enemy of living) {
+    if (state.outcome !== 'ongoing') return
+    const defense = exposedDefense(enemy, field.damageSchool, timeMs)
+    const raw = field.power * field.damageCoefficient
+    const dealt = mitigateStatusDamage(raw, field.penetration, defense, field.attackerLevel)
+    const hpBefore = enemy.hp
+    let hpAfter = hpBefore - dealt.hpDamage
+    if (hpAfter < 0) hpAfter = 0
+    enemy.hp = hpAfter
+    const event: FieldTickEvent = {
+      type: 'fieldTick',
+      timeMs,
+      actorId: field.sourceId,
+      actorName: field.sourceName,
+      targetId: enemy.id,
+      targetName: enemy.name,
+      school: field.damageSchool,
+      power: field.power,
+      coefficient: field.damageCoefficient,
+      raw,
+      penetration: field.penetration,
+      defense,
+      attackerLevel: field.attackerLevel,
+      reduction: dealt.reduction,
+      afterDefense: dealt.afterDefense,
+      hpDamage: dealt.hpDamage,
+      targetHpBefore: hpBefore,
+      targetHpAfter: hpAfter,
+      barrierBypassed: true,
+      crit: false,
+      varianceRoll: false,
+    }
+    state.log.push(event)
+    if (hpAfter <= 0) queueDeath(deaths, enemy, field.sourceId, field.sourceName, timeMs)
+  }
+  if (state.outcome === 'ongoing') healField(state, field, timeMs)
+  commitDeaths(state, deaths)
+}
+
+function resolveFieldTicks(state: CombatState, stepStart: number, stepEnd: number): void {
+  const field = state.hero.field
+  if (field === null) return
+  while (field.nextTickMs > stepStart && field.nextTickMs <= stepEnd && field.nextTickMs < field.expiresMs) {
+    if (state.outcome !== 'ongoing' || state.hero.field !== field) return
+    const timeMs = field.nextTickMs
+    field.nextTickMs = timeMs + field.tickMs
+    applyFieldTick(state, field, timeMs)
+  }
+}
+
 /** Clock category 1. Barriers and statuses whose expiry falls inside this step end before ticks. */
 function resolveExpiries(state: CombatState, stepStart: number, stepEnd: number): void {
+  expireField(state, stepStart, stepEnd)
   const actors: CombatActor[] = [state.hero, ...state.enemies]
   for (const actor of actors) {
     if (actor.barrier <= 0) continue
@@ -445,6 +558,7 @@ function resolvePeriodicTicks(state: CombatState, stepStart: number, stepEnd: nu
     if (state.outcome !== 'ongoing') return
     applyStatusDamage(state, tick)
   }
+  resolveFieldTicks(state, stepStart, stepEnd)
 }
 
 /** Clock category 3. No telegraph resolutions in this step. */
@@ -565,8 +679,9 @@ function resolveSkill(
     actor,
     result,
   ) => {
-    strikes.push({ targetId: actor.id, hit: result.hit, crit: result.crit })
+    const hpBefore = actor.hp
     applyHit(state, hero, actor, scheduled, result, deaths)
+    strikes.push({ targetId: actor.id, hit: result.hit, crit: result.crit, hpLost: hpBefore - actor.hp })
   })
   const crit = strikes.some((strike) => strike.hit && strike.crit)
   classModule(hero.classId)?.actionResolved?.(state, { kind: 'skill', skill, targetId, crit, strikes }, scheduled)
@@ -594,6 +709,7 @@ function logWait(state: CombatState, timeMs: number, reason: string): void {
 
 function resolveHeroAction(state: CombatState, defs: GameDefs): void {
   const hero = state.hero
+  hero.overhealed = false
   const scheduled = hero.nextReadyMs
   const choice = chooseHeroAction(state, defs, hero, scheduled)
   for (const event of choice.events) state.log.push(event)
@@ -828,6 +944,12 @@ function applySuppliedResources(hero: CombatHero, setup: CombatHeroSetup): void 
     hero.suppliedAmmo = setup.specialAmmo
     hero.specialAmmo = setup.specialAmmo
   }
+  if (setup.vow !== undefined) {
+    if (typeof setup.vow !== 'string') {
+      throw new Error(`vow must be a string, received ${describeValue(setup.vow)}`)
+    }
+    hero.suppliedVow = setup.vow
+  }
 }
 
 function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
@@ -916,6 +1038,9 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     resourceFraction: 0,
     suppliedResource: null,
     suppliedAmmo: null,
+    suppliedVow: null,
+    field: null,
+    overhealed: false,
     pendingCoefficient: null,
     targetPriority: parsedRules.targetPriority,
     currentTargetId: null,

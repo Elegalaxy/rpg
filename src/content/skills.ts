@@ -338,6 +338,40 @@ const judgment = {
   effects: [{ kind: 'damage', school: 'magical', coefficient: 2 }],
 } satisfies SkillDef
 
+const consecration = {
+  id: 'consecration',
+  name: 'Consecration',
+  cost: 40,
+  cooldownSeconds: 15,
+  actionTimeCoefficient: 1.2,
+  tags: ['magical', 'heal'],
+  target: 'all',
+  effects: [
+    {
+      kind: 'field',
+      durationSeconds: 8,
+      tickSeconds: 2,
+      damageSchool: 'magical',
+      damageCoefficient: 0.35,
+      healCoefficient: 0.25,
+    },
+  ],
+} satisfies SkillDef
+
+const penance = {
+  id: 'penance',
+  name: 'Penance',
+  cost: 0,
+  cooldownSeconds: 10,
+  actionTimeCoefficient: 1,
+  tags: ['faith'],
+  target: 'single',
+  effects: [
+    { kind: 'loseHp', maxHpFraction: 0.1, preventFatal: true },
+    { kind: 'resource', base: 25 },
+  ],
+} satisfies SkillDef
+
 export const skills: { [id: string]: SkillDef } = {
   [drivingBlow.id]: drivingBlow,
   [cleave.id]: cleave,
@@ -367,4 +401,6 @@ export const skills: { [id: string]: SkillDef } = {
   [mend.id]: mend,
   [ward.id]: ward,
   [judgment.id]: judgment,
+  [consecration.id]: consecration,
+  [penance.id]: penance,
 }

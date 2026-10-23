@@ -15,6 +15,8 @@ export type ScenarioDef = {
   targetPriority?: TargetPriority
   startingResource?: number
   specialAmmo?: number
+  /** Cleric vow. Other classes ignore it. */
+  vow?: string
 }
 
 export const DUEL_BASIC_ID = 'duel-basic'
@@ -25,6 +27,7 @@ export const WARRIOR_VS_STANDARD_ID = 'warrior-vs-standard'
 export const MAGE_VS_STANDARD_ID = 'mage-vs-standard'
 export const ASSASSIN_VS_STANDARD_ID = 'assassin-vs-standard'
 export const RANGER_VS_STANDARD_ID = 'ranger-vs-standard'
+export const CLERIC_VS_STANDARD_ID = 'cleric-vs-standard'
 
 export const scenarios: { [id: string]: ScenarioDef } = {
   [DUEL_BASIC_ID]: {
@@ -160,6 +163,29 @@ export const scenarios: { [id: string]: ScenarioDef } = {
       { skillId: 'piercing-arrow' },
     ],
   },
+  [CLERIC_VS_STANDARD_ID]: {
+    id: CLERIC_VS_STANDARD_ID,
+    heroId: referenceHeroes.cleric.id,
+    heroName: 'Cleric',
+    enemies: [{ defId: standardDummy.id, slot: 0 }],
+    equippedSkillIds: ['smite', 'mend', 'ward', 'judgment'],
+    vow: 'zeal',
+    priorityRows: [
+      {
+        skillId: 'mend',
+        conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 50 }],
+      },
+      {
+        skillId: 'ward',
+        conditions: [{ kind: 'telegraph', operator: 'atMost', value: 1000 }],
+      },
+      {
+        skillId: 'judgment',
+        conditions: [{ kind: 'classResource', operator: 'atLeast', value: 75 }],
+      },
+      { skillId: 'smite' },
+    ],
+  },
 }
 
 export function gameDefs(): GameDefs {
@@ -179,6 +205,7 @@ function heroSetup(hero: ReferenceHero, scenario: ScenarioDef): CombatHeroSetup 
     targetPriority: scenario.targetPriority,
     startingResource: scenario.startingResource,
     specialAmmo: scenario.specialAmmo,
+    vow: scenario.vow,
   }
 }
 

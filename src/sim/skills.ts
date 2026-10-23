@@ -21,9 +21,13 @@ import type {
   DamageEffect,
   DamageResult,
   DamageSchool,
+  FieldEffect,
+  FieldEvent,
   GameDefs,
   HealEvent,
   HealResult,
+  HpLossEvent,
+  LoseHpEffect,
   SkillDef,
   SkillEffect,
 } from './types.ts'
@@ -41,7 +45,12 @@ export const SKILL_EFFECT_KINDS = [
   'applyStatus',
   'reveal',
   'armTrap',
+  'field',
+  'loseHp',
 ] as const
+
+/** Logged when a preventFatal health loss would leave 0 HP or less. */
+export const FATAL_HP_LOSS_REASON = 'would be fatal'
 
 function describeValue(value: unknown): string {
   if (typeof value === 'number' && Number.isNaN(value)) return 'NaN'
@@ -262,6 +271,46 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     return effect
   }
   if (kind === 'reveal') return { kind }
+  if (kind === 'field') {
+    assertPositive(value.durationSeconds, `skill '${skillId}' field duration`)
+    assertPositive(value.tickSeconds, `skill '${skillId}' field tick`)
+    const school = value.damageSchool
+    if (school !== 'physical' && school !== 'magical') {
+      throw new Error(
+        `skill '${skillId}' field school must be physical or magical, received ${describeValue(school)}`,
+      )
+    }
+    assertPositive(value.damageCoefficient, `skill '${skillId}' field damage coefficient`)
+    assertPositive(value.healCoefficient, `skill '${skillId}' field heal coefficient`)
+    const effect: FieldEffect = {
+      kind,
+      durationSeconds: value.durationSeconds,
+      tickSeconds: value.tickSeconds,
+      damageSchool: school,
+      damageCoefficient: value.damageCoefficient,
+      healCoefficient: value.healCoefficient,
+    }
+    return effect
+  }
+  if (kind === 'loseHp') {
+    assertPositive(value.maxHpFraction, `skill '${skillId}' health loss`)
+    if (value.maxHpFraction > 1) {
+      throw new Error(
+        `skill '${skillId}' health loss must be at most 1, received ${describeValue(value.maxHpFraction)}`,
+      )
+    }
+    if (typeof value.preventFatal !== 'boolean') {
+      throw new Error(
+        `skill '${skillId}' health loss preventFatal must be a boolean, received ${describeValue(value.preventFatal)}`,
+      )
+    }
+    const effect: LoseHpEffect = {
+      kind,
+      maxHpFraction: value.maxHpFraction,
+      preventFatal: value.preventFatal,
+    }
+    return effect
+  }
   if (kind === 'armTrap') {
     assertFiniteNumber(value.baseChance, `skill '${skillId}' trap chance`)
     if (value.baseChance < 0 || value.baseChance > 1) {
@@ -381,6 +430,15 @@ export function equipmentBlock(hero: CombatHero, skill: SkillDef): string | null
   return null
 }
 
+/** Null when the skill can be used. `would be fatal` spends nothing and does not start the cooldown. */
+export function fatalHpLossBlock(hero: CombatHero, skill: SkillDef): string | null {
+  for (const effect of skill.effects) {
+    if (effect.kind !== 'loseHp' || !effect.preventFatal) continue
+    if (hero.hp - effect.maxHpFraction * hero.maxHp <= 0) return FATAL_HP_LOSS_REASON
+  }
+  return null
+}
+
 export function skillNeedsEnemy(skill: SkillDef): boolean {
   for (const effect of skill.effects) {
     if (
@@ -389,7 +447,8 @@ export function skillNeedsEnemy(skill: SkillDef): boolean {
       effect.kind === 'applyStatus' ||
       effect.kind === 'chain' ||
       effect.kind === 'reveal' ||
-      effect.kind === 'armTrap'
+      effect.kind === 'armTrap' ||
+      effect.kind === 'field'
     ) {
       return true
     }
@@ -602,6 +661,8 @@ export function applySkillEffects(
         roll,
       })
       const targetHpBefore = hero.hp
+      const missing = hero.maxHp - targetHpBefore
+      if (result.amount > missing) hero.overhealed = true
       let targetHpAfter = targetHpBefore + result.amount
       if (targetHpAfter > hero.maxHp) targetHpAfter = hero.maxHp
       hero.hp = targetHpAfter
@@ -801,6 +862,68 @@ export function applySkillEffects(
         }
         coefficient *= effect.decay
       }
+      continue
+    }
+    if (effect.kind === 'field') {
+      const durationMs = roundSecondsToMs(effect.durationSeconds, `${skill.id} field duration`)
+      const tickMs = roundSecondsToMs(effect.tickSeconds, `${skill.id} field tick`)
+      const replaced = hero.field !== null
+      const power = effect.damageSchool === 'physical' ? hero.physicalPower : hero.magicalPower
+      const penetration = effect.damageSchool === 'physical' ? hero.armorPenetration : hero.magicalPenetration
+      const field = {
+        skillId: skill.id,
+        sourceId: hero.id,
+        sourceName: hero.name,
+        expiresMs: scheduledMs + durationMs,
+        tickMs,
+        nextTickMs: scheduledMs + tickMs,
+        damageSchool: effect.damageSchool,
+        damageCoefficient: effect.damageCoefficient,
+        healCoefficient: effect.healCoefficient,
+        power,
+        penetration,
+        healingPower: hero.healingPower,
+        attackerLevel: hero.level,
+      }
+      hero.field = field
+      const event: FieldEvent = {
+        type: 'field',
+        timeMs: scheduledMs,
+        actorId: hero.id,
+        actorName: hero.name,
+        skillId: skill.id,
+        expiresMs: field.expiresMs,
+        nextTickMs: field.nextTickMs,
+        replaced,
+        power,
+        healingPower: hero.healingPower,
+        damageCoefficient: effect.damageCoefficient,
+        healCoefficient: effect.healCoefficient,
+      }
+      state.log.push(event)
+      continue
+    }
+    if (effect.kind === 'loseHp') {
+      const loss = hero.maxHp * effect.maxHpFraction
+      if (effect.preventFatal && hero.hp - loss <= 0) {
+        throw new Error(`${skill.name} would be fatal`)
+      }
+      const hpBefore = hero.hp
+      const hpAfter = hpBefore - loss
+      hero.hp = hpAfter
+      const event: HpLossEvent = {
+        type: 'hpLoss',
+        timeMs: scheduledMs,
+        actorId: hero.id,
+        actorName: hero.name,
+        skillId: skill.id,
+        amount: loss,
+        hpBefore,
+        hpAfter,
+        barrierBypassed: true,
+        defenseBypassed: true,
+      }
+      state.log.push(event)
       continue
     }
     const unexpected: never = effect

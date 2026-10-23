@@ -595,6 +595,110 @@ export type TrapEvent = {
   replacedName: string | null
 }
 
+/** One caster field. A new cast replaces the previous field. */
+export type ActiveField = {
+  skillId: string
+  sourceId: string
+  sourceName: string
+  expiresMs: number
+  tickMs: number
+  nextTickMs: number
+  damageSchool: DamageSchool
+  damageCoefficient: number
+  healCoefficient: number
+  /** Magical or physical power frozen at cast. */
+  power: number
+  penetration: number
+  healingPower: number
+  attackerLevel: number
+}
+
+export type FieldEvent = {
+  type: 'field'
+  timeMs: number
+  actorId: string
+  actorName: string
+  skillId: string
+  expiresMs: number
+  nextTickMs: number
+  replaced: boolean
+  power: number
+  healingPower: number
+  damageCoefficient: number
+  healCoefficient: number
+}
+
+export type FieldTickEvent = {
+  type: 'fieldTick'
+  timeMs: number
+  actorId: string
+  actorName: string
+  targetId: string
+  targetName: string
+  school: DamageSchool
+  power: number
+  coefficient: number
+  raw: number
+  penetration: number
+  defense: number
+  attackerLevel: number
+  reduction: number
+  afterDefense: number
+  hpDamage: number
+  targetHpBefore: number
+  targetHpAfter: number
+  barrierBypassed: true
+  crit: false
+  varianceRoll: false
+}
+
+export type FieldHealEvent = {
+  type: 'fieldHeal'
+  timeMs: number
+  actorId: string
+  actorName: string
+  healingPower: number
+  coefficient: number
+  raw: number
+  healingReceived: number
+  afterReceived: number
+  amount: number
+  targetHpBefore: number
+  targetHpAfter: number
+}
+
+export type FieldExpiredEvent = {
+  type: 'fieldExpired'
+  timeMs: number
+  actorId: string
+  actorName: string
+  skillId: string
+}
+
+/** Direct health loss that bypasses barriers and Defense. */
+export type HpLossEvent = {
+  type: 'hpLoss'
+  timeMs: number
+  actorId: string
+  actorName: string
+  skillId: string
+  amount: number
+  hpBefore: number
+  hpAfter: number
+  barrierBypassed: true
+  defenseBypassed: true
+}
+
+/** Temperance did not generate. The reason is hp, overheal, or overcap. */
+export type VowEvent = {
+  type: 'vow'
+  timeMs: number
+  actorId: string
+  actorName: string
+  vow: string
+  reason: 'hp' | 'overheal' | 'overcap'
+}
+
 /** Encounter meters reset when the encounter ends. Expedition meters carry until a later expedition step. */
 export type ResourceScope = 'encounter' | 'expedition'
 
@@ -661,6 +765,12 @@ export type LogEvent =
   | MarkRefreshEvent
   | RevealEvent
   | TrapEvent
+  | FieldEvent
+  | FieldTickEvent
+  | FieldHealEvent
+  | FieldExpiredEvent
+  | HpLossEvent
+  | VowEvent
   | ResourceEvent
   | ResourceSnapshotEvent
   | WaitEvent
@@ -742,6 +852,27 @@ export type ArmTrapEffect = {
   baseChance: number
 }
 
+/**
+ * One field on the caster. Recasting replaces it.
+ * Ticks use snapshotted power and current defense, and they are not hero actions.
+ */
+export type FieldEffect = {
+  kind: 'field'
+  durationSeconds: number
+  tickSeconds: number
+  damageSchool: DamageSchool
+  damageCoefficient: number
+  healCoefficient: number
+}
+
+/** Remove a fraction of maximum HP. Barriers and Defense do not reduce it. */
+export type LoseHpEffect = {
+  kind: 'loseHp'
+  maxHpFraction: number
+  /** The skill is ineligible when the loss would leave 0 HP or less. */
+  preventFatal: boolean
+}
+
 export type ApplyStatusEffect = {
   kind: 'applyStatus'
   statusId: string
@@ -778,6 +909,8 @@ export type SkillEffect =
   | ApplyStatusEffect
   | RevealEffect
   | ArmTrapEffect
+  | FieldEffect
+  | LoseHpEffect
 
 export type SkillRequirement = {
   mainHand?: WeaponKind
@@ -845,6 +978,12 @@ export type CombatHero = CombatActor & {
   suppliedResource: number | null
   /** Starting special ammo from the encounter setup. Null when the setup did not supply it. */
   suppliedAmmo: number | null
+  /** Vow copied from setup. Only a Cleric reads it. Null when the setup omitted it. */
+  suppliedVow: string | null
+  /** One active field. A new field effect replaces this. */
+  field: ActiveField | null
+  /** This action's applied heal, after the roll and healing received, exceeded the HP missing. */
+  overhealed: boolean
   /** When set, the next skill hit uses this coefficient instead of the effect's. */
   pendingCoefficient: number | null
   /** Null selects the first living enemy by slot. */
@@ -876,6 +1015,8 @@ export type CombatHeroSetup = {
   startingResource?: number
   /** Special arrows at the start. Omitted lets the class apply its own default. */
   specialAmmo?: number
+  /** Cleric vow. Other classes ignore it. */
+  vow?: string
 }
 
 export type CombatEnemySetup = {
@@ -932,10 +1073,12 @@ export type ClassStrike = {
   targetId: string
   hit: boolean
   crit: boolean
+  /** HP this hit removed. Omitted on older notices. A full absorb is 0. */
+  hpLost?: number
 }
 
 export type ClassAction =
-  | { kind: 'basicAttack'; hit: boolean; crit?: boolean; targetId?: string }
+  | { kind: 'basicAttack'; hit: boolean; crit?: boolean; targetId?: string; hpLost?: number }
   | {
       kind: 'skill'
       skill: SkillDef
@@ -948,6 +1091,8 @@ export type ClassAction =
 export type DamageNotice = {
   hpLost: number
   hpBefore: number
+  /** Barrier absorbed by this hit. Status ticks and misses omit it or use 0. */
+  barrierAbsorbed?: number
   /** `miss` is an enemy basic attack that failed its hit roll. It is not a hit for 0 HP. */
   kind: 'hit' | 'statusTick' | 'miss'
   timeMs: number

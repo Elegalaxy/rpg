@@ -231,6 +231,57 @@ describe('content integrity', () => {
       actionTimeCoefficient: 1,
       effects: [{ kind: 'damage', school: 'physical', coefficient: 1.3, armorPenetrationBonus: 0.3 }],
     })
+    expect(skills.smite).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 3,
+      actionTimeCoefficient: 1,
+      effects: [{ kind: 'damage', school: 'magical', coefficient: 1 }],
+    })
+    expect(skills.mend).toMatchObject({
+      cost: 25,
+      cooldownSeconds: 5,
+      actionTimeCoefficient: 1,
+      effects: [{ kind: 'heal', maxHpFraction: 0, healingCoefficient: 1.2 }],
+    })
+    expect(skills.ward).toMatchObject({
+      cost: 30,
+      cooldownSeconds: 10,
+      actionTimeCoefficient: 0.75,
+      effects: [{ kind: 'barrier', source: 'healing', coefficient: 1.5, durationSeconds: 8 }],
+    })
+    expect(skills.consecration).toMatchObject({
+      cost: 40,
+      cooldownSeconds: 15,
+      actionTimeCoefficient: 1.2,
+      effects: [
+        {
+          kind: 'field',
+          durationSeconds: 8,
+          tickSeconds: 2,
+          damageSchool: 'magical',
+          damageCoefficient: 0.35,
+          healCoefficient: 0.25,
+        },
+      ],
+    })
+    expect(skills.judgment).toMatchObject({
+      cost: 50,
+      cooldownSeconds: 10,
+      actionTimeCoefficient: 1.2,
+      effects: [{ kind: 'damage', school: 'magical', coefficient: 2 }],
+    })
+    expect(skills.penance).toMatchObject({
+      cost: 0,
+      cooldownSeconds: 10,
+      actionTimeCoefficient: 1,
+      effects: [
+        { kind: 'loseHp', maxHpFraction: 0.1, preventFatal: true },
+        { kind: 'resource', base: 25 },
+      ],
+    })
+    expect(scenarios['cleric-vs-standard']?.vow).toBe('zeal')
+    expect(scenarios['cleric-vs-standard']?.equippedSkillIds).toEqual(['smite', 'mend', 'ward', 'judgment'])
+
     expect(skills['flame-arrow']).toMatchObject({
       cost: 20,
       ammoCost: 1,
