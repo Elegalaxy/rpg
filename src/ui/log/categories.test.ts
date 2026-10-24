@@ -51,12 +51,13 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   encounterXp: [],
   death: ['defeatCause'],
   encounterEnd: ['defeatCause'],
+  escape: ['retreat'],
 }
 
 const DEFEAT_CAUSE_TYPES = ['damage', 'statusTick', 'fieldTick', 'hpLoss', 'death', 'encounterEnd'] as const
 
 describe('log categories', () => {
-  it('maps each event type and leaves retreat empty', () => {
+  it('maps each event type and matches retreat to escape', () => {
     const types = Object.keys(EXPECTED) as LogEvent['type'][]
     const retreatTypes = types.filter((type) => EXPECTED[type].includes('retreat'))
     const defeatTypes = types.filter((type) => EXPECTED[type].includes('defeatCause'))
@@ -68,19 +69,19 @@ describe('log categories', () => {
     })
 
     expect(LOG_CATEGORIES).toContain('retreat')
-    expect(retreatTypes).toEqual([])
+    expect(retreatTypes).toEqual(['escape'])
     expect(defeatTypes).toEqual([...DEFEAT_CAUSE_TYPES])
 
     for (const category of LOG_CATEGORIES) {
       const users = types.filter((type) => EXPECTED[type].includes(category))
-      if (category === 'retreat') expect(users).toEqual([])
+      if (category === 'retreat') expect(users).toEqual(['escape'])
       else expect(users.length).toBeGreaterThan(0)
     }
 
     for (const type of types) {
       expect(categoriesForEventType(type)).toEqual(EXPECTED[type])
       expect(eventMatchesCategories(type, new Set())).toBe(true)
-      expect(eventMatchesCategories(type, new Set(['retreat']))).toBe(false)
+      expect(eventMatchesCategories(type, new Set(['retreat']))).toBe(type === 'escape')
     }
 
     expect(eventMatchesCategories('hitRoll', new Set(['rolls']))).toBe(true)

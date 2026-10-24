@@ -554,6 +554,13 @@ Deserter:
 - Guard grants 30% incoming-damage reduction until the Deserter's next action. Cooldown: 7 seconds. Action time: 0.75×.
 - Predictable offensive/defensive alternation teaches status cleansing and timing around mitigation.
 
+Splintered Road encounter order, chosen 2026-10-24:
+
+- Each gap, including the walk out of town before the first fight, is the ordinary 20-second journey. Readiness fills from empty over that walk. Fury still waits 3 seconds and then drains at 10 per second, so a 20-second gap empties a full meter.
+- The first three encounters are fixed: a Shardling pair (two level-3 Fracture Shardlings), the Starved Wolf pair (two level-6 wolves), then one level-6 Deserter.
+- From the fourth encounter on, each draw is an equal chance of that Shardling pair, the wolf pair, the Deserter, or the mixed group (one level-5 Shardling, one level-5 Wolf, and one level-5 Deserter).
+- The draw order for that equal chance is Shardling pair, wolf pair, Deserter, mixed group.
+
 #### Withered Grove enemies
 
 Later Grove encounters pair durable Thornbeasts with Spider or Wisp support, teaching target priority.
@@ -1139,6 +1146,17 @@ The filterable log should expose:
 - On success, the return journey is safe.
 - Offline simulation follows the same rules.
 
+First-playable escape, decided 2026-10-24:
+
+- The starting threshold is hero HP at most 40% of maximum HP. No threshold means no attempt.
+- The check runs after each combat step. It does not spend the hero's action or move a scheduled action.
+- If that step already ended the fight, no escape is rolled.
+- Chance is 50% plus `floor(Agility / 5)` percentage points, capped at +20 points. Enemy, zone, supplies, and momentum add 0 until those modifiers exist. Press the Trail's escape bonus is a class node, not this base chance.
+- The roll is one expedition `nextFloat`, compared with `<` against that chance. It does not use the combat RNG.
+- A failure waits 8 seconds of that fight's clock. Another roll happens only while the threshold is still met. Leaving the threshold does not erase the remaining wait.
+- Success abandons the fight with no loot and no momentum gain. The same 20-second safe walk as a chosen return starts at once. Loot stays unsecured until arrival, which then secures it and sets momentum to 0.
+- The attempt is a combat log line with the roll, the chance, Agility, and each bonus.
+
 ### Risk and reward
 
 Pushing farther is encouraged through:
@@ -1156,7 +1174,7 @@ Expedition momentum:
 - Returning to town, successful retreat, defeat, or reincarnation resets momentum to 0.
 - Class nodes such as Ranger Pathfinder can convert momentum into combat or escape benefits.
 
-Exact boss-progress loss on retreat remains open.
+A retreat removes no boss progress in the first playable, because no boss-progress counter exists yet. How much a later counter loses remains open.
 
 ### Defeat
 
@@ -1168,7 +1186,15 @@ Exact boss-progress loss on retreat remains open.
 - Unused carried consumables are retained.
 - Deposited gold is safe.
 - Defeat incurs a rescue fee; if the hero cannot pay it, the hero enters debt.
-- Exact carried-gold handling, rescue fees, and debt consequences remain open.
+
+First-playable defeat, decided 2026-10-24:
+
+- Unsecured materials are destroyed. Secured materials stay. Overflow already lost stays recorded. Momentum and the stored rare-node chance become 0.
+- Each equipped piece, including both accessories and an off-hand, starts at 100 durability and loses 10 on defeat. The loss stops at 0. A piece at 0 stays equipped and is marked disabled. Nothing is destroyed. This mark does not change the fight that was just lost.
+- The four supply slots start empty. A slot that holds an item still holds it after defeat, and items already consumed stay consumed. No consumable is defined yet.
+- The rescue fee is 25 gold, paid from gold the hero is carrying. Unpaid gold is added to debt. Debt is only stored. Deposited gold is not spent. Soul Debt's extra 50% is a racial node, not this base fee.
+- The hero must wait 5 minutes before the next expedition. The wait is stored on the defeat. It does not tick inside the lost expedition.
+- `bossLossThisLife` is set only when a non-summon enemy in that fight is a boss. Splintered Road enemies are not bosses.
 
 ## 9. Towns, Crafting, and Economy
 
@@ -1318,9 +1344,12 @@ These are neutral calibration builds, not recommended player builds. Race bonuse
 
 ### Inventory
 
-- Expeditions use limited supply slots and loot capacity.
-- The design avoids detailed per-item weight calculations.
-- Exact supply slots and loot capacity remain open.
+- Expeditions use limited supply slots and loot capacity. The design avoids detailed per-item weight. Capacity counts total material quantity.
+- The first playable has 4 supply slots. They start empty. Which consumables fill them remains open, so Deserter supply pressure has nothing to spend yet.
+- Loot capacity is 20. Each Splintered Road enemy drops 4 of its own material: a Fracture Shardling drops a shard, a Starved Wolf drops a hide, and a Deserter drops a scrap.
+- The drop uses the momentum already held when the fight is won. The victory then adds its stack. Quantity is `4 × (1 + 5% × stacks)`, rounded half-up. Three stacks turn 4 into 5. One stack does not change a drop of 4, because 4.2 rounds to 4.
+- Drops are added in slot order. When the bag is full, older materials stay and the newest quantity that does not fit is lost.
+- The scripted intro fills the bag exactly: Shardling pair 8, wolf pair 8, Deserter 4. The next fight is where extra loot is lost.
 
 ## 10. Reincarnation and Long-Term Progression
 
@@ -1524,9 +1553,9 @@ Skill webs, priority rules, logs, crafting, routes, and risk systems can overwhe
 - Authored Fracture Echo rank modifiers and rewards
 - Healing-roll distribution
 - Exact DoT coefficients, Expose magnitude, and cleanse availability
-- Boss-progress loss on retreat
-- Rescue fees, debt consequences, and carried-gold handling
-- Supply slots and loot capacity
+- How much boss progress a retreat removes once a boss-progress counter exists. The first playable removes none.
+- What stored debt blocks, and how a disabled item is repaired. The first-playable fee is 25 gold from carried gold. Unpaid gold is stored as debt with no other effect. Deposited gold is untouched. The next expedition waits 5 minutes.
+- Which consumables fill the four supply slots
 - Crafting quality, proficiency, and upgrade formulas
 - Heirloom scaling
 - Duplicate-character rules
@@ -1553,3 +1582,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 - 2026-10-21: Accepted the technical direction: TypeScript + React + Vite with no engine, a fixed 10 ms simulation clock with a fixed tie order, and actions that resolve when ready, with action time as recovery and the first action after one base action time. Linked the implementation plan.
 - 2026-10-21: Accepted the provisional combat baseline: hero/enemy formulas, resources, active skills, automation, equipment curves, class/racial passives, keystones, first-region enemies, elites, and Warden phases. Next step is deterministic simulation.
 - 2026-10-24: Accepted the first reference-matrix deviations without coefficient changes. Assassin, Cleric, and Mage floor builds miss the equal-level Deserter bands, and every floor build loses to the rank-0 Warden. Stacking pressure stays undesigned.
+- 2026-10-24: The Splintered Road opens with a fixed Shardling pair, wolf pair, and Deserter, then draws those three or the level-5 mixed group with equal odds. Each gap is the ordinary 20-second journey.
+- 2026-10-24: First-playable inventory is 4 empty supply slots and loot capacity 20. Each Splintered Road enemy drops 4 shard, hide, or scrap. Momentum uses the stacks already held, and half-up rounding turns 4 into 5 at 3 stacks. Overflow keeps older materials.
+- 2026-10-24: First-playable escape rolls after the combat step when hero HP is at most 40%. Chance is 50% plus `floor(Agility / 5)` points, capped at +20. The attempt does not spend the hero's action. A failure waits 8 seconds. Success walks home for 20 seconds and clears momentum on arrival. Boss progress does not change.
+- 2026-10-24: First-playable defeat destroys unsecured loot, clears momentum, and takes 10 durability from each equipped piece (maximum 100). A piece at 0 is disabled and kept. The rescue fee is 25 carried gold, and the unpaid part is stored as debt. Deposited gold is safe. The next expedition waits 5 minutes. A boss defeat sets `bossLossThisLife`.

@@ -10,6 +10,10 @@ import {
 export const FURY_RESOURCE_ID = 'fury'
 export const FURY_MAXIMUM = 100
 export const FURY_SCOPE = 'encounter' as const
+/** Outside combat, Fury does not drain during this many whole seconds. */
+export const FURY_DRAIN_WAIT_SECONDS = 3
+/** Lost each whole second after the wait. A full meter needs 10 seconds of drain. */
+export const FURY_DRAIN_PER_SECOND = 10
 export const FURY_GENERATOR_BASE = 5
 export const FURY_PHYSICAL_BONUS_AT_FULL = 0.25
 export const FURY_HIT_GAIN_CAP = 20
@@ -53,16 +57,19 @@ function hasResourceEffect(action: ClassAction): boolean {
 }
 
 function encounterStart(state: CombatState, timeMs: number): void {
+  const hero = state.hero
+  const amount = hero.carryResource && hero.suppliedResource !== null ? hero.suppliedResource : 0
   defineClassResource(state, timeMs, {
     id: FURY_RESOURCE_ID,
     maximum: FURY_MAXIMUM,
     scope: FURY_SCOPE,
-    amount: 0,
+    amount,
     regenPerSecond: 0,
   })
 }
 
 function encounterEnd(state: CombatState, timeMs: number): void {
+  if (state.hero.carryResource) return
   setClassResource(state, timeMs, 0, 'encounterEnd')
 }
 

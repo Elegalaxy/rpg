@@ -8,6 +8,8 @@ export const READINESS_SCOPE = 'expedition' as const
 export const READINESS_BASIC_BASE = 10
 /** Harness default when the encounter setup does not supply a start. Travel gain is later. */
 export const READINESS_HARNESS_START = 100
+/** Travel and other time outside combat. Spirit applies. Readiness does not regen in combat. */
+export const READINESS_TRAVEL_PER_SECOND = 5
 /** One quiver slot holds one special arrow. */
 export const QUIVER_CAPACITY = 6
 export const MISSING_SPECIAL_ARROW_REASON = 'missing special arrow'

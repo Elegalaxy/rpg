@@ -10,6 +10,16 @@ export type EncounterDef = {
   members: readonly EncounterMember[]
 }
 
+/** Two level-3 Fracture Shardlings. The Splintered Road opens with this pair. */
+export const shardlingPair: EncounterDef = {
+  id: 'shardling-pair',
+  name: 'Fracture Shardling Pair',
+  members: [
+    { enemyId: 'fracture-shardling', slot: 0, level: 3 },
+    { enemyId: 'fracture-shardling', slot: 1, level: 3 },
+  ],
+}
+
 /** Two level-6 Starved Wolves. */
 export const wolfPair: EncounterDef = {
   id: 'wolf-pair',
@@ -19,6 +29,38 @@ export const wolfPair: EncounterDef = {
     { enemyId: 'starved-wolf', slot: 1, level: 6 },
   ],
 }
+
+/** One level-6 Deserter. */
+export const deserterEncounter: EncounterDef = {
+  id: 'deserter',
+  name: 'Deserter',
+  members: [{ enemyId: 'deserter', slot: 0, level: 6 }],
+}
+
+/** One level-5 Shardling, one level-5 Wolf, and one level-5 Deserter. */
+export const roadMixed: EncounterDef = {
+  id: 'road-mixed',
+  name: 'Splintered Road Mixed',
+  members: [
+    { enemyId: 'fracture-shardling', slot: 0, level: 5 },
+    { enemyId: 'starved-wolf', slot: 1, level: 5 },
+    { enemyId: 'deserter', slot: 2, level: 5 },
+  ],
+}
+
+/** Splintered Road encounters 0, 1, and 2. These do not roll. */
+export const splinteredRoadOpening: readonly EncounterDef[] = [shardlingPair, wolfPair, deserterEncounter]
+
+/**
+ * Equal draw from the fourth encounter on.
+ * The index is `Math.floor(nextFloat * 4)` in this order.
+ */
+export const splinteredRoadDraw: readonly EncounterDef[] = [
+  shardlingPair,
+  wolfPair,
+  deserterEncounter,
+  roadMixed,
+]
 
 /** One level-10 Thornbeast and one level-10 Blight Spider. */
 export const groveMixed: EncounterDef = {
@@ -41,7 +83,10 @@ export const bastionMixed: EncounterDef = {
 }
 
 export const encounters: { [id: string]: EncounterDef } = {
+  [shardlingPair.id]: shardlingPair,
   [wolfPair.id]: wolfPair,
+  [deserterEncounter.id]: deserterEncounter,
+  [roadMixed.id]: roadMixed,
   [groveMixed.id]: groveMixed,
   [bastionMixed.id]: bastionMixed,
 }

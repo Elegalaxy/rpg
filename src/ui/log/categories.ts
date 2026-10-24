@@ -1,8 +1,8 @@
 import type { LogEvent } from '../../sim/types.ts'
 
 /**
- * Filters match event types only. Retreat matches nothing until an escape
- * event exists. Defeat cause is death, encounter end, and the HP-loss types
+ * Filters match event types only. Retreat matches escape.
+ * Defeat cause is death, encounter end, and the HP-loss types
  * `summarizeDefeat` reads: damage, statusTick, fieldTick, and hpLoss.
  */
 export const LOG_CATEGORIES = [
@@ -69,6 +69,7 @@ const EVENT_CATEGORIES = {
   encounterXp: [],
   death: ['defeatCause'],
   encounterEnd: ['defeatCause'],
+  escape: ['retreat'],
 } as const satisfies Record<LogEvent['type'], readonly LogCategory[]>
 
 export function categoriesForEventType(type: LogEvent['type']): readonly LogCategory[] {

@@ -273,7 +273,7 @@ type MatrixEncounter = {
   enemies: readonly MatrixEnemy[]
 }
 
-type ReferenceLoadout = {
+export type ReferenceLoadout = {
   heroName: string
   equippedSkillIds: readonly string[]
   priorityRows: readonly PriorityRow[]
@@ -396,6 +396,13 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
       { skillId: 'smite' },
     ],
   },
+}
+
+/** Q4 harness loadout for one class. Cleric vow is zeal. Ranger ammo is 6. Mage omits Arcane Bolt. */
+export function referenceLoadoutFor(classId: HeroClass): ReferenceLoadout {
+  const loadout = referenceLoadouts[classId]
+  if (loadout === undefined) throw new Error(`unknown hero class '${String(classId)}'`)
+  return loadout
 }
 
 function bandMiddle(def: EnemyDef): number {

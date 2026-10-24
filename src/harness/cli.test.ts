@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 import { STEP_MS } from '../sim/constants.ts'
+import { deriveSeed } from '../sim/rng.ts'
 import { formatEvent } from '../sim/log.ts'
 import type { CombatState } from '../sim/types.ts'
 
@@ -213,5 +214,73 @@ describe('harness CLI', () => {
     expect(csv).toBe(table)
     expect(csv.split('\n').filter((line) => line.length > 0)).toHaveLength(76)
     expect(csv.startsWith('class,encounter,winPercent,')).toBe(true)
+  }, 180_000)
+
+  it('rejects a bad expedition command before running a road', () => {
+    const unknown = runCli(['--expedition', 'nope', '--seed', '5'])
+    expect(unknown.status).toBe(1)
+    expect(unknown.stderr).toContain("unknown expedition 'nope'")
+    expect(unknown.stderr).toContain('valid expeditions: splintered-road')
+
+    const missing = runCli(['--expedition', 'splintered-road'])
+    expect(missing.status).toBe(1)
+    expect(missing.stderr).toContain('missing --seed')
+
+    const both = runCli(['--expedition', 'splintered-road', '--scenario', 'duel-basic', '--seed', '5'])
+    expect(both.status).toBe(1)
+    expect(both.stderr).toContain('choose one of --expedition, --matrix, or --scenario')
+
+    const runs = runCli(['--expedition', 'splintered-road', '--seed', '5', '--runs', '1'])
+    expect(runs.status).toBe(1)
+    expect(runs.stderr).toContain('--expedition does not take --runs')
+  })
+
+  it('prints seed 5 twice, stable apart from the timing line', () => {
+    const first = runCli(['--expedition', 'splintered-road', '--seed', '5'])
+    const second = runCli(['--expedition', 'splintered-road', '--seed', '5'])
+    expect(first.status).toBe(0)
+    expect(second.status).toBe(0)
+    expect(first.stderr).toBe('')
+    expect(second.stderr).toBe('')
+    const stable = withoutTiming(first.stdout)
+    expect(withoutTiming(second.stdout)).toBe(stable)
+    expect(first.stdout).not.toContain('[hero]')
+    const lines = stable.split('\n')
+    expect(lines[0]).toBe(`[sim] expedition splintered-road seed 5 STEP_MS ${STEP_MS}`)
+    const opening = ['shardling-pair', 'wolf-pair', 'deserter', 'wolf-pair']
+    const durations = [7208, 15767, 10812, 12760]
+    const expectedOutcomes = ['victory', 'victory', 'victory', 'retreat']
+    const summary =
+      '[sim] summary encounters 4 victories 3 defeats 0 timeouts 0 retreats 1 momentum 0 unsecured none secured shard 8 hide 8 scrap 4 overflow 0'
+    const escapeLine =
+      'At 12.760s, Warrior attempts escape (HP 81/215, threshold 40%): roll 0.1510189522523433 against 52% (base 50, Agility 11 adds 2, supplies 0, zone 0, momentum 0): success.'
+    expect(lines.at(-1)).toBe(summary)
+    const body = lines.slice(1, -1)
+    expect(body.at(-1)).toBe(escapeLine)
+    const encounterLines = body.slice(0, -1)
+    const outcomes = { victory: 0, defeat: 0, timeout: 0, retreat: 0 }
+    expect(encounterLines).toHaveLength(4)
+    for (let index = 0; index < encounterLines.length; index += 1) {
+      const line = encounterLines[index]
+      const match = line?.match(
+        /^\[sim\] encounter (\d+) id (\S+) combatSeed (-?\d+) outcome (victory|defeat|timeout|retreat) durationMs (\d+)$/,
+      )
+      expect(match, line).not.toBeNull()
+      if (match === null) return
+      expect(Number(match[1])).toBe(index)
+      expect(Number(match[3])).toBe(deriveSeed(5, index))
+      expect(Number(match[5])).toBe(durations[index])
+      const outcome = match[4]
+      if (outcome === 'victory' || outcome === 'defeat' || outcome === 'timeout' || outcome === 'retreat') {
+        outcomes[outcome] += 1
+      }
+      expect(outcome).toBe(expectedOutcomes[index])
+      expect(match[2]).toBe(opening[index])
+      console.log('[sim] expedition line', line)
+    }
+    console.log('[sim] expedition escape', body.at(-1))
+    console.log('[sim] expedition summary', lines.at(-1))
+    expect(outcomes).toEqual({ victory: 3, defeat: 0, timeout: 0, retreat: 1 })
+    expect(lines.at(-1)).toBe(summary)
   }, 180_000)
 })

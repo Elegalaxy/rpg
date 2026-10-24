@@ -71,11 +71,12 @@ function encounterStart(state: CombatState, timeMs: number): void {
   const hero = state.hero
   const vow = requireVow(hero.suppliedVow)
   hero.classState = { ...hero.classState, [VOW_STATE_KEY]: vow }
+  const amount = hero.carryResource && hero.suppliedResource !== null ? hero.suppliedResource : FAITH_START
   defineClassResource(state, timeMs, {
     id: FAITH_RESOURCE_ID,
     maximum: FAITH_MAXIMUM,
     scope: FAITH_SCOPE,
-    amount: FAITH_START,
+    amount,
     regenPerSecond: 0,
   })
 }

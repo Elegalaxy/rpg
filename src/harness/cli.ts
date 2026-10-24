@@ -3,15 +3,21 @@ import { dirname, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 
-import { formatEvent } from '../sim/log.ts'
+import { gameDefs } from '../content/scenarios.ts'
 import { STEP_MS } from '../sim/constants.ts'
+import { createExpedition, runExpedition, SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
+import type { ExpeditionEncounterRecord } from '../sim/expedition.ts'
+import { formatEvent } from '../sim/log.ts'
 import type { CombatState } from '../sim/types.ts'
 
-import { MAX_BATCH_RUNS, runBatch, runScenario, scenarioIds, type BatchSummary } from './batch.ts'
+import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS, runBatch, runScenario, scenarioIds, type BatchSummary } from './batch.ts'
+import { splinteredRoadBlueprint } from './expedition.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
 const RPG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const REFERENCE_CSV_PATH = resolve(RPG_ROOT, 'reports', '2026-10-23-reference.csv')
+/** How many fights this command runs. The road itself does not end at four. */
+const HARNESS_EXPEDITION_ENCOUNTERS = 4
 
 const SEED_MIN = -2147483648
 const SEED_MAX = 2147483647
@@ -29,6 +35,7 @@ type ParsedArgs = {
   seed?: string
   runs?: string
   matrix?: string
+  expedition?: string
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -56,7 +63,13 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       parsed.list = true
       continue
     }
-    if (name !== '--scenario' && name !== '--seed' && name !== '--runs' && name !== '--matrix') {
+    if (
+      name !== '--scenario' &&
+      name !== '--seed' &&
+      name !== '--runs' &&
+      name !== '--matrix' &&
+      name !== '--expedition'
+    ) {
       throw new CliError(`unknown argument ${JSON.stringify(token)}`)
     }
     let value = inline
@@ -72,6 +85,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     if (name === '--scenario') parsed.scenario = value
     else if (name === '--seed') parsed.seed = value
     else if (name === '--runs') parsed.runs = value
+    else if (name === '--expedition') parsed.expedition = value
     else parsed.matrix = value
   }
   return parsed
@@ -155,6 +169,60 @@ function writeReferenceCsv(csv: string): void {
   writeFileSync(REFERENCE_CSV_PATH, csv, 'utf8')
 }
 
+function formatLoot(stacks: readonly { materialId: string; quantity: number }[]): string {
+  if (stacks.length === 0) return 'none'
+  return stacks.map((stack) => `${stack.materialId} ${stack.quantity}`).join(' ')
+}
+
+function countOutcomes(history: readonly ExpeditionEncounterRecord[], outcome: ExpeditionEncounterRecord['outcome']): number {
+  let count = 0
+  for (const entry of history) {
+    if (entry.outcome === outcome) count += 1
+  }
+  return count
+}
+
+function printExpedition(args: ParsedArgs): void {
+  if (args.expedition === undefined) throw new CliError('missing --expedition')
+  if (args.expedition !== SPLINTERED_ROAD_ID) {
+    throw new CliError(`unknown expedition '${args.expedition}'\nvalid expeditions: ${SPLINTERED_ROAD_ID}`)
+  }
+  if (args.seed === undefined) throw new CliError('missing --seed')
+  const seed = parseSeed(args.seed)
+  console.log(`[sim] expedition ${args.expedition} seed ${seed} STEP_MS ${STEP_MS}`)
+  const started = performance.now()
+  const state = runExpedition(
+    createExpedition(splinteredRoadBlueprint(), seed),
+    gameDefs(),
+    HARNESS_EXPEDITION_ENCOUNTERS,
+    HARNESS_LIMIT_MS,
+  )
+  const elapsedMs = performance.now() - started
+  for (const entry of state.history) {
+    console.log(
+      `[sim] encounter ${entry.index} id ${entry.encounterId} combatSeed ${entry.seed} outcome ${entry.outcome} durationMs ${entry.durationMs}`,
+    )
+  }
+  for (const event of state.escapeLog) console.log(formatEvent(event))
+  const encounters = state.history.length
+  const victories = countOutcomes(state.history, 'victory')
+  const defeats = countOutcomes(state.history, 'defeat')
+  const timeouts = countOutcomes(state.history, 'timeout')
+  const retreats = countOutcomes(state.history, 'retreat')
+  console.log(
+    `[sim] summary encounters ${encounters} victories ${victories} defeats ${defeats} timeouts ${timeouts} retreats ${retreats} momentum ${state.momentum} unsecured ${formatLoot(state.unsecured)} secured ${formatLoot(state.secured)} overflow ${state.overflow}`,
+  )
+  if (state.outcome === 'defeat') {
+    const durability = state.equipment
+      .map((entry) => `${entry.slot}:${entry.durability}/${entry.maxDurability}`)
+      .join(' ')
+    console.log(
+      `[sim] defeat carriedGold ${state.carriedGold} depositedGold ${state.depositedGold} debt ${state.debt} recoveryMs ${state.recoveryMs} bossLoss ${state.bossLossThisLife} durability ${durability}`,
+    )
+  }
+  printTiming(encounters, elapsedMs)
+}
+
 function printMatrix(args: ParsedArgs): void {
   if (args.matrix !== 'reference') {
     throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference`)
@@ -180,6 +248,14 @@ function main(): void {
   if (args.list) {
     console.log('[sim] scenarios')
     for (const id of scenarioIds()) console.log(id)
+    return
+  }
+  if (args.expedition !== undefined) {
+    if (args.matrix !== undefined || args.scenario !== undefined) {
+      throw new CliError('choose one of --expedition, --matrix, or --scenario')
+    }
+    if (args.runs !== undefined) throw new CliError('--expedition does not take --runs')
+    printExpedition(args)
     return
   }
   if (args.matrix !== undefined && args.scenario !== undefined) {

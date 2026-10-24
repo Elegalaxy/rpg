@@ -32,7 +32,7 @@ const fractureBurst: EnemySkillDef = {
   effects: [{ kind: 'damage', school: 'magical', coefficient: 0.4 }],
 }
 
-/** Levels 1–5. Swarm. The filler is a physical basic attack. */
+/** Levels 1–5. Swarm. Drops 4 shard. The filler is a physical basic attack. */
 export const fractureShardling: EnemyDef = {
   id: 'fracture-shardling',
   name: 'Fracture Shardling',
@@ -44,6 +44,7 @@ export const fractureShardling: EnemyDef = {
   filler: { school: 'physical' },
   traitIds: [FRACTURE_BURST_TRAIT],
   skills: [fractureBurst],
+  drop: { materialId: 'shard', baseQuantity: 4 },
 }
 
 const pounce: EnemySkillDef = {
@@ -59,7 +60,7 @@ const pounce: EnemySkillDef = {
   effects: [{ kind: 'damage', school: 'physical', coefficient: 1.6 }],
 }
 
-/** Levels 2–6. Skirmisher. The filler is a physical basic attack. */
+/** Levels 2–6. Skirmisher. Drops 4 hide. The filler is a physical basic attack. */
 export const starvedWolf: EnemyDef = {
   id: 'starved-wolf',
   name: 'Starved Wolf',
@@ -71,6 +72,7 @@ export const starvedWolf: EnemyDef = {
   filler: { school: 'physical' },
   traitIds: [PACK_HUNTER_TRAIT],
   skills: [pounce],
+  drop: { materialId: 'hide', baseQuantity: 4 },
 }
 
 const rustedCut: EnemySkillDef = {
@@ -101,7 +103,7 @@ const guard: EnemySkillDef = {
   effects: [{ kind: 'damageReduction', fraction: 0.3 }],
 }
 
-/** Levels 4–7. Standard. Rusted Cut is listed before Guard. The filler is a physical basic attack. */
+/** Levels 4–7. Standard. Drops 4 scrap. Rusted Cut is listed before Guard. The filler is a physical basic attack. */
 export const deserter: EnemyDef = {
   id: 'deserter',
   name: 'Deserter',
@@ -112,6 +114,7 @@ export const deserter: EnemyDef = {
   school: 'physical',
   filler: { school: 'physical' },
   skills: [rustedCut, guard],
+  drop: { materialId: 'scrap', baseQuantity: 4 },
 }
 
 const venomBite: EnemySkillDef = {

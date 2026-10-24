@@ -942,6 +942,29 @@ export type EncounterXpEvent = {
   amount: number
 }
 
+/**
+ * One escape attempt. It does not spend the hero's action.
+ * `thresholdPercent` is the fraction that was met, as a percent. 40 is 40%.
+ */
+export type EscapeEvent = {
+  type: 'escape'
+  timeMs: number
+  actorId: string
+  actorName: string
+  hp: number
+  maxHp: number
+  thresholdPercent: number
+  roll: number
+  chancePercent: number
+  basePercent: number
+  agility: number
+  agilityPoints: number
+  suppliesBonus: number
+  zoneBonus: number
+  momentumBonus: number
+  success: boolean
+}
+
 export type LogEvent =
   | EncounterStartEvent
   | PriorityEvent
@@ -982,6 +1005,7 @@ export type LogEvent =
   | EncounterXpEvent
   | DeathEvent
   | EncounterEndEvent
+  | EscapeEvent
 
 export type DamageEffect = {
   kind: 'damage'
@@ -1236,6 +1260,11 @@ export type CombatHero = CombatActor & {
   suppliedAmmo: number | null
   /** Vow copied from setup. Only a Cleric reads it. Null when the setup omitted it. */
   suppliedVow: string | null
+  /**
+   * Expedition fights pass the carried meter in through `suppliedResource`.
+   * Warrior Fury then stays after the fight. Standalone fights leave this false and still clear Fury.
+   */
+  carryResource: boolean
   /** One active field. A new field effect replaces this. */
   field: ActiveField | null
   /** This action's applied heal, after the roll and healing received, exceeded the HP missing. */
@@ -1275,6 +1304,13 @@ export type CombatHeroSetup = {
   specialAmmo?: number
   /** Cleric vow. Other classes ignore it. */
   vow?: string
+  /**
+   * When true, Warrior, Mage, and Cleric start from `startingResource`.
+   * Warrior Fury is not cleared at the end of that fight. Omitted is a standalone fight.
+   */
+  carryResource?: boolean
+  /** Current HP. Omitted starts at maximum HP. Values above maximum HP are capped. */
+  startingHp?: number
 }
 
 export type CombatEnemySetup = {
@@ -1413,6 +1449,14 @@ export type EnemyDef = {
   phases?: readonly BossPhaseDef[]
   /** Encounter rank R multiplies HP, Power, Armor, and Resistance by 1.12^R. */
   echoRank?: boolean
+  /** Material dropped when an expedition fight is won. Omitted enemies drop nothing. */
+  drop?: EnemyDrop
+}
+
+/** Base material quantity for one enemy, before expedition momentum. */
+export type EnemyDrop = {
+  materialId: string
+  baseQuantity: number
 }
 
 export type GameDefs = {

@@ -357,6 +357,16 @@ describe('content integrity', () => {
       effects: [{ kind: 'damageReduction', fraction: 0.3 }],
     })
     expect(deserter.skills?.[1]?.telegraphMs).toBeUndefined()
+    console.log('[expedition] road drops', {
+      shard: fractureShardling.drop,
+      hide: starvedWolf.drop,
+      scrap: deserter.drop,
+    })
+    expect(fractureShardling.drop).toEqual({ materialId: 'shard', baseQuantity: 4 })
+    expect(starvedWolf.drop).toEqual({ materialId: 'hide', baseQuantity: 4 })
+    expect(deserter.drop).toEqual({ materialId: 'scrap', baseQuantity: 4 })
+    expect(blightSpider.drop).toBeUndefined()
+    expect(standardDummy.drop).toBeUndefined()
     expect(blightSpider).toMatchObject({
       levelMin: 6,
       levelMax: 10,
@@ -547,9 +557,19 @@ describe('content integrity', () => {
       telegraphMs: 2000,
       effects: [{ kind: 'summon', enemyId: 'oathbound-echo', level: 16 }],
     })
+    expect(encounters['shardling-pair']?.members).toEqual([
+      { enemyId: 'fracture-shardling', slot: 0, level: 3 },
+      { enemyId: 'fracture-shardling', slot: 1, level: 3 },
+    ])
     expect(encounters['wolf-pair']?.members).toEqual([
       { enemyId: 'starved-wolf', slot: 0, level: 6 },
       { enemyId: 'starved-wolf', slot: 1, level: 6 },
+    ])
+    expect(encounters['deserter']?.members).toEqual([{ enemyId: 'deserter', slot: 0, level: 6 }])
+    expect(encounters['road-mixed']?.members).toEqual([
+      { enemyId: 'fracture-shardling', slot: 0, level: 5 },
+      { enemyId: 'starved-wolf', slot: 1, level: 5 },
+      { enemyId: 'deserter', slot: 2, level: 5 },
     ])
     expect(encounters['grove-mixed']?.members).toEqual([
       { enemyId: 'thornbeast', slot: 0, level: 10 },

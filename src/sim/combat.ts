@@ -1977,6 +1977,18 @@ function applySuppliedResources(hero: CombatHero, setup: CombatHeroSetup): void 
     }
     hero.suppliedVow = setup.vow
   }
+  if (setup.carryResource !== undefined) {
+    if (typeof setup.carryResource !== 'boolean') {
+      throw new Error(`carryResource must be a boolean, received ${describeValue(setup.carryResource)}`)
+    }
+    hero.carryResource = setup.carryResource
+  }
+  if (setup.startingHp !== undefined) {
+    if (typeof setup.startingHp !== 'number' || !Number.isFinite(setup.startingHp) || setup.startingHp < 0) {
+      throw new Error(`starting HP must be at least 0, received ${describeValue(setup.startingHp)}`)
+    }
+    hero.hp = setup.startingHp > hero.maxHp ? hero.maxHp : setup.startingHp
+  }
 }
 
 function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
@@ -2079,6 +2091,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     suppliedResource: null,
     suppliedAmmo: null,
     suppliedVow: null,
+    carryResource: false,
     field: null,
     overhealed: false,
     pendingCoefficient: null,

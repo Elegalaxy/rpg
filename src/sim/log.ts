@@ -355,6 +355,10 @@ export function formatEvent(event: LogEvent): string {
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dies, killed by ${event.killerName}.`
     case 'encounterEnd':
       return `At ${seconds(event.timeMs)}s, encounter ended: ${event.outcome}.`
+    case 'escape': {
+      const result = event.success ? 'success' : 'failure'
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} attempts escape (HP ${event.hp}/${event.maxHp}, threshold ${event.thresholdPercent}%): roll ${event.roll} against ${event.chancePercent}% (base ${event.basePercent}, Agility ${event.agility} adds ${event.agilityPoints}, supplies ${event.suppliesBonus}, zone ${event.zoneBonus}, momentum ${event.momentumBonus}): ${result}.`
+    }
     default: {
       const unexpected: never = event
       throw new Error(`unknown log event ${JSON.stringify(unexpected)}`)
