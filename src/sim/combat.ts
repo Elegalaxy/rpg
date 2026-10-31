@@ -2198,6 +2198,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     gear: hero.gear,
     racialNodeIds: hero.allocatedNodeIds,
     renaissance: hero.renaissance === true,
+    ...(hero.statBonuses ?? {}),
   })
   const renaissance =
     hero.renaissance === true && readAllocatedNodeIds(hero.allocatedNodeIds).includes(NODE_HUMAN_RENAISSANCE)

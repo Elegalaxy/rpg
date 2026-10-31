@@ -83,6 +83,12 @@ export function equipBlock(
   lookup: BaseLookup,
 ): string | null {
   const base = baseOf(item, lookup)
+  for (const id of item.modifiers) {
+    const modifier = ITEM_MODIFIERS[id]
+    if (modifier !== undefined && modifier.minLevel > heroLevel) {
+      return `${modifier.name} needs level ${modifier.minLevel}. This hero is level ${heroLevel}.`
+    }
+  }
   if (!slotsFor(base).includes(slot)) return `${base.name} does not fit the ${slot} slot.`
   if (item.itemLevel > heroLevel) return `${base.name} needs level ${item.itemLevel}. This hero is level ${heroLevel}.`
   if (base.type === 'offHand') {
@@ -224,4 +230,61 @@ export function applyDurability(
     if (entry !== undefined) next[slot] = { ...item, durability: entry.durability }
   }
   return next
+}
+
+/** Flat or fractional bonuses an item modifier adds, named like the `deriveHeroStats` inputs they feed. */
+export type StatBonuses = {
+  accuracyBonus?: number
+  evasionBonus?: number
+  critChanceBonus?: number
+  armorPenetrationBonus?: number
+  magicalPenetrationBonus?: number
+  equipmentHealingPower?: number
+  cooldownReductionBonus?: number
+}
+
+export type ItemModifier = {
+  id: string
+  name: string
+  /** The hero level needed to craft it and to wear an item that has it. */
+  minLevel: number
+  bonus: StatBonuses
+  /** One line for the screens. */
+  text: string
+}
+
+/** The six first-playable modifiers (G8). Percent values are fractions: 0.02 is 2 points. */
+export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
+  keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance' },
+  precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy' },
+  nimble: { id: 'nimble', name: 'Nimble', minLevel: 3, bonus: { evasionBonus: 3 }, text: '+3 Evasion' },
+  piercing: {
+    id: 'piercing',
+    name: 'Piercing',
+    minLevel: 6,
+    bonus: { armorPenetrationBonus: 0.03, magicalPenetrationBonus: 0.03 },
+    text: '+3 points armor and magical penetration',
+  },
+  mending: { id: 'mending', name: 'Mending', minLevel: 6, bonus: { equipmentHealingPower: 5 }, text: '+5 Healing Power' },
+  quick: { id: 'quick', name: 'Quick', minLevel: 9, bonus: { cooldownReductionBonus: 0.02 }, text: '+2 points cooldown reduction' },
+}
+
+/** The modifiers every hero's account knows at the start. */
+export const STARTING_MODIFIER_RECIPES: readonly string[] = ['keen', 'precise']
+
+/** The sum of every modifier on every equipped item. Empty when no modifier is equipped. */
+export function statBonusesFor(equipment: Equipment): StatBonuses {
+  const total: { [key in keyof StatBonuses]: number } = {}
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const item = equipment[slot]
+    if (item === null) continue
+    for (const id of item.modifiers) {
+      const modifier = ITEM_MODIFIERS[id]
+      if (modifier === undefined) continue
+      for (const key of Object.keys(modifier.bonus) as (keyof StatBonuses)[]) {
+        total[key] = (total[key] ?? 0) + (modifier.bonus[key] ?? 0)
+      }
+    }
+  }
+  return total
 }

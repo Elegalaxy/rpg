@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { addDevelopmentItems, equipFromArchive } from '../persist/equipment.ts'
+import { advanceCrafting, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { buyItem, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId } from '../sim/economy.ts'
@@ -24,6 +25,7 @@ import { createCombat, stepCombat } from '../sim/combat.ts'
 import type { CombatState } from '../sim/types.ts'
 
 import { debugLog } from './debug.ts'
+import { STEP_MS } from '../sim/constants.ts'
 import { createGameLoop } from './loop.ts'
 
 export const PLAYBACK_SPEEDS = [1, 2, 4] as const
@@ -472,6 +474,62 @@ export function devTownTools(kind: 'gold' | 'wear'): void {
   const next =
     kind === 'gold' ? grantGold(saveStatus.save, 500) : hero === null ? saveStatus.save : wearGear(saveStatus.save, hero.id)
   commitSave(next, `dev ${kind}`)
+}
+
+/** What the last crafting jobs produced. Not saved: it only fills the screen's notices. */
+let craftNotices: string[] = []
+
+export function getCraftNotices(): readonly string[] {
+  return craftNotices
+}
+
+/** Let town time pass for the crafting queue. The clock calls this each frame while no expedition runs. */
+export function advanceTown(count: number): void {
+  if (saveStatus.save.expedition !== null || saveStatus.save.account.craftQueue.length === 0) return
+  const result = advanceCrafting(saveStatus.save, count * STEP_MS)
+  saveStatus = { ...saveStatus, save: result.save }
+  if (result.finished.length > 0) {
+    craftNotices = [...craftNotices, ...result.finished.map((notice) => notice.text)].slice(-5)
+    commitSave(saveStatus.save, 'craft finished', false)
+  }
+}
+
+const townLoop = createGameLoop({
+  getSpeed: () => snapshot.speed,
+  isPaused: () => snapshot.paused,
+  applySteps: advanceTown,
+  notify: () => {
+    if (saveStatus.save.account.craftQueue.length === 0 && craftNotices.length === 0) return
+    saveStatus = { ...saveStatus }
+    emit()
+  },
+  details: () => ({ scenarioId: 'town', seed: 0, speed: snapshot.speed, paused: snapshot.paused }),
+})
+
+/** Start the town clock. Returns the cleanup. */
+export function startTownLoop(): () => void {
+  townLoop.start()
+  return () => {
+    townLoop.stop()
+  }
+}
+
+export function queueCraftFromUi(request: CraftRequest): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(queueCraft(saveStatus.save, hero.id, request), 'craft queued')
+}
+
+export function queueUpgradeFromUi(itemId: string, materialId: string): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(queueUpgrade(saveStatus.save, hero.id, itemId, materialId), 'upgrade queued')
+}
+
+/** Development builds only. Learns every recipe and adds materials and gold. */
+export function devCraftingKit(): void {
+  if (!import.meta.env.DEV) return
+  commitSave(grantCraftingKit(saveStatus.save), 'dev crafting kit')
 }
 
 /** Close a finished expedition: loot to the account, the first return opens a slot. */

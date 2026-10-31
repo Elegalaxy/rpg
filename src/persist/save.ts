@@ -1,6 +1,6 @@
 import { itemBase, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
-import { EQUIPMENT_SLOT_IDS, type Equipment, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type ItemInstance } from '../sim/economy.ts'
 import { assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import type { PriorityRow } from '../sim/types.ts'
@@ -21,6 +21,34 @@ export const STARTING_DISCOVERIES = ['node:greyhaven', 'node:splintered-road'] a
 /** Slot 3, 4, and 5 unlock once each, the first time any hero reaches the milestone. */
 export const SLOT_MILESTONES = ['first-return', 'first-reincarnation', 'first-warden-defeat'] as const
 
+/** One crafting job. Costs were paid when it was queued, and only the first job advances. */
+export type CraftJob =
+  | {
+      id: string
+      kind: 'craft'
+      heroId: string
+      baseId: string
+      itemLevel: number
+      materialId: string
+      modifierId: string | null
+      remainingMs: number
+      /** Index into the account's craft seed. Fixes the quality roll. */
+      seedIndex: number
+      /** The hero's proficiency rank when the job was queued. It sets the quality range. */
+      rank: number
+    }
+  | {
+      id: string
+      kind: 'upgrade'
+      heroId: string
+      /** The item is held here while the upgrade runs, and returned to the archive when it ends. */
+      item: ItemInstance
+      materialId: string
+      remainingMs: number
+      seedIndex: number
+      rank: number
+    }
+
 export type AccountData = {
   gold: number
   /** Material id to quantity. */
@@ -31,6 +59,10 @@ export type AccountData = {
   slots: number
   /** One-time account milestones reached so far. Each one opens a character slot. */
   milestones: string[]
+  /** Queued crafting jobs, at most three. */
+  craftQueue: CraftJob[]
+  /** How many crafting rolls have been used. The next job takes this index. */
+  craftCounter: number
   /** Gold owed from defeats. It is paid off at the town and blocks nothing. */
   debt: number
   /** Items the player owns that no hero has equipped. Shared across heroes. */
@@ -59,6 +91,8 @@ export type SavedHero = {
   specialAmmo: number
   /** Gold to carry into an expedition. The rest of the account's gold stays deposited and safe. */
   carryGold: number
+  /** Crafting experience. Rank is `floor(√XP)` up to 10. Personal to the hero and kept through reincarnation. */
+  craftXp: number
   /** Equipped items. Gear is bound to its hero. */
   equipment: Equipment
 }
@@ -104,11 +138,13 @@ export function newSave(): SaveData {
     account: {
       gold: 0,
       materials: {},
-      recipes: [],
+      recipes: [...STARTING_MODIFIER_RECIPES],
       discoveries: [...STARTING_DISCOVERIES],
       slots: STARTING_SLOTS,
       milestones: [],
       archive: [],
+      craftQueue: [],
+      craftCounter: 0,
       debt: 0,
     },
     heroes: [],
@@ -148,6 +184,25 @@ function assertItem(value: unknown, label: string): asserts value is ItemInstanc
   whole(value.durability, `${label} durability`)
   check(value.durability <= value.maxDurability, `${label} durability is above its maximum`)
   stringList(value.modifiers, `${label} modifiers`)
+  for (const id of value.modifiers) check(ITEM_MODIFIERS[id] !== undefined, `${label} has an unknown modifier ${describeValue(id)}`)
+}
+
+function assertJob(value: unknown): asserts value is CraftJob {
+  check(isRecord(value), 'craft job must be an object')
+  check(typeof value.id === 'string' && value.id.length > 0, 'craft job is missing an id')
+  check(value.kind === 'craft' || value.kind === 'upgrade', 'craft job kind must be craft or upgrade')
+  check(typeof value.heroId === 'string', 'craft job is missing a hero')
+  check(typeof value.materialId === 'string', 'craft job is missing a material')
+  whole(value.remainingMs, 'craft job time')
+  whole(value.seedIndex, 'craft job seed index')
+  whole(value.rank, 'craft job rank')
+  if (value.kind === 'craft') {
+    check(typeof value.baseId === 'string' && itemBase(value.baseId) !== undefined, 'craft job has an unknown base')
+    whole(value.itemLevel, 'craft job item level')
+    check(value.modifierId === null || (typeof value.modifierId === 'string' && ITEM_MODIFIERS[value.modifierId] !== undefined), 'craft job has an unknown modifier')
+  } else {
+    assertItem(value.item, 'craft job item')
+  }
 }
 
 function assertAccount(value: unknown): asserts value is AccountData {
@@ -162,6 +217,9 @@ function assertAccount(value: unknown): asserts value is AccountData {
   stringList(value.milestones, 'milestones')
   check(value.milestones.length <= MAX_SLOTS - STARTING_SLOTS, 'too many milestones')
   whole(value.debt, 'debt')
+  whole(value.craftCounter, 'craft counter')
+  check(Array.isArray(value.craftQueue) && value.craftQueue.length <= 3, 'the craft queue holds at most 3 jobs')
+  for (const job of value.craftQueue) assertJob(job)
   check(Array.isArray(value.archive), 'archive must be a list')
   const archiveIds: string[] = []
   value.archive.forEach((item, index) => {
@@ -197,6 +255,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   )
   whole(value.specialAmmo, `${label} special arrows`)
   whole(value.carryGold, `${label} carried gold`)
+  whole(value.craftXp, `${label} crafting experience`)
   check(isRecord(value.equipment), `${label} equipment must be an object`)
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = value.equipment[slot]
@@ -238,6 +297,8 @@ function fillWorldFields(parsed: unknown): void {
   if (isRecord(parsed.account) && parsed.account.milestones === undefined) parsed.account.milestones = []
   if (isRecord(parsed.account) && parsed.account.archive === undefined) parsed.account.archive = []
   if (isRecord(parsed.account) && parsed.account.debt === undefined) parsed.account.debt = 0
+  if (isRecord(parsed.account) && parsed.account.craftQueue === undefined) parsed.account.craftQueue = []
+  if (isRecord(parsed.account) && parsed.account.craftCounter === undefined) parsed.account.craftCounter = 0
   if (!Array.isArray(parsed.heroes)) return
   for (const hero of parsed.heroes) {
     if (!isRecord(hero)) continue
@@ -246,6 +307,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.retreatAtMost === undefined) hero.retreatAtMost = DEFAULT_RETREAT
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
     if (hero.carryGold === undefined) hero.carryGold = DEFAULT_CARRY_GOLD
+    if (hero.craftXp === undefined) hero.craftXp = 0
     if (hero.equipment === undefined && typeof hero.id === 'string' && (HERO_CLASSES as readonly string[]).includes(String(hero.classId))) {
       hero.equipment = starterEquipment(hero.id, hero.classId as HeroClass)
     }

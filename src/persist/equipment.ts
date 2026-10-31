@@ -1,5 +1,5 @@
 import { developmentItems, itemBase } from '../content/items.ts'
-import { equipBlock, equipItem, gearFromEquipment, slotsFor, type EquipmentSlotId } from '../sim/economy.ts'
+import { equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId } from '../sim/economy.ts'
 import { deriveHeroStats, type HeroDerivedStats } from '../sim/stats.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 import { classWebs } from '../content/webs/index.ts'
@@ -23,6 +23,7 @@ export function statsFor(hero: SavedHero): HeroDerivedStats | null {
     gear,
     racialNodeIds: nodeIds,
     renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
+    ...statBonusesFor(hero.equipment),
   })
 }
 
@@ -38,6 +39,9 @@ export function statLines(stats: HeroDerivedStats): StatLine[] {
     { label: 'Armor', value: stats.armor, unit: '' },
     { label: 'Resistance', value: stats.resistance, unit: '' },
     { label: 'Evasion', value: stats.evasion, unit: '' },
+    { label: 'Accuracy', value: stats.accuracy, unit: '' },
+    { label: 'Critical chance', value: Math.round(stats.critChance * 1000) / 10, unit: '%' },
+    { label: 'Cooldown reduction', value: Math.round(stats.cooldownReduction * 1000) / 10, unit: '%' },
     { label: 'Base action time', value: stats.actionTime, unit: ' s' },
   ]
 }

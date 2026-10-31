@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 9.3  
+Next step: Step 9.4  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -803,13 +803,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (52 files, 579 tests, exit 0), including 12 in `src/persist/town.test.ts`: the price formulas at their edges, selling and buying, repair of equipped and archive items (including a disabled one), repair-everything with short gold, partial and full debt payment, gold drops, a real won road fight adding 12 gold to the carried 25 and the total coming home, a defeat keeping deposited gold and adding debt, and the town closing during a run. `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. In the dev server in the browser pane: Dev +500 gold, Dev wear gear down, Repair everything equipped (40 gold, 500 to 460), Buy a two-handed weapon (10 gold), Sell it (5 gold back), Sell all shard (+12), Pay 25 of 40 debt, and a payment of 99 was refused with `You only owe 15.` The one thing not played by hand is a real defeat adding debt; the test covers it.
 
 ### Step 9.3: Crafting
-- Status: `todo`
+- Status: `verified`
 - Depends on: 9.2, G8
 - Files: `src/sim/economy.ts`, `src/content/recipes.ts`, `src/ui/town/Craft*.tsx`, tests
 - Change: Base recipe + material + one modifier. Seeded quality roll (the average of two rolls within the visible range). Proficiency. A failed upgrade consumes materials and leaves the item unchanged. A short crafting queue that advances on simulation time while the hero is in town.
 - Acceptance criteria: tests for the quality range, a failed upgrade, and queue progress.
 - Verification: User: craft an item, equip it, and see its effect in the next fight (§15 criterion 8).
 - Progress:
+  - 2026-10-31: `src/persist/crafting.ts` holds the G8 rules. `queueCraft` pays 6 material and `item level × 5` gold up front and adds a 30 second job whose quality roll is fixed by a saved counter (`CRAFT_SEED` plus the job's index through `deriveSeed`), so a saved game rolls the same way. The roll is the average of two uniform rolls across `qualityRange(material, rank)`, where each proficiency rank (`floor(√XP)`, up to 10) raises the minimum by 1 point and the rank held when the job was queued is the one used. `queueUpgrade` takes an archive item out of the archive for the job, charges 4 material and `item level × 5` gold, and returns it at the end: 1 level higher with chance `85% − 5 × item level`, or unchanged on a failure that still uses the materials. `advanceCrafting` moves only the first job, carries leftover time to the next, and does nothing while an expedition runs. The queue holds 3. Each finished job gives the hero 1 crafting experience.
+  - 2026-10-31: Modifiers are `ITEM_MODIFIERS` in `src/sim/economy.ts` (Keen, Precise, Nimble, Piercing, Mending, Quick). `statBonusesFor` adds the modifiers on all equipped items into the existing `deriveHeroStats` bonus inputs, and the bonus travels in the run's hero setup (`statBonuses`), so combat, the expedition, and the equipment screen all agree. Wearing a modified item needs the hero level of its modifier. An item's name shows its modifiers (`Keen One-handed Weapon`). The account starts knowing the Keen and Precise recipes and the save keeps `recipes`, `craftQueue`, `craftCounter`, and each hero's `craftXp`. `src/ui/town/Craft.tsx` shows the proficiency rank, the item, level, material, and modifier choices with the visible quality range, cost and time, the upgrade list with each chance, the queue, and finished-job notices. A third clock in the store (`startTownLoop`) passes town time while no expedition runs. The equipment screen now also lists Accuracy, Critical chance, and Cooldown reduction.
+  - 2026-10-31: Verified. `npm test` passed (53 files, 597 tests, exit 0), including 18 in `src/persist/crafting.test.ts`: rank and range edges, costs, the queue limit and every refusal, time passing only through the first job, the quality range and averaging over 300 seeded rolls, the rank snapshot, upgrade success and failure with the item returned unchanged, modifier bonuses in the derived stats and in a real `createCombat` hero (criterion 8), wearing needing the modifier's level, and a broken job in a save. `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. The road seed 5 and duel-basic are unchanged. In the dev server in the browser pane: the crafting kit, a queued Keen One-handed Weapon from shard (range 100% to 110%, 6 shard and 5 gold, 30 seconds), the saved job fast-forwarded to 0.4 seconds and resumed after a reload, the notice `Crafted One-handed Weapon, item level 1, quality 108.5%.`, rank 1, and equipping it changed the stats exactly as previewed (Physical Power 30 to 30.85, Critical chance 9% to 11%). Not played by hand: an upgrade in the page (the tests cover success and failure), and the 30-second wait itself (the pane throttles frames). Progress through a job is saved when the queue changes or a job finishes, so a reload mid-job restarts from the last save.
 
 ### Step 9.4: Contracts
 - Status: `todo`

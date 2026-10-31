@@ -1,5 +1,6 @@
 import type { HeroRace } from './progression.ts'
 import type { RngState } from './rng.ts'
+import type { StatBonuses } from './economy.ts'
 import type {
   Attributes,
   EnemyArchetype,
@@ -1388,6 +1389,8 @@ export type CombatHeroSetup = {
   curse?: string
   /** Human Renaissance: at least two nodes in each class cluster. Computed from the class web. */
   renaissance?: boolean
+  /** Bonuses from item modifiers on the equipped gear. Omitted adds none. */
+  statBonuses?: StatBonuses
   /** Skill-web nodes for this fight. Omitted is an empty list and applies no node effects. */
   allocatedNodeIds?: readonly string[]
   /** Momentum stacks for this fight. Omitted is 0 and grants no momentum bonus. */

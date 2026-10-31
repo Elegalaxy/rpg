@@ -81,6 +81,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     retreatAtMost: DEFAULT_RETREAT,
     specialAmmo: loadout.specialAmmo ?? 0,
     carryGold: DEFAULT_CARRY_GOLD,
+    craftXp: 0,
     equipment: starterEquipment(id, request.classId),
   }
   const next: SaveData = {

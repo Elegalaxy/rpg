@@ -3,7 +3,7 @@ import { itemBase } from '../content/items.ts'
 import { nodes, routeEncounterIds, routes } from '../content/world.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { TRAVEL_GAP_MS, createExpedition, type ExpeditionBlueprint, type ExpeditionState } from '../sim/expedition.ts'
-import { gearFromEquipment } from '../sim/economy.ts'
+import { gearFromEquipment, statBonusesFor } from '../sim/economy.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 
 import type { SavedHero } from './save.ts'
@@ -46,6 +46,7 @@ export function blueprintForHero(
       priorityRows: hero.priorityRows.map((row) => ({ ...row })),
       allocatedNodeIds: [...nodeIds],
       renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
+      statBonuses: statBonusesFor(hero.equipment),
       ...(hero.classId === 'ranger' ? { specialAmmo: hero.specialAmmo } : {}),
       ...(hero.vow !== null ? { vow: hero.vow } : {}),
       ...(hero.curse !== null ? { curse: hero.curse } : {}),

@@ -632,6 +632,7 @@ function carriedFromTemplate(hero: CombatHeroSetup): CarriedHero {
     gear: hero.gear,
     racialNodeIds: hero.allocatedNodeIds,
     renaissance: hero.renaissance === true,
+    ...(hero.statBonuses ?? {}),
   })
   const meter = initialMeter(hero.classId)
   const specialAmmo = hero.classId === 'ranger' ? (hero.specialAmmo ?? 0) : 0

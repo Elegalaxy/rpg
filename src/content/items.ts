@@ -1,6 +1,7 @@
 import { ARMOR_SLOTS, HERO_CLASSES, type ArmorCategory, type ArmorSlot, type HeroClass } from '../sim/constants.ts'
 import {
   ITEM_MAX_DURABILITY,
+  ITEM_MODIFIERS,
   emptyEquipment,
   type Equipment,
   type ItemBase,
@@ -52,8 +53,11 @@ export function itemBase(baseId: string): ItemBase | undefined {
   return itemBases[baseId]
 }
 
+/** The item's name with its modifiers in front, such as `Keen Bow`. */
 export function itemName(item: ItemInstance): string {
-  return itemBase(item.baseId)?.name ?? item.baseId
+  const base = itemBase(item.baseId)?.name ?? item.baseId
+  const prefix = item.modifiers.map((id) => ITEM_MODIFIERS[id]?.name ?? id)
+  return [...prefix, base].join(' ')
 }
 
 /** The Q-reference loadout for each class (§7): preferred weapon, off-hand, and armor. */

@@ -10,6 +10,7 @@ import { Roster } from './character/Roster.tsx'
 import { Rules } from './character/Rules.tsx'
 import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
+import { Craft } from './town/Craft.tsx'
 import { Town } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
@@ -25,6 +26,7 @@ import {
   setSeedText,
   setSpeed,
   startCombatLoop,
+  startTownLoop,
   startExpeditionLoop,
   startNewGame,
   togglePause,
@@ -51,9 +53,11 @@ function App() {
     debugLog('[ui]', 'app mounted')
     const stopCombat = startCombatLoop()
     const stopExpedition = startExpeditionLoop()
+    const stopTown = startTownLoop()
     return () => {
       stopCombat()
       stopExpedition()
+      stopTown()
     }
   }, [])
 
@@ -79,6 +83,7 @@ function App() {
       <Attributes />
       <SkillWeb />
       <Town />
+      <Craft />
       <Equipment />
       <Loadout />
       <Rules />
