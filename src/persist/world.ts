@@ -14,6 +14,7 @@ import {
 import { TRAVEL_GAP_MS, rescueFee, type ExpeditionState } from '../sim/expedition.ts'
 
 import { selectedHero } from './character.ts'
+import { startExpedition } from './expeditionSetup.ts'
 import { itemBase } from '../content/items.ts'
 import { applyDurability, gearGaps } from '../sim/economy.ts'
 import { reachMilestone, type SaveData, type SavedHero } from './save.ts'
@@ -230,8 +231,27 @@ export function recordProgress(save: SaveData): SaveData {
 }
 
 /**
- * Close a finished expedition. A safe return opens the first-return slot. Secured loot and deposited
- * gold go to the account, and a defeat keeps only what was already secured. The expedition is removed.
+ * Begin a run for the selected hero. The gold the hero carries comes out of the account, up to their
+ * chosen amount, and the rest travels as safe deposited gold. Settling puts it back.
+ */
+export function beginExpedition(save: SaveData, routeId: string, seed: number): { ok: true; save: SaveData } | { ok: false; reason: string } {
+  const check = canStartRoute(save, routeId)
+  if (!check.ok) return check
+  const hero = selectedHero(save)
+  if (hero === null) return { ok: false, reason: 'Select a hero first.' }
+  const carried = Math.min(hero.carryGold, save.account.gold)
+  let expedition
+  try {
+    expedition = startExpedition(hero, routeId, seed, { carried, deposited: save.account.gold - carried })
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error ? error.message : String(error) }
+  }
+  return { ok: true, save: { ...save, account: { ...save.account, gold: 0 }, expedition } }
+}
+
+/**
+ * Close a finished expedition. A safe return opens the first-return slot. Secured loot, deposited
+ * gold, and the carried gold of a safe return go to the account, and a defeat's debt is added, and a defeat keeps only what was already secured. The expedition is removed.
  */
 export function settleExpedition(save: SaveData): SaveData {
   const expedition = save.expedition
@@ -242,7 +262,8 @@ export function settleExpedition(save: SaveData): SaveData {
   let account = {
     ...progressed.account,
     materials,
-    gold: progressed.account.gold + expedition.depositedGold + (expedition.outcome === 'returned' ? expedition.carriedGold : 0),
+    gold: expedition.depositedGold + (expedition.outcome === 'returned' ? expedition.carriedGold : 0),
+    debt: progressed.account.debt + expedition.debt,
   }
   if (expedition.outcome === 'returned') account = reachMilestone(account, 'first-return')
   const heroes = progressed.heroes.map((hero) =>

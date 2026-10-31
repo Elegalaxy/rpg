@@ -23,20 +23,20 @@ describe('splintered road blueprint', () => {
     expect(warrior.opening.map((entry) => entry.id)).toEqual(['shardling-pair', 'wolf-pair', 'deserter'])
     expect(warrior.draw.map((entry) => entry.id)).toEqual(['shardling-pair', 'wolf-pair', 'deserter', 'road-mixed'])
     expect(warrior.opening[0]?.enemies).toEqual([
-      { defId: 'fracture-shardling', slot: 0, level: 3, materialId: 'shard', baseQuantity: 4 },
-      { defId: 'fracture-shardling', slot: 1, level: 3, materialId: 'shard', baseQuantity: 4 },
+      { defId: 'fracture-shardling', slot: 0, level: 3, gold: 6, materialId: 'shard', baseQuantity: 4 },
+      { defId: 'fracture-shardling', slot: 1, level: 3, gold: 6, materialId: 'shard', baseQuantity: 4 },
     ])
     expect(warrior.opening[1]?.enemies).toEqual([
-      { defId: 'starved-wolf', slot: 0, level: 6, materialId: 'hide', baseQuantity: 4 },
-      { defId: 'starved-wolf', slot: 1, level: 6, materialId: 'hide', baseQuantity: 4 },
+      { defId: 'starved-wolf', slot: 0, level: 6, gold: 12, materialId: 'hide', baseQuantity: 4 },
+      { defId: 'starved-wolf', slot: 1, level: 6, gold: 12, materialId: 'hide', baseQuantity: 4 },
     ])
     expect(warrior.opening[2]?.enemies).toEqual([
-      { defId: 'deserter', slot: 0, level: 6, materialId: 'scrap', baseQuantity: 4 },
+      { defId: 'deserter', slot: 0, level: 6, gold: 12, materialId: 'scrap', baseQuantity: 4 },
     ])
     expect(warrior.draw[3]?.enemies).toEqual([
-      { defId: 'fracture-shardling', slot: 0, level: 5, materialId: 'shard', baseQuantity: 4 },
-      { defId: 'starved-wolf', slot: 1, level: 5, materialId: 'hide', baseQuantity: 4 },
-      { defId: 'deserter', slot: 2, level: 5, materialId: 'scrap', baseQuantity: 4 },
+      { defId: 'fracture-shardling', slot: 0, level: 5, gold: 10, materialId: 'shard', baseQuantity: 4 },
+      { defId: 'starved-wolf', slot: 1, level: 5, gold: 10, materialId: 'hide', baseQuantity: 4 },
+      { defId: 'deserter', slot: 2, level: 5, gold: 10, materialId: 'scrap', baseQuantity: 4 },
     ])
     expect(warrior.hero.id).toBe(hero.id)
     expect(warrior.hero.level).toBe(5)

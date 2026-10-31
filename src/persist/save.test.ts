@@ -43,7 +43,7 @@ function fakeStorage(options?: { failWrites?: boolean }): StorageLike & { data: 
 
 function withHero(): SaveData {
   const save = newSave()
-  save.account = { gold: 40, materials: { shard: 8, hide: 3 }, recipes: ['patch'], discoveries: ['splintered-road'], slots: 3, milestones: ['first-return'], archive: [] }
+  save.account = { gold: 40, materials: { shard: 8, hide: 3 }, recipes: ['patch'], discoveries: ['splintered-road'], slots: 3, milestones: ['first-return'], archive: [], debt: 0 }
   save.heroes.push({
     id: 'hero-1',
     name: 'Ash',
@@ -57,6 +57,7 @@ function withHero(): SaveData {
     clearedNodeIds: ['splintered-road'],
     retreatAtMost: 0.4,
     specialAmmo: 0,
+    carryGold: 25,
     equipment: starterEquipment('hero-1', 'warrior'),
   })
   save.selectedHeroId = 'hero-1'

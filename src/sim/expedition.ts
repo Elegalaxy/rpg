@@ -44,6 +44,8 @@ export type ExpeditionEnemy = {
   materialId?: string
   /** Quantity before momentum. Present only when `materialId` is set. */
   baseQuantity?: number
+  /** Gold this enemy adds to the gold the hero carries when it is defeated. Omitted drops none. */
+  gold?: number
 }
 
 export type LootStack = {
@@ -460,18 +462,21 @@ function copyEnemy(enemy: ExpeditionEnemy, label: string): ExpeditionEnemy {
   if (typeof enemy.level !== 'number' || !Number.isInteger(enemy.level) || enemy.level < 1) {
     throw new Error(`${label} level must be a positive integer, received ${describeValue(enemy.level)}`)
   }
+  const gold = enemy.gold
+  if (gold !== undefined && (typeof gold !== 'number' || !Number.isInteger(gold) || gold < 0)) {
+    throw new Error(`${label} gold must be an integer of at least 0, received ${describeValue(gold)}`)
+  }
+  const base = { defId: enemy.defId, slot: enemy.slot, level: enemy.level, ...(gold === undefined ? {} : { gold }) }
   const materialId = enemy.materialId
   const baseQuantity = enemy.baseQuantity
-  if (materialId === undefined && baseQuantity === undefined) {
-    return { defId: enemy.defId, slot: enemy.slot, level: enemy.level }
-  }
+  if (materialId === undefined && baseQuantity === undefined) return base
   if (typeof materialId !== 'string' || materialId.length === 0) {
     throw new Error(`${label} drop is missing a material`)
   }
   if (typeof baseQuantity !== 'number' || !Number.isInteger(baseQuantity) || baseQuantity < 1) {
     throw new Error(`${label} base quantity must be a positive integer, received ${describeValue(baseQuantity)}`)
   }
-  return { defId: enemy.defId, slot: enemy.slot, level: enemy.level, materialId, baseQuantity }
+  return { ...base, materialId, baseQuantity }
 }
 
 function nonNegativeInteger(value: unknown, label: string): number {
@@ -939,6 +944,7 @@ function collectDrops(state: ExpeditionState): void {
   if (current === null) throw new Error('expedition has no encounter to finish')
   const enemies = [...current.enemies].sort((left, right) => left.slot - right.slot)
   for (const enemy of enemies) {
+    if (enemy.gold !== undefined) state.carriedGold += enemy.gold
     if (enemy.materialId === undefined || enemy.baseQuantity === undefined) continue
     addUnsecured(state, enemy.materialId, scaledDropQuantity(enemy.baseQuantity, state.momentum))
   }

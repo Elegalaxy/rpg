@@ -2,11 +2,12 @@ import { useSyncExternalStore } from 'react'
 
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
-import { startExpedition } from '../persist/expeditionSetup.ts'
 import { addDevelopmentItems, equipFromArchive } from '../persist/equipment.ts'
+import { buyItem, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
+import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId } from '../sim/economy.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
-import { canStartRoute, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
+import { beginExpedition, canStartRoute, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
 import { returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
 import { setPriorityRules } from '../sim/automation.ts'
@@ -364,20 +365,14 @@ export function startExpeditionLoop(): () => void {
 export function startExpeditionFromUi(routeId: string): string | null {
   const check = canStartRoute(saveStatus.save, routeId)
   if (!check.ok) return check.reason
-  const hero = selectedHero(saveStatus.save)
-  if (hero === null) return 'Select a hero first.'
   const buffer = new Uint32Array(1)
   crypto.getRandomValues(buffer)
   const seed = (buffer[0] ?? 1) | 0
-  let expedition
-  try {
-    expedition = startExpedition(hero, routeId, seed)
-  } catch (error) {
-    return error instanceof Error ? error.message : String(error)
-  }
+  const begun = beginExpedition(saveStatus.save, routeId, seed)
+  if (!begun.ok) return begun.reason
   pushedAt = null
-  debugLog('[ui]', 'expedition start', { routeId, seed, hero: hero.id })
-  commitSave({ ...saveStatus.save, expedition }, 'expedition start')
+  debugLog('[ui]', 'expedition start', { routeId, seed })
+  commitSave(begun.save, 'expedition start')
   expeditionLoop.resetClock()
   if (!snapshot.paused) expeditionLoop.start()
   return null
@@ -433,6 +428,50 @@ export function devAddItems(): void {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return
   commitSave(addDevelopmentItems(saveStatus.save, hero.id), 'dev add items')
+}
+
+function applyTown(result: RosterResult, reason: string): string | null {
+  if (!result.ok) return result.reason
+  commitSave(result.save, reason)
+  return null
+}
+
+/** Town services for the account and the selected hero. Each returns the refusal message, or null. */
+export function sellMaterialFromUi(materialId: string, quantity: number): string | null {
+  return applyTown(sellMaterial(saveStatus.save, materialId, quantity), 'sold material')
+}
+
+export function sellItemFromUi(itemId: string): string | null {
+  return applyTown(sellItem(saveStatus.save, itemId), 'sold item')
+}
+
+export function buyItemFromUi(baseId: string): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(buyItem(saveStatus.save, hero.id, baseId), 'bought item')
+}
+
+export function repairOneFromUi(itemId: string): string | null {
+  return applyTown(repairOne(saveStatus.save, itemId), 'repaired item')
+}
+
+export function repairAllFromUi(): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(repairAll(saveStatus.save, hero.id), 'repaired all')
+}
+
+export function payDebtFromUi(amount: number): string | null {
+  return applyTown(payDebt(saveStatus.save, amount), 'paid debt')
+}
+
+/** Development builds only. Adds gold and wears the hero's gear down to try the shop and repair. */
+export function devTownTools(kind: 'gold' | 'wear'): void {
+  if (!import.meta.env.DEV) return
+  const hero = selectedHero(saveStatus.save)
+  const next =
+    kind === 'gold' ? grantGold(saveStatus.save, 500) : hero === null ? saveStatus.save : wearGear(saveStatus.save, hero.id)
+  commitSave(next, `dev ${kind}`)
 }
 
 /** Close a finished expedition: loot to the account, the first return opens a slot. */

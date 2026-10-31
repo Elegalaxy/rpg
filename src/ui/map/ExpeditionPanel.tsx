@@ -115,6 +115,19 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           <small>0 to {limit}.</small>
         </div>
       ) : null}
+      <div>
+        <label>
+          Gold to carry{' '}
+          <input
+            aria-label="Gold to carry"
+            value={draft.carryGold}
+            inputMode="numeric"
+            size={5}
+            onChange={(event) => patch({ carryGold: event.target.value })}
+          />
+        </label>{' '}
+        <small>The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</small>
+      </div>
       <p>Supplies: {SUPPLY_SLOT_COUNT} slots, all empty. No consumable exists yet.</p>
       <button type="button" disabled={!checked.ok} onClick={save}>
         Save preparation

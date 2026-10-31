@@ -12,6 +12,8 @@ export type PreparationDraft = {
   vow: string
   curse: string
   specialAmmo: string
+  /** Gold to carry, as a whole number. */
+  carryGold: string
 }
 
 export const RETREAT_MIN_PERCENT = 5
@@ -23,6 +25,7 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     vow: hero.vow ?? '',
     curse: hero.curse ?? '',
     specialAmmo: String(hero.specialAmmo),
+    carryGold: String(hero.carryGold),
   }
 }
 
@@ -74,8 +77,16 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
       specialAmmo = amount
     }
   }
+  let carryGold = hero.carryGold
+  const carryText = draft.carryGold.trim()
+  const carry = Number(carryText)
+  if (carryText.length === 0 || !Number.isInteger(carry) || carry < 0) {
+    errors.push('Gold to carry must be a whole number of at least 0.')
+  } else {
+    carryGold = carry
+  }
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo } }
+  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold } }
 }
 
 /** Save a hero's preparation. It cannot change while that hero is out on an expedition. */

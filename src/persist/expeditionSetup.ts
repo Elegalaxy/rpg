@@ -11,7 +11,11 @@ import type { SavedHero } from './save.ts'
 /**
  * Build the road run for a saved hero. Gear is what the hero has equipped. Retreat threshold, vow, curse, and arrows come from the hero's preparation.
  */
-export function blueprintForHero(hero: SavedHero, routeId: string): ExpeditionBlueprint {
+export function blueprintForHero(
+  hero: SavedHero,
+  routeId: string,
+  gold: { carried: number; deposited: number } = { carried: 0, deposited: 0 },
+): ExpeditionBlueprint {
   const route = routes[routeId]
   if (route === undefined) throw new Error(`unknown route '${routeId}'`)
   const find = (id: string) => {
@@ -27,6 +31,8 @@ export function blueprintForHero(hero: SavedHero, routeId: string): ExpeditionBl
     opening: routeEncounterIds(route).map(find),
     draw: drawIds.map(find),
     travelGapMs: TRAVEL_GAP_MS,
+    carriedGold: gold.carried,
+    depositedGold: gold.deposited,
     retreatThresholds: hero.retreatAtMost === null ? [] : [{ kind: 'hpFraction', atMost: hero.retreatAtMost }],
     hero: {
       id: hero.id,
@@ -49,6 +55,11 @@ export function blueprintForHero(hero: SavedHero, routeId: string): ExpeditionBl
 }
 
 /** Start a run for the hero on a route. The seed comes from the caller so a saved run can be replayed. */
-export function startExpedition(hero: SavedHero, routeId: string, seed: number): ExpeditionState {
-  return createExpedition(blueprintForHero(hero, routeId), seed)
+export function startExpedition(
+  hero: SavedHero,
+  routeId: string,
+  seed: number,
+  gold?: { carried: number; deposited: number },
+): ExpeditionState {
+  return createExpedition(blueprintForHero(hero, routeId, gold), seed)
 }

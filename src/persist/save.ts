@@ -12,6 +12,8 @@ export const CORRUPT_KEY_PREFIX = 'rpg.save.corrupt.'
 /** Character slots, decided in G6: 2 at the start, up to 5 through the milestones below. */
 export const STARTING_SLOTS = 2
 export const MAX_SLOTS = 5
+/** The usual gold to carry: the rescue fee. */
+export const DEFAULT_CARRY_GOLD = 25
 /** The usual retreat threshold: 40% of maximum HP. */
 export const DEFAULT_RETREAT = 0.4
 /** A new game knows the town and the road out of it. */
@@ -29,6 +31,8 @@ export type AccountData = {
   slots: number
   /** One-time account milestones reached so far. Each one opens a character slot. */
   milestones: string[]
+  /** Gold owed from defeats. It is paid off at the town and blocks nothing. */
+  debt: number
   /** Items the player owns that no hero has equipped. Shared across heroes. */
   archive: ItemInstance[]
 }
@@ -53,6 +57,8 @@ export type SavedHero = {
   retreatAtMost: number | null
   /** Special arrows a Ranger packs for an expedition. 0 for other classes. */
   specialAmmo: number
+  /** Gold to carry into an expedition. The rest of the account's gold stays deposited and safe. */
+  carryGold: number
   /** Equipped items. Gear is bound to its hero. */
   equipment: Equipment
 }
@@ -103,6 +109,7 @@ export function newSave(): SaveData {
       slots: STARTING_SLOTS,
       milestones: [],
       archive: [],
+      debt: 0,
     },
     heroes: [],
     selectedHeroId: null,
@@ -154,6 +161,7 @@ function assertAccount(value: unknown): asserts value is AccountData {
   stringList(value.discoveries, 'discoveries')
   stringList(value.milestones, 'milestones')
   check(value.milestones.length <= MAX_SLOTS - STARTING_SLOTS, 'too many milestones')
+  whole(value.debt, 'debt')
   check(Array.isArray(value.archive), 'archive must be a list')
   const archiveIds: string[] = []
   value.archive.forEach((item, index) => {
@@ -188,6 +196,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     `${label} retreat threshold must be between 0 and 1, or null`,
   )
   whole(value.specialAmmo, `${label} special arrows`)
+  whole(value.carryGold, `${label} carried gold`)
   check(isRecord(value.equipment), `${label} equipment must be an object`)
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = value.equipment[slot]
@@ -228,6 +237,7 @@ function fillWorldFields(parsed: unknown): void {
   if (!isRecord(parsed)) return
   if (isRecord(parsed.account) && parsed.account.milestones === undefined) parsed.account.milestones = []
   if (isRecord(parsed.account) && parsed.account.archive === undefined) parsed.account.archive = []
+  if (isRecord(parsed.account) && parsed.account.debt === undefined) parsed.account.debt = 0
   if (!Array.isArray(parsed.heroes)) return
   for (const hero of parsed.heroes) {
     if (!isRecord(hero)) continue
@@ -235,6 +245,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.clearedNodeIds === undefined) hero.clearedNodeIds = []
     if (hero.retreatAtMost === undefined) hero.retreatAtMost = DEFAULT_RETREAT
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
+    if (hero.carryGold === undefined) hero.carryGold = DEFAULT_CARRY_GOLD
     if (hero.equipment === undefined && typeof hero.id === 'string' && (HERO_CLASSES as readonly string[]).includes(String(hero.classId))) {
       hero.equipment = starterEquipment(hero.id, hero.classId as HeroClass)
     }

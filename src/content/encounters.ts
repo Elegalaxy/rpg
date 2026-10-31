@@ -118,14 +118,15 @@ export const encounters: { [id: string]: EncounterDef } = {
   [wardenEncounter.id]: wardenEncounter,
 }
 
-/** An encounter as an expedition fight list entry, with each enemy's drop copied from its definition. */
+/** An encounter as an expedition fight list entry, with each enemy's drops copied from its definition. Gold is level × 2, or × 3 for an elite or the boss (G1). */
 export function toExpeditionEncounter(encounter: EncounterDef): ExpeditionEncounterDef {
   return {
     id: encounter.id,
     enemies: encounter.members.map((member) => {
       const def = enemies[member.enemyId]
       if (def === undefined) throw new Error(`unknown enemy '${member.enemyId}'`)
-      const enemy = { defId: member.enemyId, slot: member.slot, level: member.level }
+      const gold = member.level * (def.elite === true || def.boss === true ? 3 : 2)
+      const enemy = { defId: member.enemyId, slot: member.slot, level: member.level, gold }
       const drop = def.drop
       if (drop === undefined) return enemy
       return { ...enemy, materialId: drop.materialId, baseQuantity: drop.baseQuantity }

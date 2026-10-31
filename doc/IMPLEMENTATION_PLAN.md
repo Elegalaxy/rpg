@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 9.2  
+Next step: Step 9.3  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -790,13 +790,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (51 files, 567 tests, exit 0), including 19 in `src/persist/equipment.test.ts`: complete starter gear for all five classes, each equip rule, the archive keeping every item, the preview matching the real change, the 90% rule, an incomplete set blocking a run, and durability written back. `npm run typecheck` and `npm run lint` exited 0. The road seed 5 and duel-basic are unchanged. In the dev server in the browser pane a new Human Warrior showed the starter gear, the dev button added six test weapons, the two-handed weapon's preview read `Physical Power 30 → 32.15; Armor 21.95 → 18.2; Resistance 11.55 → 7.8; Base action time 1.82 s → 2.36 s`, equipping it produced exactly those stats, the off-hand showed `disabled by the two-handed weapon`, a shield was refused with `A two-handed weapon disables the off-hand slot.`, and the save held `weapon-two-handed`. Item modifiers and crafting come in Step 9.3, and the only way to get items now is the development button.
 
 ### Step 9.2: Town services
-- Status: `todo`
+- Status: `verified`
 - Depends on: 9.1, G1, G3
 - Files: `src/sim/economy.ts`, `src/ui/town/*.tsx`, tests
 - Change: Secure loot into shared materials. Carried versus deposited gold. A basic shop for buying and selling items and supplies at fixed prices. Repair. Paying off debt.
 - Acceptance criteria: tests for deposits, repair cost, and debt payment.
 - Verification: User: return from an expedition, deposit gold, and repair a damaged item.
 - Progress:
+  - 2026-10-31: Gold now comes from enemies: `toExpeditionEncounter` gives each enemy `level × 2` gold, or `level × 3` for an elite or the boss, and the simulation adds an enemy's gold to the gold the hero carries when its fight is won (an enemy with no gold field drops none, so the road seed 5 run is unchanged). Each hero keeps a `carryGold` setting (default 25, set in the preparation form). `beginExpedition` takes that much out of the account's gold as carried gold and the rest travels as safe deposited gold. Settling puts deposited gold back, adds carried gold only on a safe return, and adds the run's debt to a new `account.debt`. A defeat loses the carried gold left after the rescue fee and never touches deposited gold.
+  - 2026-10-31: `src/content/shop.ts` holds the G1 numbers: materials sell for 3 gold (scrap 2), an archive item sells for `item level × 5 × quality` rounded half up, a new base item costs `item level × 10` at the hero's level and 100% quality, and repair costs `ceil(missing × (1 + item level ÷ 2) ÷ 10)`. `src/persist/town.ts` has `sellMaterial`, `sellItem`, `buyItem`, `repairOne`, `repairAll`, and `payDebt`. Each refuses with a plain message when gold or stock is short and changes nothing, and all of them are closed while an expedition runs. `src/ui/town/Town.tsx` shows gold and debt, the materials, the archive, the shop (no supplies are sold), the damaged items with their repair costs, a repair-everything button, and a debt payment box.
+  - 2026-10-31: Verified. `npm test` passed (52 files, 579 tests, exit 0), including 12 in `src/persist/town.test.ts`: the price formulas at their edges, selling and buying, repair of equipped and archive items (including a disabled one), repair-everything with short gold, partial and full debt payment, gold drops, a real won road fight adding 12 gold to the carried 25 and the total coming home, a defeat keeping deposited gold and adding debt, and the town closing during a run. `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. In the dev server in the browser pane: Dev +500 gold, Dev wear gear down, Repair everything equipped (40 gold, 500 to 460), Buy a two-handed weapon (10 gold), Sell it (5 gold back), Sell all shard (+12), Pay 25 of 40 debt, and a payment of 99 was refused with `You only owe 15.` The one thing not played by hand is a real defeat adding debt; the test covers it.
 
 ### Step 9.3: Crafting
 - Status: `todo`
