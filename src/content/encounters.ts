@@ -82,6 +82,27 @@ export const bastionMixed: EncounterDef = {
   ],
 }
 
+/** The Withered Grove elite, level 14. The Fracture Gate needs this defeat. */
+export const rootmawEncounter: EncounterDef = {
+  id: 'rootmaw-stalker',
+  name: 'Rootmaw Stalker',
+  members: [{ enemyId: 'rootmaw-stalker', slot: 0, level: 14 }],
+}
+
+/** The Fallen Bastion elite, level 16. The Fracture Gate needs this defeat. */
+export const echoKnightEncounter: EncounterDef = {
+  id: 'echo-knight',
+  name: 'Echo Knight',
+  members: [{ enemyId: 'echo-knight', slot: 0, level: 16 }],
+}
+
+/** The regional boss at Echo rank 0, level 20. */
+export const wardenEncounter: EncounterDef = {
+  id: 'fractured-warden',
+  name: 'The Fractured Warden',
+  members: [{ enemyId: 'fractured-warden', slot: 0, level: 20 }],
+}
+
 export const encounters: { [id: string]: EncounterDef } = {
   [shardlingPair.id]: shardlingPair,
   [wolfPair.id]: wolfPair,
@@ -89,4 +110,7 @@ export const encounters: { [id: string]: EncounterDef } = {
   [roadMixed.id]: roadMixed,
   [groveMixed.id]: groveMixed,
   [bastionMixed.id]: bastionMixed,
+  [rootmawEncounter.id]: rootmawEncounter,
+  [echoKnightEncounter.id]: echoKnightEncounter,
+  [wardenEncounter.id]: wardenEncounter,
 }

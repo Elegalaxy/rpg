@@ -102,6 +102,19 @@ export type ExpeditionEquipment = {
 export type SupplySlot = { id: string } | null
 
 export const SPLINTERED_ROAD_ID = 'splintered-road'
+/** Every route an expedition can follow. The Road alone is the original; the rest add a branch or the Gate. */
+export const EXPEDITION_IDS = [
+  SPLINTERED_ROAD_ID,
+  'withered-grove',
+  'fallen-bastion',
+  'fracture-via-grove',
+  'fracture-via-bastion',
+] as const
+export type ExpeditionId = (typeof EXPEDITION_IDS)[number]
+
+export function isExpeditionId(value: unknown): value is ExpeditionId {
+  return typeof value === 'string' && (EXPEDITION_IDS as readonly string[]).includes(value)
+}
 /** Ordinary journey, including the walk out of town before the first fight. A return uses this same length. */
 export const TRAVEL_GAP_MS = 20_000
 export const MOMENTUM_CAP = 5
@@ -163,7 +176,7 @@ export type CarriedHero = {
 }
 
 export type ExpeditionState = {
-  id: typeof SPLINTERED_ROAD_ID
+  id: ExpeditionId
   seed: number
   classId: HeroClass
   outcome: 'ongoing' | 'defeat' | 'returned'
@@ -252,8 +265,8 @@ export function assertExpedition(state: ExpeditionState): void {
   if (typeof state !== 'object' || state === null) {
     throw new Error(`expedition state must be an object, received ${describeValue(state)}`)
   }
-  if (state.id !== SPLINTERED_ROAD_ID) {
-    throw new Error(`unknown expedition ${describeValue(state.id)}; valid expeditions: ${SPLINTERED_ROAD_ID}`)
+  if (!isExpeditionId(state.id)) {
+    throw new Error(`unknown expedition ${describeValue(state.id)}; valid expeditions: ${EXPEDITION_IDS.join(', ')}`)
   }
   if (state.outcome !== 'ongoing' && state.outcome !== 'defeat' && state.outcome !== 'returned') {
     throw new Error(`expedition outcome is unknown, received ${describeValue(state.outcome)}`)
@@ -638,8 +651,8 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
   if (typeof blueprint !== 'object' || blueprint === null) {
     throw new Error(`expedition blueprint must be an object, received ${describeValue(blueprint)}`)
   }
-  if (blueprint.id !== SPLINTERED_ROAD_ID) {
-    throw new Error(`unknown expedition ${describeValue(blueprint.id)}; valid expeditions: ${SPLINTERED_ROAD_ID}`)
+  if (!isExpeditionId(blueprint.id)) {
+    throw new Error(`unknown expedition ${describeValue(blueprint.id)}; valid expeditions: ${EXPEDITION_IDS.join(', ')}`)
   }
   if (
     typeof blueprint.travelGapMs !== 'number' ||
@@ -661,7 +674,7 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
   const carriedGold = optionalGold(blueprint.carriedGold, 'carried gold')
   const depositedGold = optionalGold(blueprint.depositedGold, 'deposited gold')
   return {
-    id: SPLINTERED_ROAD_ID,
+    id: blueprint.id,
     seed,
     classId: blueprint.hero.classId,
     outcome: 'ongoing',

@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 8.1  
+Next step: Step 8.2  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -737,13 +737,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 ### Stage 8: World map and expedition UI
 
 ### Step 8.1: Fractured Frontier content
-- Status: `todo`
+- Status: `verified`
 - Depends on: 7.4, G7
 - Files: `src/content/world.ts`, `src/content/encounters.ts`, tests
 - Change: Greyhaven, the Splintered Road, Withered Grove and Fallen Bastion nodes, and the fracture/boss node. Routes and travel times, encounter tables per node, resource nodes, the boss-reveal threshold, and discovery and gate flags (shared discoveries, personal gates, §6).
 - Acceptance criteria: the content integrity test resolves every reference. The harness runs an expedition on every route.
 - Verification: `npm test`.
 - Progress:
+  - 2026-10-31: `src/content/world.ts` holds the five G7 nodes (Greyhaven, Splintered Road, Withered Grove, Fallen Bastion, Fracture Gate), the five legs (20 seconds each), the five routes, one resource node per zone (Scrap Heap, Hollow Thicket, Shard Seam, 4 each), the elite on each branch, the Fracture Gate's personal gate, `bossRevealedOn: 'arrival'`, and a shared discovery id per node. `gateBlock(node, record)` says what a hero still has to defeat, and `bossRevealed(node, arrived)` is true only on arrival. `src/content/encounters.ts` gained the Rootmaw Stalker (level 14), Echo Knight (level 16), and Fractured Warden (level 20) fights. The simulation accepts five expedition ids (`EXPEDITION_IDS`), and the route id is the expedition id.
+  - 2026-10-31: `routeBlueprint` in `src/harness/expedition.ts` builds an expedition for a route: every node's fixed fights in order, then the last zone's draw table, with a reference hero a few levels above the last node's lowest recommended level. The Splintered Road stays exactly as before (level 5, the same four fights), and `npm run sim -- --expedition <route> --seed <n>` runs any route. The CLI lists all five ids in its error.
+  - 2026-10-31: Verified. `npm test` passed (45 files, 519 tests, exit 0): `src/content/world.test.ts` resolves every reference (legs, routes against real legs and the expedition ids, encounters, enemies, drop materials, elites, the gate) and `src/harness/routes.test.ts` runs every route for every class and follows the two Gate routes fight by fight with no retreat. `npm run typecheck` and `npm run lint` exited 0. Duel-basic seed 42 and expedition seed 5 on the road are unchanged, and the combos matrix has 0 errors. Not yet built: the sim does not use the gate, the resource nodes, or the discovery flags. Step 8.3 adds the expedition panel, and these become real there.
 
 ### Step 8.2: Node map view
 - Status: `todo`

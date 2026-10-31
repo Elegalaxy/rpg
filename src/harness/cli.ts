@@ -5,13 +5,13 @@ import { fileURLToPath } from 'node:url'
 
 import { gameDefs } from '../content/scenarios.ts'
 import { STEP_MS } from '../sim/constants.ts'
-import { createExpedition, runExpedition, SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
+import { createExpedition, EXPEDITION_IDS, isExpeditionId, runExpedition } from '../sim/expedition.ts'
 import type { ExpeditionEncounterRecord } from '../sim/expedition.ts'
 import { formatEvent } from '../sim/log.ts'
 import type { CombatState } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS, runBatch, runScenario, scenarioIds, type BatchSummary } from './batch.ts'
-import { splinteredRoadBlueprint } from './expedition.ts'
+import { routeBlueprint, routeFightCount } from './expedition.ts'
 import { runComboMatrix } from './combos.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
@@ -185,17 +185,17 @@ function countOutcomes(history: readonly ExpeditionEncounterRecord[], outcome: E
 
 function printExpedition(args: ParsedArgs): void {
   if (args.expedition === undefined) throw new CliError('missing --expedition')
-  if (args.expedition !== SPLINTERED_ROAD_ID) {
-    throw new CliError(`unknown expedition '${args.expedition}'\nvalid expeditions: ${SPLINTERED_ROAD_ID}`)
+  if (!isExpeditionId(args.expedition)) {
+    throw new CliError(`unknown expedition '${args.expedition}'\nvalid expeditions: ${EXPEDITION_IDS.join(', ')}`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   const seed = parseSeed(args.seed)
   console.log(`[sim] expedition ${args.expedition} seed ${seed} STEP_MS ${STEP_MS}`)
   const started = performance.now()
   const state = runExpedition(
-    createExpedition(splinteredRoadBlueprint(), seed),
+    createExpedition(routeBlueprint(args.expedition), seed),
     gameDefs(),
-    HARNESS_EXPEDITION_ENCOUNTERS,
+    routeFightCount(args.expedition, HARNESS_EXPEDITION_ENCOUNTERS),
     HARNESS_LIMIT_MS,
   )
   const elapsedMs = performance.now() - started
