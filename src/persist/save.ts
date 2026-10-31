@@ -7,11 +7,11 @@ export const SAVE_VERSION = 1
 export const SAVE_KEY = 'rpg.save.v1'
 export const CORRUPT_KEY_PREFIX = 'rpg.save.corrupt.'
 
-/**
- * Character slots are an open design gate (G6). The save stores the number but nothing
- * enforces it yet, and the starting value here is a placeholder until G6 is decided.
- */
-export const PLACEHOLDER_SLOTS = 1
+/** Character slots, decided in G6: 2 at the start, up to 5 through the milestones below. */
+export const STARTING_SLOTS = 2
+export const MAX_SLOTS = 5
+/** Slot 3, 4, and 5 unlock once each, the first time any hero reaches the milestone. */
+export const SLOT_MILESTONES = ['first-return', 'first-reincarnation', 'first-warden-defeat'] as const
 
 export type AccountData = {
   gold: number
@@ -75,7 +75,7 @@ function describeValue(value: unknown): string {
 export function newSave(): SaveData {
   return {
     version: SAVE_VERSION,
-    account: { gold: 0, materials: {}, recipes: [], discoveries: [], slots: PLACEHOLDER_SLOTS },
+    account: { gold: 0, materials: {}, recipes: [], discoveries: [], slots: STARTING_SLOTS },
     heroes: [],
     selectedHeroId: null,
     expedition: null,
@@ -107,6 +107,7 @@ function assertAccount(value: unknown): asserts value is AccountData {
   check(isRecord(value), 'account is missing')
   whole(value.gold, 'gold')
   whole(value.slots, 'slots')
+  check(value.slots >= STARTING_SLOTS && value.slots <= MAX_SLOTS, `slots must be from ${STARTING_SLOTS} through ${MAX_SLOTS}, received ${value.slots}`)
   check(isRecord(value.materials), 'materials must be an object')
   for (const id of Object.keys(value.materials)) whole(value.materials[id], `material ${id}`)
   stringList(value.recipes, 'recipes')

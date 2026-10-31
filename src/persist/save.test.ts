@@ -8,7 +8,10 @@ import type { GameDefs } from '../sim/types.ts'
 
 import {
   CORRUPT_KEY_PREFIX,
+  MAX_SLOTS,
   SAVE_KEY,
+  SLOT_MILESTONES,
+  STARTING_SLOTS,
   clearSave,
   loadSave,
   newSave,
@@ -38,7 +41,7 @@ function fakeStorage(options?: { failWrites?: boolean }): StorageLike & { data: 
 
 function withHero(): SaveData {
   const save = newSave()
-  save.account = { gold: 40, materials: { shard: 8, hide: 3 }, recipes: ['patch'], discoveries: ['splintered-road'], slots: 1 }
+  save.account = { gold: 40, materials: { shard: 8, hide: 3 }, recipes: ['patch'], discoveries: ['splintered-road'], slots: 3 }
   save.heroes.push({
     id: 'hero-1',
     name: 'Ash',
@@ -133,6 +136,14 @@ describe('save', () => {
     const badClass = JSON.parse(JSON.stringify(withHero())) as SaveData
     ;(badClass.heroes[0] as { classId: string }).classId = 'bard'
     expect(parseSave(JSON.stringify(badClass))).toMatchObject({ ok: false, reason: expect.stringMatching(/unknown class/) })
+    const tooMany = withHero()
+    tooMany.account.slots = 6
+    expect(parseSave(JSON.stringify(tooMany))).toMatchObject({ ok: false, reason: expect.stringMatching(/slots must be from 2 through 5/) })
+    const tooFew = withHero()
+    tooFew.account.slots = 1
+    expect(parseSave(JSON.stringify(tooFew))).toMatchObject({ ok: false, reason: expect.stringMatching(/slots must be from 2 through 5/) })
+    expect(newSave().account.slots).toBe(STARTING_SLOTS)
+    expect(SLOT_MILESTONES).toHaveLength(MAX_SLOTS - STARTING_SLOTS)
     const twice = withHero()
     twice.heroes.push(twice.heroes[0]!)
     expect(parseSave(JSON.stringify(twice))).toMatchObject({ ok: false, reason: expect.stringMatching(/duplicated/) })

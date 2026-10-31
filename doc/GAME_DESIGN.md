@@ -56,6 +56,9 @@ A sufficiently brutal defeat by a superior boss, combined with the hero's extrao
 ### Roster rules
 
 - Character slots unlock through account milestones and achievements.
+- First-playable slots, decided 2026-10-31: the account starts with 2 slots and can reach 5. The extra slots unlock once each, for the whole account, the first time any hero reaches the milestone. Slot 3: the first safe return to town from an expedition. Slot 4: the first boss defeat that sends a hero to reincarnation. Slot 5: the first defeat of the Fractured Warden. A slot never relocks, and a slot is not tied to the hero that earned it.
+- Duplicate race/class heroes are allowed, decided 2026-10-31. Each hero has its own id, so two Human Warriors keep separate progress, gear, and mastery. Hero names are trimmed, 1 to 24 characters, and must be unique in the roster when compared without case.
+- The first playable has no way to delete or retire a hero, so a slot stays in use. Retiring heroes is left for later.
 - Only one selected hero makes active or offline progress at a time.
 - World-map discoveries are shared, but each hero must clear personal combat gates.
 - Materials and recipes are shared.
@@ -64,7 +67,7 @@ A sufficiently brutal defeat by a superior boss, combined with the hero's extrao
 - Race, class, mastery, permanent power, and reincarnation currency are personal to the hero.
 - Post-final-boss world tiers advance separately for each hero.
 
-Whether duplicate heroes with the same race/class combination are allowed remains open.
+This replaces the old open question about duplicate heroes. See the first-playable slot rules above.
 
 ### Initial race roster
 
@@ -1575,7 +1578,6 @@ Skill webs, priority rules, logs, crafting, routes, and risk systems can overwhe
 - Which consumables fill the four supply slots
 - Crafting quality, proficiency, and upgrade formulas
 - Heirloom scaling
-- Duplicate-character rules
 - Save format and local persistence
 - Accessibility options
 - UI wireframes
@@ -1596,6 +1598,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-10-31: Decided G6. The account starts with 2 character slots and reaches 5 through three one-time milestones: the first safe return to town, the first reincarnating boss defeat, and the first Warden defeat. Duplicate race/class heroes are allowed, and hero names must be unique ignoring case. No hero can be deleted in the first playable.
 - 2026-10-21: Accepted the technical direction: TypeScript + React + Vite with no engine, a fixed 10 ms simulation clock with a fixed tie order, and actions that resolve when ready, with action time as recovery and the first action after one base action time. Linked the implementation plan.
 - 2026-10-21: Accepted the provisional combat baseline: hero/enemy formulas, resources, active skills, automation, equipment curves, class/racial passives, keystones, first-region enemies, elites, and Warden phases. Next step is deterministic simulation.
 - 2026-10-24: Accepted the first reference-matrix deviations without coefficient changes. Assassin, Cleric, and Mage floor builds miss the equal-level Deserter bands, and every floor build loses to the rank-0 Warden. Stacking pressure stays undesigned.

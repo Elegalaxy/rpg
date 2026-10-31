@@ -43,6 +43,7 @@ Build a browser-local first playable of the incremental RPG. Start with a determ
 - **G2. Escape. Decided 2026-10-24:** After each combat step, hero HP at most 40% of maximum rolls escape. The roll does not spend the hero's action. Chance is 50% plus `floor(Agility / 5)` percentage points, capped at +20. Enemy, zone, supplies, and momentum add 0. One expedition `nextFloat` succeeds when it is `<` that chance. A failure waits 8 seconds of that fight while the threshold remains. Success abandons the fight with no loot or momentum, then uses the 20-second return walk. Arrival secures loot and clears momentum. Boss progress does not change. Recorded in GAME_DESIGN §8.
 - **G3. Defeat. Decided 2026-10-24:** Unsecured loot is destroyed. Secured loot and overflow stay. Momentum clears. Each equipped piece starts at 100 durability and loses 10, stopping at 0, where it is marked disabled and kept. The rescue fee is 25 gold from carried gold. The unpaid part is added to debt, which has no other effect. Deposited gold is untouched. Recovery is a stored 5-minute wait and does not tick here. `bossLossThisLife` is set only when a non-summon enemy is a boss. Supply slots start empty and defeat does not clear a held or consumed entry. Recorded in GAME_DESIGN §8.
 - **G5. Racial layers. Decided 2026-10-24:** The core is on at creation: Human +5% ordinary XP, Elf Focus, Beastfolk Ferocity, Undead Stillness. Branch nodes, attachment points, Quick Study, Soul Fragments, and curses wait for skill points. Mastery layers stay off. The Human bonus does not apply to milestone rewards. Recorded in GAME_DESIGN §4.
+- **G6. Character slots. Decided 2026-10-31:** The account starts with 2 slots and can reach 5. Slot 3 unlocks on the first safe return to town, slot 4 on the first boss defeat that leads to reincarnation, and slot 5 on the first defeat of the Fractured Warden. Each unlocks once for the account and never relocks. Duplicate race/class heroes are allowed. Names are trimmed, 1 to 24 characters, and unique in the roster ignoring case. Nobody can delete or retire a hero in the first playable. Step 7.2 adds a development-only control that unlocks all 5 slots, so the 20 pairs can be checked by hand. Recorded in GAME_DESIGN §4.
 - **G4. Skill web. Decided 2026-10-24:** Three clusters of five nodes. Node 1 of a cluster costs 1 and starts that line. Each later node costs 1 and requires the previous node in the same cluster. Node 5 is the major keystone. One keystone blocks the other two. No respec. Reference fights do not spend points. A new hero knows the four Q4 skills. Two attachment slots stay empty, and no racial node can be bought. Legacy points are spent after ordinary skill points. Recorded in GAME_DESIGN §4.
 
 ### Blocking
@@ -74,7 +75,7 @@ Build a browser-local first playable of the incremental RPG. Start with a determ
 | G3 | Step 5.4 | Decided 2026-10-24. See G3 in Decided. |
 | G4 | Step 6.3 | Decided 2026-10-24. See G4 in Decided. |
 | G5 | Step 6.2 | Decided 2026-10-24. See G5 in Decided. |
-| G6 | Step 7.2 | Starting character slots, slot-unlock milestones, duplicate race/class heroes |
+| G6 | Step 7.2 | Decided 2026-10-31. See G6 in Decided. |
 | G7 | Steps 8.1, 9.4 | Fractured Frontier node layout, resource nodes, travel times, boss-reveal threshold, contract list |
 | G8 | Step 9.3 | Materials, recipes, quality/proficiency/upgrade formulas, modifiers or runes |
 | G9 | Step 10.1 | Fracture Echo rank modifiers and rank rewards. Recommended for the first playable: the 1.12^R multiplier only. |
@@ -693,14 +694,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Verification: `npm test`. User: create something, reload the page, and confirm it is still there.
 - Progress:
   - 2026-10-31: `src/persist/save.ts` holds `SaveData` (version 1: account with gold, materials, recipes, discoveries, and slots; saved heroes; the selected hero; the active expedition or null), `parseSave`, `serializeSave`, `loadSave`, `writeSave`, and `clearSave` over a small `StorageLike`, stored under `rpg.save.v1`. A saved hero keeps its `HeroProgress`, priority rows, vow, curse, and prepared spells, and combat state is rebuilt from content. The shape check reuses the sim's own `assertProgress` and `assertExpedition` (now exported). A missing entry is an empty start. A corrupt or unknown-version entry is copied to `rpg.save.corrupt.<timestamp>`, the original is left in place, and `loadSave` returns the reason. A full or blocked store returns a reason and keeps the old entry. Debug lines go through a logger argument and `src/ui/store.ts` forwards them as `[save]` lines with the byte size.
-  - 2026-10-31: `src/ui/store.ts` loads the save when the module starts (no storage means nothing is saved and no error), exposes `useSaveStatus`, `commitSave`, and `startNewGame`, and writes after each encounter end. `App.tsx` shows a banner with the reason, the backup key, and a Start a new game button, and a second line when a write fails. `slots` is stored as 1 and nothing enforces it, because the slot count is still design gate G6. Hero creation, confirmed allocations, and town actions will call `commitSave` when Steps 7.2 and 7.3 and the town steps add them.
+  - 2026-10-31: `src/ui/store.ts` loads the save when the module starts (no storage means nothing is saved and no error), exposes `useSaveStatus`, `commitSave`, and `startNewGame`, and writes after each encounter end. `App.tsx` shows a banner with the reason, the backup key, and a Start a new game button, and a second line when a write fails. `slots` is stored and validated from 2 through 5 once G6 was decided (see G6); nothing enforces the limit until Step 7.2. Hero creation, confirmed allocations, and town actions will call `commitSave` when Steps 7.2 and 7.3 and the town steps add them.
   - 2026-10-31: Verified. `npm test` passed (39 files, 479 tests, exit 0), including 9 in `src/persist/save.test.ts` (round trip, empty start, unknown version, malformed JSON, bad shapes, a failed write, clearing, a broken expedition, and an expedition resumed from the save that matches the uninterrupted run step for step). `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. Duel-basic seed 42 and expedition seed 5 are unchanged. In the dev server in the browser pane, a planted `{"version":2}` save showed the banner with the copy `rpg.save.corrupt.<timestamp>`, and Start a new game wrote a fresh version 1 save. Not yet checked by hand: the user's create-reload-confirm pass, because nothing can create a hero until Step 7.2.
 
 ### Step 7.2: Hero creation and roster
 - Status: `todo`
 - Depends on: 7.1, G6
 - Files: `src/ui/character/Create*.tsx`, `Roster*.tsx`, `src/content/heroes.ts` (identity text)
-- Change: Pick race and class (all 20 pairs) and see a short identity summary of each (§15 criterion 2). Name the hero: trimmed, 1–24 characters. Slot limit per G6. Select the active hero.
+- Change: Pick race and class (all 20 pairs) and see a short identity summary of each (§15 criterion 2). Name the hero: trimmed, 1–24 characters, unique in the roster ignoring case. Slot limit per G6 (2 at the start, up to 5). Duplicate race/class heroes are allowed. Select the active hero. In a development build only, a control unlocks all 5 slots so the 20 pairs can be checked by hand.
 - Acceptance criteria: all 20 pairs can be created. Invalid names are rejected with a message.
 - Verification: User: create one hero of each race and confirm the summaries differ.
 - Progress:
@@ -820,7 +821,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Status: `todo`
 - Depends on: 10.2, G6, G10
 - Files: `src/sim/progression.ts`, `src/content/heroes.ts`, `src/ui/character/Legacy*.tsx`, tests
-- Change: The personal mastery effects and legacy purchases defined in G10. The heirloom scales to the hero's level. Character slots unlock by milestone (G6).
+- Change: The personal mastery effects and legacy purchases defined in G10. The heirloom scales to the hero's level. Character slots unlock by the three G6 milestones (first return to town, first reincarnation, first Warden defeat) through `SLOT_MILESTONES` in `src/persist/save.ts`.
 - Acceptance criteria: tests for each purchase effect and for heirloom scaling. The harness shows the second-life reference hero doing measurably better against the Warden.
 - Verification: `npm test`, plus a harness comparison of first-life and second-life Warden win rates.
 - Progress:
