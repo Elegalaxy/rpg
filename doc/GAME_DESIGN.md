@@ -553,7 +553,14 @@ First-playable layout, decided 2026-10-31 (the contract list is still open for S
 - Each branch ends in its elite: the Rootmaw Stalker in the Grove and the Echo Knight in the Bastion.
 - The Fracture Gate is a personal gate. It opens for a hero once that hero has defeated both elites at least once. The boss is revealed to the hero on arrival at the gate, not before.
 - Discovering a node is shared across the account. Defeating the elites is personal to each hero.
-- The exact reward for a visit and the contract list remain open.
+- The exact reward for a visit remains open.
+
+First-playable contracts and XP, decided 2026-10-31:
+
+- A won fight awards the hero experience through the encounter XP rules (level-difference modifier, group discount, Spirit factor, and the Human bonus). The XP is added to the hero when the expedition is settled in town, and XP from fights already won is kept after a defeat. Level-ups give the attribute and skill points the progression rules define.
+- Greyhaven's board has six repeatable contracts: Cull the Pack (defeat 6 Starved Wolves), Clear the Shards (defeat 8 Fracture Shardlings), Hunt Deserters (defeat 3 Deserters), Thicket Sweep (win 4 fights in the Withered Grove), Bastion Patrol (win 4 fights in the Fallen Bastion), and Break the Elite (defeat the Rootmaw Stalker or the Echo Knight once).
+- Up to 3 contracts can be active. Progress counts fights won on any hero's expeditions, even if that expedition ends in defeat, and is added when the expedition is settled. A finished contract is collected in town and can then be taken again. The player can abandon one and lose its progress.
+- Rewards are about 60% of normal value for the units a contract asks for (kills or fights) at the zone's level `L`: XP is `round(0.6 × units × (5 + 2L))`, gold is `units × L`, and materials are `ceil(units ÷ 2)` of the zone's material. Gold and materials go to the account, and the XP goes to the hero who collects.
 
 #### Splintered Road enemies
 
@@ -1623,6 +1630,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-10-31: Decided how expeditions award hero XP, and the six first-playable contracts with their tracking rules and rewards.
 - 2026-10-31: Decided the first-playable crafting rules: material quality ranges, seeded averaged rolls, personal proficiency, costs and time, a queue of 3, six modifiers with level requirements, and upgrades with a falling chance.
 - 2026-10-31: Decided the first-playable town numbers: gold drops of level × 2 (level × 3 for elites and the boss), a chosen carry amount, fixed buy and sell prices, a repair formula, and debt kept on the account with no effect. No consumables yet.
 - 2026-10-31: Decided G6. The account starts with 2 character slots and reaches 5 through three one-time milestones: the first safe return to town, the first reincarnating boss defeat, and the first Warden defeat. Duplicate race/class heroes are allowed, and hero names must be unique ignoring case. No hero can be deleted in the first playable.
