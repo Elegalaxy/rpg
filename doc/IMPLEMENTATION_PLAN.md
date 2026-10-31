@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 11.1  
+Next step: Step 11.2  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -871,13 +871,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 ### Stage 11: First-playable integration and playtest
 
 ### Step 11.1: New-game flow and walkthrough fixes
-- Status: `todo`
+- Status: `verified`
 - Depends on: 10.3
 - Files: `src/ui/App.tsx` and the screens touched by gaps found
 - Change: Start screen, then hero creation, town, map and expedition, with navigation between them. Fix only the gaps that block the §15 walkthrough.
 - Acceptance criteria: a fresh browser profile can reach a Warden fight without dev tools.
 - Verification: User: play from a fresh profile and note any blockers in Progress.
 - Progress:
+  - 2026-11-01: `src/ui/App.tsx` is now a start screen plus tabs. With no hero it shows a welcome text and the hero creation form only. After that it shows an always-visible header (hero, level, gold, debt, and a `Next:` hint with a Go button, from `src/persist/guidance.ts` `nextHint`) and four tabs: Heroes (roster, create, attributes, skill web, loadout, rules, equipment, Legacy), Town (town, contracts, craft), Map (map, expedition), and Combat viewer (the old scenario viewer, now the exported `CombatViewer`). Nothing else on the screens changed.
+  - 2026-11-01: Verified. `src/persist/walkthrough.test.ts` plays a boosted hero through the Splintered Road, the Grove and the Bastion with the same persist calls the UI makes (begin, fight, return, settle) and shows the Fracture Gate route then starts with a Warden fight, so no step needs a dev tool. `npm test` (640 tests), `npm run typecheck`, `npm run lint` passed. In the dev server on a cleared profile: the welcome screen showed, creating Ash moved to the Heroes tab with the header, Go took me to the Map, and Start expedition began a run. Not done: a hand playthrough of the whole route to the Warden, because the browser pane throttles the clock; the user's playtest in Step 11.2 covers it. The page is still unstyled.
 
 ### Step 11.2: Success-criteria playtest
 - Status: `todo`

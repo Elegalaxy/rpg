@@ -10,7 +10,7 @@ import { createCombat, runCombat } from '../../sim/combat.ts'
 import { formatEvent } from '../../sim/log.ts'
 import type { CombatState, GameDefs, LogEvent } from '../../sim/types.ts'
 
-import App from '../App.tsx'
+import App, { CombatViewer } from '../App.tsx'
 import {
   LOG_CATEGORIES,
   LOG_CATEGORY_LABELS,
@@ -35,7 +35,7 @@ vi.mock('../../sim/log.ts', async () => {
 })
 
 const FIGHT_MS = 60_000
-const HEADING = 'RPG – dev build'
+const HEADING = 'RPG'
 const uiSources = import.meta.glob('../*.{ts,tsx}', {
   query: '?raw',
   import: 'default',
@@ -266,7 +266,7 @@ describe('outcome card', () => {
 
 describe('app shell', () => {
   it('mounts the log under the heading, playback controls, and combat panel', () => {
-    const html = renderToStaticMarkup(<App />)
+    const html = renderToStaticMarkup(<CombatViewer />)
     const headingAt = html.indexOf(HEADING)
     const controlsAt = html.indexOf('>Restart<')
     const combatAt = html.indexOf('aria-label="Combat"')
@@ -281,8 +281,7 @@ describe('app shell', () => {
       summarizeCalls,
     })
 
-    expect(HEADING.codePointAt(4)).toBe(0x2013)
-    expect(html).toContain(`<h1>${HEADING}</h1>`)
+    expect(renderToStaticMarkup(<App />)).toContain(`<h1>${HEADING}</h1>`)
     expect(html).toContain('>Restart<')
     expect(html).toContain('>New seed<')
     expect(html).toContain('>Pause<')
