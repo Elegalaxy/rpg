@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 7.3  
+Next step: Step 7.4  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -709,13 +709,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (41 files, 487 tests, exit 0), including 8 in `src/persist/roster.test.ts` (all 20 pairs, distinct identity text, name rules, duplicates, the slot limit, selection) and 2 in `src/ui/character/character.test.tsx`. `npm run typecheck` and `npm run lint` exited 0. In the dev server in the browser pane: an empty name showed "Enter a name.", `  Ash  ` created Human Warrior `Ash`, `ASH` was refused as a duplicate, the race and class summaries changed with each choice, `Briar` (Elf Mage) filled both slots with the full-roster message, and both heroes were still there after a reload. The page has no styling yet, so text is dark on the browser pane's dark background. Not done by hand: creating all five slots' worth of races (the 20-pair test covers every pair).
 
 ### Step 7.3: Attributes and skill-web screen
-- Status: `todo`
+- Status: `verified`
 - Depends on: 7.2
 - Files: `src/ui/character/Attributes*.tsx`, `SkillWeb*.tsx`
 - Change: Allocate attribute points with a confirmation. An SVG web view with the racial branch in its own color. A preview panel from `previewAllocation`. A confirmation dialog for irreversible choices that states keystone exclusivity.
 - Acceptance criteria: the UI cannot make an allocation the simulation rejects.
 - Verification: User: allocate a keystone and confirm the other two become unavailable, as the preview said.
 - Progress:
+  - 2026-10-31: `src/persist/character.ts` holds the allocation rules without UI: `nodeViews` (the 15 class nodes from `previewAllocation` and the 4 racial nodes from the new `previewRacialAllocation`), `confirmationText` (a keystone names the keystones it closes and says there is no respec), `takeNode` (calls the sim's `allocateNode` or `allocateRacialNode`, so the sim has the last word), `spendAttributes` (a whole plan or nothing), and `grantPoints` for development. `src/ui/character/Attributes.tsx` stages points with plus and minus buttons and spends them only after a Confirm dialog. `SkillWeb.tsx` draws the web as SVG with three class columns, the racial branch in its own teal column, taken, available, locked, and blocked nodes, a preview panel, and a Confirm dialog before a node is taken. `store.ts` adds `spendAttributesFromUi`, `takeNodeFromUi`, and a development-only `devGrantPoints`.
+  - 2026-10-31: Verified. `npm test` passed (42 files, 495 tests, exit 0), including 7 in `src/persist/character.test.ts`. One test walks all 20 race and class pairs and, at every step, checks that a node's preview says it can be taken exactly when `takeNode` succeeds, so the screen cannot offer something the sim rejects. `npm run typecheck` and `npm run lint` exited 0. In the dev server in the browser pane an Elf Mage took Arcane Bolt through Efficient Channeling, the Overcast preview and dialog listed Elemental Convergence and Grand Grimoire as closing, and after Confirm both showed blocked with `another keystone is allocated`, the skill points dropped 8 to 3, and the save held the five node ids. Development builds have a Dev: grant button, because a level 1 hero has no points.
 
 ### Step 7.4: Loadout and priority-rule editor
 - Status: `todo`

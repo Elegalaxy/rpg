@@ -1,0 +1,52 @@
+.skill-web {
+  width: 100%;
+  max-width: 660px;
+  height: auto;
+}
+.web-line {
+  stroke: #888;
+  stroke-width: 2;
+}
+.web-line--racial {
+  stroke: #1d9e8f;
+}
+.web-node {
+  cursor: pointer;
+  outline: none;
+}
+.web-node circle,
+.web-node rect {
+  fill: #223;
+  stroke: #4a7bd0;
+  stroke-width: 2.5;
+}
+.web-node--racial circle {
+  stroke: #1d9e8f;
+}
+.web-node text {
+  fill: currentColor;
+  font-size: 11px;
+}
+.web-node--allocated circle,
+.web-node--allocated rect {
+  fill: #4a7bd0;
+}
+.web-node--racial.web-node--allocated circle {
+  fill: #1d9e8f;
+}
+.web-node--locked,
+.web-node--blocked {
+  opacity: 0.45;
+}
+.web-node--blocked circle,
+.web-node--blocked rect {
+  stroke: #b04040;
+  stroke-dasharray: 4 3;
+}
+.web-node--picked circle,
+.web-node--picked rect,
+.web-node:focus-visible circle,
+.web-node:focus-visible rect {
+  stroke: #f0c040;
+  stroke-width: 4;
+}

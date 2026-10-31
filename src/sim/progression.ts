@@ -521,6 +521,24 @@ export function allocateRacialNode(progress: HeroProgress, web: RacialWeb, nodeI
   return next
 }
 
+/** The same preview as a class node, for a node of this hero's racial branch. */
+export function previewRacialAllocation(progress: HeroProgress, web: RacialWeb, nodeId: string): AllocationPreview {
+  assertProgress(progress)
+  const node = web.nodes.find((entry) => entry.id === nodeId)
+  if (node === undefined) throw new Error(`unknown node ${describeValue(nodeId)}`)
+  const review = reviewAllocation(progress, web.nodes, node)
+  const reasons = [...review.reasons]
+  if (web.race !== progress.race) reasons.unshift(`a ${progress.race} cannot take ${web.race} racial nodes`)
+  return {
+    cost: 1,
+    canTake: reasons.length === 0,
+    missingRequirementId: review.missingRequirementId,
+    unlocksSkillId: null,
+    blockedKeystoneIds: [],
+    reasons,
+  }
+}
+
 /** Renaissance: at least two nodes allocated in each cluster of the class web. */
 export function renaissanceActive(allocatedNodeIds: readonly string[], web: SkillWeb): boolean {
   const counts: { [cluster: string]: number } = {}

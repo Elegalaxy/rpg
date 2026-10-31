@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
+import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { createHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
   clearSave,
@@ -151,6 +152,34 @@ export function chooseHero(heroId: string): string | null {
   if (!result.ok) return result.reason
   commitSave(result.save, 'hero selected')
   return null
+}
+
+/** Spend attribute points for the selected hero in one step. Returns the refusal message, or null. */
+export function spendAttributesFromUi(plan: AttributePlan): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  const result = spendAttributes(saveStatus.save, hero.id, plan)
+  if (!result.ok) return result.reason
+  commitSave(result.save, 'attributes allocated')
+  return null
+}
+
+/** Spend one skill point on a node for the selected hero. Returns the refusal message, or null. */
+export function takeNodeFromUi(nodeId: string): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  const result = takeNode(saveStatus.save, hero.id, nodeId)
+  if (!result.ok) return result.reason
+  commitSave(result.save, 'node allocated')
+  return null
+}
+
+/** Development builds only. Gives the selected hero points to try the allocation screens. */
+export function devGrantPoints(): void {
+  if (!import.meta.env.DEV) return
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return
+  commitSave(grantPoints(saveStatus.save, hero.id, 6, 4), 'dev grant points')
 }
 
 /** Development builds only. Opens all five slots so every pair can be created by hand. */

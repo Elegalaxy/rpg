@@ -3,8 +3,10 @@ import { useEffect } from 'react'
 import { scenarios } from '../content/scenarios.ts'
 import type { CombatState } from '../sim/types.ts'
 
+import { Attributes } from './character/Attributes.tsx'
 import { CreateHero } from './character/CreateHero.tsx'
 import { Roster } from './character/Roster.tsx'
+import { SkillWeb } from './character/SkillWeb.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
 import { LogPanel } from './log/LogPanel.tsx'
@@ -60,6 +62,8 @@ function App() {
       {saved.writeError !== null ? <p role="alert">The game could not be saved: {saved.writeError}</p> : null}
       <Roster />
       <CreateHero />
+      <Attributes />
+      <SkillWeb />
       <p>
         {view.combat.outcome} at {shownTimeMs(view.combat)} ms
       </p>
