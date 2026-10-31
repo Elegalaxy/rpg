@@ -23,6 +23,7 @@ import {
   savePreparationFromUi,
   settleExpeditionFromUi,
   expeditionWaiting,
+  TRAVEL_SPEEDUP,
   useSaveStatus,
 } from '../store.ts'
 
@@ -215,7 +216,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
             ? `Fight ${expedition.encounterIndex + 1} is under way.`
             : expedition.returning
               ? 'Walking back to Greyhaven.'
-              : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds.`}
+              : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds (played ${TRAVEL_SPEEDUP}× faster).`}
         </p>
       )}
       {error !== null ? <p role="alert">{error}</p> : null}

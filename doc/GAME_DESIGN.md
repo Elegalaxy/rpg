@@ -548,7 +548,7 @@ The three-zone route:
 First-playable layout, decided 2026-10-31 (the contract list is still open for Step 9.4):
 
 - Nodes: Greyhaven (town), Splintered Road, Withered Grove, Fallen Bastion, and the Fracture Gate, where the Fractured Warden waits. The Road leads to a branch. The Grove and the Bastion each lead on to the Fracture Gate.
-- Every leg takes 20 seconds, the same as the road's ordinary journey, and a return walk takes the same.
+- Every leg takes 20 seconds, the same as the road's ordinary journey, and a return walk takes the same. These are simulated seconds. The UI plays the walk 4× faster than the chosen speed (about 5 real seconds at 1×), so regeneration, Readiness, and Fury drain keep their ratios to the walk. Fights are not sped up.
 - Each zone has one resource node that gives the hero 4 of a material on a visit, using the existing materials: a Scrap Heap on the Road (scrap), a Hollow Thicket in the Grove (hide), and a Shard Seam in the Bastion (shard). New materials wait for crafting (G8).
 - Each branch ends in its elite: the Rootmaw Stalker in the Grove and the Echo Knight in the Bastion.
 - The Fracture Gate is a personal gate. It opens for a hero once that hero has defeated both elites at least once. The boss is revealed to the hero on arrival at the gate, not before.

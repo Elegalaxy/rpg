@@ -6,6 +6,7 @@ import {
   advanceExpedition,
   commitSave,
   createHeroFromUi,
+  expeditionSpeed,
   expeditionWaiting,
   getSaveStatus,
   pushOnFromUi,
@@ -13,6 +14,7 @@ import {
   savePreparationFromUi,
   settleExpeditionFromUi,
   startExpeditionFromUi,
+  TRAVEL_SPEEDUP,
 } from '../store.ts'
 import { ExpeditionPanel } from './ExpeditionPanel.tsx'
 
@@ -115,5 +117,15 @@ describe('the expedition panel', () => {
     expect(returnFromUi()).toBeNull()
     expect(expedition().returning).toBe(true)
     expect(returnFromUi()).toBe('already returning to town')
+  })
+
+  it('plays the walk faster than a fight', () => {
+    commitSave({ ...getSaveStatus().save, expedition: null }, 'test reset')
+    seeds([5])
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    expect(expedition().phase).toBe('travel')
+    expect(expeditionSpeed()).toBe(TRAVEL_SPEEDUP)
+    advanceUntil(() => expedition().combat !== null)
+    expect(expeditionSpeed()).toBe(1)
   })
 })

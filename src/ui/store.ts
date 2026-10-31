@@ -346,8 +346,21 @@ export function advanceExpedition(count: number): void {
   }
 }
 
+/**
+ * The walk between fights plays this many times faster than the player's speed. The simulation still
+ * spends the whole 20-second journey, so regeneration, Readiness and Fury drain keep their ratios.
+ */
+export const TRAVEL_SPEEDUP = 4
+
+/** Playback speed for the expedition clock: faster on the road, the chosen speed in a fight. */
+export function expeditionSpeed(): number {
+  const expedition = saveStatus.save.expedition
+  const walking = expedition !== null && expedition.phase === 'travel' && expedition.combat === null
+  return walking ? snapshot.speed * TRAVEL_SPEEDUP : snapshot.speed
+}
+
 const expeditionLoop = createGameLoop({
-  getSpeed: () => snapshot.speed,
+  getSpeed: expeditionSpeed,
   isPaused: () => snapshot.paused,
   applySteps: advanceExpedition,
   notify: () => {
