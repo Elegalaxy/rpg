@@ -403,6 +403,38 @@ describe('architecture boundaries', () => {
     expect(rngViolations).toEqual([])
   })
 
+  it('does not branch combat.ts on a race id and keeps racial branch systems out of the race modules', () => {
+    const combat = readFileSync(join(SRC_DIR, 'sim', 'combat.ts'), 'utf8')
+    expect(combat).not.toMatch(/['"]human['"]|['"]elf['"]|['"]beastfolk['"]|['"]undead['"]/)
+    const raceDir = join(SRC_DIR, 'sim', 'races')
+    const banned = [/Quick Study/, /Soul Fragment/, /attachment point/i, /\bcurse\b/i, /mastery counter/i]
+    for (const name of readdirSync(raceDir)) {
+      if (!name.endsWith('.ts') || name.endsWith('.test.ts')) continue
+      const source = readFileSync(join(raceDir, name), 'utf8')
+      for (const pattern of banned) expect(source, name).not.toMatch(pattern)
+    }
+  })
+
+  it('does not branch combat.ts on a skill-web node id', () => {
+    const text = readFileSync(join(SRC_DIR, 'sim', 'combat.ts'), 'utf8')
+    const nodeIds = [
+      'assassin-shadow-cut',
+      'assassin-elusive-footwork',
+      'assassin-ambush',
+      'assassin-ghost',
+      'assassin-potent-toxins',
+      'assassin-toxic-opportunity',
+      'assassin-toxic-sovereign',
+      'assassin-exploit-weakness',
+      'assassin-relentless',
+      'assassin-death-sentence',
+      'warrior-driving-blow',
+      'warrior-berserker',
+      'warrior-unbroken',
+    ]
+    for (const id of nodeIds) expect(text.includes(id), id).toBe(false)
+  })
+
   it('does not branch combat.ts on an enemy name', () => {
     const text = readFileSync(join(SRC_DIR, 'sim', 'combat.ts'), 'utf8')
     const names = [

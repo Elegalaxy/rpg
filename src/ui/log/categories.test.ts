@@ -52,6 +52,7 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   death: ['defeatCause'],
   encounterEnd: ['defeatCause'],
   escape: ['retreat'],
+  race: [],
 }
 
 const DEFEAT_CAUSE_TYPES = ['damage', 'statusTick', 'fieldTick', 'hpLoss', 'death', 'encounterEnd'] as const

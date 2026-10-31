@@ -1,4 +1,7 @@
 import { RESOURCE_GENERATION_FACTOR, RESOURCE_GENERATION_SOFT_CAP } from '../constants.ts'
+import { focusOf, focusResourceMultiplier } from '../races/adjustments.ts'
+import { faithGenerationLocked } from './clericAdjust.ts'
+import { furyGenerationMultiplier } from './warriorAdjust.ts'
 import type { CombatState, ResourceEvent } from '../types.ts'
 
 /** Basic-attack gains normalize around the 2.0-second weapon baseline. Skills and damage taken do not. */
@@ -75,10 +78,15 @@ export function grantClassResource(
 ): void {
   const hero = state.hero
   if (hero.classResourceId === '') return
+  if (faithGenerationLocked(hero, timeMs)) return
   if (typeof base !== 'number' || !Number.isFinite(base)) {
     throw new Error(`resource gain must be a finite number, received ${describeValue(base)}`)
   }
-  const multiplier = spiritResourceFactor(hero.spirit)
+  const spirit = spiritResourceFactor(hero.spirit)
+  const focusFactor = focusResourceMultiplier(focusOf(hero))
+  const nodeFactor = furyGenerationMultiplier(hero)
+  let multiplier = focusFactor === 1 ? spirit : spirit * focusFactor
+  if (nodeFactor !== 1) multiplier *= nodeFactor
   let generated = base * multiplier
   if (gainCap !== null && generated > gainCap) generated = gainCap
   const before = hero.classResource

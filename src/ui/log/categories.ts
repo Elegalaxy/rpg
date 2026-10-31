@@ -70,6 +70,7 @@ const EVENT_CATEGORIES = {
   death: ['defeatCause'],
   encounterEnd: ['defeatCause'],
   escape: ['retreat'],
+  race: [],
 } as const satisfies Record<LogEvent['type'], readonly LogCategory[]>
 
 export function categoriesForEventType(type: LogEvent['type']): readonly LogCategory[] {

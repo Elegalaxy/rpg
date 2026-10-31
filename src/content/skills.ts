@@ -3,7 +3,7 @@ import { FURY_GENERATOR_TAG, FURY_SPENDER_TAG } from '../sim/classes/warrior.ts'
 import type { SkillDef } from '../sim/types.ts'
 
 // Venom Edge has no listed resource cost. Its status chance is 100% before the application clamp.
-// Driving Blow's 15 Fury is the ordinary 5 plus 10. The web node that raises it to 20 is not applied.
+// Driving Blow's authored 15 Fury is the ordinary 5 plus 10. The allocated node adds 5 in the warrior module.
 
 const drivingBlow = {
   id: 'driving-blow',
@@ -372,6 +372,121 @@ const penance = {
   ],
 } satisfies SkillDef
 
+/**
+ * Elemental Convergence invocations. Each costs no Mana, has no cooldown, and uses a 1.0x
+ * caster action time. They carry no element tag, so they do not feed Convergence again.
+ * The stored invocation gates them. They sit in the Convergence slot, not the loadout.
+ */
+const BURN_ON_HIT = { kind: 'applyStatus', statusId: 'burn', baseChance: 1, coefficient: 0.12, power: 'magical' } as const
+const CHILL_ON_HIT = { kind: 'applyStatus', statusId: 'chill', baseChance: 1 } as const
+
+const thermalRupture = {
+  id: 'thermal-rupture',
+  name: 'Thermal Rupture',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['magical', 'convergence', 'attack'],
+  target: 'single',
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 2.2 }],
+} satisfies SkillDef
+
+const stormglassAegis = {
+  id: 'stormglass-aegis',
+  name: 'Stormglass Aegis',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['magical', 'convergence', 'defense'],
+  target: 'single',
+  effects: [{ kind: 'barrier', source: 'magical', coefficient: 1.4, durationSeconds: 8 }],
+} satisfies SkillDef
+
+const steamBurst = {
+  id: 'steam-burst',
+  name: 'Steam Burst',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['magical', 'convergence', 'attack'],
+  target: 'all',
+  effects: [
+    { kind: 'damage', school: 'magical', coefficient: 1.2 },
+    { kind: 'actionDelay', delaySeconds: 0.75 },
+  ],
+} satisfies SkillDef
+
+const plasmaLance = {
+  id: 'plasma-lance',
+  name: 'Plasma Lance',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['magical', 'convergence', 'attack'],
+  target: 'single',
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 1.8, magicalPenetrationBonus: 0.3 }, BURN_ON_HIT],
+} satisfies SkillDef
+
+const flashFreeze = {
+  id: 'flash-freeze',
+  name: 'Flash Freeze',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['magical', 'convergence', 'attack'],
+  target: 'all',
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 1 }, CHILL_ON_HIT, CHILL_ON_HIT],
+} satisfies SkillDef
+
+const supercell = {
+  id: 'supercell',
+  name: 'Supercell',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['magical', 'convergence', 'attack'],
+  target: 'single',
+  effects: [
+    {
+      kind: 'chain',
+      school: 'magical',
+      coefficient: 1.6,
+      decay: 1,
+      followCoefficient: 1,
+      maxTargets: 4,
+      delaySeconds: 0,
+      firstStatus: BURN_ON_HIT,
+      followStatus: CHILL_ON_HIT,
+    },
+  ],
+} satisfies SkillDef
+
+/**
+ * Living Sanctuary release. These exist only for 8 seconds after Consecration ends.
+ * The stored value replaces the coefficient, and both spend a 1.0x action.
+ */
+const sanctuaryReleaseHeal = {
+  id: 'sanctuary-release-heal',
+  name: 'Sanctuary Release (heal)',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['sanctuary'],
+  target: 'single',
+  effects: [{ kind: 'heal', maxHpFraction: 0, healingCoefficient: 1 }],
+} satisfies SkillDef
+
+const sanctuaryReleaseStrike = {
+  id: 'sanctuary-release-strike',
+  name: 'Sanctuary Release (strike)',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['sanctuary', 'magical'],
+  target: 'single',
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 1 }],
+} satisfies SkillDef
+
 export const skills: { [id: string]: SkillDef } = {
   [drivingBlow.id]: drivingBlow,
   [cleave.id]: cleave,
@@ -397,10 +512,18 @@ export const skills: { [id: string]: SkillDef } = {
   [chainLightning.id]: chainLightning,
   [manaWard.id]: manaWard,
   [arcaneRecovery.id]: arcaneRecovery,
+  [thermalRupture.id]: thermalRupture,
+  [stormglassAegis.id]: stormglassAegis,
+  [steamBurst.id]: steamBurst,
+  [plasmaLance.id]: plasmaLance,
+  [flashFreeze.id]: flashFreeze,
+  [supercell.id]: supercell,
   [smite.id]: smite,
   [mend.id]: mend,
   [ward.id]: ward,
   [judgment.id]: judgment,
   [consecration.id]: consecration,
   [penance.id]: penance,
+  [sanctuaryReleaseHeal.id]: sanctuaryReleaseHeal,
+  [sanctuaryReleaseStrike.id]: sanctuaryReleaseStrike,
 }

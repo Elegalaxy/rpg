@@ -4,7 +4,12 @@ import { HERO_CLASSES } from '../sim/constants.ts'
 import { deriveHeroStats } from '../sim/stats.ts'
 
 import { referenceGear } from './gear.ts'
-import { referenceHeroAtLevel, referenceHeroes, splitReferenceAttributes } from './heroes.ts'
+import {
+  racialStartingAttributes,
+  referenceHeroAtLevel,
+  referenceHeroes,
+  splitReferenceAttributes,
+} from './heroes.ts'
 
 function percent(ratio: number): number {
   return ratio * 100
@@ -291,6 +296,49 @@ describe('reference hero content', () => {
         if ('category' in source && 'category' in piece) expect(piece.category).toBe(source.category)
       }
     }
+  })
+
+  it('locks the four racial starting attribute lines', () => {
+    const order = ['strength', 'vitality', 'agility', 'intellect', 'spirit']
+    console.log('[hero] racial bases', racialStartingAttributes)
+    expect(racialStartingAttributes.human).toEqual({
+      strength: 10,
+      vitality: 10,
+      agility: 10,
+      intellect: 10,
+      spirit: 10,
+    })
+    expect(racialStartingAttributes.elf).toEqual({
+      strength: 8,
+      vitality: 9,
+      agility: 12,
+      intellect: 12,
+      spirit: 9,
+    })
+    expect(racialStartingAttributes.beastfolk).toEqual({
+      strength: 13,
+      vitality: 13,
+      agility: 9,
+      intellect: 7,
+      spirit: 8,
+    })
+    expect(racialStartingAttributes.undead).toEqual({
+      strength: 8,
+      vitality: 9,
+      agility: 13,
+      intellect: 11,
+      spirit: 9,
+    })
+    for (const attributes of Object.values(racialStartingAttributes)) {
+      expect(Object.keys(attributes)).toEqual(order)
+    }
+    expect(referenceHeroes.warrior.attributes).toEqual({
+      strength: 24,
+      vitality: 22,
+      agility: 16,
+      intellect: 10,
+      spirit: 16,
+    })
   })
 })
 

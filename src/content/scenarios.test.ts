@@ -131,6 +131,21 @@ describe('duel-basic', () => {
     expect(lines.join('\n')).toMatchSnapshot()
   })
 
+  it('omits race, so seed 42 has no race log events', () => {
+    const state = runCombat(createCombat(setupForScenario(DUEL_BASIC_ID), gameDefs(), 42), gameDefs(), FIGHT_MS)
+    const raceEvents = state.log.filter((event) => event.type === 'race')
+    const end = state.log[state.log.length - 1]
+    console.log('[sim]', 'duel-basic race events', {
+      count: raceEvents.length,
+      race: state.hero.race,
+      outcome: state.outcome,
+      durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
+    })
+    expect(state.hero.race).toBeNull()
+    expect(raceEvents).toEqual([])
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 20_688 })
+  })
+
   it('deep-equals two runs and a resume from t=5000', () => {
     const setup = setupForScenario(DUEL_BASIC_ID)
     const defs = gameDefs()

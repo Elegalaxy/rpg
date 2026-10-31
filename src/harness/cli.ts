@@ -12,6 +12,7 @@ import type { CombatState } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS, runBatch, runScenario, scenarioIds, type BatchSummary } from './batch.ts'
 import { splinteredRoadBlueprint } from './expedition.ts'
+import { runComboMatrix } from './combos.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
 const RPG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -224,13 +225,23 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
   const seed = parseSeed(args.seed)
   const runs = parseRuns(args.runs)
+  if (args.matrix === 'combos') {
+    console.log(`[sim] matrix combos seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const report = runComboMatrix(seed, runs)
+    const elapsedMs = performance.now() - started
+    console.log(`[sim] matrix combos pairs ${report.pairs} runs ${report.runs} errors ${report.errors}`)
+    printTiming(report.pairs * runs, elapsedMs)
+    if (report.errors > 0) throw new CliError(`matrix combos finished with ${report.errors} errors`)
+    return
+  }
   console.log(
     `[sim] matrix ${args.matrix} seed ${seed} runs ${runs} report reports/2026-10-23-reference.csv`,
   )

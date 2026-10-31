@@ -1,3 +1,5 @@
+import { affinityBurnPower, affinityChillSeconds } from './classes/mageAdjust.ts'
+import { holdMarkedPoison, persistentMark, poisonApplicationAdjust } from './classes/assassin.ts'
 import {
   BOSS_DURATION_FRACTION,
   BOSS_STACK_CAP_FACTOR,
@@ -475,8 +477,11 @@ function applyBleed(input: ApplyInput, def: BleedStatusDef, snapshot: StatusSnap
 }
 
 function applyPoison(input: ApplyInput, def: PoisonStatusDef, snapshot: StatusSnapshot, chance: number, potency: number, resistance: number, roll: number): void {
-  const cap = statusStackCap(def.maxStacks, input.target.boss)
-  const expiresMs = input.timeMs + scaledDurationMs(def.durationSeconds, input.target.boss, `${def.id} duration`)
+  const adjust = poisonApplicationAdjust(input.source)
+  const maxStacks = adjust === null ? def.maxStacks : adjust.maxStacks
+  const durationSeconds = adjust === null ? def.durationSeconds : adjust.durationSeconds
+  const cap = statusStackCap(maxStacks, input.target.boss)
+  const expiresMs = input.timeMs + scaledDurationMs(durationSeconds, input.target.boss, `${def.id} duration`)
   const tickMs = roundMs(def.tickSeconds, `${def.id} tick`)
   const current = input.target.statuses.poison
   if (current === null) {
@@ -506,6 +511,11 @@ function applyPoison(input: ApplyInput, def: PoisonStatusDef, snapshot: StatusSn
     delayMs: null,
     nextReadyMs: null,
   })
+}
+
+function burnSnapshot(input: ApplyInput): StatusSnapshot {
+  const snapshot = snapshotOf(input.source, input.effect, 'magical')
+  return { ...snapshot, power: affinityBurnPower(input.state, input.source, snapshot.power) }
 }
 
 function applyBurn(input: ApplyInput, def: BurnStatusDef, snapshot: StatusSnapshot, chance: number, potency: number, resistance: number, roll: number): void {
@@ -552,7 +562,8 @@ function applyBurn(input: ApplyInput, def: BurnStatusDef, snapshot: StatusSnapsh
 
 function applyChill(input: ApplyInput, def: ChillStatusDef, chance: number, potency: number, resistance: number, roll: number): void {
   const cap = statusStackCap(def.maxStacks, input.target.boss)
-  const expiresMs = input.timeMs + scaledDurationMs(def.durationSeconds, input.target.boss, `${def.id} duration`)
+  const seconds = affinityChillSeconds(input.state, input.source, def.durationSeconds)
+  const expiresMs = input.timeMs + scaledDurationMs(seconds, input.target.boss, `${def.id} duration`)
   const current = input.target.statuses.chill
   let stacks = 1
   if (current === null) {
@@ -604,7 +615,7 @@ function applyStun(input: ApplyInput, def: StunStatusDef, school: DamageSchool, 
 
 function applyMark(input: ApplyInput, def: MarkStatusDef): void {
   let expiresMs: number | null = null
-  if (input.effect.durationSeconds !== undefined) {
+  if (input.effect.durationSeconds !== undefined && !persistentMark(input.source)) {
     const seconds = input.target.boss
       ? input.effect.durationSeconds * BOSS_DURATION_FRACTION
       : input.effect.durationSeconds
@@ -683,6 +694,11 @@ function applyExpose(input: ApplyInput, def: ExposeStatusDef, school: DamageScho
   })
 }
 
+function applicationPotency(input: ApplyInput, def: StatusDef): number {
+  const bonus = def.kind === 'poison' ? (poisonApplicationAdjust(input.source)?.potencyBonus ?? 0) : 0
+  return statusPotency(input.source, (input.effect.potency ?? 0) + bonus)
+}
+
 /**
  * Roll and apply one status. Contact Bleed and Poison are skipped, without a roll,
  * when the applying hit dealt no HP. Chill does not move `nextReadyMs`. Stun does.
@@ -697,7 +713,7 @@ export function tryApplyStatus(input: ApplyInput & { defs: { statuses: { [id: st
     attemptEvent(input, def, {
       school: 'physical',
       baseChance: input.effect.baseChance,
-      potency: statusPotency(input.source, input.effect.potency ?? 0),
+      potency: applicationPotency(input, def),
       resistance: statusResistance(input.target, 'physical'),
       chance: 0,
       roll: null,
@@ -717,7 +733,7 @@ export function tryApplyStatus(input: ApplyInput & { defs: { statuses: { [id: st
 
   const school = resistanceSchool(def, input.skill)
   if (school === 'none') throw new Error(`status '${def.id}' has no resistance school`)
-  const potency = statusPotency(input.source, input.effect.potency ?? 0)
+  const potency = applicationPotency(input, def)
   const resistance = statusResistance(input.target, school)
   const chance = applicationChance(input.effect.baseChance, potency, resistance)
   const roll = drawRoll(input)
@@ -752,7 +768,7 @@ export function tryApplyStatus(input: ApplyInput & { defs: { statuses: { [id: st
     return
   }
   if (def.kind === 'burn') {
-    applyBurn(input, def, snapshotOf(input.source, input.effect, 'magical'), chance, potency, resistance, roll)
+    applyBurn(input, def, burnSnapshot(input), chance, potency, resistance, roll)
     return
   }
   if (def.kind === 'chill') {
@@ -954,6 +970,7 @@ function expireOne(
 /** Durations that fall inside this step end before periodic ticks. */
 export function expireStatuses(state: CombatState, stepStart: number, stepEnd: number): void {
   for (const actor of actorsInOrder(state)) {
+    holdMarkedPoison(state, actor, stepStart, stepEnd)
     const poison = actor.statuses.poison
     if (poison !== null && expireOne(state, actor, 'poison', poison.name, poison.stacks.length, poison.expiresMs, stepStart, stepEnd)) {
       actor.statuses.poison = null

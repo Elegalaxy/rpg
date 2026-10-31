@@ -1,3 +1,4 @@
+import type { HeroRace } from './progression.ts'
 import type { RngState } from './rng.ts'
 import type {
   Attributes,
@@ -190,6 +191,8 @@ export type CombatActor = {
   magicalStatusResistance: number
   /** Boss status caps, durations, and Stun delay. Not immunity. */
   boss: boolean
+  /** Copied from the enemy definition. A hero is never elite. */
+  elite: boolean
   /**
    * Armor and Resistance priorities can use this actor only when revealed.
    * Encounter setup or a later Hunter's Mark sets it. Harness enemies start revealed.
@@ -274,6 +277,10 @@ export type ArmedTrap = {
   baseChance: number
   skillId: string
   sourceId: string
+  /** Added to Status Potency when this trap applies Stun. Omitted adds nothing. */
+  potencyBonus?: number
+  /** Milliseconds added to the target's next action when Stun is resisted. Omitted does not push. */
+  resistDelayMs?: number
 }
 
 /** Inputs a caller can fix so damage tests do not draw from the RNG. */
@@ -301,6 +308,10 @@ export type DamageInput = {
   rolls: DamageRolls
   /** Active skills skip the hit roll. Basic attacks leave this unset. */
   guaranteedHit?: boolean
+  /** Replaces the Consistency floor in the log. Omitted keeps that floor. */
+  damageFloor?: number
+  /** Applied after incoming mitigation and before rounding. Omitted is unchanged. */
+  finalDamageMultiplier?: number
 }
 
 /** Full-precision pipeline. `hpDamage` is the rounded integer applied to HP. */
@@ -780,7 +791,7 @@ export type VowEvent = {
   actorId: string
   actorName: string
   vow: string
-  reason: 'hp' | 'overheal' | 'overcap'
+  reason: 'hp' | 'overheal' | 'overcap' | 'broken'
 }
 
 /** Encounter meters reset when the encounter ends. Expedition meters carry until a later expedition step. */
@@ -1006,6 +1017,13 @@ export type LogEvent =
   | DeathEvent
   | EncounterEndEvent
   | EscapeEvent
+  | RaceEvent
+
+export type RaceEvent = {
+  type: 'race'
+  timeMs: number
+  text: string
+}
 
 export type DamageEffect = {
   kind: 'damage'
@@ -1015,6 +1033,8 @@ export type DamageEffect = {
   power?: DamageSchool
   /** Added to Armor penetration before the 80% cap. Physical hits only. */
   armorPenetrationBonus?: number
+  /** Added to magical penetration before the 80% cap. Magical hits only. 0.3 is 30 percentage points. */
+  magicalPenetrationBonus?: number
 }
 
 export type HealEffect = {
@@ -1078,6 +1098,12 @@ export type ChainEffect = {
   decay: number
   maxTargets: number
   delaySeconds: number
+  /** When set, every target after the first uses this coefficient and `decay` is ignored. */
+  followCoefficient?: number
+  /** Applied to the first target after its hit. */
+  firstStatus?: ApplyStatusEffect
+  /** Applied to each target after the first, after its hit. */
+  followStatus?: ApplyStatusEffect
 }
 
 /** Sets the target's revealed flag for this encounter. Does not apply Mark. */
@@ -1211,6 +1237,11 @@ export type SkillDef = {
   effects: readonly SkillEffect[]
   /** Special arrows required in addition to `cost`. Spend neither unless both can be paid. */
   ammoCost?: number
+  /**
+   * Carried supplies required in addition to `cost`.
+   * Omitted means the skill has no supply cost. No supply item is implied.
+   */
+  supplyCost?: number
 }
 
 /** One automation row. All of its conditions must pass. The same skill on a later row is the OR. */
@@ -1245,6 +1276,14 @@ export type CombatHero = CombatActor & {
   resourceRegenPerSecond: number
   /** Plain JSON class memory. Not a place for functions. */
   classState: { [key: string]: number | string | boolean | null }
+  /** Omitted setup race. Null runs no race hooks. */
+  race: HeroRace | null
+  /** Plain JSON race memory. Not a place for functions. */
+  raceState: { [key: string]: number | string | boolean | null }
+  /** Starting Focus from the setup. Null starts an Elf at 0. */
+  suppliedFocus: number | null
+  /** Starting Ferocity progress from the setup. Null starts Beastfolk at 0. */
+  suppliedFerocity: number | null
   /** Set while the hero is waiting for a resource. The wait does not spend action time. */
   waiting: boolean
   /** Equipped special-ammunition count for conditions and Flame Arrow. */
@@ -1271,6 +1310,26 @@ export type CombatHero = CombatActor & {
   overhealed: boolean
   /** When set, the next skill hit uses this coefficient instead of the effect's. */
   pendingCoefficient: number | null
+  /** Set by a class hook for this action only. Null keeps the skill's listed cost. */
+  pendingSkillCost: number | null
+  /** Set by a class hook for this action only. Null keeps the skill's listed cooldown. */
+  pendingCooldownSeconds: number | null
+  /** Set by a class hook for this action only. Null keeps the action's listed time coefficient. */
+  pendingActionCoefficient: number | null
+  /** Skill-web nodes copied from setup. Empty when the setup omits them. */
+  allocatedNodeIds: readonly string[]
+  /** Expedition momentum for this fight. 0 when the setup omits it. */
+  expeditionMomentum: number
+  /** Supplies carried into this fight. 0 when the setup omits it. */
+  carriedSupplyCount: number
+  /** Special arrows already fired this expedition. Null when the setup omits the counter. */
+  suppliedArrowCount: number | null
+  /** Prepared-spell charges carried in as JSON `{skillId: charges}`. Null fills them to their maximum. */
+  suppliedMageCharges: string | null
+  /** The spells the player chose to prepare. Null takes the loadout order. */
+  suppliedPreparedSpells: string[] | null
+  /** Encounters left before Trapper may deploy. Null means this fight may deploy once. */
+  suppliedTrapperCooldown: number | null
   /** Null selects the first living enemy by slot. */
   targetPriority: TargetPriority | null
   currentTargetId: string | null
@@ -1293,6 +1352,8 @@ export type CombatHeroSetup = {
   name: string
   level: number
   classId: HeroClass
+  /** Omitted leaves the hero with no race hooks. */
+  race?: HeroRace
   attributes: Attributes
   gear: HeroGear
   equippedSkillIds?: readonly string[]
@@ -1311,6 +1372,24 @@ export type CombatHeroSetup = {
   carryResource?: boolean
   /** Current HP. Omitted starts at maximum HP. Values above maximum HP are capped. */
   startingHp?: number
+  /** Elf Focus at the start of this fight. Omitted starts at 0. */
+  startingFocus?: number
+  /** Beastfolk Ferocity progress at the start of this fight. Omitted starts at 0. */
+  ferocityProgress?: number
+  /** Skill-web nodes for this fight. Omitted is an empty list and applies no node effects. */
+  allocatedNodeIds?: readonly string[]
+  /** Momentum stacks for this fight. Omitted is 0 and grants no momentum bonus. */
+  expeditionMomentum?: number
+  /** Supplies carried into this fight. Omitted is 0. */
+  carriedSupplyCount?: number
+  /** Special arrows already fired on this expedition. Omitted starts the counter at 0. */
+  specialArrowCount?: number
+  /** Encounters remaining before Trapper deploys. Omitted lets a standalone fight deploy once. */
+  trapperCooldown?: number
+  /** Mage prepared-spell charges as JSON `{skillId: charges}`. Omitted fills them to their maximum. */
+  mageCharges?: string
+  /** Spells the Mage prepared. Omitted takes the loadout order, skipping Arcane Bolt. */
+  preparedSpells?: string[]
 }
 
 export type CombatEnemySetup = {
@@ -1511,12 +1590,14 @@ export type DamageNotice = {
   barrierAbsorbed?: number
   /** `miss` is an enemy basic attack that failed its hit roll. It is not a hit for 0 HP. */
   kind: 'hit' | 'statusTick' | 'miss'
+  /** Actor that dealt this hit. Omitted for status ticks and older notices. */
+  sourceId?: string
   timeMs: number
   school: DamageSchool
 }
 
 export type OutgoingModifierQuery = {
-  school: DamageSchool
+  school: DamageSchool | 'healing'
   skill: SkillDef | null
 }
 
@@ -1526,12 +1607,12 @@ export type FallbackDecision =
   | { kind: 'wait'; reason: string }
 
 export type ClassModule = {
-  encounterStart?: (state: CombatState, timeMs: number) => void
+  encounterStart?: (state: CombatState, timeMs: number, defs?: GameDefs) => void
   encounterEnd?: (state: CombatState, timeMs: number) => void
   actionChosen?: (state: CombatState, action: ClassAction, timeMs: number) => void
-  actionResolved?: (state: CombatState, action: ClassAction, timeMs: number) => void
+  actionResolved?: (state: CombatState, action: ClassAction, timeMs: number, defs?: GameDefs) => void
   damageDealt?: (state: CombatState, notice: DamageNotice) => void
-  damageTaken?: (state: CombatState, notice: DamageNotice) => void
+  damageTaken?: (state: CombatState, notice: DamageNotice, defs?: GameDefs) => void
   kill?: (state: CombatState, victimId: string, timeMs: number) => void
   outgoingModifiers?: (state: CombatState, query: OutgoingModifierQuery) => number
   incomingModifiers?: (state: CombatState, query: OutgoingModifierQuery) => number

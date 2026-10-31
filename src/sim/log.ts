@@ -276,6 +276,9 @@ export function formatEvent(event: LogEvent): string {
       if (event.reason === 'moved') {
         return `At ${seconds(event.timeMs)}s, Mark moves off ${event.actorName}.`
       }
+      if (event.reason === 'death') {
+        return `At ${seconds(event.timeMs)}s, ${event.statusName} clears from ${event.actorName} on death.`
+      }
       return `At ${seconds(event.timeMs)}s, cleanse removes ${event.statusName} from ${event.actorName} (${event.stacks} stacks).`
     case 'markRefresh':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} refreshes Mark on ${event.targetName}: ${event.remainingMs} ms remains ${event.nextRemainingMs} ms, expires at ${seconds(event.expiresMs)}s.`
@@ -355,6 +358,8 @@ export function formatEvent(event: LogEvent): string {
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dies, killed by ${event.killerName}.`
     case 'encounterEnd':
       return `At ${seconds(event.timeMs)}s, encounter ended: ${event.outcome}.`
+    case 'race':
+      return `At ${seconds(event.timeMs)}s, ${event.text}`
     case 'escape': {
       const result = event.success ? 'success' : 'failure'
       return `At ${seconds(event.timeMs)}s, ${event.actorName} attempts escape (HP ${event.hp}/${event.maxHp}, threshold ${event.thresholdPercent}%): roll ${event.roll} against ${event.chancePercent}% (base ${event.basePercent}, Agility ${event.agility} adds ${event.agilityPoints}, supplies ${event.suppliesBonus}, zone ${event.zoneBonus}, momentum ${event.momentumBonus}): ${result}.`

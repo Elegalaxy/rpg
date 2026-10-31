@@ -1,7 +1,16 @@
 import { ADVANTAGE_MAXIMUM, ADVANTAGE_RESOURCE_ID } from './classes/assassin.ts'
 import { FAITH_MAXIMUM, FAITH_RESOURCE_ID, FAITH_START } from './classes/cleric.ts'
 import { MANA_MAXIMUM, MANA_RESOURCE_ID, MANA_TRAVEL_REGEN_PER_SECOND } from './classes/mage.ts'
-import { READINESS_MAXIMUM, READINESS_RESOURCE_ID, READINESS_TRAVEL_PER_SECOND } from './classes/ranger.ts'
+import { encounterRestoreCount, manaRegenFactor, restoreChargeText } from './classes/mageAdjust.ts'
+import {
+  READINESS_MAXIMUM,
+  READINESS_RESOURCE_ID,
+  READINESS_TRAVEL_PER_SECOND,
+  TRAPPER_RECHARGE_ENCOUNTERS,
+  pressTrailEscapePoints,
+  pressTrailReadiness,
+  travelReadinessFactor,
+} from './classes/ranger.ts'
 import { spiritResourceFactor } from './classes/resources.ts'
 import {
   FURY_DRAIN_PER_SECOND,
@@ -11,6 +20,10 @@ import {
 } from './classes/warrior.ts'
 import { createCombat, runCombat, stepCombat } from './combat.ts'
 import { HERO_CLASSES, REGEN_PER_VITALITY, STEP_MS, type HeroClass } from './constants.ts'
+import { setupRaceMeters, storeRaceMeters } from './races/carry.ts'
+import { FEROCITY_CAP } from './races/beastfolk.ts'
+import { FOCUS_MAX } from './races/elf.ts'
+import { readRace } from './races/index.ts'
 import { createRng, deriveSeed, nextFloat, type RngState } from './rng.ts'
 import { deriveHeroStats, type HeroGear } from './stats.ts'
 import type { CombatHeroSetup, CombatOutcome, CombatSetup, CombatState, EscapeEvent, GameDefs } from './types.ts'
@@ -131,6 +144,12 @@ export type CarriedHero = {
   resourceFraction: number
   specialAmmo: number
   vow: string | null
+  /** Elf Focus carried between fights. Other races leave this at 0. */
+  focus: number
+  /** Special arrows fired this expedition. Efficient Quiver reads it. Others leave it at 0. */
+  specialArrowCount: number
+  /** Mage prepared-spell charges as JSON. Omitted or null means full. Town restores them. */
+  mageCharges?: string | null
 }
 
 export type ExpeditionState = {
@@ -160,6 +179,10 @@ export type ExpeditionState = {
   momentum: number
   /** Percentage points, 2 per momentum stack. Arrival, defeat, and `resetMomentum` set this back to 0. */
   rareNodeChance: number
+  /** Beastfolk Ferocity progress, 0–6. Not a combat resource. */
+  ferocityProgress: number
+  /** Encounters remaining before Trapper may deploy. 0 is ready. A new expedition starts ready. */
+  trapperCooldown: number
   /** Materials carried on the road. Total quantity is at most `LOOT_CAPACITY`. A defeat clears this. */
   unsecured: LootStack[]
   /** Materials moved here when the return walk arrives. A defeat leaves this in place. */
@@ -263,6 +286,42 @@ function assertExpedition(state: ExpeditionState): void {
     state.momentum > MOMENTUM_CAP
   ) {
     throw new Error(`momentum must be an integer from 0 through ${MOMENTUM_CAP}, received ${describeValue(state.momentum)}`)
+  }
+  if (
+    typeof state.hero.focus !== 'number' ||
+    !Number.isFinite(state.hero.focus) ||
+    state.hero.focus < 0 ||
+    state.hero.focus > FOCUS_MAX
+  ) {
+    throw new Error(`focus must be from 0 through ${FOCUS_MAX}, received ${describeValue(state.hero.focus)}`)
+  }
+  if (
+    typeof state.hero.specialArrowCount !== 'number' ||
+    !Number.isInteger(state.hero.specialArrowCount) ||
+    state.hero.specialArrowCount < 0
+  ) {
+    throw new Error(
+      `special arrow count must be a whole number of at least 0, received ${describeValue(state.hero.specialArrowCount)}`,
+    )
+  }
+  if (
+    typeof state.trapperCooldown !== 'number' ||
+    !Number.isInteger(state.trapperCooldown) ||
+    state.trapperCooldown < 0
+  ) {
+    throw new Error(
+      `trapper cooldown must be a whole number of at least 0, received ${describeValue(state.trapperCooldown)}`,
+    )
+  }
+  if (
+    typeof state.ferocityProgress !== 'number' ||
+    !Number.isInteger(state.ferocityProgress) ||
+    state.ferocityProgress < 0 ||
+    state.ferocityProgress > FEROCITY_CAP
+  ) {
+    throw new Error(
+      `ferocity progress must be an integer from 0 through ${FEROCITY_CAP}, received ${describeValue(state.ferocityProgress)}`,
+    )
   }
   if (state.rareNodeChance !== state.momentum * RARE_NODE_CHANCE_PER_STACK) {
     throw new Error(
@@ -557,6 +616,8 @@ function carriedFromTemplate(hero: CombatHeroSetup): CarriedHero {
     resourceFraction: 0,
     specialAmmo,
     vow: hero.vow ?? null,
+    focus: 0,
+    specialArrowCount: 0,
   }
 }
 
@@ -576,6 +637,7 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
   }
   if (typeof blueprint.hero !== 'object' || blueprint.hero === null) throw new Error('expedition hero is missing')
   assertClassId(blueprint.hero.classId)
+  readRace(blueprint.hero.race)
   const opening = copyEncounters(blueprint.opening, 'opening encounter')
   const draw = copyEncounters(blueprint.draw, 'draw encounter')
   if (draw.length === 0) throw new Error('expedition draw has no encounters')
@@ -604,6 +666,8 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
     history: [],
     momentum: 0,
     rareNodeChance: 0,
+    ferocityProgress: 0,
+    trapperCooldown: 0,
     unsecured: [],
     secured: [],
     overflow: 0,
@@ -638,7 +702,12 @@ function applyTravelSecond(state: ExpeditionState, second: number): void {
   }
   if (hero.classResourceId === MANA_RESOURCE_ID || hero.classResourceId === READINESS_RESOURCE_ID) {
     const base = hero.classResourceId === MANA_RESOURCE_ID ? MANA_TRAVEL_REGEN_PER_SECOND : READINESS_TRAVEL_PER_SECOND
-    const gain = base * spiritResourceFactor(hero.spirit)
+    const travel =
+      hero.classResourceId === READINESS_RESOURCE_ID
+        ? travelReadinessFactor(state.heroTemplate.allocatedNodeIds, state.momentum)
+        : 1
+    const regen = hero.classResourceId === MANA_RESOURCE_ID ? manaRegenFactor(state.heroTemplate.allocatedNodeIds) : 1
+    const gain = base * spiritResourceFactor(hero.spirit) * travel * regen
     hero.classResource = capMeter(hero.classResource + gain, hero.classResourceMax)
     return
   }
@@ -673,16 +742,34 @@ function selectEncounter(state: ExpeditionState): ExpeditionEncounterDef {
   return drawn
 }
 
+function carriedSupplyCount(state: ExpeditionState): number {
+  let count = 0
+  for (const slot of state.supplySlots) {
+    if (slot !== null) count += 1
+  }
+  return count
+}
+
 function combatSetup(state: ExpeditionState, encounter: ExpeditionEncounterDef): CombatSetup {
   const classId = state.classId
   const setup: CombatHeroSetup = {
     ...state.heroTemplate,
     startingHp: state.hero.hp,
     carryResource: classId === 'warrior' || classId === 'mage' || classId === 'cleric',
+    ...setupRaceMeters(state.heroTemplate.race, state.hero.focus, state.ferocityProgress),
   }
   if (classId === 'assassin') delete setup.startingResource
   else setup.startingResource = state.hero.classResource
-  if (classId === 'ranger') setup.specialAmmo = state.hero.specialAmmo
+  if (classId === 'ranger') {
+    setup.specialAmmo = state.hero.specialAmmo
+    setup.specialArrowCount = state.hero.specialArrowCount
+    setup.trapperCooldown = state.trapperCooldown
+    setup.expeditionMomentum = state.momentum
+    setup.carriedSupplyCount = carriedSupplyCount(state)
+  }
+  if (classId === 'mage' && typeof state.hero.mageCharges === 'string') {
+    setup.mageCharges = state.hero.mageCharges
+  }
   if (classId === 'cleric') {
     if (state.hero.vow === null || state.hero.vow.length === 0) {
       throw new Error('cleric expedition is missing a vow')
@@ -735,11 +822,45 @@ function carryFromCombat(state: ExpeditionState): void {
   state.hero.classResourceMax = hero.classResourceMax
   state.hero.resourceFraction = hero.resourceFraction
   state.hero.specialAmmo = hero.specialAmmo
+  const fired = hero.classState.specialArrowCount
+  if (typeof fired === 'number' && Number.isInteger(fired) && fired >= 0) state.hero.specialArrowCount = fired
+  if (state.classId === 'mage') {
+    const charges = hero.classState.mageCharges
+    if (typeof charges === 'string') {
+      const maxima = hero.classState.mageChargeMax
+      const restored = restoreChargeText(
+        charges,
+        typeof maxima === 'string' ? maxima : null,
+        encounterRestoreCount(state.heroTemplate.allocatedNodeIds),
+      )
+      state.hero.mageCharges = restored
+    }
+  }
   if (state.classId === 'assassin') {
     state.hero.classResource = 0
     state.hero.resourceFraction = 0
   }
   if (typeof hero.suppliedVow === 'string' && hero.suppliedVow.length > 0) state.hero.vow = hero.suppliedVow
+  const stored = storeRaceMeters(state.heroTemplate.race, hero)
+  if (stored.focus !== null) {
+    if (typeof stored.focus !== 'number' || !Number.isFinite(stored.focus) || stored.focus < 0 || stored.focus > FOCUS_MAX) {
+      throw new Error(`carried focus must be from 0 through ${FOCUS_MAX}, received ${describeValue(stored.focus)}`)
+    }
+    state.hero.focus = stored.focus
+  }
+  if (stored.ferocity !== null) {
+    if (
+      typeof stored.ferocity !== 'number' ||
+      !Number.isInteger(stored.ferocity) ||
+      stored.ferocity < 0 ||
+      stored.ferocity > FEROCITY_CAP
+    ) {
+      throw new Error(
+        `carried ferocity must be an integer from 0 through ${FEROCITY_CAP}, received ${describeValue(stored.ferocity)}`,
+      )
+    }
+    state.ferocityProgress = stored.ferocity
+  }
 }
 
 /**
@@ -835,6 +956,21 @@ function applyDefeat(state: ExpeditionState, combat: CombatState): void {
   state.recoveryMs = DEFEAT_RECOVERY_MS
   if (defeatedByBoss(combat)) state.bossLossThisLife = true
   resetMomentum(state, 'defeat')
+  resetFocus(state, 'defeat')
+  resetFerocity(state, 'defeat')
+  state.hero.mageCharges = null
+}
+
+/**
+ * A deploy sets the wait to three encounters, and this completion is the first of them.
+ * The next deploy is ready when the count returns to 0.
+ */
+function noteTrapperEncounter(state: ExpeditionState): void {
+  const combat = state.combat
+  if (combat !== null && combat.hero.classState.trapperDeployed === true) {
+    state.trapperCooldown = TRAPPER_RECHARGE_ENCOUNTERS
+  }
+  if (state.trapperCooldown > 0) state.trapperCooldown -= 1
 }
 
 function finishEncounter(state: ExpeditionState, defs: GameDefs): void {
@@ -850,9 +986,14 @@ function finishEncounter(state: ExpeditionState, defs: GameDefs): void {
     outcome: combat.outcome,
     durationMs: durationMs(combat),
   })
+  noteTrapperEncounter(state)
   if (combat.outcome === 'victory') {
     collectDrops(state)
     addMomentum(state, momentumGain(combat, defs))
+    const restored = pressTrailReadiness(state.heroTemplate.allocatedNodeIds, state.momentum)
+    if (restored > 0) {
+      state.hero.classResource = capMeter(state.hero.classResource + restored, state.hero.classResourceMax)
+    }
   }
   if (combat.outcome === 'defeat') {
     applyDefeat(state, combat)
@@ -875,6 +1016,9 @@ function arriveInTown(state: ExpeditionState): void {
   state.returning = false
   state.momentum = 0
   state.rareNodeChance = 0
+  resetFocus(state, 'return')
+  resetFerocity(state, 'return')
+  state.hero.mageCharges = null
   state.outcome = 'returned'
 }
 
@@ -935,6 +1079,8 @@ function retreatFromCombat(state: ExpeditionState): void {
   state.travelMs = 0
   state.returning = true
   state.escapeRetryMs = null
+  resetFocus(state, 'retreat')
+  resetFerocity(state, 'retreat')
 }
 
 /**
@@ -949,7 +1095,9 @@ function tryEscape(state: ExpeditionState): boolean {
   if (threshold === null) return false
   if (state.escapeRetryMs !== null && combat.timeMs < state.escapeRetryMs) return false
   const agilityPoints = Math.min(ESCAPE_AGILITY_CAP, Math.floor(hero.agility / 5))
-  const chancePercent = ESCAPE_BASE_PERCENT + agilityPoints + ESCAPE_SUPPLIES_BONUS + ESCAPE_ZONE_BONUS + ESCAPE_MOMENTUM_BONUS
+  const trailEscape = pressTrailEscapePoints(state.heroTemplate.allocatedNodeIds, state.momentum)
+  const momentumBonus = ESCAPE_MOMENTUM_BONUS + trailEscape
+  const chancePercent = ESCAPE_BASE_PERCENT + agilityPoints + ESCAPE_SUPPLIES_BONUS + ESCAPE_ZONE_BONUS + momentumBonus
   const roll = nextFloat(state.rng)
   const success = roll * 100 < chancePercent
   const event: EscapeEvent = {
@@ -967,7 +1115,7 @@ function tryEscape(state: ExpeditionState): boolean {
     agilityPoints,
     suppliesBonus: ESCAPE_SUPPLIES_BONUS,
     zoneBonus: ESCAPE_ZONE_BONUS,
-    momentumBonus: ESCAPE_MOMENTUM_BONUS,
+    momentumBonus,
     success,
   }
   combat.log.push(event)
@@ -1026,6 +1174,29 @@ export function resetMomentum(state: ExpeditionState, reason: MomentumResetReaso
   }
   state.momentum = 0
   state.rareNodeChance = 0
+}
+
+function assertRaceResetReason(reason: unknown, label: string): asserts reason is MomentumResetReason {
+  if (!(MOMENTUM_RESET_REASONS as readonly string[]).includes(reason as string)) {
+    throw new Error(
+      `${label} reset reason is unknown, received ${describeValue(reason)}; valid reasons: ${MOMENTUM_RESET_REASONS.join(', ')}`,
+    )
+  }
+}
+
+/** Clears carried Elf Focus. Town, retreat, defeat, and reincarnation all use this. */
+export function resetFocus(state: ExpeditionState, reason: MomentumResetReason): void {
+  assertExpedition(state)
+  assertRaceResetReason(reason, 'focus')
+  state.hero.focus = 0
+  state.hero.specialArrowCount = 0
+}
+
+/** Clears Beastfolk Ferocity progress. A retreat or defeat does not keep a victory gain. */
+export function resetFerocity(state: ExpeditionState, reason: MomentumResetReason): void {
+  assertExpedition(state)
+  assertRaceResetReason(reason, 'ferocity')
+  state.ferocityProgress = 0
 }
 
 /**

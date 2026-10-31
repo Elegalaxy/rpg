@@ -1,7 +1,9 @@
-import { MISSING_SPECIAL_ARROW_REASON } from './classes/ranger.ts'
+import { syncCleric } from './classes/cleric.ts'
+import { MISSING_SPECIAL_ARROW_REASON, resolvedAmmoCost } from './classes/ranger.ts'
 import { nextFloat } from './rng.ts'
 import {
   activeBarrier,
+  classSkillBlock,
   equipmentBlock,
   fatalHpLossBlock,
   skillAffordable,
@@ -400,8 +402,11 @@ export function skipReason(
 ): string | null {
   if (!skillEquipped(hero, skill.id)) return 'not equipped'
   if (!skillOffCooldown(hero, skill, timeMs)) return 'on cooldown'
+  if (hero.classId === 'cleric') syncCleric(state)
+  const classBlock = classSkillBlock(hero, skill, timeMs)
+  if (classBlock !== null) return classBlock
   if (!skillAffordable(hero, skill)) return 'unaffordable'
-  const ammoCost = skill.ammoCost ?? 0
+  const ammoCost = resolvedAmmoCost(hero, skill)
   if (ammoCost > hero.specialAmmo) return MISSING_SPECIAL_ARROW_REASON
   const equipment = equipmentBlock(hero, skill)
   if (equipment !== null) return equipment

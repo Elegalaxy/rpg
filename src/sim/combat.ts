@@ -5,8 +5,18 @@ import {
   skillActionTargets,
   type HeroActionChoice,
 } from './automation.ts'
+import { markedDirectFactor } from './classes/assassin.ts'
 import { classModule } from './classes/index.ts'
+import {
+  heroDamageRollFloorBonus,
+  heroFinalDamageMultiplier,
+  raceOutgoingModifier,
+  raisedFloor,
+} from './races/adjustments.ts'
+import { raceModule, readFerocityProgress, readRace, readStartingFocus } from './races/index.ts'
 import { grantClassResource, payClassResource } from './classes/resources.ts'
+import { resolvedAmmoCost } from './classes/ranger.ts'
+import { adjustedHealingReceived } from './classes/warriorAdjust.ts'
 import {
   BASIC_ATTACK_COEFFICIENT,
   CRIT_CHANCE_BASE,
@@ -261,6 +271,7 @@ function endEncounter(
   for (const enemy of state.enemies) cancelPendingTelegraphs(state, enemy, timeMs)
   state.outcome = outcome
   classModule(state.hero.classId)?.encounterEnd?.(state, timeMs)
+  raceModule(state.hero.race)?.encounterEnd?.(state, timeMs)
   if (outcome === 'victory') logEncounterXp(state, timeMs)
   state.log.push({ type: 'encounterEnd', timeMs, outcome })
 }
@@ -375,6 +386,7 @@ function noteDeath(
     cancelReaction(state, target, timeMs)
     onEnemyDeath(state, target, timeMs)
     endGrantedReductions(state, target, timeMs)
+    classModule(state.hero.classId)?.kill?.(state, target.id, timeMs)
   }
   if (target.side === 'hero') {
     endEncounter(state, 'defeat', timeMs)
@@ -394,8 +406,9 @@ type PendingDeath = {
   timeMs: number
 }
 
-function notifyDamageTaken(state: CombatState, notice: DamageNotice): void {
-  classModule(state.hero.classId)?.damageTaken?.(state, notice)
+function notifyDamageTaken(state: CombatState, notice: DamageNotice, defs?: GameDefs): void {
+  classModule(state.hero.classId)?.damageTaken?.(state, notice, defs)
+  raceModule(state.hero.race)?.damageTaken?.(state, notice)
 }
 
 function queueDeath(
@@ -431,6 +444,7 @@ function commitDeaths(state: CombatState, deaths: readonly PendingDeath[]): void
       cancelReaction(state, death.target, death.timeMs)
       onEnemyDeath(state, death.target, death.timeMs)
       endGrantedReductions(state, death.target, death.timeMs)
+      classModule(state.hero.classId)?.kill?.(state, death.target.id, death.timeMs)
     }
     if (death.target.side === 'hero') heroDeath = death
     else lastEnemyDeath = death
@@ -452,22 +466,75 @@ function heroOutgoing(
   skill: SkillDef | null,
 ): number {
   const hook = classModule(state.hero.classId)?.outgoingModifiers
-  if (hook === undefined) return 1
-  const value = hook(state, { school, skill })
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw new Error(`outgoing modifier must be at least 0, received ${describeValue(value)}`)
+  let classFactor = 1
+  if (hook !== undefined) {
+    const value = hook(state, { school, skill })
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+      throw new Error(`outgoing modifier must be at least 0, received ${describeValue(value)}`)
+    }
+    classFactor = value
   }
-  return value
+  const raceFactor = raceOutgoingModifier(state, school, skill)
+  if (raceFactor === null) return classFactor
+  return classFactor * raceFactor
+}
+
+function heroIncomingExtra(state: CombatState, school: DamageSchool, skill: SkillDef | null): number {
+  const hook = classModule(state.hero.classId)?.incomingModifiers
+  if (hook === undefined) return 1
+  const extra = hook(state, { school, skill })
+  if (typeof extra !== 'number' || !Number.isFinite(extra) || extra < 0) {
+    throw new Error(`incoming modifier must be at least 0, received ${describeValue(extra)}`)
+  }
+  return extra
+}
+
+function incomingModifierFor(
+  state: CombatState,
+  target: CombatActor,
+  school: DamageSchool,
+  skill: SkillDef | null,
+): number {
+  const base = incomingDamageFactor(target)
+  if (target.id !== state.hero.id) return base
+  const extra = heroIncomingExtra(state, school, skill)
+  if (extra === 1) return base
+  return base * extra
+}
+
+/** True when this actor stays up. A class hook can leave the hero at 1 HP after a lethal hit. */
+function heroStillStanding(state: CombatState, target: CombatActor, hpAfter: number): boolean {
+  if (target.id !== state.hero.id) return hpAfter > 0
+  if (hpAfter > 0) return true
+  if (target.hp <= 0) return false
+  for (let index = state.log.length - 1; index >= 0; index -= 1) {
+    const event = state.log[index]
+    if (event === undefined) continue
+    if (event.type !== 'damage' && event.type !== 'statusTick') continue
+    if (event.targetId !== target.id) continue
+    event.targetHpAfter = target.hp
+    break
+  }
+  return true
 }
 
 function applyStatusDamage(state: CombatState, defs: GameDefs, tick: StatusTickDraft): void {
   const target = tick.target
   if (!target.alive) return
+  let hpDamage = tick.hpDamage
+  if (target.id === state.hero.id) {
+    const extra = heroIncomingExtra(state, tick.school, null)
+    if (extra !== 1) {
+      hpDamage = Math.round(tick.hpDamage * extra)
+      if (hpDamage < 0) hpDamage = 0
+    }
+  }
+  const logged = hpDamage === tick.hpDamage ? tick : { ...tick, hpDamage }
   const hpBefore = target.hp
-  let hpAfter = hpBefore - tick.hpDamage
+  let hpAfter = hpBefore - hpDamage
   if (hpAfter < 0) hpAfter = 0
   target.hp = hpAfter
-  state.log.push(statusTickEvent(tick, hpBefore, hpAfter))
+  state.log.push(statusTickEvent(logged, hpBefore, hpAfter))
   afterEnemyHpLoss(state, target, hpBefore, hpAfter, tick.timeMs, tick.sourceId === state.hero.id, defs)
   if (target.id === state.hero.id) {
     notifyDamageTaken(state, {
@@ -479,7 +546,7 @@ function applyStatusDamage(state: CombatState, defs: GameDefs, tick: StatusTickD
       school: tick.school,
     })
   }
-  if (hpAfter > 0) return
+  if (heroStillStanding(state, target, hpAfter)) return
   noteDeath(state, target, tick.sourceId, tick.sourceName, tick.timeMs)
 }
 
@@ -510,16 +577,21 @@ function applyHit(
   })
   afterEnemyHpLoss(state, target, hpBefore, hpAfter, scheduled, actor.side === 'hero', defs)
   if (target.id === state.hero.id) {
-    notifyDamageTaken(state, {
-      hpLost: hpBefore - hpAfter,
-      hpBefore,
-      barrierAbsorbed: result.barrierAbsorbed,
-      kind: 'hit',
-      timeMs: scheduled,
-      school: result.school,
-    })
+    notifyDamageTaken(
+      state,
+      {
+        hpLost: hpBefore - hpAfter,
+        hpBefore,
+        barrierAbsorbed: result.barrierAbsorbed,
+        kind: 'hit',
+        timeMs: scheduled,
+        school: result.school,
+        sourceId: actor.id,
+      },
+      defs,
+    )
   }
-  if (hpAfter > 0) return
+  if (heroStillStanding(state, target, hpAfter)) return
   queueDeath(deaths, target, actor.id, actor.name, scheduled)
 }
 
@@ -530,7 +602,24 @@ function actorRecoveryMs(state: CombatState, actor: CombatActor, coefficient: nu
 
 function resolveBasicAttack(state: CombatState, defs: GameDefs, actor: CombatActor): void {
   const scheduled = actor.nextReadyMs
-  const recoveryMs = actorRecoveryMs(state, actor, actor.fillerCoefficient, scheduled)
+  let coefficient = actor.fillerCoefficient
+  if (actor.side === 'hero') {
+    classModule(state.hero.classId)?.actionChosen?.(state, { kind: 'basicAttack', hit: false }, scheduled)
+    if (state.hero.pendingActionCoefficient !== null) {
+      coefficient = state.hero.pendingActionCoefficient
+      state.hero.pendingActionCoefficient = null
+    }
+  }
+  const recoveryMs =
+    actor.side === 'hero' && coefficient !== actor.fillerCoefficient
+      ? slowedActionMs(
+          roundDurationMs(
+            actionTime(state.hero.baseActionSeconds, state.hero.agility, coefficient),
+            `${actor.id} action time`,
+          ),
+          chillSlowFraction(actor, scheduled),
+        )
+      : actorRecoveryMs(state, actor, coefficient, scheduled)
   actor.nextReadyMs = scheduled + recoveryMs
   const target = livingTarget(state, actor)
   if (actor.side === 'hero' && target.side === 'enemy') state.hero.currentTargetId = target.id
@@ -550,14 +639,29 @@ function resolveBasicAttack(state: CombatState, defs: GameDefs, actor: CombatAct
     cooldownReadyMs: null,
   })
 
+  if (actor.side === 'hero') {
+    raceModule(state.hero.race)?.actionChosen?.(
+      state,
+      { kind: 'basicAttack', hit: false, targetId: target.id },
+      scheduled,
+    )
+  }
+
   const evasion = effectiveEvasion(target, scheduled)
   const hitRoll = nextFloat(state.rng)
   const hitChance = basicHitChance(actor.accuracy, evasion)
   let consistencyRoll = 0
   let critRoll = 0
+  let damageFloor: number | undefined
+  let finalDamageMultiplier: number | undefined
   if (hitRoll < hitChance) {
     const bounds = consistencyBounds(actor.consistency)
-    consistencyRoll = centeredRoll(state.rng, bounds.floor, bounds.ceiling)
+    const floorBonus = actor.side === 'hero' ? heroDamageRollFloorBonus(state.hero) : 0
+    const floor = raisedFloor(bounds.floor, bounds.ceiling, floorBonus)
+    if (floor !== bounds.floor) damageFloor = floor
+    const finalMultiplier = actor.side === 'hero' ? heroFinalDamageMultiplier(state.hero) : 1
+    if (finalMultiplier !== 1) finalDamageMultiplier = finalMultiplier
+    consistencyRoll = centeredRoll(state.rng, floor, bounds.ceiling)
     critRoll = nextFloat(state.rng)
   }
 
@@ -566,7 +670,8 @@ function resolveBasicAttack(state: CombatState, defs: GameDefs, actor: CombatAct
     evasion,
     power: actor.power,
     coefficient: actor.fillerCoefficient,
-    outgoingModifier: actor.side === 'hero' ? heroOutgoing(state, actor.school, null) : 1,
+    outgoingModifier:
+      actor.side === 'hero' ? heroOutgoing(state, actor.school, null) * markedDirectFactor(state.hero, target) : 1,
     consistency: actor.consistency,
     critChance: actor.critChance,
     critDamage: actor.critDamage,
@@ -574,8 +679,10 @@ function resolveBasicAttack(state: CombatState, defs: GameDefs, actor: CombatAct
     penetration: actor.penetration,
     defense: defenseOf(target, actor.school, scheduled),
     attackerLevel: actor.level,
-    incomingModifier: incomingDamageFactor(target),
+    incomingModifier: incomingModifierFor(state, target, actor.school, null),
     school: actor.school,
+    ...(damageFloor !== undefined ? { damageFloor } : {}),
+    ...(finalDamageMultiplier !== undefined ? { finalDamageMultiplier } : {}),
     rolls: { hitRoll, consistencyRoll, critRoll },
   })
 
@@ -605,17 +712,15 @@ function resolveBasicAttack(state: CombatState, defs: GameDefs, actor: CombatAct
     })
   }
   if (actor.side === 'hero') {
-    classModule(state.hero.classId)?.actionResolved?.(
-      state,
-      {
-        kind: 'basicAttack',
-        hit: result.hit,
-        crit: result.crit,
-        targetId: target.id,
-        hpLost: hpBeforeHit - target.hp,
-      },
-      scheduled,
-    )
+    const resolved = {
+      kind: 'basicAttack' as const,
+      hit: result.hit,
+      crit: result.crit,
+      targetId: target.id,
+      hpLost: hpBeforeHit - target.hp,
+    }
+    classModule(state.hero.classId)?.actionResolved?.(state, resolved, scheduled, defs)
+    raceModule(state.hero.race)?.actionResolved?.(state, resolved, scheduled)
   }
   commitDeaths(state, deaths)
 }
@@ -650,7 +755,8 @@ function healField(state: CombatState, field: ActiveField, timeMs: number): void
   const hero = state.hero
   if (!hero.alive) return
   const raw = field.healingPower * field.healCoefficient
-  const afterReceived = raw * hero.healingReceived
+  const healingReceived = adjustedHealingReceived(hero)
+  const afterReceived = raw * healingReceived
   let amount = Math.round(afterReceived)
   if (amount < 0) amount = 0
   const targetHpBefore = hero.hp
@@ -665,7 +771,7 @@ function healField(state: CombatState, field: ActiveField, timeMs: number): void
     healingPower: field.healingPower,
     coefficient: field.healCoefficient,
     raw,
-    healingReceived: hero.healingReceived,
+    healingReceived,
     afterReceived,
     amount,
     targetHpBefore,
@@ -837,7 +943,7 @@ function resolveEnemyStrike(
     penetration: actor.penetration,
     defense: defenseOf(target, effect.school, timeMs),
     attackerLevel: actor.level,
-    incomingModifier: incomingDamageFactor(target),
+    incomingModifier: incomingModifierFor(state, target, effect.school, null),
     school: effect.school,
     guaranteedHit: true,
     rolls: { hitRoll: 0, consistencyRoll, critRoll },
@@ -1476,6 +1582,48 @@ function resolveReactions(state: CombatState, defs: GameDefs, stepStart: number,
   }
 }
 
+function readWholeCount(value: unknown, label: string, omitted: number): number {
+  if (value === undefined) return omitted
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new Error(`${label} must be a whole number of at least 0, received ${describeValue(value)}`)
+  }
+  return value
+}
+
+function readOptionalCount(value: unknown, label: string): number | null {
+  if (value === undefined) return null
+  return readWholeCount(value, label, 0)
+}
+
+function readOptionalJson(value: unknown, label: string): string | null {
+  if (value === undefined) return null
+  if (typeof value !== 'string') throw new Error(`${label} must be a JSON string, received ${describeValue(value)}`)
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(value)
+  } catch {
+    throw new Error(`${label} must be valid JSON`)
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`${label} must be a JSON object`)
+  }
+  return value
+}
+
+function readAllocatedNodeIds(value: unknown): string[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) throw new Error('allocated nodes must be a list')
+  const ids: string[] = []
+  for (let index = 0; index < value.length; index += 1) {
+    const id = value[index]
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new Error(`allocated node ${index + 1} is missing an id`)
+    }
+    ids.push(id)
+  }
+  return ids
+}
+
 function readSkillIdList(value: unknown, label: string): string[] {
   if (value === undefined) return []
   if (!Array.isArray(value)) throw new Error(`${label} must be a list`)
@@ -1524,13 +1672,18 @@ function scheduleSkill(
   skill: SkillDef,
   scheduled: number,
 ): { nextReadyMs: number; cooldownReadyMs: number | null } {
-  const actionSeconds = actionTime(hero.baseActionSeconds, hero.agility, skill.actionTimeCoefficient)
+  const coefficient =
+    hero.pendingActionCoefficient === null ? skill.actionTimeCoefficient : hero.pendingActionCoefficient
+  hero.pendingActionCoefficient = null
+  const actionSeconds = actionTime(hero.baseActionSeconds, hero.agility, coefficient)
   const actionMs = roundDurationMs(actionSeconds, `${skill.id} action time`)
   const slowedMs = slowedActionMs(actionMs, chillSlowFraction(hero, scheduled))
   const nextReadyMs = scheduled + slowedMs
   let cooldownReadyMs: number | null = null
-  if (skill.cooldownSeconds > 0) {
-    const cooldownSeconds = finalCooldownSeconds(skill.cooldownSeconds, hero.cooldownReduction)
+  const cooldownBase = hero.pendingCooldownSeconds === null ? skill.cooldownSeconds : hero.pendingCooldownSeconds
+  hero.pendingCooldownSeconds = null
+  if (cooldownBase > 0) {
+    const cooldownSeconds = finalCooldownSeconds(cooldownBase, hero.cooldownReduction)
     const cooldownMs = roundDurationMs(cooldownSeconds, `${skill.id} cooldown`)
     cooldownReadyMs = scheduled + cooldownMs
     hero.cooldowns[skill.id] = cooldownReadyMs
@@ -1541,16 +1694,18 @@ function scheduleSkill(
 
 function paySkillCosts(state: CombatState, skill: SkillDef, timeMs: number): { ammoSpent: number; ammoRemaining: number } {
   const hero = state.hero
-  const ammoCost = skill.ammoCost ?? 0
+  const ammoCost = resolvedAmmoCost(hero, skill)
   if (!Number.isInteger(ammoCost) || ammoCost < 0) {
     throw new Error(`${skill.name} ammo cost must be a whole number of at least 0, received ${describeValue(ammoCost)}`)
   }
-  if (ammoCost > hero.specialAmmo || skill.cost > hero.classResource) {
+  const cost = hero.pendingSkillCost === null ? skill.cost : hero.pendingSkillCost
+  hero.pendingSkillCost = null
+  if (ammoCost > hero.specialAmmo || cost > hero.classResource) {
     throw new Error(
-      `${hero.name} cannot pay ${skill.name}: readiness ${hero.classResource}, special arrows ${hero.specialAmmo}, costs ${skill.cost} and ${ammoCost}`,
+      `${hero.name} cannot pay ${skill.name}: readiness ${hero.classResource}, special arrows ${hero.specialAmmo}, costs ${cost} and ${ammoCost}`,
     )
   }
-  payClassResource(state, timeMs, skill.cost, 'payment')
+  payClassResource(state, timeMs, cost, 'payment')
   if (ammoCost > 0) hero.specialAmmo -= ammoCost
   return { ammoSpent: ammoCost, ammoRemaining: hero.specialAmmo }
 }
@@ -1565,6 +1720,7 @@ function resolveSkill(
   const hero = state.hero
   const targetId = targets[0]?.id
   classModule(hero.classId)?.actionChosen?.(state, { kind: 'skill', skill, targetId }, scheduled)
+  raceModule(hero.race)?.actionChosen?.(state, { kind: 'skill', skill, targetId }, scheduled)
   const payment = paySkillCosts(state, skill, scheduled)
   const timing = scheduleSkill(hero, skill, scheduled)
   const target = actionTarget(skill, targets)
@@ -1594,7 +1750,9 @@ function resolveSkill(
     strikes.push({ targetId: actor.id, hit: result.hit, crit: result.crit, hpLost: hpBefore - actor.hp })
   })
   const crit = strikes.some((strike) => strike.hit && strike.crit)
-  classModule(hero.classId)?.actionResolved?.(state, { kind: 'skill', skill, targetId, crit, strikes }, scheduled)
+  const resolved = { kind: 'skill' as const, skill, targetId, crit, strikes }
+  classModule(hero.classId)?.actionResolved?.(state, resolved, scheduled, defs)
+  raceModule(hero.race)?.actionResolved?.(state, resolved, scheduled)
   commitDeaths(state, deaths)
 }
 
@@ -1674,17 +1832,36 @@ function triggerArmedTrap(state: CombatState, defs: GameDefs, actor: CombatActor
   const skill = defs.skills[trap.skillId]
   if (skill === undefined) throw new Error(`armed trap skill '${trap.skillId}' is not defined`)
   const readyBefore = actor.nextReadyMs
+  const potency = trap.potencyBonus
   tryApplyStatus({
     state,
     defs,
     source: state.hero,
     target: actor,
     skill,
-    effect: { kind: 'applyStatus', statusId: 'stun', baseChance: trap.baseChance },
+    effect: {
+      kind: 'applyStatus',
+      statusId: 'stun',
+      baseChance: trap.baseChance,
+      ...(typeof potency === 'number' ? { potency } : {}),
+    },
     timeMs: scheduled,
     applyingHit: false,
     hpDamageDealt: 0,
   })
+  if (actor.nextReadyMs === readyBefore && typeof trap.resistDelayMs === 'number' && trap.resistDelayMs > 0) {
+    pushActorTiming(actor, trap.resistDelayMs)
+    state.log.push({
+      type: 'actionDelay',
+      timeMs: scheduled,
+      actorId: state.hero.id,
+      actorName: state.hero.name,
+      targetId: actor.id,
+      targetName: actor.name,
+      delayMs: trap.resistDelayMs,
+      nextReadyMs: actor.nextReadyMs,
+    })
+  }
   return actor.nextReadyMs !== readyBefore
 }
 
@@ -1930,6 +2107,7 @@ function actorFromEnemy(
     physicalStatusResistance: 0,
     magicalStatusResistance: 0,
     boss: def.boss === true,
+    elite: def.elite === true,
     revealed,
     archetype: def.archetype,
     rank,
@@ -1989,6 +2167,10 @@ function applySuppliedResources(hero: CombatHero, setup: CombatHeroSetup): void 
     }
     hero.hp = setup.startingHp > hero.maxHp ? hero.maxHp : setup.startingHp
   }
+  const startingFocus = readStartingFocus(setup.startingFocus)
+  if (startingFocus !== null) hero.suppliedFocus = startingFocus
+  const ferocityProgress = readFerocityProgress(setup.ferocityProgress)
+  if (ferocityProgress !== null) hero.suppliedFerocity = ferocityProgress
 }
 
 function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
@@ -2045,6 +2227,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     physicalStatusResistance: 0,
     magicalStatusResistance: 0,
     boss: false,
+    elite: false,
     revealed: true,
     archetype: 'standard',
     rank: 0,
@@ -2085,6 +2268,10 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     classResourceScope: 'encounter',
     resourceRegenPerSecond: 0,
     classState: {},
+    race: readRace(hero.race),
+    raceState: {},
+    suppliedFocus: null,
+    suppliedFerocity: null,
     waiting: false,
     specialAmmo: 0,
     resourceFraction: 0,
@@ -2095,6 +2282,16 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     field: null,
     overhealed: false,
     pendingCoefficient: null,
+    pendingSkillCost: null,
+    pendingCooldownSeconds: null,
+    pendingActionCoefficient: null,
+    allocatedNodeIds: readAllocatedNodeIds(hero.allocatedNodeIds),
+    expeditionMomentum: readWholeCount(hero.expeditionMomentum, 'expedition momentum', 0),
+    carriedSupplyCount: readWholeCount(hero.carriedSupplyCount, 'carried supplies', 0),
+    suppliedArrowCount: readOptionalCount(hero.specialArrowCount, 'special arrow count'),
+    suppliedTrapperCooldown: readOptionalCount(hero.trapperCooldown, 'trapper cooldown'),
+    suppliedMageCharges: readOptionalJson(hero.mageCharges, 'mage charges'),
+    suppliedPreparedSpells: hero.preparedSpells === undefined ? null : readSkillIdList(hero.preparedSpells, 'prepared spells'),
     targetPriority: parsedRules.targetPriority,
     currentTargetId: null,
   }
@@ -2150,7 +2347,8 @@ export function createCombat(setup: CombatSetup, defs: GameDefs, seed: number): 
     heroName: hero.name,
     enemies: enemies.map((enemy) => ({ id: enemy.id, name: enemy.name, slot: enemy.slot })),
   })
-  classModule(hero.classId)?.encounterStart?.(state, 0)
+  classModule(hero.classId)?.encounterStart?.(state, 0, defs)
+  raceModule(hero.race)?.encounterStart?.(state, 0)
   for (const enemy of enemies) onEnemySpawn(state, enemy)
   flushPhaseSkills(state, defs)
   return state

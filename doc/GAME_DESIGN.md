@@ -114,6 +114,13 @@ All classes must be playable with all races. Some combinations may intentionally
 
 Racial traits should unlock in layers through the individual hero's mastery rather than all applying at full strength immediately.
 
+First-playable racial layers, decided 2026-10-24:
+
+- The core is on at creation. Human ordinary XP is +5%. Elf Focus, Beastfolk Ferocity, and Undead Stillness use the core numbers above.
+- Branch nodes wait for skill points. Attachment points, Quick Study, Soul Fragments, and curses are not active.
+- Mastery layers wait. A new hero does not start with the stronger mastery version of a racial trait.
+- The Human bonus does not apply to one-time milestone rewards. Ordinary mastery will use the same 5% when a mastery counter exists. No mastery counter exists yet.
+
 ### Racial branch rules
 
 - Each MVP racial branch contains four passive or automatically triggered nodes.
@@ -296,6 +303,16 @@ Initial coefficients are defined in the combat-mathematics section. They remain 
 - A compact, color-coded racial branch attaches to several points on the class web and uses the same skill points.
 - Difficult race/class combinations can unlock a small hybrid branch through combination-specific mastery milestones.
 
+First-playable skill web, decided 2026-10-24:
+
+- Each class web is the three named clusters, five nodes each, in the order written below.
+- Node 1 of any cluster costs 1 skill point and has no prerequisite. Each later node costs 1 and requires the previous node in that same cluster.
+- Node 5 is that cluster's major keystone. A hero can hold one. Taking one blocks the other two.
+- There is no respec during a life.
+- Reference fights keep their current loadouts and do not spend points. A new hero already knows that class's four starting skills.
+- Two racial attachment slots are stored empty. No racial node can be bought yet. Flexible Route's third slot does not exist yet.
+- Legacy skill points are an extra pool. A purchase spends ordinary skill points first.
+
 Initial class clusters:
 
 - Warrior: Fury, Arms, and Bulwark
@@ -306,7 +323,7 @@ Initial class clusters:
 
 ### Provisional Warrior web
 
-The MVP Warrior web has fifteen nodes: five per cluster. Connections and exact values remain open.
+The MVP Warrior web has fifteen nodes: five per cluster. Connections follow the first-playable rule above.
 
 #### Fury cluster
 
@@ -338,7 +355,7 @@ Increased-damage-taken effects multiply. For example, Berserker and Reckless Str
 
 ### Provisional Assassin web
 
-The MVP Assassin web has fifteen nodes: five per cluster. Connections, caps, durations, and exact values remain open.
+The MVP Assassin web has fifteen nodes: five per cluster. Connections follow the first-playable rule above. Caps, durations, and exact values remain open.
 
 #### Shadow cluster
 
@@ -369,7 +386,7 @@ The chosen major keystone cannot change until reincarnation.
 
 ### Provisional Ranger web
 
-The MVP Ranger web has fifteen nodes: five per cluster. Connections, costs, ammunition capacity, and exact values remain open.
+The MVP Ranger web has fifteen nodes: five per cluster. Each node costs 1 skill point, and connections follow the first-playable rule above. Ammunition capacity remains open.
 
 #### Marksmanship cluster
 
@@ -400,7 +417,7 @@ The chosen major keystone cannot change until reincarnation.
 
 ### Provisional Mage web
 
-The MVP Mage web has fifteen nodes: five per cluster. Connections, Mana costs, prepared charges, and exact values remain open.
+The MVP Mage web has fifteen nodes: five per cluster. Connections follow the first-playable rule above. Mana costs, prepared charges, and exact values remain open.
 
 #### Elemental cluster
 
@@ -451,7 +468,7 @@ The chosen major keystone cannot change until reincarnation.
 
 ### Provisional Cleric web
 
-The MVP Cleric web has fifteen nodes: five per cluster. Connections, vow conditions, Faith costs, and exact values remain open.
+The MVP Cleric web has fifteen nodes: five per cluster. Connections follow the first-playable rule above. Vow conditions, Faith costs, and exact values remain open.
 
 #### Devotion cluster
 
@@ -1546,7 +1563,7 @@ Skill webs, priority rules, logs, crafting, routes, and risk systems can overwhe
 - Validate the initial attribute and combat coefficients through simulation
 - Validate and revise class passive nodes, major keystones, and the provisional thirty-skill MVP roster
 - Validate and revise racial mechanics, branches, capstones, and curses
-- Exact racial unlock tiers and mastery pacing
+- Exact mastery pacing for racial traits. The first playable turns the core on at creation, saves branch nodes for skill points, and leaves mastery layers off.
 - Which race/class pairings count as difficult combinations
 - Hybrid-node requirements and reward ceilings
 - Exact first-region node map, resources, contracts, and unlock requirements
@@ -1586,3 +1603,5 @@ Balance values should be treated as testable starting hypotheses rather than fin
 - 2026-10-24: First-playable inventory is 4 empty supply slots and loot capacity 20. Each Splintered Road enemy drops 4 shard, hide, or scrap. Momentum uses the stacks already held, and half-up rounding turns 4 into 5 at 3 stacks. Overflow keeps older materials.
 - 2026-10-24: First-playable escape rolls after the combat step when hero HP is at most 40%. Chance is 50% plus `floor(Agility / 5)` points, capped at +20. The attempt does not spend the hero's action. A failure waits 8 seconds. Success walks home for 20 seconds and clears momentum on arrival. Boss progress does not change.
 - 2026-10-24: First-playable defeat destroys unsecured loot, clears momentum, and takes 10 durability from each equipped piece (maximum 100). A piece at 0 is disabled and kept. The rescue fee is 25 carried gold, and the unpaid part is stored as debt. Deposited gold is safe. The next expedition waits 5 minutes. A boss defeat sets `bossLossThisLife`.
+- 2026-10-24: First-playable races turn the core on at creation: Human +5% ordinary XP, Elf Focus, Beastfolk Ferocity, and Undead Stillness. Branch nodes wait for skill points. Mastery layers stay off.
+- 2026-10-24: First-playable skill webs are three clusters of five. Node 1 of a cluster is a start. Each later node costs 1 skill point and requires the previous node in that cluster. Node 5 is the major keystone, and a hero can hold one. There is no respec. Two racial attachment slots stay empty.

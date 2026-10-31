@@ -1,4 +1,22 @@
+import { adjustedEvasionAmount, applyFatalExecute, markedDirectFactor } from './classes/assassin.ts'
+import {
+  chainDecay,
+  convergenceSlotSkill,
+  mageAffordable,
+  mageSkillBlock,
+  recoveryResourceBase,
+} from './classes/mageAdjust.ts'
+import {
+  barrierFactor,
+  clericAffordable,
+  clericSkillBlock,
+  healCoefficient,
+  penanceResourceBase,
+  releaseSlotSkill,
+  righteousPenetration,
+} from './classes/clericAdjust.ts'
 import { grantClassResource } from './classes/resources.ts'
+import { adjustedHealingReceived, resolvedSkillCost } from './classes/warriorAdjust.ts'
 import {
   COOLDOWN_REDUCTION_CAP,
   HEALING_ROLL_CEILING,
@@ -8,6 +26,14 @@ import {
   WEAPON_POWER_FACTOR,
 } from './constants.ts'
 import { consistencyBounds, resolveDamage } from './damage.ts'
+import {
+  heroDamageRollFloorBonus,
+  heroFinalDamageMultiplier,
+  heroHealRollFloorBonus,
+  heroKeptIncoming,
+  raceOutgoingModifier,
+  raisedFloor,
+} from './races/adjustments.ts'
 import { centeredRoll, nextFloat } from './rng.ts'
 import { exposedDefense, pushActorTiming, tryApplyStatus } from './statuses.ts'
 import type {
@@ -15,6 +41,7 @@ import type {
   ApplyStatusEffect,
   BarrierEvent,
   BuffEndedEvent,
+  ChainEffect,
   CombatActor,
   CombatHero,
   CombatState,
@@ -146,6 +173,15 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
       }
       effect.armorPenetrationBonus = value.armorPenetrationBonus
     }
+    if (value.magicalPenetrationBonus !== undefined) {
+      assertFiniteNumber(value.magicalPenetrationBonus, `skill '${skillId}' magical penetration`)
+      if (value.magicalPenetrationBonus < 0) {
+        throw new Error(
+          `skill '${skillId}' magical penetration must be at least 0, received ${describeValue(value.magicalPenetrationBonus)}`,
+        )
+      }
+      effect.magicalPenetrationBonus = value.magicalPenetrationBonus
+    }
     return effect
   }
   if (kind === 'heal') {
@@ -219,8 +255,8 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
         `skill '${skillId}' chain targets must be an integer of at least 1, received ${describeValue(value.maxTargets)}`,
       )
     }
-    assertPositive(value.delaySeconds, `skill '${skillId}' chain delay`)
-    return {
+    assertNonNegative(value.delaySeconds, `skill '${skillId}' chain delay`)
+    const chain: ChainEffect = {
       kind,
       school,
       coefficient: value.coefficient,
@@ -228,6 +264,20 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
       maxTargets: value.maxTargets,
       delaySeconds: value.delaySeconds,
     }
+    if (value.followCoefficient !== undefined) {
+      assertPositive(value.followCoefficient, `skill '${skillId}' chain follow coefficient`)
+      chain.followCoefficient = value.followCoefficient
+    }
+    for (const field of ['firstStatus', 'followStatus'] as const) {
+      const nested = value[field]
+      if (nested === undefined) continue
+      const checked = assertEffect(nested, skillId)
+      if (checked.kind !== 'applyStatus') {
+        throw new Error(`skill '${skillId}' chain ${field} must be a status effect`)
+      }
+      chain[field] = checked
+    }
+    return chain
   }
   if (kind === 'applyStatus') {
     const statusId = value.statusId
@@ -461,6 +511,11 @@ export function assertSkillDef(value: unknown): asserts value is SkillDef {
       throw new Error(`skill '${id}' ammo cost must be a whole number of at least 0, received ${describeValue(value.ammoCost)}`)
     }
   }
+  if (value.supplyCost !== undefined) {
+    if (typeof value.supplyCost !== 'number' || !Number.isInteger(value.supplyCost) || value.supplyCost < 0) {
+      throw new Error(`skill '${id}' supply cost must be a whole number of at least 0, received ${describeValue(value.supplyCost)}`)
+    }
+  }
 }
 
 export function assertSkillBook(skills: unknown): void {
@@ -490,12 +545,19 @@ export function finalCooldownSeconds(baseSeconds: number, cooldownReduction: num
 }
 
 export function skillEquipped(hero: CombatHero, skillId: string): boolean {
-  return hero.equippedSkillIds.includes(skillId)
+  return hero.equippedSkillIds.includes(skillId) || convergenceSlotSkill(hero, skillId) || releaseSlotSkill(hero, skillId)
+}
+
+/** Mage or Cleric reason a skill cannot be used yet. Null for every other hero. */
+export function classSkillBlock(hero: CombatHero, skill: SkillDef, timeMs: number): string | null {
+  return mageSkillBlock(hero, skill) ?? clericSkillBlock(hero, skill, timeMs)
 }
 
 /** A positive cost is paid from the hero's live class meter. */
 export function skillAffordable(hero: CombatHero, skill: SkillDef): boolean {
-  return skill.cost <= hero.classResource
+  if (hero.classId === 'mage') return mageAffordable(hero, skill)
+  if (hero.classId === 'cleric') return clericAffordable(hero, skill)
+  return resolvedSkillCost(hero, skill) <= hero.classResource
 }
 
 /** Cooldowns are ready when simulated time has reached the stored instant. */
@@ -585,6 +647,8 @@ export type HealInput = {
   outgoingModifier: number
   healingReceived: number
   roll: number
+  /** Logged floor. Omitted uses the healing floor constant. */
+  rollFloor?: number
 }
 
 /**
@@ -608,6 +672,10 @@ export function resolveHeal(input: HealInput): HealResult {
   const afterReceived = afterRoll * input.healingReceived
   let amount = Math.round(afterReceived)
   if (amount < 0) amount = 0
+  if (input.rollFloor !== undefined && (typeof input.rollFloor !== 'number' || !Number.isFinite(input.rollFloor))) {
+    throw new Error(`healing roll floor must be a finite number, received ${describeValue(input.rollFloor)}`)
+  }
+  const rollFloor = input.rollFloor === undefined ? HEALING_ROLL_FLOOR : input.rollFloor
   return {
     maxHpFraction: input.maxHpFraction,
     healingCoefficient: input.healingCoefficient,
@@ -616,7 +684,7 @@ export function resolveHeal(input: HealInput): HealResult {
     raw,
     afterOutgoing,
     roll: input.roll,
-    rollFloor: HEALING_ROLL_FLOOR,
+    rollFloor,
     rollCeiling: HEALING_ROLL_CEILING,
     afterRoll,
     healingReceived: input.healingReceived,
@@ -637,13 +705,34 @@ function defenseOf(target: CombatActor, school: DamageSchool, timeMs: number): n
   return exposedDefense(target, school, timeMs)
 }
 
+function keptIncoming(actor: CombatActor): number | null {
+  if (actor.side !== 'hero') return null
+  return heroKeptIncoming(actor as CombatHero)
+}
+
+function temporaryIncoming(actor: CombatActor, kept: number | null): number[] {
+  if (kept === null) return actor.incomingMultipliers
+  const temporary: number[] = []
+  let skipped = false
+  for (const multiplier of actor.incomingMultipliers) {
+    if (!skipped && multiplier === kept) {
+      skipped = true
+      continue
+    }
+    temporary.push(multiplier)
+  }
+  return temporary
+}
+
 export function endUntilNextAction(state: CombatState, actor: CombatActor, timeMs: number): void {
   const granted = actor.damageReductionSourceId !== null && actor.damageReductionSourceId !== actor.id
   const ownReduction = granted ? 0 : actor.damageReduction
-  const active = ownReduction > 0 || actor.evasionBonus !== 0 || actor.incomingMultipliers.length > 0
+  const kept = keptIncoming(actor)
+  const temporary = temporaryIncoming(actor, kept)
+  const active = ownReduction > 0 || actor.evasionBonus !== 0 || temporary.length > 0
   if (!active) return
   const incomingMultiplier = incomingDamageFactor({
-    incomingMultipliers: actor.incomingMultipliers,
+    incomingMultipliers: temporary,
     damageReduction: 0,
   })
   const event: BuffEndedEvent = {
@@ -660,7 +749,7 @@ export function endUntilNextAction(state: CombatState, actor: CombatActor, timeM
     actor.damageReductionSourceId = null
   }
   actor.evasionBonus = 0
-  actor.incomingMultipliers = []
+  actor.incomingMultipliers = kept === null ? [] : [kept]
   state.log.push(event)
 }
 
@@ -715,14 +804,18 @@ function strike(
   armorPenetrationBonus: number,
   outgoingModifier: number,
   scheduledMs: number,
+  magicalPenetrationBonus = 0,
 ): DamageResult {
   const bounds = consistencyBounds(hero.consistency)
-  const consistencyRoll = centeredRoll(state.rng, bounds.floor, bounds.ceiling)
+  const floorBonus = heroDamageRollFloorBonus(hero)
+  const floor = raisedFloor(bounds.floor, bounds.ceiling, floorBonus)
+  const consistencyRoll = centeredRoll(state.rng, floor, bounds.ceiling)
   const critRoll = nextFloat(state.rng)
+  const finalDamageMultiplier = heroFinalDamageMultiplier(hero)
   const penetration =
     school === 'physical'
       ? cappedPenetration(penetrationFor(hero, 'physical'), armorPenetrationBonus)
-      : penetrationFor(hero, 'magical')
+      : cappedPenetration(penetrationFor(hero, 'magical'), magicalPenetrationBonus)
   const usedCoefficient = hero.pendingCoefficient === null ? coefficient : hero.pendingCoefficient
   return resolveDamage({
     accuracy: hero.accuracy,
@@ -740,6 +833,8 @@ function strike(
     incomingModifier: incomingDamageFactor(target),
     school,
     guaranteedHit: true,
+    ...(floor !== bounds.floor ? { damageFloor: floor } : {}),
+    ...(finalDamageMultiplier !== 1 ? { finalDamageMultiplier } : {}),
     rolls: { hitRoll: 0, consistencyRoll, critRoll },
   })
 }
@@ -759,16 +854,22 @@ export function applySkillEffects(
     if (effect.kind === 'damage') {
       for (const target of targets) {
         if (!target.alive) continue
-        const result = strike(
-          state,
+        const result = applyFatalExecute(
           hero,
           target,
-          effect.school,
-          effect.power ?? effect.school,
-          effect.coefficient,
-          effect.armorPenetrationBonus ?? 0,
-          outgoingFor(effect.school),
-          scheduledMs,
+          skill,
+          strike(
+            state,
+            hero,
+            target,
+            effect.school,
+            effect.power ?? effect.school,
+            effect.coefficient,
+            effect.armorPenetrationBonus ?? 0,
+            outgoingFor(effect.school) * markedDirectFactor(hero, target),
+            scheduledMs,
+            (effect.magicalPenetrationBonus ?? 0) + righteousPenetration(hero, skill),
+          ),
         )
         applyDamage(target, result)
         hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
@@ -776,15 +877,19 @@ export function applySkillEffects(
       continue
     }
     if (effect.kind === 'heal') {
-      const roll = centeredRoll(state.rng, HEALING_ROLL_FLOOR, HEALING_ROLL_CEILING)
+      const healBonus = heroHealRollFloorBonus(hero)
+      const healFloor = raisedFloor(HEALING_ROLL_FLOOR, HEALING_ROLL_CEILING, healBonus)
+      const roll = centeredRoll(state.rng, healFloor, HEALING_ROLL_CEILING)
+      const raceHeal = raceOutgoingModifier(state, 'healing', skill)
       const result = resolveHeal({
         maxHp: hero.maxHp,
         maxHpFraction: effect.maxHpFraction,
         healingPower: hero.healingPower,
-        healingCoefficient: effect.healingCoefficient,
-        outgoingModifier: 1,
-        healingReceived: hero.healingReceived,
+        healingCoefficient: healCoefficient(hero, skill, effect.healingCoefficient),
+        outgoingModifier: raceHeal === null ? 1 : raceHeal,
+        healingReceived: adjustedHealingReceived(hero),
         roll,
+        ...(healFloor !== HEALING_ROLL_FLOOR ? { rollFloor: healFloor } : {}),
       })
       const targetHpBefore = hero.hp
       const missing = hero.maxHp - targetHpBefore
@@ -808,7 +913,7 @@ export function applySkillEffects(
     }
     if (effect.kind === 'barrier') {
       const power = effect.source === 'magical' ? hero.magicalPower : hero.healingPower
-      const amount = power * effect.coefficient
+      const amount = power * effect.coefficient * barrierFactor(hero, skill)
       const expiresMs = scheduledMs + roundSecondsToMs(effect.durationSeconds, `${skill.id} barrier`)
       const replaced = hero.barrier
       hero.barrier = amount
@@ -841,14 +946,15 @@ export function applySkillEffects(
       continue
     }
     if (effect.kind === 'evasion') {
-      hero.evasionBonus = effect.amount
+      const amount = adjustedEvasionAmount(hero, skill, effect.amount)
+      hero.evasionBonus = amount
       state.log.push({
         type: 'buff',
         timeMs: scheduledMs,
         actorId: hero.id,
         actorName: hero.name,
         kind: 'evasion',
-        value: effect.amount,
+        value: amount,
         until: 'nextAction',
       })
       continue
@@ -904,7 +1010,8 @@ export function applySkillEffects(
       continue
     }
     if (effect.kind === 'resource') {
-      grantClassResource(state, scheduledMs, effect.base, skill.id)
+      const base = penanceResourceBase(hero, skill, recoveryResourceBase(hero, skill, effect.base))
+      if (base > 0) grantClassResource(state, scheduledMs, base, skill.id)
       continue
     }
     if (effect.kind === 'reveal') {
@@ -956,22 +1063,44 @@ export function applySkillEffects(
       if (primary === undefined) throw new Error(`${skill.name} chain resolved without a target`)
       const jumped = chainTargets(state, primary, effect.maxTargets)
       let coefficient = effect.coefficient
+      const decay = chainDecay(hero, skill, effect.decay)
+      let first = true
       for (const target of jumped) {
         if (!target.alive || state.outcome !== 'ongoing') continue
-        const result = strike(
-          state,
+        const result = applyFatalExecute(
           hero,
           target,
-          effect.school,
-          effect.school,
-          coefficient,
-          0,
-          outgoingFor(effect.school),
-          scheduledMs,
+          skill,
+          strike(
+            state,
+            hero,
+            target,
+            effect.school,
+            effect.school,
+            coefficient,
+            0,
+            outgoingFor(effect.school) * markedDirectFactor(hero, target),
+            scheduledMs,
+          ),
         )
         applyDamage(target, result)
         hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
-        if (target.alive) {
+        const followStatus = first ? effect.firstStatus : effect.followStatus
+        if (followStatus !== undefined && target.alive) {
+          const dealt = hpDamageDealt[target.id]
+          tryApplyStatus({
+            state,
+            defs,
+            source: hero,
+            target,
+            skill,
+            effect: followStatus,
+            timeMs: scheduledMs,
+            applyingHit: dealt !== undefined,
+            hpDamageDealt: dealt ?? 0,
+          })
+        }
+        if (target.alive && effect.delaySeconds > 0) {
           const delayMs = roundSecondsToMs(effect.delaySeconds, `${skill.id} chain delay`)
           pushActorTiming(target, delayMs)
           const event: ActionDelayEvent = {
@@ -986,7 +1115,9 @@ export function applySkillEffects(
           }
           state.log.push(event)
         }
-        coefficient *= effect.decay
+        if (effect.followCoefficient !== undefined) coefficient = effect.followCoefficient
+        else coefficient *= decay
+        first = false
       }
       continue
     }

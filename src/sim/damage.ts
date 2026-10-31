@@ -73,6 +73,15 @@ export function consistencyBounds(consistency: number): { floor: number; ceiling
   return { floor: floorPoints / 100, ceiling: DAMAGE_ROLL_CEILING }
 }
 
+function rollBounds(input: DamageInput): { floor: number; ceiling: number } {
+  const bounds = consistencyBounds(input.consistency)
+  if (input.damageFloor === undefined) return bounds
+  if (typeof input.damageFloor !== 'number' || !Number.isFinite(input.damageFloor)) {
+    throw new Error(`damage floor must be a finite number, received ${describeValue(input.damageFloor)}`)
+  }
+  return { floor: input.damageFloor, ceiling: bounds.ceiling }
+}
+
 function missedResult(input: DamageInput, hitChance: number, bounds: { floor: number; ceiling: number }): DamageResult {
   return {
     hitChance,
@@ -138,7 +147,7 @@ export function resolveDamage(input: DamageInput): DamageResult {
 
   const guaranteed = input.guaranteedHit === true
   const hitChance = guaranteed ? 1 : basicHitChance(input.accuracy, input.evasion)
-  const bounds = consistencyBounds(input.consistency)
+  const bounds = rollBounds(input)
   const hit = guaranteed || input.rolls.hitRoll < hitChance
   if (!hit) return missedResult(input, hitChance, bounds)
 
@@ -151,7 +160,20 @@ export function resolveDamage(input: DamageInput): DamageResult {
   const overflow = afterCrit - barrierAbsorbed
   const reduction = defenseReduction(input.defense, input.penetration, input.attackerLevel)
   const afterDefense = overflow * (1 - reduction)
-  const afterIncoming = afterDefense * input.incomingModifier
+  const rawIncoming = afterDefense * input.incomingModifier
+  let afterIncoming = rawIncoming
+  if (input.finalDamageMultiplier !== undefined && input.finalDamageMultiplier !== 1) {
+    if (
+      typeof input.finalDamageMultiplier !== 'number' ||
+      !Number.isFinite(input.finalDamageMultiplier) ||
+      input.finalDamageMultiplier < 0
+    ) {
+      throw new Error(
+        `final damage multiplier must be at least 0, received ${describeValue(input.finalDamageMultiplier)}`,
+      )
+    }
+    afterIncoming = rawIncoming * input.finalDamageMultiplier
+  }
   let hpDamage = Math.round(afterIncoming)
   const shielded = input.barrier > 0
   if (!shielded && hpDamage < MIN_UNSHIELDED_DAMAGE) hpDamage = MIN_UNSHIELDED_DAMAGE

@@ -1,7 +1,16 @@
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
+import type { HeroRace } from '../sim/progression.ts'
 import type { Attributes, HeroGear, HeroStatInput } from '../sim/stats.ts'
 
 import { referenceGear } from './gear.ts'
+
+/** Racial base attributes. Order: Strength, Vitality, Agility, Intellect, Spirit. */
+export const racialStartingAttributes: Record<HeroRace, Attributes> = {
+  human: { strength: 10, vitality: 10, agility: 10, intellect: 10, spirit: 10 },
+  elf: { strength: 8, vitality: 9, agility: 12, intellect: 12, spirit: 9 },
+  beastfolk: { strength: 13, vitality: 13, agility: 9, intellect: 7, spirit: 8 },
+  undead: { strength: 8, vitality: 9, agility: 13, intellect: 11, spirit: 9 },
+}
 
 // Human level-20 reference heroes: attributes plus gear. No passive nodes or consumables.
 
