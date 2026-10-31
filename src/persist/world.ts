@@ -14,6 +14,8 @@ import {
 import { TRAVEL_GAP_MS, rescueFee, type ExpeditionState } from '../sim/expedition.ts'
 
 import { selectedHero } from './character.ts'
+import { itemBase } from '../content/items.ts'
+import { applyDurability, gearGaps } from '../sim/economy.ts'
 import { reachMilestone, type SaveData, type SavedHero } from './save.ts'
 
 export type NodeState = 'locked' | 'discovered' | 'cleared'
@@ -113,6 +115,8 @@ export function canStartRoute(save: SaveData, routeId: string): StartCheck {
   const hero = selectedHero(save)
   if (hero === null) return { ok: false, reason: 'Select a hero first.' }
   if (save.expedition !== null) return { ok: false, reason: 'An expedition is already running.' }
+  const gaps = gearGaps(hero.equipment, itemBase)
+  if (gaps.length > 0) return { ok: false, reason: `Equip every slot first. Missing: ${gaps.join(', ')}.` }
   for (const node of routeNodes(route)) {
     if (node.kind === 'town') continue
     const status = nodeStatus(node, save, hero)
@@ -241,7 +245,10 @@ export function settleExpedition(save: SaveData): SaveData {
     gold: progressed.account.gold + expedition.depositedGold + (expedition.outcome === 'returned' ? expedition.carriedGold : 0),
   }
   if (expedition.outcome === 'returned') account = reachMilestone(account, 'first-return')
-  return { ...progressed, account, expedition: null }
+  const heroes = progressed.heroes.map((hero) =>
+    hero.id === selectedHero(progressed)?.id ? { ...hero, equipment: applyDurability(hero.equipment, expedition.equipment) } : hero,
+  )
+  return { ...progressed, account, heroes, expedition: null }
 }
 
 /**

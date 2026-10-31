@@ -9,6 +9,7 @@ import { Loadout } from './character/Loadout.tsx'
 import { Roster } from './character/Roster.tsx'
 import { Rules } from './character/Rules.tsx'
 import { SkillWeb } from './character/SkillWeb.tsx'
+import { Equipment } from './town/Equipment.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
 import { LogPanel } from './log/LogPanel.tsx'
@@ -76,6 +77,7 @@ function App() {
       <CreateHero />
       <Attributes />
       <SkillWeb />
+      <Equipment />
       <Loadout />
       <Rules />
       <p>

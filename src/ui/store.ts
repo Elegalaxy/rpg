@@ -3,6 +3,8 @@ import { useSyncExternalStore } from 'react'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { startExpedition } from '../persist/expeditionSetup.ts'
+import { addDevelopmentItems, equipFromArchive } from '../persist/equipment.ts'
+import type { EquipmentSlotId } from '../sim/economy.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { canStartRoute, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
 import { returnToTown, stepExpedition } from '../sim/expedition.ts'
@@ -413,6 +415,24 @@ export function savePreparationFromUi(draft: PreparationDraft): string[] {
   if (!result.ok) return [result.reason]
   commitSave(result.save, 'preparation saved')
   return []
+}
+
+/** Equip an archive item for the selected hero. Returns the reason it was refused, or null. */
+export function equipFromUi(itemId: string, slot: EquipmentSlotId | null): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  const result = equipFromArchive(saveStatus.save, hero.id, itemId, slot)
+  if (!result.ok) return result.reason
+  commitSave(result.save, 'equipped')
+  return null
+}
+
+/** Development builds only. Adds a spread of weapons to the archive. */
+export function devAddItems(): void {
+  if (!import.meta.env.DEV) return
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return
+  commitSave(addDevelopmentItems(saveStatus.save, hero.id), 'dev add items')
 }
 
 /** Close a finished expedition: loot to the account, the first return opens a slot. */

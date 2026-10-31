@@ -1,4 +1,6 @@
+import { itemBase, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
+import { EQUIPMENT_SLOT_IDS, type Equipment, type ItemInstance } from '../sim/economy.ts'
 import { assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import type { PriorityRow } from '../sim/types.ts'
@@ -27,6 +29,8 @@ export type AccountData = {
   slots: number
   /** One-time account milestones reached so far. Each one opens a character slot. */
   milestones: string[]
+  /** Items the player owns that no hero has equipped. Shared across heroes. */
+  archive: ItemInstance[]
 }
 
 /** One hero's saved record. Combat state is rebuilt from this and the content tables. */
@@ -49,6 +53,8 @@ export type SavedHero = {
   retreatAtMost: number | null
   /** Special arrows a Ranger packs for an expedition. 0 for other classes. */
   specialAmmo: number
+  /** Equipped items. Gear is bound to its hero. */
+  equipment: Equipment
 }
 
 export type SaveData = {
@@ -96,6 +102,7 @@ export function newSave(): SaveData {
       discoveries: [...STARTING_DISCOVERIES],
       slots: STARTING_SLOTS,
       milestones: [],
+      archive: [],
     },
     heroes: [],
     selectedHeroId: null,
@@ -124,6 +131,18 @@ function stringList(value: unknown, label: string): asserts value is string[] {
   for (const entry of value) check(typeof entry === 'string' && entry.length > 0, `${label} has a bad entry ${describeValue(entry)}`)
 }
 
+function assertItem(value: unknown, label: string): asserts value is ItemInstance {
+  check(isRecord(value), `${label} must be an object`)
+  check(typeof value.id === 'string' && value.id.length > 0, `${label} is missing an id`)
+  check(typeof value.baseId === 'string' && itemBase(value.baseId) !== undefined, `${label} has an unknown base ${describeValue(value.baseId)}`)
+  check(typeof value.itemLevel === 'number' && Number.isInteger(value.itemLevel) && value.itemLevel >= 1, `${label} item level must be a whole number of at least 1`)
+  check(typeof value.quality === 'number' && value.quality > 0 && value.quality <= 2, `${label} quality must be above 0 and at most 2`)
+  whole(value.maxDurability, `${label} maximum durability`)
+  whole(value.durability, `${label} durability`)
+  check(value.durability <= value.maxDurability, `${label} durability is above its maximum`)
+  stringList(value.modifiers, `${label} modifiers`)
+}
+
 function assertAccount(value: unknown): asserts value is AccountData {
   check(isRecord(value), 'account is missing')
   whole(value.gold, 'gold')
@@ -135,6 +154,13 @@ function assertAccount(value: unknown): asserts value is AccountData {
   stringList(value.discoveries, 'discoveries')
   stringList(value.milestones, 'milestones')
   check(value.milestones.length <= MAX_SLOTS - STARTING_SLOTS, 'too many milestones')
+  check(Array.isArray(value.archive), 'archive must be a list')
+  const archiveIds: string[] = []
+  value.archive.forEach((item, index) => {
+    assertItem(item, `archive item ${index + 1}`)
+    check(!archiveIds.includes(item.id), `item id ${item.id} is duplicated`)
+    archiveIds.push(item.id)
+  })
 }
 
 function assertHero(value: unknown, index: number): asserts value is SavedHero {
@@ -162,6 +188,12 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     `${label} retreat threshold must be between 0 and 1, or null`,
   )
   whole(value.specialAmmo, `${label} special arrows`)
+  check(isRecord(value.equipment), `${label} equipment must be an object`)
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const item = value.equipment[slot]
+    check(item !== undefined, `${label} equipment is missing the ${slot} slot`)
+    if (item !== null) assertItem(item, `${label} ${slot}`)
+  }
 }
 
 /** Version 1 shape check. Throws a readable message on the first problem. */
@@ -195,6 +227,7 @@ export function serializeSave(data: SaveData): string {
 function fillWorldFields(parsed: unknown): void {
   if (!isRecord(parsed)) return
   if (isRecord(parsed.account) && parsed.account.milestones === undefined) parsed.account.milestones = []
+  if (isRecord(parsed.account) && parsed.account.archive === undefined) parsed.account.archive = []
   if (!Array.isArray(parsed.heroes)) return
   for (const hero of parsed.heroes) {
     if (!isRecord(hero)) continue
@@ -202,6 +235,9 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.clearedNodeIds === undefined) hero.clearedNodeIds = []
     if (hero.retreatAtMost === undefined) hero.retreatAtMost = DEFAULT_RETREAT
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
+    if (hero.equipment === undefined && typeof hero.id === 'string' && (HERO_CLASSES as readonly string[]).includes(String(hero.classId))) {
+      hero.equipment = starterEquipment(hero.id, hero.classId as HeroClass)
+    }
   }
 }
 

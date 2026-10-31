@@ -1,3 +1,4 @@
+import { starterEquipment } from '../content/items.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { racialStartingAttributes } from '../content/heroes.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
@@ -63,8 +64,9 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
   }
   const loadout = referenceLoadoutFor(request.classId)
   const web = classWebs[request.classId]
+  const id = nextHeroId(save)
   const hero: SavedHero = {
-    id: nextHeroId(save),
+    id,
     name: normalizeName(request.name),
     classId: request.classId,
     progress: createProgress(request.race, racialStartingAttributes[request.race], {
@@ -78,6 +80,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     clearedNodeIds: [],
     retreatAtMost: DEFAULT_RETREAT,
     specialAmmo: loadout.specialAmmo ?? 0,
+    equipment: starterEquipment(id, request.classId),
   }
   const next: SaveData = {
     ...save,

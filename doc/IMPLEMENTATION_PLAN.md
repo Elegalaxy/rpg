@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 9.1  
+Next step: Step 9.2  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -777,13 +777,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 ### Stage 9: Items, town, crafting, contracts
 
 ### Step 9.1: Items and equipment
-- Status: `todo`
+- Status: `verified`
 - Depends on: 8.3
 - Files: `src/sim/economy.ts`, `src/content/items.ts`, `src/ui/town/Equipment*.tsx`, tests
 - Change: Item instances (base, item level, quality, durability, modifiers) and the eight slots. Item-level requirement, the 90% off-preference rule, two-handed weapons disabling the off-hand, the archive, and starter gear per class.
 - Acceptance criteria: tests for each equip rule. Equipping changes the derived stats shown in the UI.
 - Verification: `npm test`. User: swap a weapon and see the action time and power change.
 - Progress:
+  - 2026-10-31: `src/sim/economy.ts` holds the item rules with no content: `ItemInstance` (base, item level, quality, durability, modifiers), the eight `Equipment` slots, `equipBlock` and `equipItem`, `gearGaps`, `gearFromEquipment` (the combat-facing `HeroGear`), and `applyDurability`. The rules: a hero's level must reach the item level; an item fits only its own slot; a two-handed weapon disables the off-hand and sends it to the archive; a quiver needs a bow, and leaving the bow sends the quiver to the archive; a replaced item goes to the archive; accessories take the first free slot or a chosen one. The 90% off-preference rule was already in `deriveHeroStats` and is now tested through equipment. `src/content/items.ts` has the item bases (five weapons, four off-hands, sixteen armor pieces by category and slot, ring and charm) and `starterEquipment`: the class's reference gear at item level 1, exactly 100% quality, no modifiers.
+  - 2026-10-31: The save keeps `equipment` on each hero (gear is bound to its hero) and a shared `account.archive`; a save without them gets the starter set and an empty archive. `src/persist/equipment.ts` has `equipFromArchive` (locked while an expedition runs), `statsFor` and `statLines` (every number comes straight from `deriveHeroStats`), `previewEquip` (before and after for each stat), and a development-only `addDevelopmentItems`. The run now uses what the hero has equipped, a route will not start with an incomplete set (`Equip every slot first. Missing: ...`), and settling an expedition writes the ended durabilities back onto the items. `src/ui/town/Equipment.tsx` shows the eight slots, the derived stats, and the archive with an Equip button per legal slot and the stat change it would cause, or the reason it is refused.
+  - 2026-10-31: Verified. `npm test` passed (51 files, 567 tests, exit 0), including 19 in `src/persist/equipment.test.ts`: complete starter gear for all five classes, each equip rule, the archive keeping every item, the preview matching the real change, the 90% rule, an incomplete set blocking a run, and durability written back. `npm run typecheck` and `npm run lint` exited 0. The road seed 5 and duel-basic are unchanged. In the dev server in the browser pane a new Human Warrior showed the starter gear, the dev button added six test weapons, the two-handed weapon's preview read `Physical Power 30 → 32.15; Armor 21.95 → 18.2; Resistance 11.55 → 7.8; Base action time 1.82 s → 2.36 s`, equipping it produced exactly those stats, the off-hand showed `disabled by the two-handed weapon`, a shield was refused with `A two-handed weapon disables the off-hand slot.`, and the save held `weapon-two-handed`. Item modifiers and crafting come in Step 9.3, and the only way to get items now is the development button.
 
 ### Step 9.2: Town services
 - Status: `todo`
