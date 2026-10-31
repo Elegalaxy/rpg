@@ -1447,7 +1447,15 @@ Reincarnation preserves:
 
 - All equipment is archived and retains its normal level/tier requirements.
 - One chosen heirloom scales down to the new hero level and grows with the hero.
-- Exact heirloom scaling and whether the chosen heirloom can change during a life remain open.
+- Heirloom, decided 2026-11-01: the hero picks one item at reincarnation. Its item level follows the hero's level, up to the level it had when chosen. Quality and modifiers are kept. It can only be changed at the next reincarnation. The Second Heirloom purchase lets a hero keep one more.
+
+First-playable reincarnation numbers, decided 2026-11-01:
+
+- Currency is Legacy: `2 × (level − 1) + floor(5 × XP into the level ÷ XP to the next level)`, so a level 20 hero gets about 38.
+- One-time bonuses per hero, claimed at the next reincarnation after the hero first reaches them: +3 for each elite first defeated (Rootmaw Stalker, Echo Knight), +20 for the first Warden defeat, and +5 for each Echo rank first unlocked.
+- Legacy buys hero-bound purchases that last across lives. Attribute Seed adds 1 to a starting attribute of the hero's choice and costs 3, up to 10 in total. Skill Point Seed gives 1 unallocated skill point at the start of each life and costs 8, then 12, then 16, up to 3. Second Heirloom lets the hero keep one more heirloom and costs 25, once.
+- Mastery is the hero's completed lives, up to 10. Each rank adds 2% ordinary XP, up to +20%, and nothing else.
+- The reset and preserve lists above apply. The account's current contracts are cleared, because contracts are account-wide here. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
 
 ### Campaign and endgame
 
@@ -1609,7 +1617,6 @@ Skill webs, priority rules, logs, crafting, routes, and risk systems can overwhe
 - What stored debt blocks, and how a disabled item is repaired. The first-playable fee is 25 gold from carried gold. Unpaid gold is stored as debt with no other effect. Deposited gold is untouched. The next expedition waits 5 minutes.
 - Which consumables fill the four supply slots (the first playable has none)
 - Crafting quality, proficiency, and upgrade formulas
-- Heirloom scaling
 - Save format and local persistence
 - Accessibility options
 - UI wireframes
@@ -1630,6 +1637,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-01: Decided the first-playable reincarnation rules: Legacy currency, one-time bonuses, three purchases, mastery as +2% ordinary XP per completed life, and the heirloom's scaling.
 - 2026-10-31: Decided how expeditions award hero XP, and the six first-playable contracts with their tracking rules and rewards.
 - 2026-10-31: Decided the first-playable crafting rules: material quality ranges, seeded averaged rolls, personal proficiency, costs and time, a queue of 3, six modifiers with level requirements, and upgrades with a falling chance.
 - 2026-10-31: Decided the first-playable town numbers: gold drops of level × 2 (level × 3 for elites and the boss), a chosen carry amount, fixed buy and sell prices, a repair formula, and debt kept on the account with no effect. No consumables yet.
