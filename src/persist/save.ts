@@ -1,5 +1,6 @@
 import { itemBase, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
+import { contracts as contractTable } from '../content/contracts.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type ItemInstance } from '../sim/economy.ts'
 import { assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
@@ -49,6 +50,12 @@ export type CraftJob =
       rank: number
     }
 
+/** A contract the player has taken. Progress counts toward the contract's target. */
+export type ActiveContract = {
+  contractId: string
+  progress: number
+}
+
 export type AccountData = {
   gold: number
   /** Material id to quantity. */
@@ -59,6 +66,8 @@ export type AccountData = {
   slots: number
   /** One-time account milestones reached so far. Each one opens a character slot. */
   milestones: string[]
+  /** Contracts taken from the board, at most three. */
+  contracts: ActiveContract[]
   /** Queued crafting jobs, at most three. */
   craftQueue: CraftJob[]
   /** How many crafting rolls have been used. The next job takes this index. */
@@ -143,6 +152,7 @@ export function newSave(): SaveData {
       slots: STARTING_SLOTS,
       milestones: [],
       archive: [],
+      contracts: [],
       craftQueue: [],
       craftCounter: 0,
       debt: 0,
@@ -218,6 +228,15 @@ function assertAccount(value: unknown): asserts value is AccountData {
   check(value.milestones.length <= MAX_SLOTS - STARTING_SLOTS, 'too many milestones')
   whole(value.debt, 'debt')
   whole(value.craftCounter, 'craft counter')
+  check(Array.isArray(value.contracts) && value.contracts.length <= 3, 'at most 3 contracts can be active')
+  const taken: string[] = []
+  for (const entry of value.contracts) {
+    check(isRecord(entry) && typeof entry.contractId === 'string' && contractTable[entry.contractId] !== undefined, 'a contract id is unknown')
+    whole(entry.progress, 'contract progress')
+    check(entry.progress <= contractTable[entry.contractId]!.count, 'contract progress is past its target')
+    check(!taken.includes(entry.contractId), `contract ${entry.contractId} is taken twice`)
+    taken.push(entry.contractId)
+  }
   check(Array.isArray(value.craftQueue) && value.craftQueue.length <= 3, 'the craft queue holds at most 3 jobs')
   for (const job of value.craftQueue) assertJob(job)
   check(Array.isArray(value.archive), 'archive must be a list')
@@ -298,6 +317,7 @@ function fillWorldFields(parsed: unknown): void {
   if (isRecord(parsed.account) && parsed.account.archive === undefined) parsed.account.archive = []
   if (isRecord(parsed.account) && parsed.account.debt === undefined) parsed.account.debt = 0
   if (isRecord(parsed.account) && parsed.account.craftQueue === undefined) parsed.account.craftQueue = []
+  if (isRecord(parsed.account) && parsed.account.contracts === undefined) parsed.account.contracts = []
   if (isRecord(parsed.account) && parsed.account.craftCounter === undefined) parsed.account.craftCounter = 0
   if (!Array.isArray(parsed.heroes)) return
   for (const hero of parsed.heroes) {

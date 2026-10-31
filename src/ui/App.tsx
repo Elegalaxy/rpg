@@ -10,6 +10,7 @@ import { Roster } from './character/Roster.tsx'
 import { Rules } from './character/Rules.tsx'
 import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
+import { Contracts } from './town/Contracts.tsx'
 import { Craft } from './town/Craft.tsx'
 import { Town } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
@@ -83,6 +84,7 @@ function App() {
       <Attributes />
       <SkillWeb />
       <Town />
+      <Contracts />
       <Craft />
       <Equipment />
       <Loadout />

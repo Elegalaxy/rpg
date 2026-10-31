@@ -16,7 +16,9 @@ import { TRAVEL_GAP_MS, rescueFee, type ExpeditionState } from '../sim/expeditio
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { itemBase } from '../content/items.ts'
+import { awardXp } from '../sim/progression.ts'
 import { applyDurability, gearGaps } from '../sim/economy.ts'
+import { addContractProgress } from './contracts.ts'
 import { reachMilestone, type SaveData, type SavedHero } from './save.ts'
 
 export type NodeState = 'locked' | 'discovered' | 'cleared'
@@ -256,7 +258,7 @@ export function beginExpedition(save: SaveData, routeId: string, seed: number): 
 export function settleExpedition(save: SaveData): SaveData {
   const expedition = save.expedition
   if (expedition === null || expedition.outcome === 'ongoing') return save
-  const progressed = recordProgress(save)
+  const progressed = addContractProgress(recordProgress(save), expedition)
   const materials = { ...progressed.account.materials }
   for (const stack of expedition.secured) materials[stack.materialId] = (materials[stack.materialId] ?? 0) + stack.quantity
   let account = {
@@ -267,7 +269,13 @@ export function settleExpedition(save: SaveData): SaveData {
   }
   if (expedition.outcome === 'returned') account = reachMilestone(account, 'first-return')
   const heroes = progressed.heroes.map((hero) =>
-    hero.id === selectedHero(progressed)?.id ? { ...hero, equipment: applyDurability(hero.equipment, expedition.equipment) } : hero,
+    hero.id === selectedHero(progressed)?.id
+      ? {
+          ...hero,
+          equipment: applyDurability(hero.equipment, expedition.equipment),
+          progress: awardXp(hero.progress, expedition.xpEarned ?? 0),
+        }
+      : hero,
   )
   return { ...progressed, account, heroes, expedition: null }
 }
@@ -302,6 +310,7 @@ export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
   const victories = expedition.history.filter((entry) => entry.outcome === 'victory').length
   const retreated = expedition.history.find((entry) => entry.outcome === 'retreat')
   const lines = [`Fights won: ${victories}.`]
+  if ((expedition.xpEarned ?? 0) > 0) lines.push(`Experience earned: ${expedition.xpEarned}.`)
   if (expedition.outcome === 'returned') {
     if (retreated !== undefined) lines.push(`You retreated during fight ${retreated.index + 1}. That fight gave no loot or momentum.`)
     lines.push(`Loot secured: ${lootText(expedition.secured)}.`)

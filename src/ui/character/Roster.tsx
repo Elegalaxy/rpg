@@ -29,7 +29,7 @@ export function Roster() {
           return (
             <li key={hero.id}>
               <strong>{hero.name}</strong> — {raceIdentity[hero.progress.race].name} {classIdentity[hero.classId].name},
-              level {hero.progress.level}{' '}
+              level {hero.progress.level} ({hero.progress.xp} XP into the level){' '}
               {selected ? (
                 <em>(selected)</em>
               ) : (

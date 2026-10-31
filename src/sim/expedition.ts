@@ -25,7 +25,9 @@ import { FEROCITY_CAP } from './races/beastfolk.ts'
 import { FOCUS_MAX } from './races/elf.ts'
 import { readRace } from './races/index.ts'
 import { createRng, deriveSeed, nextFloat, type RngState } from './rng.ts'
+import { xpFromEnemies } from './progression.ts'
 import { longHuntRegenFactor } from './races/beastfolk.ts'
+import { humanOrdinaryXp } from './races/human.ts'
 import {
   CURSE_SOUL_DEBT,
   NODE_BEAST_THICK_HIDE,
@@ -206,6 +208,8 @@ export type ExpeditionState = {
   rareNodeChance: number
   /** Beastfolk Ferocity progress, 0–6. Not a combat resource. */
   ferocityProgress: number
+  /** Hero XP from fights won on this expedition. Added to the hero when the run is settled. Omitted is 0. */
+  xpEarned?: number
   /** Encounters remaining before Trapper may deploy. 0 is ready. A new expedition starts ready. */
   trapperCooldown: number
   /** Materials carried on the road. Total quantity is at most `LOOT_CAPACITY`. A defeat clears this. */
@@ -363,6 +367,7 @@ export function assertExpedition(state: ExpeditionState): void {
   nonNegativeInteger(state.carriedGold, 'carried gold')
   nonNegativeInteger(state.depositedGold, 'deposited gold')
   nonNegativeInteger(state.debt, 'debt')
+  if (state.xpEarned !== undefined) nonNegativeInteger(state.xpEarned, 'experience earned')
   nonNegativeInteger(state.recoveryMs, 'recovery')
   if (typeof state.bossLossThisLife !== 'boolean') {
     throw new Error(`boss loss must be a boolean, received ${describeValue(state.bossLossThisLife)}`)
@@ -1029,6 +1034,15 @@ function noteTrapperEncounter(state: ExpeditionState): void {
   if (state.trapperCooldown > 0) state.trapperCooldown -= 1
 }
 
+/** The hero's XP for a won fight: the encounter rules, plus the Human bonus (and Quick Study) for a Human. */
+function victoryXp(state: ExpeditionState, combat: CombatState): number {
+  const members = combat.enemies.map((enemy) => ({ xp: enemy.xp, level: enemy.level, summon: enemy.summon }))
+  const level = state.heroTemplate.level
+  const spirit = state.hero.spirit
+  if (state.heroTemplate.race === 'human') return humanOrdinaryXp(level, spirit, members, state.heroTemplate.allocatedNodeIds)
+  return xpFromEnemies(level, spirit, members)
+}
+
 function finishEncounter(state: ExpeditionState, defs: GameDefs): void {
   const combat = state.combat
   const current = state.current
@@ -1045,6 +1059,7 @@ function finishEncounter(state: ExpeditionState, defs: GameDefs): void {
   noteTrapperEncounter(state)
   if (combat.outcome === 'victory') {
     collectDrops(state)
+    state.xpEarned = (state.xpEarned ?? 0) + victoryXp(state, combat)
     addMomentum(state, momentumGain(combat, defs))
     const restored = pressTrailReadiness(state.heroTemplate.allocatedNodeIds, state.momentum)
     if (restored > 0) {

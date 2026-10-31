@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 9.4  
+Next step: Step 10.1  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -816,13 +816,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (53 files, 597 tests, exit 0), including 18 in `src/persist/crafting.test.ts`: rank and range edges, costs, the queue limit and every refusal, time passing only through the first job, the quality range and averaging over 300 seeded rolls, the rank snapshot, upgrade success and failure with the item returned unchanged, modifier bonuses in the derived stats and in a real `createCombat` hero (criterion 8), wearing needing the modifier's level, and a broken job in a save. `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. The road seed 5 and duel-basic are unchanged. In the dev server in the browser pane: the crafting kit, a queued Keen One-handed Weapon from shard (range 100% to 110%, 6 shard and 5 gold, 30 seconds), the saved job fast-forwarded to 0.4 seconds and resumed after a reload, the notice `Crafted One-handed Weapon, item level 1, quality 108.5%.`, rank 1, and equipping it changed the stats exactly as previewed (Physical Power 30 to 30.85, Critical chance 9% to 11%). Not played by hand: an upgrade in the page (the tests cover success and failure), and the 30-second wait itself (the pane throttles frames). Progress through a job is saved when the queue changes or a job finishes, so a reload mid-job restarts from the last save.
 
 ### Step 9.4: Contracts
-- Status: `todo`
+- Status: `verified`
 - Depends on: 9.3, G7
 - Files: `src/sim/economy.ts`, `src/content/contracts.ts`, `src/ui/town/Contracts*.tsx`, tests
 - Change: Repeatable contracts that track progress from expedition events and pay gold, materials and XP at the §7 efficiency target.
 - Acceptance criteria: tests for progress tracking and completion.
 - Verification: User: accept a contract, complete it, and collect the reward.
 - Progress:
+  - 2026-10-31: Heroes now gain XP from expeditions, which nothing did before. The simulation adds `victoryXp` to `ExpeditionState.xpEarned` for each won fight: the encounter rules (`xpFromEnemies`: level-difference modifier, group discount, Spirit factor) and, for a Human, `humanOrdinaryXp` with Quick Study. `settleExpedition` adds it to the hero with `awardXp`, so level-ups give the attribute and skill points they already define. XP from fights already won is kept after a defeat, and the outcome screen shows `Experience earned: N.` when there is some. The roster shows each hero's XP into the level.
+  - 2026-10-31: `src/content/contracts.ts` has the six G7 contracts (Cull the Pack, Clear the Shards, Hunt Deserters, Thicket Sweep, Bastion Patrol, Break the Elite) with `rewardFor` (XP `round(0.6 × units × (5 + 2L))`, gold `units × L`, materials `ceil(units ÷ 2)`). `src/persist/contracts.ts` accepts up to 3 (no repeats), abandons (progress lost), and collects (gold and materials to the account, XP to the collecting hero, then the contract can be taken again). Progress comes from the expedition's won fights only (kills by enemy type, fights at a node, or a named elite encounter), is added at settle even after a defeat, and never goes past the target. The board is closed during a run, and the save validates the contract list. `src/ui/town/Contracts.tsx` shows each contract with its reward and progress and an Accept, Abandon, or Collect button.
+  - 2026-10-31: Verified. `npm test` passed (54 files, 609 tests, exit 0), including 12 in `src/persist/contracts.test.ts` (the reward numbers for all six, every reference resolving, the limit of three, collecting, closing during a run, bad saves, counting kills and node fights and elites from won fights only, progress added at settle with a defeat, and real won fights giving the encounter XP with the Human bonus and the plain XP for an Elf). `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. The road seed 5 and duel-basic are unchanged. In the dev server in the browser pane: three contracts accepted, one abandoned, progress set in the save and reloaded (`Progress 3 of 3.`), and collecting Hunt Deserters paid 18 gold, 2 scrap, and 31 XP (`31 XP into the level` on the roster). Not played by hand: a contract filled by a real expedition, because a real fight takes too long in the throttled pane; the settle path is covered by tests.
 
 ---
 

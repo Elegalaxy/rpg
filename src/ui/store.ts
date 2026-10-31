@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { addDevelopmentItems, equipFromArchive } from '../persist/equipment.ts'
+import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { advanceCrafting, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { buyItem, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
@@ -530,6 +531,21 @@ export function queueUpgradeFromUi(itemId: string, materialId: string): string |
 export function devCraftingKit(): void {
   if (!import.meta.env.DEV) return
   commitSave(grantCraftingKit(saveStatus.save), 'dev crafting kit')
+}
+
+export function acceptContractFromUi(contractId: string): string | null {
+  return applyTown(acceptContract(saveStatus.save, contractId), 'contract accepted')
+}
+
+export function abandonContractFromUi(contractId: string): string | null {
+  return applyTown(abandonContract(saveStatus.save, contractId), 'contract abandoned')
+}
+
+/** Collect a finished contract. The selected hero gets the experience. */
+export function collectContractFromUi(contractId: string): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero to collect the experience.'
+  return applyTown(collectContract(saveStatus.save, hero.id, contractId), 'contract collected')
 }
 
 /** Close a finished expedition: loot to the account, the first return opens a slot. */
