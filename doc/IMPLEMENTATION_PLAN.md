@@ -882,13 +882,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-01: Verified. `src/persist/walkthrough.test.ts` plays a boosted hero through the Splintered Road, the Grove and the Bastion with the same persist calls the UI makes (begin, fight, return, settle) and shows the Fracture Gate route then starts with a Warden fight, so no step needs a dev tool. `npm test` (640 tests), `npm run typecheck`, `npm run lint` passed. In the dev server on a cleared profile: the welcome screen showed, creating Ash moved to the Heroes tab with the header, Go took me to the Map, and Start expedition began a run. Not done: a hand playthrough of the whole route to the Warden, because the browser pane throttles the clock; the user's playtest in Step 11.2 covers it. The page is still unstyled.
 
 ### Step 11.2: Success-criteria playtest
-- Status: `todo`
+- Status: `done`
 - Depends on: 11.1
 - Files: this plan (Progress), `rpg/doc/GAME_DESIGN.md` (findings and open questions), `docs/ideas/incremental-rpg.md` (status, only if it changes)
 - Change: The user plays through the ten §15 success criteria. Run the `combos` and `reference` matrices for a preliminary balance check. Record the findings.
 - Acceptance criteria: each §15 criterion is marked pass or fail with a note.
 - Verification: User-led playtest.
 - Progress:
+  - 2026-11-01: Matrices run from seed 1, 50 runs. `combos` (20 pairs): errors 0. `reference` (report `reports/2026-10-23-reference.csv`): every class wins its equal-level fights 100%; the only `fail` flags are the three already accepted Deserter band misses (Assassin, Cleric, Mage, same numbers as GAME_DESIGN §12) and the Warden at Echo rank 0, which every floor build loses by design. Finding for the user: no floor build beats the Rootmaw Stalker (0% for all five classes), and the Echo Knight wins are Warrior 100%, Mage 100%, Assassin 74%, Cleric 66%, Ranger 0%. Elite gates therefore depend on gear, levels, and skill points beyond the floor build, which the matrix does not model. Ranger and Mage show 76–98% wins on the mixed Grove and Bastion runs. No coefficients were changed.
+  - 2026-11-01: §15 status. Machine-checked (pass): 1 (all 20 race/class pairs are created and run in `combos`, errors 0), 3 (attribute and skill-web spending with confirmations, tested), 4 (loadout and priority rows, tested), 8 (gather, craft, upgrade with visible effect, tested in Stage 9), 9 (boss loss, defeat costs, reincarnation, second life measurably better: Warden HP left 69.0% to 66.3%, tested in Step 10.3). Needs the user's play (not judged by me): 2 (is race plus class identity clear), 5 (is real-time combat readable), 6 (does the log explain a win, failed escape, or defeat), 7 (is return versus push a real decision), 10 (is it interesting enough to repeat). Step stays `done`, not `verified`, until the user marks those five.
 
 ---
 
