@@ -10,7 +10,7 @@ import {
   type NodeState,
 } from '../../persist/world.ts'
 import { legs, nodes, routes } from '../../content/world.ts'
-import { settleExpeditionFromUi, startExpeditionFromUi, useSaveStatus } from '../store.ts'
+import { startExpeditionFromUi, useSaveStatus } from '../store.ts'
 
 import './map.css'
 
@@ -44,7 +44,6 @@ export function MapView() {
   const chosen = new Set(routes[routeId]?.nodeIds ?? [])
   const position = expedition === null ? null : markerPosition(expedition)
   const marker = position === null ? null : point(position)
-  const here = position?.kind === 'at' ? (nodes[position.nodeId]?.name ?? '') : ''
   const shownRoute = expedition === null ? routeId : expedition.id
   const onRoute = new Set(routes[shownRoute]?.nodeIds ?? [])
 
@@ -129,23 +128,10 @@ export function MapView() {
             </button>
             {!start.ok ? <p data-testid="start-blocked">{start.reason}</p> : null}
           </>
-        ) : expedition.outcome === 'ongoing' ? (
-          <p data-testid="travel-status">
-            {expedition.phase === 'combat'
-              ? `Fighting at ${here}, fight ${expedition.encounterIndex + 1}.`
-              : expedition.returning
-                ? 'Walking back to Greyhaven.'
-                : `Travelling, ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds to the next fight.`}
-          </p>
         ) : (
-          <div>
-            <p data-testid="expedition-ended">
-              The expedition ended: {expedition.outcome === 'returned' ? 'you returned safely.' : 'you were defeated.'}
-            </p>
-            <button type="button" onClick={settleExpeditionFromUi}>
-              Return to town
-            </button>
-          </div>
+          <p data-testid="map-expedition-note">
+            {expedition.outcome === 'ongoing' ? 'An expedition is under way. Follow it below.' : 'The expedition has ended. See the outcome below.'}
+          </p>
         )}
         {error !== null ? <p role="alert">{error}</p> : null}
       </div>

@@ -4,7 +4,7 @@ import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createProgress, HERO_RACES, type HeroRace } from '../sim/progression.ts'
 
-import { MAX_SLOTS, type SaveData, type SavedHero } from './save.ts'
+import { DEFAULT_RETREAT, MAX_SLOTS, type SaveData, type SavedHero } from './save.ts'
 
 export const NAME_MIN = 1
 export const NAME_MAX = 24
@@ -76,6 +76,8 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     preparedSpells: [],
     defeatedEnemyIds: [],
     clearedNodeIds: [],
+    retreatAtMost: DEFAULT_RETREAT,
+    specialAmmo: loadout.specialAmmo ?? 0,
   }
   const next: SaveData = {
     ...save,

@@ -1,6 +1,5 @@
 import { toExpeditionEncounter, encounters } from '../content/encounters.ts'
 import { referenceHeroAtLevel } from '../content/heroes.ts'
-import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { nodes, routeEncounterIds, routes } from '../content/world.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { TRAVEL_GAP_MS, createExpedition, type ExpeditionBlueprint, type ExpeditionState } from '../sim/expedition.ts'
@@ -10,14 +9,12 @@ import type { SavedHero } from './save.ts'
 
 /**
  * Build the road run for a saved hero. Gear is the neutral reference set at the hero's level until
- * equipment exists (Step 9.1), and retreat is the usual 40% HP threshold until the preparation
- * screen lets the player choose (Step 8.3).
+ * equipment exists (Step 9.1). Retreat threshold, vow, curse, and arrows come from the hero's preparation.
  */
 export function blueprintForHero(hero: SavedHero, routeId: string): ExpeditionBlueprint {
   const route = routes[routeId]
   if (route === undefined) throw new Error(`unknown route '${routeId}'`)
   const reference = referenceHeroAtLevel(hero.classId, hero.progress.level)
-  const loadout = referenceLoadoutFor(hero.classId)
   const find = (id: string) => {
     const encounter = encounters[id]
     if (encounter === undefined) throw new Error(`route '${routeId}' names unknown encounter '${id}'`)
@@ -31,7 +28,7 @@ export function blueprintForHero(hero: SavedHero, routeId: string): ExpeditionBl
     opening: routeEncounterIds(route).map(find),
     draw: drawIds.map(find),
     travelGapMs: TRAVEL_GAP_MS,
-    retreatThresholds: [{ kind: 'hpFraction', atMost: 0.4 }],
+    retreatThresholds: hero.retreatAtMost === null ? [] : [{ kind: 'hpFraction', atMost: hero.retreatAtMost }],
     hero: {
       id: hero.id,
       name: hero.name,
@@ -44,7 +41,7 @@ export function blueprintForHero(hero: SavedHero, routeId: string): ExpeditionBl
       priorityRows: hero.priorityRows.map((row) => ({ ...row })),
       allocatedNodeIds: [...nodeIds],
       renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
-      ...(loadout.specialAmmo !== undefined ? { specialAmmo: loadout.specialAmmo } : {}),
+      ...(hero.classId === 'ranger' ? { specialAmmo: hero.specialAmmo } : {}),
       ...(hero.vow !== null ? { vow: hero.vow } : {}),
       ...(hero.curse !== null ? { curse: hero.curse } : {}),
       ...(hero.preparedSpells.length > 0 ? { preparedSpells: [...hero.preparedSpells] } : {}),

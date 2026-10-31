@@ -12,6 +12,7 @@ import { SkillWeb } from './character/SkillWeb.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
 import { LogPanel } from './log/LogPanel.tsx'
+import { ExpeditionPanel } from './map/ExpeditionPanel.tsx'
 import { MapView } from './map/MapView.tsx'
 import { OutcomeCard } from './log/OutcomeCard.tsx'
 import {
@@ -71,6 +72,7 @@ function App() {
       {saved.writeError !== null ? <p role="alert">The game could not be saved: {saved.writeError}</p> : null}
       <Roster />
       <MapView />
+      <ExpeditionPanel />
       <CreateHero />
       <Attributes />
       <SkillWeb />

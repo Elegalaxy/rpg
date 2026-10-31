@@ -11,7 +11,7 @@ import {
   type Route,
   type WorldNode,
 } from '../content/world.ts'
-import { TRAVEL_GAP_MS, type ExpeditionState } from '../sim/expedition.ts'
+import { TRAVEL_GAP_MS, rescueFee, type ExpeditionState } from '../sim/expedition.ts'
 
 import { selectedHero } from './character.ts'
 import { reachMilestone, type SaveData, type SavedHero } from './save.ts'
@@ -242,4 +242,58 @@ export function settleExpedition(save: SaveData): SaveData {
   }
   if (expedition.outcome === 'returned') account = reachMilestone(account, 'first-return')
   return { ...progressed, account, expedition: null }
+}
+
+/**
+ * After a fight the run waits for the player: push on to the next walk, or return to town. The wait
+ * is derived from the state, so a reload during the wait lands in the same place. `pushedAt` is the
+ * fight count the player already chose to push on from.
+ */
+export function shouldHold(expedition: ExpeditionState, pushedAt: number | null): boolean {
+  return (
+    expedition.outcome === 'ongoing' &&
+    expedition.phase === 'travel' &&
+    !expedition.returning &&
+    expedition.encounterIndex > 0 &&
+    expedition.travelMs === 0 &&
+    pushedAt !== expedition.encounterIndex
+  )
+}
+
+export type OutcomeSummary = {
+  title: string
+  lines: string[]
+}
+
+function lootText(stacks: readonly { materialId: string; quantity: number }[]): string {
+  return stacks.length === 0 ? 'none' : stacks.map((stack) => `${stack.quantity} ${stack.materialId}`).join(', ')
+}
+
+/** What a finished expedition cost and gained, taken only from its state. */
+export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
+  const victories = expedition.history.filter((entry) => entry.outcome === 'victory').length
+  const retreated = expedition.history.find((entry) => entry.outcome === 'retreat')
+  const lines = [`Fights won: ${victories}.`]
+  if (expedition.outcome === 'returned') {
+    if (retreated !== undefined) lines.push(`You retreated during fight ${retreated.index + 1}. That fight gave no loot or momentum.`)
+    lines.push(`Loot secured: ${lootText(expedition.secured)}.`)
+    if (expedition.overflow > 0) lines.push(`${expedition.overflow} did not fit in the bag and was lost.`)
+    lines.push('Momentum was cleared on arrival.')
+    return { title: retreated === undefined ? 'Returned safely' : 'Retreated to Greyhaven', lines }
+  }
+  if (expedition.outcome === 'defeat') {
+    const lost = expedition.history.find((entry) => entry.outcome === 'defeat')
+    lines.push(lost === undefined ? 'You were defeated.' : `You were defeated in fight ${lost.index + 1}.`)
+    lines.push('All unsecured loot was destroyed, and momentum was cleared.')
+    lines.push(`Loot kept (already secured): ${lootText(expedition.secured)}.`)
+    const worn = expedition.equipment.filter((entry) => entry.durability < entry.maxDurability)
+    if (worn.length > 0) {
+      lines.push(`Gear damaged: ${worn.map((entry) => `${entry.slot} ${entry.durability}/${entry.maxDurability}${entry.disabled ? ' (disabled)' : ''}`).join(', ')}.`)
+    }
+    lines.push(`Rescue fee: ${rescueFee(expedition)} gold. Gold you carry now: ${expedition.carriedGold}. Debt: ${expedition.debt}.`)
+    lines.push(`Recovery wait: ${Math.round(expedition.recoveryMs / 60_000)} minutes.`)
+    if (expedition.bossLossThisLife) lines.push('A boss defeated you this life.')
+    return { title: 'Defeated', lines }
+  }
+  return { title: 'Expedition running', lines }
 }

@@ -3,8 +3,9 @@ import { useSyncExternalStore } from 'react'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { startExpedition } from '../persist/expeditionSetup.ts'
-import { canStartRoute, recordProgress, settleExpedition } from '../persist/world.ts'
-import { stepExpedition } from '../sim/expedition.ts'
+import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
+import { canStartRoute, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
+import { returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
 import { setPriorityRules } from '../sim/automation.ts'
 import { createHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
@@ -309,12 +310,23 @@ const loop = createGameLoop({
   details,
 })
 
-function applyExpeditionSteps(count: number): void {
+/** The fight count the player already chose to push on from. Not saved: a reload asks again. */
+let pushedAt: number | null = null
+
+/** True while the run waits for the player to push on or return. */
+export function expeditionWaiting(): boolean {
+  const expedition = saveStatus.save.expedition
+  return expedition !== null && shouldHold(expedition, pushedAt)
+}
+
+/** Advance the running expedition by this many simulation steps. The clock calls this each frame. */
+export function advanceExpedition(count: number): void {
   const expedition = saveStatus.save.expedition
   if (expedition === null || expedition.outcome !== 'ongoing') return
   const fights = expedition.history.length
   const phase = expedition.phase
   for (let index = 0; index < count; index += 1) {
+    if (shouldHold(expedition, pushedAt)) break
     stepExpedition(expedition, defs)
     if (expedition.outcome !== 'ongoing') break
   }
@@ -329,7 +341,7 @@ function applyExpeditionSteps(count: number): void {
 const expeditionLoop = createGameLoop({
   getSpeed: () => snapshot.speed,
   isPaused: () => snapshot.paused,
-  applySteps: applyExpeditionSteps,
+  applySteps: advanceExpedition,
   notify: () => {
     saveStatus = { ...saveStatus }
     emit()
@@ -361,11 +373,46 @@ export function startExpeditionFromUi(routeId: string): string | null {
   } catch (error) {
     return error instanceof Error ? error.message : String(error)
   }
+  pushedAt = null
   debugLog('[ui]', 'expedition start', { routeId, seed, hero: hero.id })
   commitSave({ ...saveStatus.save, expedition }, 'expedition start')
   expeditionLoop.resetClock()
   if (!snapshot.paused) expeditionLoop.start()
   return null
+}
+
+/** The player chose to push on from the fight the run is waiting after. */
+export function pushOnFromUi(): void {
+  const expedition = saveStatus.save.expedition
+  if (expedition === null || !shouldHold(expedition, pushedAt)) return
+  pushedAt = expedition.encounterIndex
+  debugLog('[ui]', 'push on', { fight: expedition.encounterIndex })
+  saveStatus = { ...saveStatus }
+  emit()
+}
+
+/** The player chose to walk back to town. Only works while the run waits between fights. */
+export function returnFromUi(): string | null {
+  const expedition = saveStatus.save.expedition
+  if (expedition === null) return 'No expedition is running.'
+  try {
+    returnToTown(expedition)
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+  debugLog('[ui]', 'return to town', { fight: expedition.encounterIndex })
+  commitSave(saveStatus.save, 'return to town')
+  return null
+}
+
+/** Save the preparation for the selected hero. Returns the messages for a refused draft. */
+export function savePreparationFromUi(draft: PreparationDraft): string[] {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return ['Select a hero first.']
+  const result = savePreparation(saveStatus.save, hero.id, draft)
+  if (!result.ok) return [result.reason]
+  commitSave(result.save, 'preparation saved')
+  return []
 }
 
 /** Close a finished expedition: loot to the account, the first return opens a slot. */

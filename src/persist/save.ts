@@ -10,6 +10,8 @@ export const CORRUPT_KEY_PREFIX = 'rpg.save.corrupt.'
 /** Character slots, decided in G6: 2 at the start, up to 5 through the milestones below. */
 export const STARTING_SLOTS = 2
 export const MAX_SLOTS = 5
+/** The usual retreat threshold: 40% of maximum HP. */
+export const DEFAULT_RETREAT = 0.4
 /** A new game knows the town and the road out of it. */
 export const STARTING_DISCOVERIES = ['node:greyhaven', 'node:splintered-road'] as const
 /** Slot 3, 4, and 5 unlock once each, the first time any hero reaches the milestone. */
@@ -43,6 +45,10 @@ export type SavedHero = {
   /** Personal world record: enemies this hero has defeated, and the nodes this hero has cleared. */
   defeatedEnemyIds: string[]
   clearedNodeIds: string[]
+  /** Retreat when HP falls to this fraction of maximum. Null never retreats. */
+  retreatAtMost: number | null
+  /** Special arrows a Ranger packs for an expedition. 0 for other classes. */
+  specialAmmo: number
 }
 
 export type SaveData = {
@@ -150,6 +156,12 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   stringList(value.preparedSpells, `${label} prepared spells`)
   stringList(value.defeatedEnemyIds, `${label} defeated enemies`)
   stringList(value.clearedNodeIds, `${label} cleared nodes`)
+  check(
+    value.retreatAtMost === null ||
+      (typeof value.retreatAtMost === 'number' && value.retreatAtMost > 0 && value.retreatAtMost < 1),
+    `${label} retreat threshold must be between 0 and 1, or null`,
+  )
+  whole(value.specialAmmo, `${label} special arrows`)
 }
 
 /** Version 1 shape check. Throws a readable message on the first problem. */
@@ -188,6 +200,8 @@ function fillWorldFields(parsed: unknown): void {
     if (!isRecord(hero)) continue
     if (hero.defeatedEnemyIds === undefined) hero.defeatedEnemyIds = []
     if (hero.clearedNodeIds === undefined) hero.clearedNodeIds = []
+    if (hero.retreatAtMost === undefined) hero.retreatAtMost = DEFAULT_RETREAT
+    if (hero.specialAmmo === undefined) hero.specialAmmo = 0
   }
 }
 

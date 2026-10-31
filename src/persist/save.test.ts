@@ -54,6 +54,8 @@ function withHero(): SaveData {
     preparedSpells: [],
     defeatedEnemyIds: ['rootmaw-stalker'],
     clearedNodeIds: ['splintered-road'],
+    retreatAtMost: 0.4,
+    specialAmmo: 0,
   })
   save.selectedHeroId = 'hero-1'
   return save

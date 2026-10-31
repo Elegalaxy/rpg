@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 8.3  
+Next step: Step 9.1  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -761,13 +761,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (47 files, 537 tests, exit 0), including 16 in `src/persist/world.test.ts` (states, the personal gate, route info, starting rules, the marker through a real expedition, recording and settling, and a real road run settled into a valid save) and the map render test. `npm run typecheck` and `npm run lint` exited 0. Duel-basic seed 42 and the road seed 5 are unchanged, and the combos matrix has 0 errors. In the dev server in the browser pane, a new game showed Greyhaven cleared, the road discovered, and the other three nodes locked, the Grove route said `Withered Grove: Not discovered yet.`, and a started road run moved the marker from x 60 to 92 and then 112 as the walk reached 5 and then 8 seconds, with the chosen route shown in gold. Limits: the pane throttles animation frames, so a 20-second walk took far longer than 5 seconds even at 4x, and the run was saved only at its start, so a reload mid-walk restarts that fight's walk.
 
 ### Step 8.3: Expedition panel
-- Status: `todo`
+- Status: `verified`
 - Depends on: 8.2
 - Files: `src/ui/map/Expedition*.tsx`, `src/ui/App.tsx`
 - Change: Preparation (retreat thresholds, vow, curse, quiver, supplies). While running: momentum, unsecured loot, HP and resources, and a choice between pushing on and returning, with the Stage 4 combat and log panels embedded. An outcome screen for return, retreat or defeat that lists the costs.
 - Acceptance criteria: the user can play a full expedition without the CLI.
 - Verification: User: run an expedition, push for momentum, and decide when to return (§15 criterion 7).
 - Progress:
+  - 2026-10-31: Preparation. Each saved hero now keeps `retreatAtMost` (a fraction of maximum HP, or null to never retreat, default 40%) and `specialAmmo` (a Ranger's arrows, default 6). `src/persist/preparation.ts` checks a draft: the retreat threshold is a whole percent from 5 to 90 or empty, a Cleric must pick one of the three vows, only an Undead with Cursebound can carry one of the three curses, and a Ranger's arrows are 0 to 6 (8 with Efficient Quiver). A refused draft names the setting, nothing is saved, and the settings are locked while an expedition runs. The run builder uses them. The four supply slots show as empty with a note that no consumable exists yet.
+  - 2026-10-31: The run. After each fight the run now waits for the player (`shouldHold`, derived from the expedition state, so a reload during the wait asks again): Push on starts the next walk, and Return to town calls the sim's `returnToTown` and walks back. `src/ui/map/ExpeditionPanel.tsx` shows HP and the class resource, momentum out of 5, unsecured loot out of the bag capacity of 20 with a warning that it is lost on defeat or retreat, secured loot, fights finished, the choice, and the fight's own combat and log panels embedded. When the run ends the outcome screen (`outcomeSummary`) lists fights won, a retreat, loot secured, anything that did not fit, and for a defeat the destroyed loot, gear damage, the rescue fee and debt, the recovery wait, and a boss loss. `MapView` now only picks a route and starts it.
+  - 2026-10-31: Verified. `npm test` passed (50 files, 548 tests, exit 0): `src/persist/preparation.test.ts`, `src/persist/world.hold.test.ts`, and `src/ui/map/expedition.test.tsx`, which drives the real store through preparation, a run that waits, the refused double start, Push on, Return to town, the outcome markup, and settling. `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. The road seed 5 and duel-basic are unchanged. In the dev server in the browser pane, a Beastfolk Warrior saved a 30% retreat threshold (and a value of 999 was refused with its message, with Save disabled), started the road, won fight 1 (momentum 1, 8 shards unsecured), and waited with Push on and Return to town. Return to town walked back, and after fast-forwarding the saved walk the outcome screen read `Returned safely. Fights won: 1. Loot secured: 8 shard.` Return to town then banked 8 shard, reached the first-return milestone, opened slot 3, and showed the preparation form again. The pane throttles animation frames heavily, so the 20-second walks were fast-forwarded through the save rather than watched. A full multi-fight push and a defeat were checked in tests, not by hand. The save is written at each fight end and at Return to town, so a reload mid-walk restarts that walk.
 
 ---
 
