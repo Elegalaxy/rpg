@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 7.1  
+Next step: Step 7.2  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -685,13 +685,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 ### Stage 7: Saves and character UI
 
 ### Step 7.1: Versioned local save
-- Status: `todo`
+- Status: `verified`
 - Depends on: 6.9
 - Files: `src/persist/save.ts`, `src/persist/save.test.ts`, `src/ui/store.ts`
 - Change: `SaveData` with `version: 1`, account data (materials, recipes, discoveries, gold, slots), heroes, the selected hero, and any active expedition state. Stored under `localStorage` key `rpg.save.v1`. Save on hero creation, confirmed allocations, town actions, and encounter end. On load, check the shape and version. If it is corrupt or the version is unknown, copy the raw data to `rpg.save.corrupt.<timestamp>`, show an error, and offer a new game. `[save]` debug lines show the byte size. No migrations before the first playable.
 - Acceptance criteria: tests for the round trip, an unknown version, malformed JSON, and resuming an active expedition from the save with an identical continuation.
 - Verification: `npm test`. User: create something, reload the page, and confirm it is still there.
 - Progress:
+  - 2026-10-31: `src/persist/save.ts` holds `SaveData` (version 1: account with gold, materials, recipes, discoveries, and slots; saved heroes; the selected hero; the active expedition or null), `parseSave`, `serializeSave`, `loadSave`, `writeSave`, and `clearSave` over a small `StorageLike`, stored under `rpg.save.v1`. A saved hero keeps its `HeroProgress`, priority rows, vow, curse, and prepared spells, and combat state is rebuilt from content. The shape check reuses the sim's own `assertProgress` and `assertExpedition` (now exported). A missing entry is an empty start. A corrupt or unknown-version entry is copied to `rpg.save.corrupt.<timestamp>`, the original is left in place, and `loadSave` returns the reason. A full or blocked store returns a reason and keeps the old entry. Debug lines go through a logger argument and `src/ui/store.ts` forwards them as `[save]` lines with the byte size.
+  - 2026-10-31: `src/ui/store.ts` loads the save when the module starts (no storage means nothing is saved and no error), exposes `useSaveStatus`, `commitSave`, and `startNewGame`, and writes after each encounter end. `App.tsx` shows a banner with the reason, the backup key, and a Start a new game button, and a second line when a write fails. `slots` is stored as 1 and nothing enforces it, because the slot count is still design gate G6. Hero creation, confirmed allocations, and town actions will call `commitSave` when Steps 7.2 and 7.3 and the town steps add them.
+  - 2026-10-31: Verified. `npm test` passed (39 files, 479 tests, exit 0), including 9 in `src/persist/save.test.ts` (round trip, empty start, unknown version, malformed JSON, bad shapes, a failed write, clearing, a broken expedition, and an expedition resumed from the save that matches the uninterrupted run step for step). `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. Duel-basic seed 42 and expedition seed 5 are unchanged. In the dev server in the browser pane, a planted `{"version":2}` save showed the banner with the copy `rpg.save.corrupt.<timestamp>`, and Start a new game wrote a fresh version 1 save. Not yet checked by hand: the user's create-reload-confirm pass, because nothing can create a hero until Step 7.2.
 
 ### Step 7.2: Hero creation and roster
 - Status: `todo`

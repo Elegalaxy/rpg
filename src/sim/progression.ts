@@ -135,7 +135,7 @@ function assertAttributes(value: unknown): asserts value is Attributes {
   }
 }
 
-function assertProgress(progress: unknown): asserts progress is HeroProgress {
+export function assertProgress(progress: unknown): asserts progress is HeroProgress {
   if (progress === null || typeof progress !== 'object') {
     throw new Error(`hero progress must be an object, received ${describeValue(progress)}`)
   }

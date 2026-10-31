@@ -15,8 +15,10 @@ import {
   setSeedText,
   setSpeed,
   startCombatLoop,
+  startNewGame,
   togglePause,
   useCombatStore,
+  useSaveStatus,
 } from './store.ts'
 
 const scenarioIds = Object.keys(scenarios)
@@ -32,6 +34,7 @@ function shownTimeMs(combat: CombatState): number {
 
 function App() {
   const view = useCombatStore()
+  const saved = useSaveStatus()
 
   useEffect(() => {
     debugLog('[ui]', 'app mounted')
@@ -41,6 +44,18 @@ function App() {
   return (
     <>
       <h1>RPG – dev build</h1>
+      {saved.loadError !== null ? (
+        <div role="alert">
+          <p>
+            The saved game could not be read: {saved.loadError}.
+            {saved.backupKey !== null ? ` A copy was kept as ${saved.backupKey}.` : ''}
+          </p>
+          <button type="button" onClick={startNewGame}>
+            Start a new game
+          </button>
+        </div>
+      ) : null}
+      {saved.writeError !== null ? <p role="alert">The game could not be saved: {saved.writeError}</p> : null}
       <p>
         {view.combat.outcome} at {shownTimeMs(view.combat)} ms
       </p>

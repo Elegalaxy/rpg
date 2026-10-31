@@ -1,6 +1,14 @@
 import { useSyncExternalStore } from 'react'
 
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
+import {
+  clearSave,
+  loadSave,
+  newSave,
+  writeSave,
+  type SaveData,
+  type StorageLike,
+} from '../persist/save.ts'
 import { createCombat, stepCombat } from '../sim/combat.ts'
 import type { CombatState } from '../sim/types.ts'
 
@@ -52,6 +60,91 @@ function assertScenarioId(scenarioId: string): void {
   }
 }
 
+export type SaveStatus = {
+  save: SaveData
+  /** Set when the stored save was corrupt or from an unknown version. The player can start a new game. */
+  loadError: string | null
+  /** Where the unreadable save was copied, when the copy worked. */
+  backupKey: string | null
+  /** Set when the last write failed. The previous save is still stored. */
+  writeError: string | null
+  bytes: number | null
+  /** False when this browser gives no storage. Nothing is saved then. */
+  storageAvailable: boolean
+}
+
+function browserStorage(): StorageLike | null {
+  try {
+    const storage = globalThis.localStorage
+    return storage ?? null
+  } catch {
+    return null
+  }
+}
+
+function saveLogger(message: string, details?: unknown): void {
+  debugLog('[save]', message, details)
+}
+
+function initialSaveStatus(): SaveStatus {
+  const storage = browserStorage()
+  if (storage === null) {
+    return { save: newSave(), loadError: null, backupKey: null, writeError: null, bytes: null, storageAvailable: false }
+  }
+  let result
+  try {
+    result = loadSave(storage, Date.now(), saveLogger)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return { save: newSave(), loadError: message, backupKey: null, writeError: null, bytes: null, storageAvailable: true }
+  }
+  if (result.kind === 'loaded') {
+    return { save: result.data, loadError: null, backupKey: null, writeError: null, bytes: result.bytes, storageAvailable: true }
+  }
+  if (result.kind === 'corrupt') {
+    return { save: newSave(), loadError: result.reason, backupKey: result.backupKey, writeError: null, bytes: null, storageAvailable: true }
+  }
+  return { save: newSave(), loadError: null, backupKey: null, writeError: null, bytes: null, storageAvailable: true }
+}
+
+let saveStatus: SaveStatus = initialSaveStatus()
+
+export function getSaveStatus(): SaveStatus {
+  return saveStatus
+}
+
+export function useSaveStatus(): SaveStatus {
+  return useSyncExternalStore(subscribe, getSaveStatus, getSaveStatus)
+}
+
+/**
+ * Replace the account's save and write it. Hero creation, allocations, and town actions call this.
+ * The combat loop passes `notify` false because it notifies once per frame itself.
+ */
+export function commitSave(next: SaveData, reason: string, notify = true): void {
+  const storage = browserStorage()
+  if (storage === null) {
+    saveStatus = { ...saveStatus, save: next }
+    if (notify) emit()
+    return
+  }
+  const result = writeSave(storage, next, saveLogger)
+  saveLogger('commit', { reason })
+  saveStatus = result.ok
+    ? { ...saveStatus, save: next, writeError: null, bytes: result.bytes }
+    : { ...saveStatus, save: next, writeError: result.reason }
+  if (notify) emit()
+}
+
+/** Drop an unreadable save and start fresh. The corrupt copy stays in storage. */
+export function startNewGame(): void {
+  const storage = browserStorage()
+  if (storage !== null) clearSave(storage)
+  saveLogger('new game')
+  saveStatus = { ...saveStatus, save: newSave(), loadError: null, backupKey: null, writeError: null, bytes: null }
+  commitSave(saveStatus.save, 'new game')
+}
+
 const defs = gameDefs()
 const listeners = new Set<() => void>()
 
@@ -98,6 +191,7 @@ function applySteps(count: number): void {
     stepCombat(combat, defs)
     if (combat.outcome !== 'ongoing') {
       const end = combat.log[combat.log.length - 1]
+      commitSave(saveStatus.save, 'encounter end', false)
       debugLog('[loop]', 'encounter end', {
         scenarioId: snapshot.scenarioId,
         seed: combat.seed,

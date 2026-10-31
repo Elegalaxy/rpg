@@ -248,7 +248,7 @@ function assertCombatLimit(limit: number): void {
   }
 }
 
-function assertExpedition(state: ExpeditionState): void {
+export function assertExpedition(state: ExpeditionState): void {
   if (typeof state !== 'object' || state === null) {
     throw new Error(`expedition state must be an object, received ${describeValue(state)}`)
   }
