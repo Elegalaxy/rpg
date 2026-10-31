@@ -1233,6 +1233,14 @@ First-playable defeat, decided 2026-10-24:
 - Regional towns have specialties, services, recipes, and predictable price differences.
 - Gold can be deposited to protect it from expedition risk.
 
+First-playable town numbers, decided 2026-10-31:
+
+- Gold comes from enemies. Each regular enemy drops its level × 2 gold. An elite or the boss drops its level × 3. Gold is added to the gold the hero is carrying.
+- Before an expedition the player chooses how much gold to carry, with a default of 25, the rescue fee. The rest of the account's gold stays deposited and safe. On a safe return the carried gold goes back to the account. After a defeat the carried gold that is left after the rescue fee is lost.
+- Greyhaven buys materials at 3 gold each (scrap 2) and buys archive items for `item level × 5 × quality`, rounded half up. It sells base items at 100% quality for `item level × 10` gold at the hero's level, and sells no supplies, because no consumable exists yet. The four supply slots stay empty.
+- Repair restores an item to full durability. One item costs `ceil(missing durability × (1 + item level ÷ 2) ÷ 10)` gold. A disabled item is repaired the same way.
+- Debt is kept on the account and added to by each defeat. It can be paid off in any amount from the account's gold, and it still blocks nothing.
+
 ### Crafting
 
 - NPC artisans produce standard base items.
@@ -1583,7 +1591,7 @@ Skill webs, priority rules, logs, crafting, routes, and risk systems can overwhe
 - Exact DoT coefficients, Expose magnitude, and cleanse availability
 - How much boss progress a retreat removes once a boss-progress counter exists. The first playable removes none.
 - What stored debt blocks, and how a disabled item is repaired. The first-playable fee is 25 gold from carried gold. Unpaid gold is stored as debt with no other effect. Deposited gold is untouched. The next expedition waits 5 minutes.
-- Which consumables fill the four supply slots
+- Which consumables fill the four supply slots (the first playable has none)
 - Crafting quality, proficiency, and upgrade formulas
 - Heirloom scaling
 - Save format and local persistence
@@ -1606,6 +1614,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-10-31: Decided the first-playable town numbers: gold drops of level × 2 (level × 3 for elites and the boss), a chosen carry amount, fixed buy and sell prices, a repair formula, and debt kept on the account with no effect. No consumables yet.
 - 2026-10-31: Decided G6. The account starts with 2 character slots and reaches 5 through three one-time milestones: the first safe return to town, the first reincarnating boss defeat, and the first Warden defeat. Duplicate race/class heroes are allowed, and hero names must be unique ignoring case. No hero can be deleted in the first playable.
 - 2026-10-21: Accepted the technical direction: TypeScript + React + Vite with no engine, a fixed 10 ms simulation clock with a fixed tie order, and actions that resolve when ready, with action time as recovery and the first action after one base action time. Linked the implementation plan.
 - 2026-10-21: Accepted the provisional combat baseline: hero/enemy formulas, resources, active skills, automation, equipment curves, class/racial passives, keystones, first-region enemies, elites, and Warden phases. Next step is deterministic simulation.
