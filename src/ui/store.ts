@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
+import { createHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
   clearSave,
   loadSave,
@@ -134,6 +135,28 @@ export function commitSave(next: SaveData, reason: string, notify = true): void 
     ? { ...saveStatus, save: next, writeError: null, bytes: result.bytes }
     : { ...saveStatus, save: next, writeError: result.reason }
   if (notify) emit()
+}
+
+/** Create a hero and save. Returns the message to show when it is refused, or null. */
+export function createHeroFromUi(request: NewHero): string | null {
+  const result = createHero(saveStatus.save, request)
+  if (!result.ok) return result.reason
+  commitSave(result.save, 'hero created')
+  return null
+}
+
+/** Select a hero and save. Returns the message to show when it is refused, or null. */
+export function chooseHero(heroId: string): string | null {
+  const result = selectHero(saveStatus.save, heroId)
+  if (!result.ok) return result.reason
+  commitSave(result.save, 'hero selected')
+  return null
+}
+
+/** Development builds only. Opens all five slots so every pair can be created by hand. */
+export function devUnlockAllSlots(): void {
+  if (!import.meta.env.DEV) return
+  commitSave(unlockAllSlots(saveStatus.save), 'dev unlock slots')
 }
 
 /** Drop an unreadable save and start fresh. The corrupt copy stays in storage. */

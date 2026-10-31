@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 7.2  
+Next step: Step 7.3  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -698,13 +698,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (39 files, 479 tests, exit 0), including 9 in `src/persist/save.test.ts` (round trip, empty start, unknown version, malformed JSON, bad shapes, a failed write, clearing, a broken expedition, and an expedition resumed from the save that matches the uninterrupted run step for step). `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. Duel-basic seed 42 and expedition seed 5 are unchanged. In the dev server in the browser pane, a planted `{"version":2}` save showed the banner with the copy `rpg.save.corrupt.<timestamp>`, and Start a new game wrote a fresh version 1 save. Not yet checked by hand: the user's create-reload-confirm pass, because nothing can create a hero until Step 7.2.
 
 ### Step 7.2: Hero creation and roster
-- Status: `todo`
+- Status: `verified`
 - Depends on: 7.1, G6
 - Files: `src/ui/character/Create*.tsx`, `Roster*.tsx`, `src/content/heroes.ts` (identity text)
 - Change: Pick race and class (all 20 pairs) and see a short identity summary of each (§15 criterion 2). Name the hero: trimmed, 1–24 characters, unique in the roster ignoring case. Slot limit per G6 (2 at the start, up to 5). Duplicate race/class heroes are allowed. Select the active hero. In a development build only, a control unlocks all 5 slots so the 20 pairs can be checked by hand.
 - Acceptance criteria: all 20 pairs can be created. Invalid names are rejected with a message.
 - Verification: User: create one hero of each race and confirm the summaries differ.
 - Progress:
+  - 2026-10-31: `src/persist/roster.ts` holds the rules with no UI: `createHero` (any of the 20 pairs, level 1, racial starting attributes, the class's four starting skills as learned and equipped, the reference priority rows, vow `zeal` for a Cleric), `nameProblem` (trimmed, 1 to 24 characters counted as characters, unique ignoring case), `freeSlots`, `selectHero`, and `unlockAllSlots`. Duplicate race/class heroes are allowed and get separate ids (`hero-N`). A new hero becomes the selected one unless an expedition is running, and the selected hero cannot change during an expedition. The screens are `src/ui/character/CreateHero.tsx` (name, race and class radios, and the identity summary of the current choice) and `Roster.tsx` (slots in use, the heroes, Select, and a development-only Dev: unlock all slots button). Identity text is `raceIdentity` and `classIdentity` in `src/content/heroes.ts`. `store.ts` adds `createHeroFromUi`, `chooseHero`, and `devUnlockAllSlots`, and each commits the save.
+  - 2026-10-31: Verified. `npm test` passed (41 files, 487 tests, exit 0), including 8 in `src/persist/roster.test.ts` (all 20 pairs, distinct identity text, name rules, duplicates, the slot limit, selection) and 2 in `src/ui/character/character.test.tsx`. `npm run typecheck` and `npm run lint` exited 0. In the dev server in the browser pane: an empty name showed "Enter a name.", `  Ash  ` created Human Warrior `Ash`, `ASH` was refused as a duplicate, the race and class summaries changed with each choice, `Briar` (Elf Mage) filled both slots with the full-roster message, and both heroes were still there after a reload. The page has no styling yet, so text is dark on the browser pane's dark background. Not done by hand: creating all five slots' worth of races (the 20-pair test covers every pair).
 
 ### Step 7.3: Attributes and skill-web screen
 - Status: `todo`

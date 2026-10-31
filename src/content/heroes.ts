@@ -239,3 +239,64 @@ export function referenceHeroAtLevel(classId: HeroClass, level: number): Referen
   }
   return hero
 }
+
+export type Identity = {
+  name: string
+  /** One line for the picker: what makes this race or class play differently. */
+  summary: string
+  /** The core meter or trait, named so the two choices can be told apart at a glance. */
+  core: string
+}
+
+/** Race identity text for hero creation (§4). The core mechanic is on from creation. */
+export const raceIdentity: Record<HeroRace, Identity> = {
+  human: {
+    name: 'Human',
+    summary: 'Adaptable and quick to learn. The branch bends the class web into custom routes.',
+    core: '+5% ordinary XP. Even starting attributes (10 each).',
+  },
+  elf: {
+    name: 'Elf',
+    summary: 'Precise and controlled. Successful actions build Focus, which narrows damage variance.',
+    core: 'Focus 0-100: +10 per successful action, lost with HP damage; raises the minimum roll and resource gain.',
+  },
+  beastfolk: {
+    name: 'Beastfolk',
+    summary: 'Tough and stronger the longer an expedition runs. Victories build Ferocity tiers.',
+    core: 'Ferocity 0-6 in three tiers: +5% Power and 3% damage reduction each. Strength and Vitality lead.',
+  },
+  undead: {
+    name: 'Undead',
+    summary: 'Patient and relentless. Three actions without direct HP damage charge a powerful strike.',
+    core: 'Stillness: after 3 undamaged actions the next attack gains +20 Accuracy, +10% damage, a higher minimum roll.',
+  },
+}
+
+/** Class identity text for hero creation (§4). */
+export const classIdentity: Record<HeroClass, Identity> = {
+  warrior: {
+    name: 'Warrior',
+    summary: 'Front-line fighter who turns damage taken and dealt into heavy blows.',
+    core: 'Fury 0-100: hits and lost HP build it, held Fury adds up to +25% physical damage, spent on strong attacks.',
+  },
+  assassin: {
+    name: 'Assassin',
+    summary: 'Agile duelist who marks a target, stacks poison, and executes.',
+    core: 'Advantage 0-5: crits, evasion, and Mark builds stacks; Execute spends them.',
+  },
+  ranger: {
+    name: 'Ranger',
+    summary: 'Ranged specialist who prepares aimed shots, traps, and special arrows on the road.',
+    core: 'Readiness 0-100: fills while travelling, spent on aimed shots and traps; special arrows in a quiver.',
+  },
+  mage: {
+    name: 'Mage',
+    summary: 'Spellcaster with fire, frost, and lightning, paced by a Mana pool.',
+    core: 'Mana 100: regenerates in and out of combat; Arcane Bolt is the cheap fallback.',
+  },
+  cleric: {
+    name: 'Cleric',
+    summary: 'Vow-bound healer and smiter who protects the party of one.',
+    core: 'Faith 0-100 from one chosen vow (Zeal, Endurance, or Temperance), spent on heals, wards, and Judgment.',
+  },
+}
