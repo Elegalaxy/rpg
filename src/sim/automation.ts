@@ -31,7 +31,7 @@ import {
 
 export const MAX_PRIORITY_ROWS = 12
 
-const STATUS_IDS = ['bleed', 'poison', 'burn', 'chill', 'mark', 'expose'] as const
+export const STATUS_IDS = ['bleed', 'poison', 'burn', 'chill', 'mark', 'expose'] as const
 const COMPARE_OPERATORS = ['atMost', 'atLeast', 'equal', 'notEqual'] as const
 const PRESENCE_OPERATORS = ['present', 'absent'] as const
 const REJECTED_PRIORITIES = ['Most dangerous', 'most dangerous', 'mostDangerous', 'most-dangerous']
@@ -152,6 +152,19 @@ function parseCondition(value: unknown, label: string): AutomationCondition | st
     const amount = parseNumber(record.value, `${label} value`)
     if (typeof amount === 'string') return amount
     return { kind, operator, value: amount }
+  }
+
+  if (kind === 'balance') {
+    const extra = unexpectedKey(record, ['kind', 'meter', 'operator', 'value'])
+    if (extra !== null) return `${label} has unknown field '${extra}'`
+    if (record.meter !== 'grace' && record.meter !== 'wrath') {
+      return `${label} meter must be grace or wrath, received ${describeValue(record.meter)}`
+    }
+    const operator = readCompare(record.operator)
+    if (operator === null) return `${label} operator is invalid, received ${describeValue(record.operator)}`
+    const amount = parseNumber(record.value, `${label} value`)
+    if (typeof amount === 'string') return amount
+    return { kind, meter: record.meter, operator, value: amount }
   }
 
   if (kind === 'enemyType') {
@@ -567,6 +580,7 @@ function conditionNeedsTarget(condition: AutomationCondition): boolean {
     case 'status':
       return condition.who === 'target'
     case 'classResource':
+    case 'balance':
     case 'barrier':
     case 'specialAmmo':
     case 'enemyCount':
@@ -616,6 +630,11 @@ function conditionFailure(
     }
     case 'classResource':
       return numericFailure('class resource', hero.classResource, condition.operator, condition.value)
+    case 'balance': {
+      const stored = hero.classState[condition.meter]
+      if (typeof stored !== 'number') return `no ${condition.meter} meter`
+      return numericFailure(condition.meter, stored, condition.operator, condition.value)
+    }
     case 'specialAmmo':
       return numericFailure('special ammo', hero.specialAmmo, condition.operator, condition.value)
     case 'enemyCount':

@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 7.4  
+Next step: Step 8.1  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -720,13 +720,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (42 files, 495 tests, exit 0), including 7 in `src/persist/character.test.ts`. One test walks all 20 race and class pairs and, at every step, checks that a node's preview says it can be taken exactly when `takeNode` succeeds, so the screen cannot offer something the sim rejects. `npm run typecheck` and `npm run lint` exited 0. In the dev server in the browser pane an Elf Mage took Arcane Bolt through Efficient Channeling, the Overcast preview and dialog listed Elemental Convergence and Grand Grimoire as closing, and after Confirm both showed blocked with `another keystone is allocated`, the skill points dropped 8 to 3, and the save held the five node ids. Development builds have a Dev: grant button, because a level 1 hero has no points.
 
 ### Step 7.4: Loadout and priority-rule editor
-- Status: `todo`
+- Status: `verified`
 - Depends on: 7.3
 - Files: `src/ui/character/Loadout*.tsx`, `Rules*.tsx`
 - Change: Choose four skills. Edit up to 12 rows: condition dropdowns limited to valid types, a target override, reordering, and validation messages. Edits made during combat go through `setPriorityRules`. Saved per hero.
 - Acceptance criteria: invalid rows can't be saved. A mid-combat edit appears as a `rulesChanged` log line.
 - Verification: User: add an Execute row at Advantage ≥ 3 and watch the log use it.
 - Progress:
+  - 2026-10-31: `src/persist/loadout.ts` holds the editor rules with no UI. `saveLoadout` calls the sim's `setLoadout` (1 to 4 learned skills) and removes any rule that names a skill the hero no longer has equipped, and says how many. A rule row can name only an equipped skill, or the Mage Convergence and Cleric release skills when that node is taken. `validateRules` builds every condition from a draft (hero or target HP %, class resource, Grace or Wrath, enemies alive, barrier, target or hero status, target status stacks, telegraph present or resolving within N seconds, target marked for an Assassin, special arrows for a Ranger), names the row and condition that is wrong, allows at most 12 rows, and then passes the set through the sim's `parsePriorityRules`, so a set that passes here is one `setPriorityRules` accepts. A condition the editor has no control for (enemy type, rank, boss phase, a status's remaining time) is kept through an edit. The Cleric's Sacred Balance needed a way to read Grace and Wrath, so the sim gained a `balance` condition (`{ kind: 'balance', meter, operator, value }`).
+  - 2026-10-31: `src/ui/character/Loadout.tsx` (checkboxes, the count, Save loadout disabled at 0 or 5) and `Rules.tsx` (skill, target override, condition rows with only the valid choices for the class, move up and down, remove, Add rule up to 12, Save rules disabled while anything is invalid, and the problems listed) are shown for the selected hero. Saving also sends the rows through `setPriorityRules` when the combat on screen is running and has the same class, so the fight logs a `rulesChanged` line.
+  - 2026-10-31: Verified. `npm test` passed (43 files, 511 tests, exit 0), including 15 in `src/persist/loadout.test.ts`: every condition kind, bad values, class-limited kinds, each class's starting rules round trip through the editor unchanged, refused sets leave the save untouched, the loadout removes dead rules, an applied set logs `rulesChanged` and a refused one logs `applied: false`, an Execute row at Advantage 3 or more is used as row 0 in a full Assassin fight, and the Grace and Wrath condition picks Mend at 30 Wrath and not at 10. `npm run typecheck` and `npm run lint` exited 0. In the dev server in the browser pane, an Assassin got a new first rule Execute with Advantage at least 3: the editor showed `Class resource needs a number.` until the value was typed, Save rules stored the row, and the log showed `Assassin changes priority rules to 6 rows`. The pane throttles animation frames while it is not in front, so the live fight advanced only a few hundred milliseconds there and the Execute use was not watched live; the sim test covers it. The page is unstyled, and the saved rules apply to a fight only when the class matches the scenario hero.
 
 ---
 

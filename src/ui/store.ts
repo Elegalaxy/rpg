@@ -2,6 +2,8 @@ import { useSyncExternalStore } from 'react'
 
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
+import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
+import { setPriorityRules } from '../sim/automation.ts'
 import { createHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
   clearSave,
@@ -172,6 +174,42 @@ export function takeNodeFromUi(nodeId: string): string | null {
   if (!result.ok) return result.reason
   commitSave(result.save, 'node allocated')
   return null
+}
+
+/** Save a loadout for the selected hero. Returns the message to show and any refusal. */
+export function saveLoadoutFromUi(skillIds: readonly string[]): { error: string | null; message: string | null } {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return { error: 'Select a hero first.', message: null }
+  const result = saveLoadout(saveStatus.save, hero.id, skillIds)
+  if (!result.ok) return { error: result.reason, message: null }
+  commitSave(result.save, 'loadout saved')
+  const removed =
+    result.removedRules === 0
+      ? ''
+      : ` ${result.removedRules} ${result.removedRules === 1 ? 'rule' : 'rules'} that used a skill you unequipped ${result.removedRules === 1 ? 'was' : 'were'} removed.`
+  return { error: null, message: `Loadout saved.${removed}` }
+}
+
+/**
+ * Save the selected hero's rules. Returns the messages for a refused set, or an empty list.
+ * When the combat on screen has the same class and is still running, the rules also go through
+ * `setPriorityRules`, so the fight logs a `rulesChanged` line and uses them from the next action.
+ */
+export function saveRulesFromUi(drafts: readonly RowDraft[]): string[] {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return ['Select a hero first.']
+  const result = saveRules(saveStatus.save, hero.id, drafts)
+  if (!result.ok) return [result.reason]
+  commitSave(result.save, 'rules saved', false)
+  const saved = selectedHero(result.save)
+  const combat = snapshot.combat
+  if (saved !== null && combat.outcome === 'ongoing' && combat.hero.classId === saved.classId) {
+    setPriorityRules(combat, { rows: saved.priorityRows }, defs)
+    debugLog('[ui]', 'rules applied to the running fight', { rows: saved.priorityRows.length })
+  }
+  snapshot = { ...snapshot }
+  emit()
+  return []
 }
 
 /** Development builds only. Gives the selected hero points to try the allocation screens. */

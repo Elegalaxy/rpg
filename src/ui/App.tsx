@@ -5,7 +5,9 @@ import type { CombatState } from '../sim/types.ts'
 
 import { Attributes } from './character/Attributes.tsx'
 import { CreateHero } from './character/CreateHero.tsx'
+import { Loadout } from './character/Loadout.tsx'
 import { Roster } from './character/Roster.tsx'
+import { Rules } from './character/Rules.tsx'
 import { SkillWeb } from './character/SkillWeb.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
@@ -64,6 +66,8 @@ function App() {
       <CreateHero />
       <Attributes />
       <SkillWeb />
+      <Loadout />
+      <Rules />
       <p>
         {view.combat.outcome} at {shownTimeMs(view.combat)} ms
       </p>

@@ -442,6 +442,8 @@ export type ConditionOperator = CompareOperator | PresenceOperator
 export type AutomationCondition =
   | { kind: 'hpPercent'; who: 'hero' | 'target'; operator: CompareOperator; value: number }
   | { kind: 'classResource'; operator: CompareOperator; value: number }
+  /** Cleric Sacred Balance Grace or Wrath. Fails when the hero has no such meter. */
+  | { kind: 'balance'; meter: 'grace' | 'wrath'; operator: CompareOperator; value: number }
   | { kind: 'barrier'; operator: ConditionOperator; value?: number }
   | {
       kind: 'status'

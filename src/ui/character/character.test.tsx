@@ -5,7 +5,9 @@ import { classIdentity, raceIdentity } from '../../content/heroes.ts'
 
 import { Attributes } from './Attributes.tsx'
 import { CreateHero } from './CreateHero.tsx'
+import { Loadout } from './Loadout.tsx'
 import { Roster } from './Roster.tsx'
+import { Rules } from './Rules.tsx'
 import { SkillWeb } from './SkillWeb.tsx'
 
 describe('hero creation screen', () => {
@@ -29,5 +31,12 @@ describe('allocation screens without a hero', () => {
   it('ask for a selected hero', () => {
     expect(renderToStaticMarkup(<Attributes />)).toContain('Select a hero to allocate attribute points.')
     expect(renderToStaticMarkup(<SkillWeb />)).toContain('Select a hero to see their skill web.')
+  })
+})
+
+describe('loadout and rules screens without a hero', () => {
+  it('ask for a selected hero', () => {
+    expect(renderToStaticMarkup(<Loadout />)).toContain('Select a hero to choose their skills.')
+    expect(renderToStaticMarkup(<Rules />)).toContain('Select a hero to edit their rules.')
   })
 })
