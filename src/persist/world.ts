@@ -1,0 +1,245 @@
+import { encounters } from '../content/encounters.ts'
+import { enemies } from '../content/enemies.ts'
+import {
+  GREYHAVEN_ID,
+  LEG_TRAVEL_MS,
+  bossRevealed,
+  gateBlock,
+  legs,
+  nodes,
+  routes,
+  type Route,
+  type WorldNode,
+} from '../content/world.ts'
+import { TRAVEL_GAP_MS, type ExpeditionState } from '../sim/expedition.ts'
+
+import { selectedHero } from './character.ts'
+import { reachMilestone, type SaveData, type SavedHero } from './save.ts'
+
+export type NodeState = 'locked' | 'discovered' | 'cleared'
+
+export type NodeStatus = {
+  state: NodeState
+  /** Why a node is locked, or null. A personal gate shows what the hero still has to defeat. */
+  reason: string | null
+}
+
+/**
+ * One node as the selected hero sees it. Discovery is shared across the account. Clearing and the
+ * Fracture Gate's gate are personal to the hero.
+ */
+export function nodeStatus(node: WorldNode, save: SaveData, hero: SavedHero | null): NodeStatus {
+  if (hero !== null && hero.clearedNodeIds.includes(node.id)) return { state: 'cleared', reason: null }
+  if (!save.account.discoveries.includes(node.discoveryId)) return { state: 'locked', reason: 'Not discovered yet.' }
+  if (node.gate !== undefined) {
+    const block = gateBlock(node, { defeatedEnemyIds: hero?.defeatedEnemyIds ?? [] })
+    if (block !== null) return { state: 'locked', reason: block }
+  }
+  if (node.kind === 'town') return { state: 'cleared', reason: null }
+  return { state: 'discovered', reason: null }
+}
+
+export type RouteInfo = {
+  route: Route
+  nodeNames: string[]
+  fights: number
+  levels: { min: number; max: number } | null
+  /** Enemy names on the route. The boss shows as hidden until the hero has arrived at its node. */
+  enemyNames: string[]
+  bossHidden: boolean
+  resources: { name: string; materialId: string; quantity: number }[]
+  /** One way, in seconds. A return walk takes the same. */
+  travelSeconds: number
+}
+
+function routeNodes(route: Route): WorldNode[] {
+  return route.nodeIds.flatMap((id) => {
+    const node = nodes[id]
+    return node === undefined ? [] : [node]
+  })
+}
+
+export function routeInfo(routeId: string, save: SaveData): RouteInfo {
+  const route = routes[routeId]
+  if (route === undefined) throw new Error(`unknown route '${routeId}'`)
+  const along = routeNodes(route)
+  let min: number | null = null
+  let max: number | null = null
+  const names: string[] = []
+  let bossHidden = false
+  let fights = 0
+  const resources: RouteInfo['resources'] = []
+  for (const node of along) {
+    if (node.levels !== undefined) {
+      min = min === null || node.levels.min < min ? node.levels.min : min
+      max = max === null || node.levels.max > max ? node.levels.max : max
+    }
+    if (node.resource !== undefined) {
+      resources.push({ name: node.resource.name, materialId: node.resource.materialId, quantity: node.resource.quantity })
+    }
+    fights += node.encounterIds.length
+    for (const id of node.encounterIds) {
+      const encounter = encounters[id]
+      for (const member of encounter?.members ?? []) {
+        const def = enemies[member.enemyId]
+        if (def === undefined) continue
+        if (def.boss === true) {
+          if (bossRevealed(node, save.account.discoveries.includes(node.discoveryId))) names.push(def.name)
+          else bossHidden = true
+          continue
+        }
+        if (!names.includes(def.name)) names.push(def.name)
+      }
+    }
+  }
+  return {
+    route,
+    nodeNames: along.map((node) => node.name),
+    fights,
+    levels: min === null || max === null ? null : { min, max },
+    enemyNames: names,
+    bossHidden,
+    resources,
+    travelSeconds: ((route.nodeIds.length - 1) * LEG_TRAVEL_MS) / 1000,
+  }
+}
+
+export type StartCheck = { ok: true } | { ok: false; reason: string }
+
+/** A route can start when a hero is selected, none is running, and every node on it is open to this hero. */
+export function canStartRoute(save: SaveData, routeId: string): StartCheck {
+  const route = routes[routeId]
+  if (route === undefined) return { ok: false, reason: 'Unknown route.' }
+  const hero = selectedHero(save)
+  if (hero === null) return { ok: false, reason: 'Select a hero first.' }
+  if (save.expedition !== null) return { ok: false, reason: 'An expedition is already running.' }
+  for (const node of routeNodes(route)) {
+    if (node.kind === 'town') continue
+    const status = nodeStatus(node, save, hero)
+    if (status.state === 'locked') return { ok: false, reason: `${node.name}: ${status.reason ?? 'locked'}` }
+  }
+  return { ok: true }
+}
+
+/** Which node each fight on a route happens at, in order. */
+export function fightNodeIds(route: Route): string[] {
+  const ids: string[] = []
+  for (const node of routeNodes(route)) {
+    for (let index = 0; index < node.encounterIds.length; index += 1) ids.push(node.id)
+  }
+  return ids
+}
+
+function nodeForFight(route: Route, index: number): string {
+  const ids = fightNodeIds(route)
+  return ids[index] ?? ids[ids.length - 1] ?? GREYHAVEN_ID
+}
+
+export type MarkerPosition =
+  | { kind: 'at'; nodeId: string }
+  | { kind: 'between'; fromId: string; toId: string; fraction: number }
+
+/**
+ * Where the hero is, computed only from the expedition state. Between two fights in different nodes
+ * the marker moves along their leg for the length of the walk. A return walk goes back to Greyhaven.
+ */
+export function markerPosition(expedition: ExpeditionState): MarkerPosition {
+  const route = routes[expedition.id]
+  if (route === undefined) return { kind: 'at', nodeId: GREYHAVEN_ID }
+  if (expedition.outcome !== 'ongoing') return { kind: 'at', nodeId: GREYHAVEN_ID }
+  if (expedition.phase === 'combat') {
+    const index = expedition.current?.index ?? expedition.encounterIndex
+    return { kind: 'at', nodeId: nodeForFight(route, index) }
+  }
+  const previous = expedition.encounterIndex === 0 ? GREYHAVEN_ID : nodeForFight(route, expedition.encounterIndex - 1)
+  if (expedition.returning) {
+    if (previous === GREYHAVEN_ID) return { kind: 'at', nodeId: GREYHAVEN_ID }
+    return { kind: 'between', fromId: previous, toId: GREYHAVEN_ID, fraction: clamp(expedition.travelMs / TRAVEL_GAP_MS) }
+  }
+  const next = nodeForFight(route, expedition.encounterIndex)
+  if (previous === next) return { kind: 'at', nodeId: next }
+  return { kind: 'between', fromId: previous, toId: next, fraction: clamp(expedition.travelMs / expedition.travelGapMs) }
+}
+
+function clamp(value: number): number {
+  if (!(value > 0)) return 0
+  return value > 1 ? 1 : value
+}
+
+function add(list: readonly string[], ...ids: string[]): string[] {
+  const missing = ids.filter((id, index) => !list.includes(id) && ids.indexOf(id) === index)
+  return missing.length === 0 ? (list as string[]) : [...list, ...missing]
+}
+
+/**
+ * Fold what the running expedition has done into the save: arriving discovers a node for the whole
+ * account, defeating an elite is recorded for the hero, and winning every fixed fight at a node clears
+ * it and discovers the nodes beyond. Safe to call again, it only adds.
+ */
+export function recordProgress(save: SaveData): SaveData {
+  const expedition = save.expedition
+  const hero = selectedHero(save)
+  if (expedition === null || hero === null) return save
+  const route = routes[expedition.id]
+  if (route === undefined) return save
+  const fightNodes = fightNodeIds(route)
+  let discoveries = save.account.discoveries
+  let defeated = hero.defeatedEnemyIds
+  let cleared = hero.clearedNodeIds
+  let account = save.account
+
+  const arrive = (index: number): void => {
+    const node = nodes[nodeForFight(route, index)]
+    if (node !== undefined) discoveries = add(discoveries, node.discoveryId)
+  }
+  for (const entry of expedition.history) arrive(entry.index)
+  if (expedition.current !== null) arrive(expedition.current.index)
+
+  const won = new Set(expedition.history.filter((entry) => entry.outcome === 'victory').map((entry) => entry.index))
+  for (const node of routeNodes(route)) {
+    const indices = fightNodes.flatMap((id, index) => (id === node.id ? [index] : []))
+    if (indices.length === 0) continue
+    for (const index of indices) {
+      const entry = expedition.history.find((item) => item.index === index && item.outcome === 'victory')
+      if (entry === undefined) continue
+      const def = enemies[entry.encounterId]
+      if (def !== undefined && (def.elite === true || def.boss === true)) defeated = add(defeated, def.id)
+      if (def?.boss === true) account = reachMilestone(account, 'first-warden-defeat')
+    }
+    if (indices.every((index) => won.has(index))) {
+      cleared = add(cleared, node.id)
+      for (const leg of legs) {
+        if (leg.from !== node.id) continue
+        const next = nodes[leg.to]
+        if (next !== undefined) discoveries = add(discoveries, next.discoveryId)
+      }
+    }
+  }
+  const changed =
+    discoveries !== save.account.discoveries || defeated !== hero.defeatedEnemyIds || cleared !== hero.clearedNodeIds || account !== save.account
+  if (!changed) return save
+  return {
+    ...save,
+    account: { ...account, discoveries },
+    heroes: save.heroes.map((item) => (item.id === hero.id ? { ...item, defeatedEnemyIds: defeated, clearedNodeIds: cleared } : item)),
+  }
+}
+
+/**
+ * Close a finished expedition. A safe return opens the first-return slot. Secured loot and deposited
+ * gold go to the account, and a defeat keeps only what was already secured. The expedition is removed.
+ */
+export function settleExpedition(save: SaveData): SaveData {
+  const expedition = save.expedition
+  if (expedition === null || expedition.outcome === 'ongoing') return save
+  const progressed = recordProgress(save)
+  const materials = { ...progressed.account.materials }
+  for (const stack of expedition.secured) materials[stack.materialId] = (materials[stack.materialId] ?? 0) + stack.quantity
+  let account = {
+    ...progressed.account,
+    materials,
+    gold: progressed.account.gold + expedition.depositedGold + (expedition.outcome === 'returned' ? expedition.carriedGold : 0),
+  }
+  if (expedition.outcome === 'returned') account = reachMilestone(account, 'first-return')
+  return { ...progressed, account, expedition: null }
+}

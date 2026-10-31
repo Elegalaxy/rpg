@@ -1,3 +1,6 @@
+import type { ExpeditionEncounterDef } from '../sim/expedition.ts'
+import { enemies } from './enemies.ts'
+
 export type EncounterMember = {
   enemyId: string
   slot: number
@@ -113,4 +116,19 @@ export const encounters: { [id: string]: EncounterDef } = {
   [rootmawEncounter.id]: rootmawEncounter,
   [echoKnightEncounter.id]: echoKnightEncounter,
   [wardenEncounter.id]: wardenEncounter,
+}
+
+/** An encounter as an expedition fight list entry, with each enemy's drop copied from its definition. */
+export function toExpeditionEncounter(encounter: EncounterDef): ExpeditionEncounterDef {
+  return {
+    id: encounter.id,
+    enemies: encounter.members.map((member) => {
+      const def = enemies[member.enemyId]
+      if (def === undefined) throw new Error(`unknown enemy '${member.enemyId}'`)
+      const enemy = { defId: member.enemyId, slot: member.slot, level: member.level }
+      const drop = def.drop
+      if (drop === undefined) return enemy
+      return { ...enemy, materialId: drop.materialId, baseQuantity: drop.baseQuantity }
+    }),
+  }
 }

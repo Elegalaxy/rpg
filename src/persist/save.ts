@@ -10,6 +10,8 @@ export const CORRUPT_KEY_PREFIX = 'rpg.save.corrupt.'
 /** Character slots, decided in G6: 2 at the start, up to 5 through the milestones below. */
 export const STARTING_SLOTS = 2
 export const MAX_SLOTS = 5
+/** A new game knows the town and the road out of it. */
+export const STARTING_DISCOVERIES = ['node:greyhaven', 'node:splintered-road'] as const
 /** Slot 3, 4, and 5 unlock once each, the first time any hero reaches the milestone. */
 export const SLOT_MILESTONES = ['first-return', 'first-reincarnation', 'first-warden-defeat'] as const
 
@@ -18,8 +20,11 @@ export type AccountData = {
   /** Material id to quantity. */
   materials: { [materialId: string]: number }
   recipes: string[]
+  /** Shared world discoveries: node ids from the world content, such as `node:splintered-road`. */
   discoveries: string[]
   slots: number
+  /** One-time account milestones reached so far. Each one opens a character slot. */
+  milestones: string[]
 }
 
 /** One hero's saved record. Combat state is rebuilt from this and the content tables. */
@@ -35,6 +40,9 @@ export type SavedHero = {
   curse: string | null
   /** The spells a Mage prepared. Empty takes the loadout order. */
   preparedSpells: string[]
+  /** Personal world record: enemies this hero has defeated, and the nodes this hero has cleared. */
+  defeatedEnemyIds: string[]
+  clearedNodeIds: string[]
 }
 
 export type SaveData = {
@@ -75,7 +83,14 @@ function describeValue(value: unknown): string {
 export function newSave(): SaveData {
   return {
     version: SAVE_VERSION,
-    account: { gold: 0, materials: {}, recipes: [], discoveries: [], slots: STARTING_SLOTS },
+    account: {
+      gold: 0,
+      materials: {},
+      recipes: [],
+      discoveries: [...STARTING_DISCOVERIES],
+      slots: STARTING_SLOTS,
+      milestones: [],
+    },
     heroes: [],
     selectedHeroId: null,
     expedition: null,
@@ -112,6 +127,8 @@ function assertAccount(value: unknown): asserts value is AccountData {
   for (const id of Object.keys(value.materials)) whole(value.materials[id], `material ${id}`)
   stringList(value.recipes, 'recipes')
   stringList(value.discoveries, 'discoveries')
+  stringList(value.milestones, 'milestones')
+  check(value.milestones.length <= MAX_SLOTS - STARTING_SLOTS, 'too many milestones')
 }
 
 function assertHero(value: unknown, index: number): asserts value is SavedHero {
@@ -131,6 +148,8 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check(value.vow === null || typeof value.vow === 'string', `${label} vow must be text or null`)
   check(value.curse === null || typeof value.curse === 'string', `${label} curse must be text or null`)
   stringList(value.preparedSpells, `${label} prepared spells`)
+  stringList(value.defeatedEnemyIds, `${label} defeated enemies`)
+  stringList(value.clearedNodeIds, `${label} cleared nodes`)
 }
 
 /** Version 1 shape check. Throws a readable message on the first problem. */
@@ -160,6 +179,18 @@ export function serializeSave(data: SaveData): string {
   return JSON.stringify(data)
 }
 
+/** Saves from before the world record existed get empty lists. Nothing else is guessed. */
+function fillWorldFields(parsed: unknown): void {
+  if (!isRecord(parsed)) return
+  if (isRecord(parsed.account) && parsed.account.milestones === undefined) parsed.account.milestones = []
+  if (!Array.isArray(parsed.heroes)) return
+  for (const hero of parsed.heroes) {
+    if (!isRecord(hero)) continue
+    if (hero.defeatedEnemyIds === undefined) hero.defeatedEnemyIds = []
+    if (hero.clearedNodeIds === undefined) hero.clearedNodeIds = []
+  }
+}
+
 export function parseSave(text: string): ParseResult {
   let parsed: unknown
   try {
@@ -167,6 +198,7 @@ export function parseSave(text: string): ParseResult {
   } catch {
     return { ok: false, reason: 'the save is not valid JSON' }
   }
+  fillWorldFields(parsed)
   try {
     assertSaveData(parsed)
   } catch (error) {
@@ -228,4 +260,14 @@ export function writeSave(storage: StorageLike, data: SaveData, log?: SaveLogger
 /** Remove the live save for a new game. Corrupt backups stay. */
 export function clearSave(storage: StorageLike): void {
   storage.removeItem(SAVE_KEY)
+}
+
+/**
+ * Record a one-time milestone. The first time only, it opens the next character slot.
+ * Returns the account unchanged when the milestone was already reached.
+ */
+export function reachMilestone(account: AccountData, milestone: (typeof SLOT_MILESTONES)[number]): AccountData {
+  if (account.milestones.includes(milestone)) return account
+  const milestones = [...account.milestones, milestone]
+  return { ...account, milestones, slots: Math.min(MAX_SLOTS, STARTING_SLOTS + milestones.length) }
 }

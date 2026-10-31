@@ -74,6 +74,8 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     vow: request.classId === 'cleric' ? (loadout.vow ?? 'zeal') : null,
     curse: null,
     preparedSpells: [],
+    defeatedEnemyIds: [],
+    clearedNodeIds: [],
   }
   const next: SaveData = {
     ...save,

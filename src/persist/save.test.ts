@@ -16,6 +16,7 @@ import {
   loadSave,
   newSave,
   parseSave,
+  reachMilestone,
   serializeSave,
   writeSave,
   type SaveData,
@@ -41,7 +42,7 @@ function fakeStorage(options?: { failWrites?: boolean }): StorageLike & { data: 
 
 function withHero(): SaveData {
   const save = newSave()
-  save.account = { gold: 40, materials: { shard: 8, hide: 3 }, recipes: ['patch'], discoveries: ['splintered-road'], slots: 3 }
+  save.account = { gold: 40, materials: { shard: 8, hide: 3 }, recipes: ['patch'], discoveries: ['splintered-road'], slots: 3, milestones: ['first-return'] }
   save.heroes.push({
     id: 'hero-1',
     name: 'Ash',
@@ -51,6 +52,8 @@ function withHero(): SaveData {
     vow: null,
     curse: null,
     preparedSpells: [],
+    defeatedEnemyIds: ['rootmaw-stalker'],
+    clearedNodeIds: ['splintered-road'],
   })
   save.selectedHeroId = 'hero-1'
   return save
@@ -210,5 +213,34 @@ describe('save', () => {
     const save = JSON.parse(serializeSave(newSave())) as Record<string, unknown>
     save.expedition = broken
     expect(parseSave(JSON.stringify(save))).toMatchObject({ ok: false, reason: expect.stringMatching(/history/) })
+  })
+})
+
+describe('world record in the save', () => {
+  it('starts knowing the town and the road, and fills the lists for an older save', () => {
+    expect(newSave().account.discoveries).toEqual(['node:greyhaven', 'node:splintered-road'])
+    const older = JSON.parse(serializeSave(withHero())) as Record<string, unknown>
+    const account = older.account as Record<string, unknown>
+    delete account.milestones
+    const hero = (older.heroes as Record<string, unknown>[])[0]!
+    delete hero.defeatedEnemyIds
+    delete hero.clearedNodeIds
+    const parsed = parseSave(JSON.stringify(older))
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) {
+      expect(parsed.data.account.milestones).toEqual([])
+      expect(parsed.data.heroes[0]?.defeatedEnemyIds).toEqual([])
+    }
+  })
+
+  it('opens a slot the first time a milestone is reached, and only then', () => {
+    const account = newSave().account
+    const first = reachMilestone(account, 'first-return')
+    expect(first.slots).toBe(3)
+    expect(first.milestones).toEqual(['first-return'])
+    expect(reachMilestone(first, 'first-return')).toBe(first)
+    const all = reachMilestone(reachMilestone(first, 'first-reincarnation'), 'first-warden-defeat')
+    expect(all.slots).toBe(MAX_SLOTS)
+    expect(parseSave(serializeSave({ ...newSave(), account: all })).ok).toBe(true)
   })
 })

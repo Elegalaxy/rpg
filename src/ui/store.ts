@@ -2,6 +2,9 @@ import { useSyncExternalStore } from 'react'
 
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
+import { startExpedition } from '../persist/expeditionSetup.ts'
+import { canStartRoute, recordProgress, settleExpedition } from '../persist/world.ts'
+import { stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
 import { setPriorityRules } from '../sim/automation.ts'
 import { createHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
@@ -305,6 +308,72 @@ const loop = createGameLoop({
   },
   details,
 })
+
+function applyExpeditionSteps(count: number): void {
+  const expedition = saveStatus.save.expedition
+  if (expedition === null || expedition.outcome !== 'ongoing') return
+  const fights = expedition.history.length
+  const phase = expedition.phase
+  for (let index = 0; index < count; index += 1) {
+    stepExpedition(expedition, defs)
+    if (expedition.outcome !== 'ongoing') break
+  }
+  const moved = expedition.history.length !== fights || expedition.phase !== phase || expedition.outcome !== 'ongoing'
+  if (!moved) return
+  saveStatus = { ...saveStatus, save: recordProgress(saveStatus.save) }
+  if (expedition.history.length !== fights || expedition.outcome !== 'ongoing') {
+    commitSave(saveStatus.save, expedition.outcome === 'ongoing' ? 'encounter end' : 'expedition end', false)
+  }
+}
+
+const expeditionLoop = createGameLoop({
+  getSpeed: () => snapshot.speed,
+  isPaused: () => snapshot.paused,
+  applySteps: applyExpeditionSteps,
+  notify: () => {
+    saveStatus = { ...saveStatus }
+    emit()
+  },
+  details: () => ({ scenarioId: 'expedition', seed: saveStatus.save.expedition?.seed ?? 0, speed: snapshot.speed, paused: snapshot.paused }),
+})
+
+/** Start the expedition clock when a run is on the save, such as after a reload. Returns the cleanup. */
+export function startExpeditionLoop(): () => void {
+  const running = saveStatus.save.expedition
+  if (running !== null && running.outcome === 'ongoing') expeditionLoop.start()
+  return () => {
+    expeditionLoop.stop()
+  }
+}
+
+/** Start a run on a route for the selected hero. Returns the reason it was refused, or null. */
+export function startExpeditionFromUi(routeId: string): string | null {
+  const check = canStartRoute(saveStatus.save, routeId)
+  if (!check.ok) return check.reason
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  const buffer = new Uint32Array(1)
+  crypto.getRandomValues(buffer)
+  const seed = (buffer[0] ?? 1) | 0
+  let expedition
+  try {
+    expedition = startExpedition(hero, routeId, seed)
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+  debugLog('[ui]', 'expedition start', { routeId, seed, hero: hero.id })
+  commitSave({ ...saveStatus.save, expedition }, 'expedition start')
+  expeditionLoop.resetClock()
+  if (!snapshot.paused) expeditionLoop.start()
+  return null
+}
+
+/** Close a finished expedition: loot to the account, the first return opens a slot. */
+export function settleExpeditionFromUi(): void {
+  const settled = settleExpedition(saveStatus.save)
+  if (settled === saveStatus.save) return
+  commitSave(settled, 'expedition settled')
+}
 
 function startScenario(scenarioId: string, seed: number, seedText: string): void {
   assertScenarioId(scenarioId)

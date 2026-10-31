@@ -1,0 +1,47 @@
+.world-map {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+}
+.map-background {
+  fill: #1c2430;
+  stroke: #3a4658;
+}
+.map-leg {
+  stroke: #566278;
+  stroke-width: 3;
+}
+.map-leg--chosen {
+  stroke: #f0c040;
+  stroke-width: 4;
+}
+.map-node circle {
+  fill: #223;
+  stroke: #4a7bd0;
+  stroke-width: 3;
+}
+.map-node text {
+  fill: #dde4ee;
+  font-size: 11px;
+}
+.map-node--locked {
+  opacity: 0.5;
+}
+.map-node--locked circle {
+  stroke: #7a4a4a;
+  stroke-dasharray: 4 3;
+}
+.map-node--discovered circle {
+  fill: #2a3a55;
+}
+.map-node--cleared circle {
+  fill: #4a7bd0;
+}
+.map-node--chosen circle {
+  stroke: #f0c040;
+}
+.map-marker {
+  fill: #f06040;
+  stroke: #fff;
+  stroke-width: 2;
+}

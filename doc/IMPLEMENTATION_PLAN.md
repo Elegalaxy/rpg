@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 8.2  
+Next step: Step 8.3  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -749,13 +749,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (45 files, 519 tests, exit 0): `src/content/world.test.ts` resolves every reference (legs, routes against real legs and the expedition ids, encounters, enemies, drop materials, elites, the gate) and `src/harness/routes.test.ts` runs every route for every class and follows the two Gate routes fight by fight with no retreat. `npm run typecheck` and `npm run lint` exited 0. Duel-basic seed 42 and expedition seed 5 on the road are unchanged, and the combos matrix has 0 errors. Not yet built: the sim does not use the gate, the resource nodes, or the discovery flags. Step 8.3 adds the expedition panel, and these become real there.
 
 ### Step 8.2: Node map view
-- Status: `todo`
+- Status: `verified`
 - Depends on: 8.1
 - Files: `src/ui/map/*.tsx`, `public/map/`
 - Change: SVG nodes and routes over a placeholder background. Node states: locked, discovered, cleared. An animated hero marker while travelling. Choosing a destination and route. A route info panel with known enemies, resources and level band.
 - Acceptance criteria: the map state comes only from simulation and save state.
 - Verification: User: choose a route and watch the marker travel.
 - Progress:
+  - 2026-10-31: The save now carries the world record the map needs: shared `account.discoveries` (a new game knows `node:greyhaven` and `node:splintered-road`), `account.milestones`, and each hero's `defeatedEnemyIds` and `clearedNodeIds`. An older save without them gets empty lists. `reachMilestone` opens the next character slot the first time a milestone is reached. `src/persist/world.ts` computes everything the map shows from the save and the expedition state only: `nodeStatus` (locked, discovered, or cleared, with the Fracture Gate's personal gate giving the reason), `routeInfo` (path, level band, fights, one-way seconds, enemies with the boss hidden until arrival, resources), `canStartRoute`, `markerPosition` (at a node, or a fraction along a leg while walking, or back to Greyhaven on a return), `recordProgress` (arriving discovers a node for the account, an elite defeat is recorded for the hero, winning every fixed fight at a node clears it and discovers the nodes beyond), and `settleExpedition` (secured loot and deposited gold go to the account, a safe return reaches the first-return milestone and opens slot 3, a defeat keeps only what was secured).
+  - 2026-10-31: `src/persist/expeditionSetup.ts` builds a run from a saved hero and a route: race, attributes, loadout, rules, nodes, vow, curse, prepared spells, and the 40% retreat threshold, with the neutral reference gear for the hero's level until Step 9.1 adds equipment. `src/ui/store.ts` runs the expedition clock for a running save (`startExpeditionFromUi`, `startExpeditionLoop` for a reload, `settleExpeditionFromUi`), applies `recordProgress` as fights finish, and writes the save at each fight end and at the end of the run. `src/ui/map/MapView.tsx` draws the five nodes and five legs over a placeholder background, the chosen route in gold, a route radio list and info panel, a Start expedition button that says why it cannot start, a hero marker that moves with the walk, and a Return to town button when the run ends. This is more of the run than the plan listed for 8.2, because watching the marker needed a running expedition. Step 8.3 keeps its own scope: preparation, push or return, the embedded combat and log panels, and the outcome screen.
+  - 2026-10-31: Verified. `npm test` passed (47 files, 537 tests, exit 0), including 16 in `src/persist/world.test.ts` (states, the personal gate, route info, starting rules, the marker through a real expedition, recording and settling, and a real road run settled into a valid save) and the map render test. `npm run typecheck` and `npm run lint` exited 0. Duel-basic seed 42 and the road seed 5 are unchanged, and the combos matrix has 0 errors. In the dev server in the browser pane, a new game showed Greyhaven cleared, the road discovered, and the other three nodes locked, the Grove route said `Withered Grove: Not discovered yet.`, and a started road run moved the marker from x 60 to 92 and then 112 as the walk reached 5 and then 8 seconds, with the chosen route shown in gold. Limits: the pane throttles animation frames, so a 20-second walk took far longer than 5 seconds even at 4x, and the run was saved only at its start, so a reload mid-walk restarts that fight's walk.
 
 ### Step 8.3: Expedition panel
 - Status: `todo`

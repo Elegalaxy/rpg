@@ -12,6 +12,7 @@ import { SkillWeb } from './character/SkillWeb.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
 import { LogPanel } from './log/LogPanel.tsx'
+import { MapView } from './map/MapView.tsx'
 import { OutcomeCard } from './log/OutcomeCard.tsx'
 import {
   PLAYBACK_SPEEDS,
@@ -21,6 +22,7 @@ import {
   setSeedText,
   setSpeed,
   startCombatLoop,
+  startExpeditionLoop,
   startNewGame,
   togglePause,
   useCombatStore,
@@ -44,7 +46,12 @@ function App() {
 
   useEffect(() => {
     debugLog('[ui]', 'app mounted')
-    return startCombatLoop()
+    const stopCombat = startCombatLoop()
+    const stopExpedition = startExpeditionLoop()
+    return () => {
+      stopCombat()
+      stopExpedition()
+    }
   }, [])
 
   return (
@@ -63,6 +70,7 @@ function App() {
       ) : null}
       {saved.writeError !== null ? <p role="alert">The game could not be saved: {saved.writeError}</p> : null}
       <Roster />
+      <MapView />
       <CreateHero />
       <Attributes />
       <SkillWeb />
