@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 6.9  
+Next step: Step 7.1  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -668,13 +668,17 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-10-31: Verified. `npm test` passed (37 files, 448 tests, exit 0), including 20 in `src/content/cleric-nodes.test.ts` (one per node, plus the Exalted lockout and the two release skills). `npm run typecheck` and `npm run lint` exited 0. Duel-basic seed 42 stayed victory at 20688 ms. Seed 5 stayed victories at 7208, 15767, and 10812 ms, retreat at 12760 ms, same summary. Not covered: a telegraph-triggered Steadfast Spirit test, and Grace and Wrath carrying between expedition fights.
 
 ### Step 6.9: Racial branches and Undead curses
-- Status: `todo`
+- Status: `verified`
 - Depends on: 6.8
 - Files: `src/content/webs/racial.ts`, `src/sim/races/*.ts`, tests
 - Change: The 16 §4 racial nodes and the three Undead curses (chosen before an expedition).
 - Acceptance criteria: one test per node and curse. The `combos` matrix runs all 20 pairs with representative allocated webs and no errors.
 - Verification: `npm test`, `npm run sim -- --matrix combos --runs 50 --seed 1`.
 - Progress:
+  - 2026-10-31: The 16 racial nodes are in `src/content/webs/racial.ts` (four per race, one line, none a keystone, same skill points as class nodes) and spent with `allocateRacialNode`. Rules are in `src/sim/races/racialNodes.ts` and the four race modules, and `deriveHeroStats` applies the stat nodes (Cross-Training, Thick Hide, Renaissance) so combat and the expedition agree. Human: Quick Study 1.08 XP, Cross-Training counts every item as preferred, Renaissance needs two nodes in each class cluster (`renaissanceActive`) and the setup flag `renaissance`. Elf: Focused Mind 15 gain and 25% less loss, Efficient Flow doubles the resource bonus to a 20% cap, Foresight +10 Evasion at 75, Perfect Clarity at 100 lifts the damage floor to 95%, adds 0.10 cooldown reduction, and any direct HP loss clears Focus.
+  - 2026-10-31: Beastfolk: Thick Hide +10% HP and +25% out-of-combat HP regeneration, Blood Scent counts a low-HP finish as 2 progress and heals 5% after the victory, Long Hunt adds 5% per tier to resource generation and regeneration, Apex Instinct at tier 3 adds 0.15 crit damage and 15% healing and barrier output. Undead: Patient Killer, Soul Harvest (one per kill, cap 5, carried through the expedition and cleared in town, on retreat, and on defeat), Cursebound (`curse` in the setup, ignored without the node), the three curses, and Deathly Precision (a Soul forces the top roll and +25 points of crit on the spent Stillness action). The race `kill` hook is now called by combat.
+  - 2026-10-31: Choices made here. Flexible Route is takeable and has no effect, because attachment points are still closed (`setAttachment` still refuses). Foresight's earlier telegraph reveal is a UI matter and is not simulated. Hollow Hunger's heal uses the Soul only when HP is below 30% after a hit that took HP. Grave Patience slows both basic attacks and skills by 1/0.85. Soul Debt raises the rescue fee to 38 (25 × 1.5, half-up) when the curse and Cursebound are both set. Perfect Clarity does not lower a healing floor Focus already raised to 100%. The old architecture guard that banned racial branch words in the race modules was narrowed to the systems still unbuilt (attachment points and the mastery counter).
+  - 2026-10-31: `npm run sim -- --matrix combos` now runs each pair twice per run, a core build and a representative allocated build (`comboNodeIds`: the whole racial branch, one class cluster through its keystone, and the first three nodes of the others, with Hollow Hunger for Undead). Verified. `npm test` passed (38 files, 470 tests, exit 0), including 22 in `src/harness/racial-nodes.test.ts` (it sits in the harness because content may not import it). `npm run typecheck` and `npm run lint` exited 0. `npm run sim -- --matrix combos --runs 50 --seed 1` ended with `pairs 20 runs 50 errors 0`. Duel-basic seed 42 stayed victory at 20688 ms, and expedition seed 5 kept its times and summary.
 
 ---
 

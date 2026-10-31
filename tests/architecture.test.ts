@@ -407,7 +407,9 @@ describe('architecture boundaries', () => {
     const combat = readFileSync(join(SRC_DIR, 'sim', 'combat.ts'), 'utf8')
     expect(combat).not.toMatch(/['"]human['"]|['"]elf['"]|['"]beastfolk['"]|['"]undead['"]/)
     const raceDir = join(SRC_DIR, 'sim', 'races')
-    const banned = [/Quick Study/, /Soul Fragment/, /attachment point/i, /\bcurse\b/i, /mastery counter/i]
+    // Step 6.9 added the racial branch nodes and the Undead curses, so only the systems that
+    // are still unbuilt stay banned here.
+    const banned = [/attachment point/i, /mastery counter/i]
     for (const name of readdirSync(raceDir)) {
       if (!name.endsWith('.ts') || name.endsWith('.test.ts')) continue
       const source = readFileSync(join(raceDir, name), 'utf8')

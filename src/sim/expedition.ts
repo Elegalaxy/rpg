@@ -25,6 +25,14 @@ import { FEROCITY_CAP } from './races/beastfolk.ts'
 import { FOCUS_MAX } from './races/elf.ts'
 import { readRace } from './races/index.ts'
 import { createRng, deriveSeed, nextFloat, type RngState } from './rng.ts'
+import { longHuntRegenFactor } from './races/beastfolk.ts'
+import {
+  CURSE_SOUL_DEBT,
+  NODE_BEAST_THICK_HIDE,
+  NODE_UNDEAD_CURSEBOUND,
+  SOUL_DEBT_FEE,
+  THICK_HIDE_REGEN,
+} from './races/racialNodes.ts'
 import { deriveHeroStats, type HeroGear } from './stats.ts'
 import type { CombatHeroSetup, CombatOutcome, CombatSetup, CombatState, EscapeEvent, GameDefs } from './types.ts'
 
@@ -148,6 +156,8 @@ export type CarriedHero = {
   focus: number
   /** Special arrows fired this expedition. Efficient Quiver reads it. Others leave it at 0. */
   specialArrowCount: number
+  /** Undead Soul Fragments held this expedition. Omitted is 0. Town, retreat, and defeat clear them. */
+  souls?: number
   /** Mage prepared-spell charges as JSON. Omitted or null means full. Town restores them. */
   mageCharges?: string | null
 }
@@ -389,14 +399,15 @@ function assertLoot(stacks: unknown, label: string, capped: boolean): void {
  * Half-up of `0.05 × VIT` for one second.
  * `(VIT + 10) / 20` is that product when the rate is exactly 0.05, without a binary 0.05.
  */
-function hpRegenPerSecond(vitality: number): number {
+export function hpRegenPerSecond(vitality: number, factor = 1): number {
   if (typeof vitality !== 'number' || !Number.isFinite(vitality) || vitality < 0) {
     throw new Error(`vitality must be at least 0, received ${describeValue(vitality)}`)
   }
   if (REGEN_PER_VITALITY !== 0.05) {
     throw new Error(`out-of-combat HP regen must be 0.05 × VIT, received ${REGEN_PER_VITALITY}`)
   }
-  return Math.floor((vitality + 10) / 20)
+  if (factor === 1) return Math.floor((vitality + 10) / 20)
+  return Math.floor(((vitality + 10) * Math.round(factor * 1000)) / 20_000)
 }
 
 function capMeter(amount: number, maximum: number): number {
@@ -601,6 +612,8 @@ function carriedFromTemplate(hero: CombatHeroSetup): CarriedHero {
     classId: hero.classId,
     attributes: hero.attributes,
     gear: hero.gear,
+    racialNodeIds: hero.allocatedNodeIds,
+    renaissance: hero.renaissance === true,
   })
   const meter = initialMeter(hero.classId)
   const specialAmmo = hero.classId === 'ranger' ? (hero.specialAmmo ?? 0) : 0
@@ -686,6 +699,15 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
   }
 }
 
+/** Thick Hide is +25%. Long Hunt adds 5% per Ferocity tier. */
+function outOfCombatRegenFactor(state: ExpeditionState): number {
+  const ids = state.heroTemplate.allocatedNodeIds
+  let factor = 1
+  if (ids !== undefined && ids.includes(NODE_BEAST_THICK_HIDE)) factor *= THICK_HIDE_REGEN
+  factor *= longHuntRegenFactor(ids, state.ferocityProgress)
+  return factor
+}
+
 function applyTravelSecond(state: ExpeditionState, second: number): void {
   const hero = state.hero
   if (typeof hero.hp !== 'number' || !Number.isFinite(hero.hp)) {
@@ -695,7 +717,7 @@ function applyTravelSecond(state: ExpeditionState, second: number): void {
     throw new Error(`hero maximum HP must be greater than 0, received ${describeValue(hero.maxHp)}`)
   }
   if (hero.hp > hero.maxHp) hero.hp = hero.maxHp
-  const healed = hpRegenPerSecond(hero.vitality)
+  const healed = hpRegenPerSecond(hero.vitality, outOfCombatRegenFactor(state))
   if (healed > 0 && hero.hp < hero.maxHp) {
     const next = hero.hp + healed
     hero.hp = next > hero.maxHp ? hero.maxHp : next
@@ -758,6 +780,7 @@ function combatSetup(state: ExpeditionState, encounter: ExpeditionEncounterDef):
     carryResource: classId === 'warrior' || classId === 'mage' || classId === 'cleric',
     ...setupRaceMeters(state.heroTemplate.race, state.hero.focus, state.ferocityProgress),
   }
+  if (state.heroTemplate.race === 'undead') setup.startingSouls = state.hero.souls ?? 0
   if (classId === 'assassin') delete setup.startingResource
   else setup.startingResource = state.hero.classResource
   if (classId === 'ranger') {
@@ -848,6 +871,10 @@ function carryFromCombat(state: ExpeditionState): void {
     }
     state.hero.focus = stored.focus
   }
+  if (state.heroTemplate.race === 'undead') {
+    const souls = hero.raceState.souls
+    state.hero.souls = typeof souls === 'number' && Number.isInteger(souls) && souls >= 0 ? souls : 0
+  }
   if (stored.ferocity !== null) {
     if (
       typeof stored.ferocity !== 'number' ||
@@ -929,10 +956,19 @@ function loseDurability(state: ExpeditionState): void {
   }
 }
 
+/** Soul Debt raises the rescue fee, and so the debt, by 50%. */
+export function rescueFee(state: ExpeditionState): number {
+  const template = state.heroTemplate
+  const ids = template.allocatedNodeIds
+  const debt = template.curse === CURSE_SOUL_DEBT && ids !== undefined && ids.includes(NODE_UNDEAD_CURSEBOUND)
+  return debt ? Math.round(RESCUE_FEE * SOUL_DEBT_FEE) : RESCUE_FEE
+}
+
 function payRescueFee(state: ExpeditionState): void {
-  const paid = Math.min(state.carriedGold, RESCUE_FEE)
+  const fee = rescueFee(state)
+  const paid = Math.min(state.carriedGold, fee)
   state.carriedGold -= paid
-  state.debt += RESCUE_FEE - paid
+  state.debt += fee - paid
 }
 
 /** A summon with `boss` set does not count. Road enemies are not bosses. */
@@ -1189,6 +1225,7 @@ export function resetFocus(state: ExpeditionState, reason: MomentumResetReason):
   assertExpedition(state)
   assertRaceResetReason(reason, 'focus')
   state.hero.focus = 0
+  state.hero.souls = 0
   state.hero.specialArrowCount = 0
 }
 

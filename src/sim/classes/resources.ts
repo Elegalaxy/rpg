@@ -1,5 +1,7 @@
 import { RESOURCE_GENERATION_FACTOR, RESOURCE_GENERATION_SOFT_CAP } from '../constants.ts'
 import { focusOf, focusResourceMultiplier } from '../races/adjustments.ts'
+import { hasEfficientFlow } from '../races/elf.ts'
+import { longHuntResourceFactor } from '../races/beastfolk.ts'
 import { faithGenerationLocked } from './clericAdjust.ts'
 import { furyGenerationMultiplier } from './warriorAdjust.ts'
 import type { CombatState, ResourceEvent } from '../types.ts'
@@ -83,10 +85,12 @@ export function grantClassResource(
     throw new Error(`resource gain must be a finite number, received ${describeValue(base)}`)
   }
   const spirit = spiritResourceFactor(hero.spirit)
-  const focusFactor = focusResourceMultiplier(focusOf(hero))
+  const focusFactor = focusResourceMultiplier(focusOf(hero), hasEfficientFlow(hero))
   const nodeFactor = furyGenerationMultiplier(hero)
   let multiplier = focusFactor === 1 ? spirit : spirit * focusFactor
   if (nodeFactor !== 1) multiplier *= nodeFactor
+  const huntFactor = longHuntResourceFactor(hero)
+  if (huntFactor !== 1) multiplier *= huntFactor
   let generated = base * multiplier
   if (gainCap !== null && generated > gainCap) generated = gainCap
   const before = hero.classResource

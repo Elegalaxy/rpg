@@ -1,8 +1,11 @@
 import { gameDefs, referenceLoadoutFor } from '../content/scenarios.ts'
 import { referenceHeroAtLevel } from '../content/heroes.ts'
+import { classWebs } from '../content/webs/index.ts'
+import { racialWebs } from '../content/webs/racial.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
-import { HERO_RACES, type HeroRace } from '../sim/progression.ts'
+import { HERO_RACES, renaissanceActive, type HeroRace } from '../sim/progression.ts'
+import { CURSE_HOLLOW_HUNGER } from '../sim/races/racialNodes.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import type { CombatSetup, CombatState, GameDefs } from '../sim/types.ts'
 
@@ -62,7 +65,26 @@ export function comboDefs(): GameDefs {
   return defs
 }
 
-export function comboSetup(pair: ComboPair): CombatSetup {
+/**
+ * A representative build: the whole racial branch, one full class cluster through its keystone,
+ * and the first three nodes of each other cluster. It buys one keystone only.
+ */
+export function comboNodeIds(pair: ComboPair): string[] {
+  const web = classWebs[pair.classId]
+  const clusters: string[] = []
+  for (const node of web.nodes) {
+    if (!clusters.includes(node.cluster)) clusters.push(node.cluster)
+  }
+  const ids: string[] = []
+  for (const node of web.nodes) {
+    const first = node.cluster === clusters[0]
+    if (first || node.index <= 3) ids.push(node.id)
+  }
+  for (const node of racialWebs[pair.race].nodes) ids.push(node.id)
+  return ids
+}
+
+export function comboSetup(pair: ComboPair, allocated = false): CombatSetup {
   const hero = referenceHeroAtLevel(pair.classId, HERO_LEVEL)
   const loadout = referenceLoadoutFor(pair.classId)
   return {
@@ -79,20 +101,35 @@ export function comboSetup(pair: ComboPair): CombatSetup {
       ...(loadout.startingResource !== undefined ? { startingResource: loadout.startingResource } : {}),
       ...(loadout.specialAmmo !== undefined ? { specialAmmo: loadout.specialAmmo } : {}),
       ...(loadout.vow !== undefined ? { vow: loadout.vow } : {}),
+      ...(allocated ? allocatedFields(pair) : {}),
     },
     enemies: [{ defId: DUMMY_ID, slot: 0, level: HERO_LEVEL }],
   }
 }
 
-export function runComboFight(pair: ComboPair, seed: number, defs: GameDefs = comboDefs()): CombatState {
-  return runCombat(createCombat(comboSetup(pair), defs, seed), defs, HARNESS_LIMIT_MS)
+function allocatedFields(pair: ComboPair): Partial<CombatSetup['hero']> {
+  const ids = comboNodeIds(pair)
+  return {
+    allocatedNodeIds: ids,
+    renaissance: renaissanceActive(ids, classWebs[pair.classId]),
+    ...(pair.race === 'undead' ? { curse: CURSE_HOLLOW_HUNGER } : {}),
+  }
+}
+
+export function runComboFight(
+  pair: ComboPair,
+  seed: number,
+  defs: GameDefs = comboDefs(),
+  allocated = false,
+): CombatState {
+  return runCombat(createCombat(comboSetup(pair, allocated), defs, seed), defs, HARNESS_LIMIT_MS)
 }
 
 export function comboSeed(baseSeed: number, pairIndex: number, runs: number, runIndex: number): number {
   return deriveSeed(baseSeed, pairIndex * runs + runIndex)
 }
 
-/** One fight per pair per run. A thrown fight or a log with no race event counts as an error. */
+/** Two fights per pair per run: the core build and the representative allocated build. A thrown fight or a log with no race event counts as an error. */
 export function runComboMatrix(baseSeed: number, runs: number): ComboMatrixReport {
   assertRuns(runs)
   const pairs = comboPairs()
@@ -101,18 +138,23 @@ export function runComboMatrix(baseSeed: number, runs: number): ComboMatrixRepor
   for (const pair of pairs) {
     for (let runIndex = 0; runIndex < runs; runIndex += 1) {
       const seed = comboSeed(baseSeed, pair.pairIndex, runs, runIndex)
-      try {
-        const state = runComboFight(pair, seed, defs)
-        if (!state.log.some((event) => event.type === 'race')) {
+      for (const allocated of [false, true]) {
+        const label = allocated ? 'allocated' : 'core'
+        try {
+          const state = runComboFight(pair, seed, defs, allocated)
+          if (!state.log.some((event) => event.type === 'race')) {
+            errors += 1
+            console.error(
+              `[sim] matrix combos missing race event ${label} ${pair.race} ${pair.classId} run ${runIndex} seed ${seed}`,
+            )
+          }
+        } catch (error) {
           errors += 1
+          const message = error instanceof Error ? error.message : String(error)
           console.error(
-            `[sim] matrix combos missing race event ${pair.race} ${pair.classId} run ${runIndex} seed ${seed}`,
+            `[sim] matrix combos error ${label} ${pair.race} ${pair.classId} run ${runIndex} seed ${seed}: ${message}`,
           )
         }
-      } catch (error) {
-        errors += 1
-        const message = error instanceof Error ? error.message : String(error)
-        console.error(`[sim] matrix combos error ${pair.race} ${pair.classId} run ${runIndex} seed ${seed}: ${message}`)
       }
     }
   }

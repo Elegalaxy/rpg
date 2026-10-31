@@ -77,6 +77,7 @@ import {
   tryApplyStatus,
 } from './statuses.ts'
 import type { StatusTickDraft } from './statuses.ts'
+import { CURSES, NODE_HUMAN_RENAISSANCE, RENAISSANCE_CONSISTENCY, SOUL_CAP } from './races/racialNodes.ts'
 import { actionTime, applyEchoRank, deriveEnemyStats, deriveHeroStats } from './stats.ts'
 import type {
   ActiveField,
@@ -445,6 +446,7 @@ function commitDeaths(state: CombatState, deaths: readonly PendingDeath[]): void
       onEnemyDeath(state, death.target, death.timeMs)
       endGrantedReductions(state, death.target, death.timeMs)
       classModule(state.hero.classId)?.kill?.(state, death.target.id, death.timeMs)
+      raceModule(state.hero.race)?.kill?.(state, death.target.id, death.timeMs)
     }
     if (death.target.side === 'hero') heroDeath = death
     else lastEnemyDeath = death
@@ -2171,6 +2173,14 @@ function applySuppliedResources(hero: CombatHero, setup: CombatHeroSetup): void 
   if (startingFocus !== null) hero.suppliedFocus = startingFocus
   const ferocityProgress = readFerocityProgress(setup.ferocityProgress)
   if (ferocityProgress !== null) hero.suppliedFerocity = ferocityProgress
+  const souls = readOptionalCount(setup.startingSouls, 'starting souls')
+  if (souls !== null) hero.suppliedSouls = souls > SOUL_CAP ? SOUL_CAP : souls
+  if (setup.curse !== undefined) {
+    if (typeof setup.curse !== 'string' || !(CURSES as readonly string[]).includes(setup.curse)) {
+      throw new Error(`curse must be one of ${CURSES.join(', ')}, received ${describeValue(setup.curse)}`)
+    }
+    hero.suppliedCurse = setup.curse
+  }
 }
 
 function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
@@ -2186,7 +2196,11 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     classId: hero.classId,
     attributes: hero.attributes,
     gear: hero.gear,
+    racialNodeIds: hero.allocatedNodeIds,
+    renaissance: hero.renaissance === true,
   })
+  const renaissance =
+    hero.renaissance === true && readAllocatedNodeIds(hero.allocatedNodeIds).includes(NODE_HUMAN_RENAISSANCE)
   const school = heroSchool(hero.gear.mainHand.kind)
   const actionTimeMs = roundDurationMs(derived.actionTime, `${hero.id} action time`)
   const actionRatio = WEAPON_ACTION_TIME[hero.gear.mainHand.kind]
@@ -2215,7 +2229,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     critChance: derived.critChance,
     critDamage: derived.critDamage,
     // A new hero has Consistency 0: damage rolls from 60% through 100%.
-    consistency: 0,
+    consistency: renaissance ? RENAISSANCE_CONSISTENCY : 0,
     actionTimeMs,
     nextReadyMs: actionTimeMs,
     ...guardDefaults(),
@@ -2272,6 +2286,8 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     raceState: {},
     suppliedFocus: null,
     suppliedFerocity: null,
+    suppliedSouls: null,
+    suppliedCurse: null,
     waiting: false,
     specialAmmo: 0,
     resourceFraction: 0,

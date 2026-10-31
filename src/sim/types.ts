@@ -1284,6 +1284,10 @@ export type CombatHero = CombatActor & {
   suppliedFocus: number | null
   /** Starting Ferocity progress from the setup. Null starts Beastfolk at 0. */
   suppliedFerocity: number | null
+  /** Soul Fragments carried in from the expedition. Null starts an Undead at 0. */
+  suppliedSouls: number | null
+  /** Curse chosen for this expedition. Only Cursebound reads it. */
+  suppliedCurse: string | null
   /** Set while the hero is waiting for a resource. The wait does not spend action time. */
   waiting: boolean
   /** Equipped special-ammunition count for conditions and Flame Arrow. */
@@ -1376,6 +1380,12 @@ export type CombatHeroSetup = {
   startingFocus?: number
   /** Beastfolk Ferocity progress at the start of this fight. Omitted starts at 0. */
   ferocityProgress?: number
+  /** Undead Soul Fragments at the start of this fight. Omitted starts at 0. */
+  startingSouls?: number
+  /** Undead curse for this expedition. Needs the Cursebound node to take effect. */
+  curse?: string
+  /** Human Renaissance: at least two nodes in each class cluster. Computed from the class web. */
+  renaissance?: boolean
   /** Skill-web nodes for this fight. Omitted is an empty list and applies no node effects. */
   allocatedNodeIds?: readonly string[]
   /** Momentum stacks for this fight. Omitted is 0 and grants no momentum bonus. */

@@ -1,4 +1,12 @@
 import {
+  NODE_BEAST_THICK_HIDE,
+  NODE_HUMAN_CROSS_TRAINING,
+  NODE_HUMAN_RENAISSANCE,
+  RENAISSANCE_HP,
+  RENAISSANCE_POWER,
+  THICK_HIDE_HP,
+} from './races/racialNodes.ts'
+import {
   ACTION_TIME_FLOOR_SECONDS,
   AGILITY_SPEED_SCALE,
   ARMOR_BUDGET_BASE,
@@ -148,6 +156,10 @@ export type HeroStatInput = {
   armorPenetrationBonus?: number
   magicalPenetrationBonus?: number
   cooldownReductionBonus?: number
+  /** Racial branch nodes that change derived stats. Omitted applies none. */
+  racialNodeIds?: readonly string[]
+  /** Human Renaissance is active. */
+  renaissance?: boolean
 }
 
 export type HeroDerivedStats = {
@@ -530,6 +542,18 @@ function readAttributes(value: unknown): Attributes {
   return attributes
 }
 
+function racialMultipliers(input: HeroStatInput): { hp: number; power: number } {
+  const ids = input.racialNodeIds ?? []
+  let hp = 1
+  let power = 1
+  if (ids.includes(NODE_BEAST_THICK_HIDE)) hp *= THICK_HIDE_HP
+  if (input.renaissance === true && ids.includes(NODE_HUMAN_RENAISSANCE)) {
+    hp *= RENAISSANCE_HP
+    power *= RENAISSANCE_POWER
+  }
+  return { hp, power }
+}
+
 export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
   const record = requireObject(input, 'hero stat input')
   assertPositiveInteger(record.level, 'level')
@@ -544,7 +568,10 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
     record.skillTimeCoefficient === undefined ? 1 : (record.skillTimeCoefficient as number)
   assertFiniteNumber(skillTimeCoefficient, 'skill time coefficient')
 
-  const weaponRating = effectiveness(prefers(classId, 'weapon', gear.mainHand.kind))
+  const crossTrained = (input.racialNodeIds ?? []).includes(NODE_HUMAN_CROSS_TRAINING)
+  const prefersFor = (...args: Parameters<typeof prefers>): boolean => crossTrained || prefers(...args)
+
+  const weaponRating = effectiveness(prefersFor(classId, 'weapon', gear.mainHand.kind))
   const neutralMain = neutralWeaponPower(gear.mainHand.itemLevel)
   const mainPower =
     scale(neutralMain, [WEAPON_POWER_FACTOR[gear.mainHand.kind], weaponRating]) * gear.mainHand.quality
@@ -557,7 +584,7 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
   let armor = ZERO_RATIONAL
   let resistance = ZERO_RATIONAL
   if (gear.offHand !== null) {
-    const offRating = effectiveness(prefers(classId, 'offHand', gear.offHand.kind))
+    const offRating = effectiveness(prefersFor(classId, 'offHand', gear.offHand.kind))
     const neutralOff = neutralWeaponPower(gear.offHand.itemLevel)
     if (gear.offHand.kind === 'dagger') {
       physicalPower +=
@@ -578,7 +605,7 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
 
   const armorPieces = [gear.head, gear.chest, gear.hands, gear.feet]
   for (const piece of armorPieces) {
-    const contribution = addArmorPiece(armor, resistance, piece, prefers(classId, 'armor', piece.category))
+    const contribution = addArmorPiece(armor, resistance, piece, prefersFor(classId, 'armor', piece.category))
     armor = contribution.armor
     resistance = contribution.resistance
   }
@@ -603,13 +630,15 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
     CRIT_DAMAGE_PER_STRENGTH * attributes.strength +
     optionalBonus(input.critDamageBonus, 'crit damage bonus')
 
+  const racial = racialMultipliers(input)
   return {
-    maxHp: HERO_HP_BASE + HERO_HP_PER_LEVEL * level + HERO_HP_PER_VITALITY * attributes.vitality,
-    physicalPower,
-    magicalPower,
+    maxHp: (HERO_HP_BASE + HERO_HP_PER_LEVEL * level + HERO_HP_PER_VITALITY * attributes.vitality) * racial.hp,
+    physicalPower: physicalPower * racial.power,
+    magicalPower: magicalPower * racial.power,
     healingPower:
-      optionalBonus(input.equipmentHealingPower, 'equipment healing power') +
-      POWER_PER_PRIMARY * attributes.spirit,
+      (optionalBonus(input.equipmentHealingPower, 'equipment healing power') +
+        POWER_PER_PRIMARY * attributes.spirit) *
+      racial.power,
     accuracy: attributes.agility + optionalBonus(input.accuracyBonus, 'accuracy bonus'),
     evasion: attributes.agility + gearEvasion + optionalBonus(input.evasionBonus, 'evasion bonus'),
     critChance,

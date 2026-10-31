@@ -56,6 +56,12 @@ export type SkillNode = {
   unlocksSkillId: string | null
 }
 
+/** A race's four-node branch. Nodes use the same skill points as class nodes. */
+export type RacialWeb = {
+  race: HeroRace
+  nodes: readonly SkillNode[]
+}
+
 export type SkillWeb = {
   classId: HeroClass
   nodes: readonly SkillNode[]
@@ -446,7 +452,7 @@ type AllocationReview = {
   reasons: string[]
 }
 
-function reviewAllocation(progress: HeroProgress, web: SkillWeb, node: SkillNode): AllocationReview {
+function reviewAllocation(progress: HeroProgress, nodes: readonly SkillNode[], node: SkillNode): AllocationReview {
   const reasons: string[] = []
   if (hasId(progress.allocatedNodeIds, node.id)) reasons.push(ALREADY_ALLOCATED)
   let missingRequirementId: string | null = null
@@ -458,7 +464,7 @@ function reviewAllocation(progress: HeroProgress, web: SkillWeb, node: SkillNode
   const blockedKeystoneIds: string[] = []
   if (node.keystone) {
     let otherTaken = false
-    for (const other of web.nodes) {
+    for (const other of nodes) {
       if (!other.keystone || other.id === node.id) continue
       blockedKeystoneIds.push(other.id)
       if (hasId(progress.allocatedNodeIds, other.id)) otherTaken = true
@@ -486,7 +492,7 @@ function allocationError(node: SkillNode, reason: string, missingRequirementId: 
 export function allocateNode(progress: HeroProgress, web: SkillWeb, nodeId: string): HeroProgress {
   assertProgress(progress)
   const node = findNode(web, nodeId)
-  const review = reviewAllocation(progress, web, node)
+  const review = reviewAllocation(progress, web.nodes, node)
   const reason = review.reasons[0]
   if (reason !== undefined) throw new Error(allocationError(node, reason, review.missingRequirementId))
   const next = copyProgress(progress)
@@ -495,6 +501,35 @@ export function allocateNode(progress: HeroProgress, web: SkillWeb, nodeId: stri
   if (next.unspentSkillPoints > 0) next.unspentSkillPoints -= 1
   else next.legacySkillPoints -= 1
   return next
+}
+
+/** Spend one point on a node of this hero's own racial branch. Racial nodes are never keystones. */
+export function allocateRacialNode(progress: HeroProgress, web: RacialWeb, nodeId: string): HeroProgress {
+  assertProgress(progress)
+  if (web.race !== progress.race) {
+    throw new Error(`a ${progress.race} cannot take ${web.race} racial nodes`)
+  }
+  const node = web.nodes.find((entry) => entry.id === nodeId)
+  if (node === undefined) throw new Error(`unknown node ${describeValue(nodeId)}`)
+  const review = reviewAllocation(progress, web.nodes, node)
+  const reason = review.reasons[0]
+  if (reason !== undefined) throw new Error(allocationError(node, reason, review.missingRequirementId))
+  const next = copyProgress(progress)
+  next.allocatedNodeIds.push(node.id)
+  if (next.unspentSkillPoints > 0) next.unspentSkillPoints -= 1
+  else next.legacySkillPoints -= 1
+  return next
+}
+
+/** Renaissance: at least two nodes allocated in each cluster of the class web. */
+export function renaissanceActive(allocatedNodeIds: readonly string[], web: SkillWeb): boolean {
+  const counts: { [cluster: string]: number } = {}
+  for (const node of web.nodes) {
+    if (counts[node.cluster] === undefined) counts[node.cluster] = 0
+    if (hasId(allocatedNodeIds, node.id)) counts[node.cluster] = (counts[node.cluster] ?? 0) + 1
+  }
+  const clusters = Object.keys(counts)
+  return clusters.length > 0 && clusters.every((name) => (counts[name] ?? 0) >= 2)
 }
 
 /** Add one legacy skill point. Does not change ordinary unspent points. */
@@ -545,7 +580,7 @@ export function setAttachment(progress: HeroProgress, slot: number, nodeId: stri
 export function previewAllocation(progress: HeroProgress, web: SkillWeb, nodeId: string): AllocationPreview {
   assertProgress(progress)
   const node = findNode(web, nodeId)
-  const review = reviewAllocation(progress, web, node)
+  const review = reviewAllocation(progress, web.nodes, node)
   return {
     cost: 1,
     canTake: review.reasons.length === 0,

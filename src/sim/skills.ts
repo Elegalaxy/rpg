@@ -16,6 +16,7 @@ import {
   righteousPenetration,
 } from './classes/clericAdjust.ts'
 import { grantClassResource } from './classes/resources.ts'
+import { apexOutputFactor } from './races/beastfolk.ts'
 import { adjustedHealingReceived, resolvedSkillCost } from './classes/warriorAdjust.ts'
 import {
   COOLDOWN_REDUCTION_CAP,
@@ -913,7 +914,7 @@ export function applySkillEffects(
     }
     if (effect.kind === 'barrier') {
       const power = effect.source === 'magical' ? hero.magicalPower : hero.healingPower
-      const amount = power * effect.coefficient * barrierFactor(hero, skill)
+      const amount = power * effect.coefficient * barrierFactor(hero, skill) * apexOutputFactor(hero)
       const expiresMs = scheduledMs + roundSecondsToMs(effect.durationSeconds, `${skill.id} barrier`)
       const replaced = hero.barrier
       hero.barrier = amount

@@ -1,5 +1,5 @@
 import type { CombatHero, CombatState, OutgoingModifierQuery, SkillDef } from '../types.ts'
-import { focusOf, focusRollFloorBonus } from './elf.ts'
+import { clarityFloorBonus, focusOf, focusRollFloorBonus } from './elf.ts'
 import { raceModule } from './index.ts'
 
 export { focusOf, focusResourceMultiplier, focusRollFloorBonus } from './elf.ts'
@@ -40,8 +40,10 @@ export function heroDamageRollFloorBonus(hero: CombatHero): number {
     raceBonus = extra
   }
   const total = fromFocus + raceBonus + classDamageRollFloorBonus(hero)
-  if (total === 0) return 0
-  return total
+  const clarity = clarityFloorBonus(hero)
+  const best = clarity > total ? clarity : total
+  if (best === 0) return 0
+  return best
 }
 
 export function heroHealRollFloorBonus(hero: CombatHero): number {
