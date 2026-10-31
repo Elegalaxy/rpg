@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 10.1  
+Next step: Step 10.2  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -46,6 +46,7 @@ Build a browser-local first playable of the incremental RPG. Start with a determ
 - **G1 (town numbers). Decided 2026-10-31:** Enemies drop level × 2 gold (level × 3 for elites and the boss), added to carried gold. The player picks the carry amount before an expedition (default 25); the rest stays deposited. Greyhaven buys materials at 3 gold (scrap 2) and archive items at `item level × 5 × quality`, sells base items at 100% quality for `item level × 10` at the hero's level, and sells no supplies. Repair costs `ceil(missing × (1 + item level ÷ 2) ÷ 10)` per item. Debt lives on the account, grows with each defeat, is payable in any amount, and blocks nothing. No consumables in the first playable. Recorded in GAME_DESIGN §12.
 - **G8. Crafting. Decided 2026-10-31:** Every base item is craftable from the start, and the account starts knowing the Keen and Precise modifier recipes. Scrap rolls 90% to 100% quality, hide 95% to 105%, shard 100% to 110%, as the average of two seeded uniform rolls. Proficiency is personal: each craft or upgrade attempt gives 1 XP, rank is `floor(√XP)` up to 10, and each rank raises the range minimum by 1 point. A craft costs 6 material plus `item level × 5` gold and takes 30 seconds of town time in a queue of 3. One modifier per craft: Keen, Precise, Nimble, Piercing, Mending, Quick, with the level minimums and bonuses in GAME_DESIGN §12. An upgrade adds 1 item level for 4 material plus `item level × 5` gold, with a chance of `85% − 5 × item level`, and a failure leaves the item unchanged. Recorded in GAME_DESIGN §12.
 - **G7 (contracts and XP). Decided 2026-10-31:** Won fights award XP through the encounter rules, added to the hero when an expedition is settled and kept after a defeat. Six repeatable contracts (Cull the Pack, Clear the Shards, Hunt Deserters, Thicket Sweep, Bastion Patrol, Break the Elite), up to 3 active, progress counted from won fights and added at settle, collected in town. Reward XP `round(0.6 × units × (5 + 2L))`, gold `units × L`, materials `ceil(units ÷ 2)`. Recorded in GAME_DESIGN §6.
+- **G9. Echo ranks. Decided 2026-11-01 (the plan's own recommendation, already in GAME_DESIGN §6):** Echo rank `R` multiplies the rank-0 Warden's HP, Power, Armor, and Resistance by `1.12^R`, with no authored per-rank modifiers in the first playable. A victory at rank R unlocks rank R + 1 for that hero. The hero chooses the rank to fight, from 0 to the unlocked rank. A loss to the boss at any rank counts as the life's boss loss. Rank rewards beyond the first-Warden-defeat milestone wait for G10.
 - **G6. Character slots. Decided 2026-10-31:** The account starts with 2 slots and can reach 5. Slot 3 unlocks on the first safe return to town, slot 4 on the first boss defeat that leads to reincarnation, and slot 5 on the first defeat of the Fractured Warden. Each unlocks once for the account and never relocks. Duplicate race/class heroes are allowed. Names are trimmed, 1 to 24 characters, and unique in the roster ignoring case. Nobody can delete or retire a hero in the first playable. Step 7.2 adds a development-only control that unlocks all 5 slots, so the 20 pairs can be checked by hand. Recorded in GAME_DESIGN §4.
 - **G7. Fractured Frontier layout. Decided 2026-10-31 (contracts still open):** Greyhaven, the Splintered Road, the Withered Grove, the Fallen Bastion, and the Fracture Gate with the Warden. The Road leads to the branch, and each branch leads to the Gate. Every leg is 20 seconds. Each zone has one resource node worth 4 of a material: Scrap Heap (scrap), Hollow Thicket (hide), Shard Seam (shard). The Gate opens for a hero after that hero has defeated both elites, the Rootmaw Stalker and the Echo Knight. The boss is revealed on arrival at the Gate. Node discovery is shared across the account, and the elite defeats are personal. Recorded in GAME_DESIGN §6.
 - **G4. Skill web. Decided 2026-10-24:** Three clusters of five nodes. Node 1 of a cluster costs 1 and starts that line. Each later node costs 1 and requires the previous node in the same cluster. Node 5 is the major keystone. One keystone blocks the other two. No respec. Reference fights do not spend points. A new hero knows the four Q4 skills. Two attachment slots stay empty, and no racial node can be bought. Legacy points are spent after ordinary skill points. Recorded in GAME_DESIGN §4.
@@ -82,7 +83,7 @@ Build a browser-local first playable of the incremental RPG. Start with a determ
 | G6 | Step 7.2 | Decided 2026-10-31. See G6 in Decided. |
 | G7 | Steps 8.1, 9.4 | Decided 2026-10-31, including the contract list. See both G7 entries in Decided. |
 | G8 | Step 9.3 | Decided 2026-10-31. See G8 in Decided. |
-| G9 | Step 10.1 | Fracture Echo rank modifiers and rank rewards. Recommended for the first playable: the 1.12^R multiplier only. |
+| G9 | Step 10.1 | Decided 2026-11-01. See G9 in Decided. |
 | G10 | Steps 10.2–10.3 | Reincarnation currency conversion, legacy purchases, what mastery does numerically, heirloom scaling |
 
 ### Small preference questions
@@ -832,13 +833,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 ### Stage 10: Boss ranks, reincarnation, mastery
 
 ### Step 10.1: Boss reveal and Echo ranks
-- Status: `todo`
+- Status: `verified`
 - Depends on: 9.4, G9
 - Files: `src/sim/expedition.ts`, `src/sim/progression.ts`, tests
 - Change: Zone progress reveals the boss. A victory unlocks the hero's next personal rank. A loss at any rank sets `bossLossThisLife`.
 - Acceptance criteria: tests for the reveal, rank unlocks, and the loss flag.
 - Verification: `npm test`.
 - Progress:
+  - 2026-11-01: The boss reveal already worked from Step 8.2 (`bossRevealed`: only on arrival at the Gate) and has a test here. Each saved hero now keeps `echoRank` (the highest rank unlocked, 0 at the start), `fightRank` (the rank for the next run to the Gate, at most `echoRank`), and `bossLossThisLife`. The preparation form takes a whole-number Echo rank from 0 to the unlocked rank once a rank is unlocked. `blueprintForHero` puts that rank on the boss enemy only, `ExpeditionEnemy` carries `rank`, and the run passes it to combat, where the existing `1.12^R` stat scaling applies. When a run is settled, a won boss fight at rank R sets `echoRank` to at least R + 1 and moves `fightRank` to the new rank only when a new rank was unlocked, and a boss loss at any rank sets `bossLossThisLife`. The outcome screen says which rank fell and which is unlocked, and tells a hero who lost to a boss that they can now reincarnate.
+  - 2026-11-01: Verified. `npm test` passed (55 files, 617 tests, exit 0), including 8 in `src/persist/echo.test.ts`: the rank on the boss and nowhere else, the Warden entering a real combat at rank 3 with HP, Power, and Armor about 1.12 cubed above rank 0, the rank choice limits, unlocking at several ranks without moving a lower chosen rank, the outcome lines, the loss flag at ranks 0 and 2 and not from a road defeat, a flag that stays set, a save with a fight rank above the unlocked rank refused, and the reveal. `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. The road seed 5 is unchanged. Not played by hand: a real Warden fight, which a floor-build hero loses at rank 0 by design.
 
 ### Step 10.2: Reincarnation
 - Status: `todo`

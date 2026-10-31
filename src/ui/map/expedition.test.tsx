@@ -52,10 +52,10 @@ describe('the expedition panel', () => {
   it('prepares, runs, waits between fights, pushes on, returns, and settles', () => {
     expect(createHeroFromUi({ name: 'Ash', race: 'human', classId: 'warrior' })).toBeNull()
     expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Preparation')
-    expect(savePreparationFromUi({ retreatPercent: '999', vow: '', curse: '', specialAmmo: '0', carryGold: '25' })).toEqual([
+    expect(savePreparationFromUi({ retreatPercent: '999', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0' })).toEqual([
       'Retreat threshold must be a whole percent from 5 to 90, or empty to never retreat.',
     ])
-    expect(savePreparationFromUi({ retreatPercent: '', vow: '', curse: '', specialAmmo: '0', carryGold: '25' })).toEqual([])
+    expect(savePreparationFromUi({ retreatPercent: '', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0' })).toEqual([])
     expect(selectedHero(getSaveStatus().save)?.retreatAtMost).toBeNull()
 
     // A level 1 hero often loses its first fight, so try seeds until one wins and reaches the wait.

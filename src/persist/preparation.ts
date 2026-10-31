@@ -14,6 +14,8 @@ export type PreparationDraft = {
   specialAmmo: string
   /** Gold to carry, as a whole number. */
   carryGold: string
+  /** The Warden's Echo rank for a run to the Fracture Gate. */
+  fightRank: string
 }
 
 export const RETREAT_MIN_PERCENT = 5
@@ -26,6 +28,7 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     curse: hero.curse ?? '',
     specialAmmo: String(hero.specialAmmo),
     carryGold: String(hero.carryGold),
+    fightRank: String(hero.fightRank),
   }
 }
 
@@ -85,8 +88,16 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   } else {
     carryGold = carry
   }
+  let fightRank = hero.fightRank
+  const rankText = draft.fightRank.trim()
+  const rank = Number(rankText)
+  if (rankText.length === 0 || !Number.isInteger(rank) || rank < 0 || rank > hero.echoRank) {
+    errors.push(`Echo rank must be a whole number from 0 to ${hero.echoRank}.`)
+  } else {
+    fightRank = rank
+  }
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold } }
+  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold, fightRank } }
 }
 
 /** Save a hero's preparation. It cannot change while that hero is out on an expedition. */

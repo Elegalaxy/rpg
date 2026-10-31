@@ -82,6 +82,9 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     specialAmmo: loadout.specialAmmo ?? 0,
     carryGold: DEFAULT_CARRY_GOLD,
     craftXp: 0,
+    echoRank: 0,
+    fightRank: 0,
+    bossLossThisLife: false,
     equipment: starterEquipment(id, request.classId),
   }
   const next: SaveData = {

@@ -232,6 +232,18 @@ export function recordProgress(save: SaveData): SaveData {
   }
 }
 
+/** The Echo rank of each boss fight the expedition won, in order. Empty when no boss fell. */
+export function bossVictoryRanks(expedition: ExpeditionState): number[] {
+  const ranks: number[] = []
+  for (const entry of expedition.history) {
+    if (entry.outcome !== 'victory') continue
+    const fight = expedition.opening[entry.index]
+    const boss = fight?.enemies.find((enemy) => enemies[enemy.defId]?.boss === true)
+    if (boss !== undefined) ranks.push(boss.rank ?? 0)
+  }
+  return ranks
+}
+
 /**
  * Begin a run for the selected hero. The gold the hero carries comes out of the account, up to their
  * chosen amount, and the rest travels as safe deposited gold. Settling puts it back.
@@ -255,6 +267,13 @@ export function beginExpedition(save: SaveData, routeId: string, seed: number): 
  * Close a finished expedition. A safe return opens the first-return slot. Secured loot, deposited
  * gold, and the carried gold of a safe return go to the account, and a defeat's debt is added, and a defeat keeps only what was already secured. The expedition is removed.
  */
+/** A victory at Echo rank R unlocks rank R + 1 and sets the next fight to it. Nothing else changes the rank. */
+function unlockedRanks(hero: SavedHero, expedition: ExpeditionState): { echoRank: number; fightRank: number } {
+  let echoRank = hero.echoRank
+  for (const rank of bossVictoryRanks(expedition)) if (rank + 1 > echoRank) echoRank = rank + 1
+  return { echoRank, fightRank: echoRank > hero.echoRank ? echoRank : hero.fightRank }
+}
+
 export function settleExpedition(save: SaveData): SaveData {
   const expedition = save.expedition
   if (expedition === null || expedition.outcome === 'ongoing') return save
@@ -274,6 +293,8 @@ export function settleExpedition(save: SaveData): SaveData {
           ...hero,
           equipment: applyDurability(hero.equipment, expedition.equipment),
           progress: awardXp(hero.progress, expedition.xpEarned ?? 0),
+          ...unlockedRanks(hero, expedition),
+          bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
         }
       : hero,
   )
@@ -310,6 +331,7 @@ export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
   const victories = expedition.history.filter((entry) => entry.outcome === 'victory').length
   const retreated = expedition.history.find((entry) => entry.outcome === 'retreat')
   const lines = [`Fights won: ${victories}.`]
+  for (const rank of bossVictoryRanks(expedition)) lines.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
   if ((expedition.xpEarned ?? 0) > 0) lines.push(`Experience earned: ${expedition.xpEarned}.`)
   if (expedition.outcome === 'returned') {
     if (retreated !== undefined) lines.push(`You retreated during fight ${retreated.index + 1}. That fight gave no loot or momentum.`)
@@ -329,7 +351,7 @@ export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
     }
     lines.push(`Rescue fee: ${rescueFee(expedition)} gold. Gold you carry now: ${expedition.carriedGold}. Debt: ${expedition.debt}.`)
     lines.push(`Recovery wait: ${Math.round(expedition.recoveryMs / 60_000)} minutes.`)
-    if (expedition.bossLossThisLife) lines.push('A boss defeated you this life.')
+    if (expedition.bossLossThisLife) lines.push('A boss defeated you this life. You can now reincarnate.')
     return { title: 'Defeated', lines }
   }
   return { title: 'Expedition running', lines }

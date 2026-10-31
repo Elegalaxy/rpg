@@ -94,7 +94,7 @@ describe('outcome summary', () => {
       'Gear damaged: chest 90/100.',
       'Rescue fee: 25 gold. Gold you carry now: 0. Debt: 25.',
       'Recovery wait: 5 minutes.',
-      'A boss defeated you this life.',
+      'A boss defeated you this life. You can now reincarnate.',
     ])
   })
 })

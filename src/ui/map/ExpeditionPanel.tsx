@@ -128,6 +128,23 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </label>{' '}
         <small>The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</small>
       </div>
+      {hero.echoRank > 0 ? (
+        <div>
+          <label>
+            Fractured Warden Echo rank{' '}
+            <input
+              aria-label="Echo rank"
+              value={draft.fightRank}
+              inputMode="numeric"
+              size={3}
+              onChange={(event) => patch({ fightRank: event.target.value })}
+            />
+          </label>{' '}
+          <small>
+            0 to {hero.echoRank}. Each rank multiplies the boss HP, Power, Armor, and Resistance by 1.12. A victory unlocks the next rank.
+          </small>
+        </div>
+      ) : null}
       <p>Supplies: {SUPPLY_SLOT_COUNT} slots, all empty. No consumable exists yet.</p>
       <button type="button" disabled={!checked.ok} onClick={save}>
         Save preparation

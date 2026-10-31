@@ -59,6 +59,9 @@ function withHero(): SaveData {
     specialAmmo: 0,
     carryGold: 25,
     craftXp: 0,
+    echoRank: 0,
+    fightRank: 0,
+    bossLossThisLife: false,
     equipment: starterEquipment('hero-1', 'warrior'),
   })
   save.selectedHeroId = 'hero-1'

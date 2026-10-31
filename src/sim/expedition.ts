@@ -48,6 +48,8 @@ export type ExpeditionEnemy = {
   baseQuantity?: number
   /** Gold this enemy adds to the gold the hero carries when it is defeated. Omitted drops none. */
   gold?: number
+  /** Echo rank for a boss fight. Omitted is rank 0. */
+  rank?: number
 }
 
 export type LootStack = {
@@ -471,7 +473,17 @@ function copyEnemy(enemy: ExpeditionEnemy, label: string): ExpeditionEnemy {
   if (gold !== undefined && (typeof gold !== 'number' || !Number.isInteger(gold) || gold < 0)) {
     throw new Error(`${label} gold must be an integer of at least 0, received ${describeValue(gold)}`)
   }
-  const base = { defId: enemy.defId, slot: enemy.slot, level: enemy.level, ...(gold === undefined ? {} : { gold }) }
+  const rank = enemy.rank
+  if (rank !== undefined && (typeof rank !== 'number' || !Number.isInteger(rank) || rank < 0)) {
+    throw new Error(`${label} Echo rank must be an integer of at least 0, received ${describeValue(rank)}`)
+  }
+  const base = {
+    defId: enemy.defId,
+    slot: enemy.slot,
+    level: enemy.level,
+    ...(gold === undefined ? {} : { gold }),
+    ...(rank === undefined ? {} : { rank }),
+  }
   const materialId = enemy.materialId
   const baseQuantity = enemy.baseQuantity
   if (materialId === undefined && baseQuantity === undefined) return base
@@ -829,6 +841,7 @@ function combatSetup(state: ExpeditionState, encounter: ExpeditionEncounterDef):
       defId: enemy.defId,
       slot: enemy.slot,
       level: enemy.level,
+      ...(enemy.rank === undefined ? {} : { rank: enemy.rank }),
     })),
   }
 }

@@ -22,7 +22,7 @@ function hero(save: SaveData) {
 
 describe('preparation', () => {
   it('starts from the usual defaults, per class', () => {
-    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25' })
+    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0' })
     expect(draftFor(hero(heroSave('cleric'))).vow).toBe('zeal')
     expect(draftFor(hero(heroSave('ranger'))).specialAmmo).toBe('6')
   })

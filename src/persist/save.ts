@@ -100,6 +100,12 @@ export type SavedHero = {
   specialAmmo: number
   /** Gold to carry into an expedition. The rest of the account's gold stays deposited and safe. */
   carryGold: number
+  /** The highest Fractured Warden Echo rank this hero can fight. Each victory unlocks the next. Personal to the hero. */
+  echoRank: number
+  /** The Echo rank to fight on the next run to the Fracture Gate. At most `echoRank`. */
+  fightRank: number
+  /** A boss defeated this hero this life. Reincarnation needs it, and reincarnation clears it. */
+  bossLossThisLife: boolean
   /** Crafting experience. Rank is `floor(√XP)` up to 10. Personal to the hero and kept through reincarnation. */
   craftXp: number
   /** Equipped items. Gear is bound to its hero. */
@@ -275,6 +281,10 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.specialAmmo, `${label} special arrows`)
   whole(value.carryGold, `${label} carried gold`)
   whole(value.craftXp, `${label} crafting experience`)
+  whole(value.echoRank, `${label} Echo rank`)
+  whole(value.fightRank, `${label} fight rank`)
+  check(value.fightRank <= value.echoRank, `${label} fight rank is above the Echo rank it has unlocked`)
+  check(typeof value.bossLossThisLife === 'boolean', `${label} boss loss must be true or false`)
   check(isRecord(value.equipment), `${label} equipment must be an object`)
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = value.equipment[slot]
@@ -328,6 +338,9 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
     if (hero.carryGold === undefined) hero.carryGold = DEFAULT_CARRY_GOLD
     if (hero.craftXp === undefined) hero.craftXp = 0
+    if (hero.echoRank === undefined) hero.echoRank = 0
+    if (hero.fightRank === undefined) hero.fightRank = 0
+    if (hero.bossLossThisLife === undefined) hero.bossLossThisLife = false
     if (hero.equipment === undefined && typeof hero.id === 'string' && (HERO_CLASSES as readonly string[]).includes(String(hero.classId))) {
       hero.equipment = starterEquipment(hero.id, hero.classId as HeroClass)
     }

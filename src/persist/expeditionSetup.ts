@@ -1,12 +1,27 @@
 import { toExpeditionEncounter, encounters } from '../content/encounters.ts'
+import { enemies } from '../content/enemies.ts'
 import { itemBase } from '../content/items.ts'
 import { nodes, routeEncounterIds, routes } from '../content/world.ts'
 import { classWebs } from '../content/webs/index.ts'
-import { TRAVEL_GAP_MS, createExpedition, type ExpeditionBlueprint, type ExpeditionState } from '../sim/expedition.ts'
+import {
+  TRAVEL_GAP_MS,
+  createExpedition,
+  type ExpeditionBlueprint,
+  type ExpeditionEncounterDef,
+  type ExpeditionState,
+} from '../sim/expedition.ts'
 import { gearFromEquipment, statBonusesFor } from '../sim/economy.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 
 import type { SavedHero } from './save.ts'
+
+/** A boss in the fight gets the hero's chosen Echo rank. Other enemies keep rank 0. */
+function withBossRank(encounter: ExpeditionEncounterDef, rank: number): ExpeditionEncounterDef {
+  return {
+    ...encounter,
+    enemies: encounter.enemies.map((enemy) => (enemies[enemy.defId]?.boss === true ? { ...enemy, rank } : enemy)),
+  }
+}
 
 /**
  * Build the road run for a saved hero. Gear is what the hero has equipped. Retreat threshold, vow, curse, and arrows come from the hero's preparation.
@@ -28,8 +43,8 @@ export function blueprintForHero(
   const nodeIds = hero.progress.allocatedNodeIds
   return {
     id: routeId as ExpeditionBlueprint['id'],
-    opening: routeEncounterIds(route).map(find),
-    draw: drawIds.map(find),
+    opening: routeEncounterIds(route).map(find).map((encounter) => withBossRank(encounter, hero.fightRank)),
+    draw: drawIds.map(find).map((encounter) => withBossRank(encounter, hero.fightRank)),
     travelGapMs: TRAVEL_GAP_MS,
     carriedGold: gold.carried,
     depositedGold: gold.deposited,
