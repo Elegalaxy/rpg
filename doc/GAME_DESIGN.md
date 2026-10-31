@@ -1253,6 +1253,15 @@ First-playable town numbers, decided 2026-10-31:
 - Recipes and crafting proficiency persist through reincarnation.
 - Item tiers and modifiers have hero-level requirements.
 
+First-playable crafting numbers, decided 2026-10-31:
+
+- Recipes: every base item can be made from the start. The account also knows two modifier recipes at the start (Keen and Precise). Later recipes add more modifiers.
+- Materials set the visible quality range: scrap 90% to 100%, hide 95% to 105%, shard 100% to 110%. The quality roll is the average of two uniform rolls in that range. The rolls are seeded, and the seed is saved.
+- Proficiency is personal to the hero and survives reincarnation. Each craft or upgrade attempt adds 1 XP. Rank is `floor(√XP)`, up to 10, and each rank raises the range's minimum by 1 percentage point, never above its maximum.
+- A craft costs 6 of the chosen material plus `item level × 5` gold. The item level is at most the hero's level. It takes 30 seconds of town time, and the queue holds 3 jobs. Only the first job advances, and time passes only while no expedition is running.
+- One modifier per craft, from the recipes the account knows, and the hero's level must reach its minimum: Keen +2 points critical chance (level 1), Precise +3 Accuracy (level 1), Nimble +3 Evasion (level 3), Piercing +3 points Armor and magical penetration (level 6), Mending +5 Healing Power (level 6), Quick +2 points cooldown reduction (level 9). Modifiers on every equipped item add together.
+- An upgrade raises an archive item's level by 1, up to the hero's level, for 4 of a chosen material plus `item level × 5` gold, in the same queue and time. The chance is `85% − 5 × item level`. A failure uses the materials and returns the item unchanged.
+
 ### Equipment math
 
 MVP combat slots:
@@ -1614,6 +1623,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-10-31: Decided the first-playable crafting rules: material quality ranges, seeded averaged rolls, personal proficiency, costs and time, a queue of 3, six modifiers with level requirements, and upgrades with a falling chance.
 - 2026-10-31: Decided the first-playable town numbers: gold drops of level × 2 (level × 3 for elites and the boss), a chosen carry amount, fixed buy and sell prices, a repair formula, and debt kept on the account with no effect. No consumables yet.
 - 2026-10-31: Decided G6. The account starts with 2 character slots and reaches 5 through three one-time milestones: the first safe return to town, the first reincarnating boss defeat, and the first Warden defeat. Duplicate race/class heroes are allowed, and hero names must be unique ignoring case. No hero can be deleted in the first playable.
 - 2026-10-21: Accepted the technical direction: TypeScript + React + Vite with no engine, a fixed 10 ms simulation clock with a fixed tie order, and actions that resolve when ready, with action time as recovery and the first action after one base action time. Linked the implementation plan.
