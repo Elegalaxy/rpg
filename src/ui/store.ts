@@ -3,6 +3,8 @@ import { useSyncExternalStore } from 'react'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { addDevelopmentItems, equipFromArchive } from '../persist/equipment.ts'
+import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
+import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { advanceCrafting, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { buyItem, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
@@ -546,6 +548,31 @@ export function collectContractFromUi(contractId: string): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero to collect the experience.'
   return applyTown(collectContract(saveStatus.save, hero.id, contractId), 'contract collected')
+}
+
+/** Reincarnate the selected hero, keeping the chosen item as an heirloom. Returns the refusal, or null. */
+export function reincarnateFromUi(heirloomItemId: string | null): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemId), 'reincarnated')
+}
+
+/** Spend the selected hero's Legacy. Returns the refusal, or null. */
+export function buyPurchaseFromUi(kind: PurchaseKind, attribute?: keyof HeroPurchases['attributeSeeds']): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(buyPurchase(saveStatus.save, hero.id, kind, attribute), 'legacy purchase')
+}
+
+/** Development builds only. Marks a boss loss, or adds Legacy, so the reincarnation screen can be tried. */
+export function devLegacyTools(kind: 'bossLoss' | 'legacy'): void {
+  if (!import.meta.env.DEV) return
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return
+  const heroes = saveStatus.save.heroes.map((entry) =>
+    entry.id !== hero.id ? entry : kind === 'bossLoss' ? { ...entry, bossLossThisLife: true } : { ...entry, legacy: entry.legacy + 40 },
+  )
+  commitSave({ ...saveStatus.save, heroes }, `dev ${kind}`)
 }
 
 /** Close a finished expedition: loot to the account, the first return opens a slot. */

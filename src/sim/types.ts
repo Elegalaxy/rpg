@@ -1389,6 +1389,8 @@ export type CombatHeroSetup = {
   curse?: string
   /** Human Renaissance: at least two nodes in each class cluster. Computed from the class web. */
   renaissance?: boolean
+  /** Mastery rank, 0 to 10. Each rank adds 2% ordinary XP. Omitted is 0. */
+  masteryRank?: number
   /** Bonuses from item modifiers on the equipped gear. Omitted adds none. */
   statBonuses?: StatBonuses
   /** Skill-web nodes for this fight. Omitted is an empty list and applies no node effects. */

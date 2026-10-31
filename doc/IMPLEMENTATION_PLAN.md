@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 10.2  
+Next step: Step 11.1  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -845,22 +845,26 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-01: Verified. `npm test` passed (55 files, 617 tests, exit 0), including 8 in `src/persist/echo.test.ts`: the rank on the boss and nowhere else, the Warden entering a real combat at rank 3 with HP, Power, and Armor about 1.12 cubed above rank 0, the rank choice limits, unlocking at several ranks without moving a lower chosen rank, the outcome lines, the loss flag at ranks 0 and 2 and not from a road defeat, a flag that stays set, a save with a fight rank above the unlocked rank refused, and the reveal. `npm run typecheck`, `npm run lint`, and `npm run build` exited 0. The road seed 5 is unchanged. Not played by hand: a real Warden fight, which a floor-build hero loses at rank 0 by design.
 
 ### Step 10.2: Reincarnation
-- Status: `todo`
+- Status: `verified`
 - Depends on: 10.1, G10
 - Files: `src/sim/progression.ts`, `src/ui/character/Reincarnate*.tsx`, tests
 - Change: Eligibility requires a boss loss this life, with defeat costs already applied. Currency from level and XP. First-time milestone bonuses. The §10 reset and preserve lists. Legacy skill points come back unallocated. Choose one heirloom.
 - Acceptance criteria: a test for each reset and preserve item.
 - Verification: User: lose to the Warden, reincarnate, and confirm what was kept.
 - Progress:
-
+  - 2026-11-01: `src/persist/reincarnation.ts` holds the rules. A hero can reincarnate only after a boss has beaten them this life (`bossLossThisLife`, with the defeat costs already applied at settle) and with no expedition running. The Legacy gained is `legacyFromProgress` (`2 × (level − 1)` plus the XP share, 0 to 4) plus the one-time bonuses `bonusesDue` finds (+3 per elite, +20 for the Warden, +5 per Echo rank), which are recorded in `claimedBonuses` so each pays once. Reset: level, XP, attributes (back to the racial start plus any seeds), the skill web and loadout, unspent points, the priority rules, the hero's defeated enemies, cleared nodes, Echo ranks and fight rank, the boss-loss flag, and the account's contracts. Kept: lives (mastery), purchases, Legacy, discoveries, recipes, crafting experience, gold and deposited gold, materials, the archive, and the vow. All worn gear goes to the archive and the hero gets fresh starter gear with new ids (`hero-1-L1-mainHand`). The first reincarnation opens character slot 4 by the G6 milestone (`first-reincarnation`). The chosen item becomes an heirloom (`item.heirloom = { heroId, cap }`): its level follows the hero up to its cap, only its hero can equip it, one is kept (two with the Second Heirloom), and an older one is released at its cap. `src/ui/character/Legacy.tsx` shows Legacy, the preview with each bonus, the heirloom picker, and a confirmation.
+  - 2026-11-01: Verified. `npm test` passed (57 files, 639 tests, exit 0), including `src/persist/reincarnation.test.ts` with a test for each reset and preserve item above, the currency formula at its edges, bonuses paying once, gear archiving, heirloom flagging, scaling, equipping, and the allowance, and the slot milestone. `npm run typecheck` and `npm run lint` exited 0. In the dev server in the browser pane: the screen said `Lose to a boss first...` until a boss loss was marked, the preview showed the gain, Confirm reincarnated the hero to level 1 with the points they had been granted gone, their gear in the archive, and starter gear `hero-1-L1-mainHand`. Not played by hand: losing to the Warden for real, because a floor-build hero does lose at rank 0 but the fight takes too long in the throttled pane; the settle path that sets the flag is tested in Step 10.1.
 ### Step 10.3: Mastery, legacy purchases, heirloom scaling, slot unlocks
-- Status: `todo`
+- Status: `verified`
 - Depends on: 10.2, G6, G10
 - Files: `src/sim/progression.ts`, `src/content/heroes.ts`, `src/ui/character/Legacy*.tsx`, tests
 - Change: The personal mastery effects and legacy purchases defined in G10. The heirloom scales to the hero's level. Character slots unlock by the three G6 milestones (first return to town, first reincarnation, first Warden defeat) through `SLOT_MILESTONES` in `src/persist/save.ts`.
 - Acceptance criteria: tests for each purchase effect and for heirloom scaling. The harness shows the second-life reference hero doing measurably better against the Warden.
 - Verification: `npm test`, plus a harness comparison of first-life and second-life Warden win rates.
 - Progress:
+  - 2026-11-01: Purchases (`buyPurchase`) are bound to the hero and kept across lives. Attribute Seed costs 3 and adds 1 to a chosen starting attribute, up to 10 in total. Skill Point Seed costs 8, then 12, then 16, up to 3, and gives that many unallocated skill points at the start of each life. Second Heirloom costs 25, once. A purchase needs the Legacy and no running expedition, and says what it cost. Mastery is the hero's completed lives up to 10 and adds 2% ordinary XP per rank: `masteryRank` feeds the run's hero setup (`masteryRank`), and the simulation multiplies a won fight's XP by it, including for a Human with the Human bonus. It changes nothing else, and a test confirms the fight itself is identical. Heirlooms are re-scaled whenever the hero's level can change: when an expedition is settled, when a contract is collected, and at reincarnation. The three G6 slot milestones now all have a source: first return (8.3), first reincarnation (10.2), and first Warden defeat (8.2/10.1).
+  - 2026-11-01: Harness comparison. `src/harness/legacy.test.ts` fights the reference level-20 Warrior against the Warden at Echo rank 0 over 40 seeds, first life against the same hero with ten Attribute Seeds (5 Strength, 5 Vitality). Result: 0 wins in both (the floor build loses by design), the Warden has 69.0% of its HP left against 66.3%, and the hero lasts 50.6 s against 51.9 s. The second life is measurably better in every metric and more seeds help more, and the gain is small on purpose, because G10 keeps permanent power controlled. The Skill Point Seeds and any skill nodes are not part of this comparison, since the harness has no allocation policy yet.
+  - 2026-11-01: Verified. `npm test`, `npm run typecheck`, `npm run lint` passed (639 tests). The road seed 5 is unchanged. In the dev server in the browser pane: 40 dev Legacy bought two Strength seeds (3 each) and a Skill Point Seed (8), leaving 26, and after reincarnating Strength was 12 (10 base plus 2), the skill point showed 1 unallocated, mastery was 1, Legacy stayed 26, and the account had 3 slots.
 
 ---
 

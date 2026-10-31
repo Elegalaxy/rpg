@@ -79,6 +79,22 @@ export type AccountData = {
 }
 
 /** One hero's saved record. Combat state is rebuilt from this and the content tables. */
+/** What a hero has bought with Legacy. */
+export type HeroPurchases = {
+  /** Starting attribute points bought, by attribute. Ten in total at most. */
+  attributeSeeds: { strength: number; vitality: number; agility: number; intellect: number; spirit: number }
+  /** Skill Point Seeds bought, up to 3. */
+  skillSeeds: number
+  /** Whether the Second Heirloom was bought. */
+  secondHeirloom: boolean
+}
+
+export const EMPTY_PURCHASES: HeroPurchases = {
+  attributeSeeds: { strength: 0, vitality: 0, agility: 0, intellect: 0, spirit: 0 },
+  skillSeeds: 0,
+  secondHeirloom: false,
+}
+
 export type SavedHero = {
   id: string
   name: string
@@ -106,6 +122,14 @@ export type SavedHero = {
   fightRank: number
   /** A boss defeated this hero this life. Reincarnation needs it, and reincarnation clears it. */
   bossLossThisLife: boolean
+  /** Reincarnation currency this hero has not spent. Bound to the hero and kept across lives. */
+  legacy: number
+  /** Lives this hero has completed by reincarnating. Mastery rank is this, up to 10. */
+  lives: number
+  /** Legacy purchases, kept across lives. */
+  purchases: HeroPurchases
+  /** One-time milestone bonuses already paid out, such as `elite:echo-knight` or `rank:2`. */
+  claimedBonuses: string[]
   /** Crafting experience. Rank is `floor(√XP)` up to 10. Personal to the hero and kept through reincarnation. */
   craftXp: number
   /** Equipped items. Gear is bound to its hero. */
@@ -193,6 +217,10 @@ function stringList(value: unknown, label: string): asserts value is string[] {
 function assertItem(value: unknown, label: string): asserts value is ItemInstance {
   check(isRecord(value), `${label} must be an object`)
   check(typeof value.id === 'string' && value.id.length > 0, `${label} is missing an id`)
+  if (value.heirloom !== undefined) {
+    check(isRecord(value.heirloom) && typeof value.heirloom.heroId === 'string', `${label} heirloom must name its hero`)
+    whole(value.heirloom.cap, `${label} heirloom cap`)
+  }
   check(typeof value.baseId === 'string' && itemBase(value.baseId) !== undefined, `${label} has an unknown base ${describeValue(value.baseId)}`)
   check(typeof value.itemLevel === 'number' && Number.isInteger(value.itemLevel) && value.itemLevel >= 1, `${label} item level must be a whole number of at least 1`)
   check(typeof value.quality === 'number' && value.quality > 0 && value.quality <= 2, `${label} quality must be above 0 and at most 2`)
@@ -281,6 +309,20 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.specialAmmo, `${label} special arrows`)
   whole(value.carryGold, `${label} carried gold`)
   whole(value.craftXp, `${label} crafting experience`)
+  whole(value.legacy, `${label} Legacy`)
+  whole(value.lives, `${label} lives`)
+  stringList(value.claimedBonuses, `${label} claimed bonuses`)
+  check(isRecord(value.purchases), `${label} purchases must be an object`)
+  check(isRecord(value.purchases.attributeSeeds), `${label} attribute seeds must be an object`)
+  let seeds = 0
+  for (const key of ['strength', 'vitality', 'agility', 'intellect', 'spirit']) {
+    whole(value.purchases.attributeSeeds[key], `${label} ${key} seeds`)
+    seeds += value.purchases.attributeSeeds[key] as number
+  }
+  check(seeds <= 10, `${label} has more than 10 attribute seeds`)
+  whole(value.purchases.skillSeeds, `${label} skill seeds`)
+  check((value.purchases.skillSeeds as number) <= 3, `${label} has more than 3 skill seeds`)
+  check(typeof value.purchases.secondHeirloom === 'boolean', `${label} second heirloom must be true or false`)
   whole(value.echoRank, `${label} Echo rank`)
   whole(value.fightRank, `${label} fight rank`)
   check(value.fightRank <= value.echoRank, `${label} fight rank is above the Echo rank it has unlocked`)
@@ -338,6 +380,10 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
     if (hero.carryGold === undefined) hero.carryGold = DEFAULT_CARRY_GOLD
     if (hero.craftXp === undefined) hero.craftXp = 0
+    if (hero.legacy === undefined) hero.legacy = 0
+    if (hero.lives === undefined) hero.lives = 0
+    if (hero.claimedBonuses === undefined) hero.claimedBonuses = []
+    if (hero.purchases === undefined) hero.purchases = JSON.parse(JSON.stringify(EMPTY_PURCHASES))
     if (hero.echoRank === undefined) hero.echoRank = 0
     if (hero.fightRank === undefined) hero.fightRank = 0
     if (hero.bossLossThisLife === undefined) hero.bossLossThisLife = false

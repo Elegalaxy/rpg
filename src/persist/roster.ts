@@ -5,7 +5,7 @@ import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createProgress, HERO_RACES, type HeroRace } from '../sim/progression.ts'
 
-import { DEFAULT_CARRY_GOLD, DEFAULT_RETREAT, MAX_SLOTS, type SaveData, type SavedHero } from './save.ts'
+import { EMPTY_PURCHASES, DEFAULT_CARRY_GOLD, DEFAULT_RETREAT, MAX_SLOTS, type SaveData, type SavedHero } from './save.ts'
 
 export const NAME_MIN = 1
 export const NAME_MAX = 24
@@ -82,6 +82,10 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     specialAmmo: loadout.specialAmmo ?? 0,
     carryGold: DEFAULT_CARRY_GOLD,
     craftXp: 0,
+    legacy: 0,
+    lives: 0,
+    purchases: JSON.parse(JSON.stringify(EMPTY_PURCHASES)) as typeof EMPTY_PURCHASES,
+    claimedBonuses: [],
     echoRank: 0,
     fightRank: 0,
     bossLossThisLife: false,

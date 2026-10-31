@@ -12,11 +12,12 @@ export function humanOrdinaryXp(
   spirit: number,
   members: readonly XpMember[],
   nodeIds?: readonly string[],
+  extra = 1,
 ): number {
   const multiplier = hasRacialNode(nodeIds, NODE_HUMAN_QUICK_STUDY)
     ? HUMAN_QUICK_STUDY_MULTIPLIER
     : HUMAN_ORDINARY_XP_MULTIPLIER
-  return xpFromEnemies(heroLevel, spirit, members, multiplier)
+  return xpFromEnemies(heroLevel, spirit, members, multiplier * extra)
 }
 
 function encounterStart(state: CombatState, timeMs: number): void {

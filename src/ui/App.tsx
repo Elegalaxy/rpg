@@ -12,6 +12,7 @@ import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
 import { Contracts } from './town/Contracts.tsx'
 import { Craft } from './town/Craft.tsx'
+import { Legacy } from './character/Legacy.tsx'
 import { Town } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { debugLog } from './debug.ts'
@@ -87,6 +88,7 @@ function App() {
       <Contracts />
       <Craft />
       <Equipment />
+      <Legacy />
       <Loadout />
       <Rules />
       <p>

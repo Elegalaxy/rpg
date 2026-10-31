@@ -1052,8 +1052,11 @@ function victoryXp(state: ExpeditionState, combat: CombatState): number {
   const members = combat.enemies.map((enemy) => ({ xp: enemy.xp, level: enemy.level, summon: enemy.summon }))
   const level = state.heroTemplate.level
   const spirit = state.hero.spirit
-  if (state.heroTemplate.race === 'human') return humanOrdinaryXp(level, spirit, members, state.heroTemplate.allocatedNodeIds)
-  return xpFromEnemies(level, spirit, members)
+  const mastery = 1 + 0.02 * (state.heroTemplate.masteryRank ?? 0)
+  if (state.heroTemplate.race === 'human') {
+    return humanOrdinaryXp(level, spirit, members, state.heroTemplate.allocatedNodeIds, mastery)
+  }
+  return xpFromEnemies(level, spirit, members, mastery)
 }
 
 function finishEncounter(state: ExpeditionState, defs: GameDefs): void {

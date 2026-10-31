@@ -4,6 +4,7 @@ import { nodes, routes } from '../content/world.ts'
 import type { ExpeditionState } from '../sim/expedition.ts'
 import { awardXp } from '../sim/progression.ts'
 
+import { scaleHeirlooms } from './reincarnation.ts'
 import type { RosterResult } from './roster.ts'
 import type { ActiveContract, SaveData } from './save.ts'
 
@@ -53,7 +54,7 @@ export function collectContract(save: SaveData, heroId: string, contractId: stri
   materials[reward.materialId] = (materials[reward.materialId] ?? 0) + reward.materialQuantity
   return {
     ok: true,
-    save: {
+    save: scaleHeirlooms({
       ...save,
       account: {
         ...save.account,
@@ -62,7 +63,7 @@ export function collectContract(save: SaveData, heroId: string, contractId: stri
         contracts: save.account.contracts.filter((entry) => entry.contractId !== contractId),
       },
       heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, progress: awardXp(entry.progress, reward.xp) } : entry)),
-    },
+    }, heroId),
   }
 }
 

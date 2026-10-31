@@ -550,6 +550,17 @@ export function renaissanceActive(allocatedNodeIds: readonly string[], web: Skil
   return clusters.length > 0 && clusters.every((name) => (counts[name] ?? 0) >= 2)
 }
 
+/**
+ * Legacy currency for reincarnating at this progress (G10): `2 × (level − 1)` plus a fifth-step share of
+ * the XP into the current level, 0 to 4.
+ */
+export function legacyFromProgress(progress: HeroProgress): number {
+  assertProgress(progress)
+  const cost = xpToNextLevel(progress.level)
+  const share = cost > 0 ? Math.floor((5 * progress.xp) / cost) : 0
+  return 2 * (progress.level - 1) + (share > 4 ? 4 : share)
+}
+
 /** Add one legacy skill point. Does not change ordinary unspent points. */
 export function grantLegacySkillPoint(progress: HeroProgress): HeroProgress {
   assertProgress(progress)

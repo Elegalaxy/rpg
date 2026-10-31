@@ -33,6 +33,8 @@ export type ItemInstance = {
   durability: number
   maxDurability: number
   modifiers: string[]
+  /** Set on a hero's heirloom: its level follows that hero's level, up to `cap`. Only that hero can use it. */
+  heirloom?: { heroId: string; cap: number }
 }
 
 /** Equipped items by slot. A hero needs every slot filled except the off-hand under a two-handed weapon. */

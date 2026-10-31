@@ -19,6 +19,7 @@ import { itemBase } from '../content/items.ts'
 import { awardXp } from '../sim/progression.ts'
 import { applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress } from './contracts.ts'
+import { scaleHeirlooms } from './reincarnation.ts'
 import { reachMilestone, type SaveData, type SavedHero } from './save.ts'
 
 export type NodeState = 'locked' | 'discovered' | 'cleared'
@@ -298,7 +299,9 @@ export function settleExpedition(save: SaveData): SaveData {
         }
       : hero,
   )
-  return { ...progressed, account, heroes, expedition: null }
+  const settled: SaveData = { ...progressed, account, heroes, expedition: null }
+  const owner = selectedHero(progressed)
+  return owner === null ? settled : scaleHeirlooms(settled, owner.id)
 }
 
 /**

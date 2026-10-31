@@ -86,6 +86,10 @@ export function equipFromArchive(save: SaveData, heroId: string, itemId: string,
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
   if (save.expedition !== null) return { ok: false, reason: 'Equipment is locked while an expedition is running.' }
+  const wanted = save.account.archive.find((entry) => entry.id === itemId)
+  if (wanted?.heirloom !== undefined && wanted.heirloom.heroId !== heroId) {
+    return { ok: false, reason: 'That is another hero\'s heirloom.' }
+  }
   const result = withEquipped(hero, save.account.archive, itemId, slot)
   if (!result.ok) return { ok: false, reason: result.reason }
   return {

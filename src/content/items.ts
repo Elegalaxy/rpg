@@ -75,11 +75,12 @@ export function newItem(id: string, baseId: string, itemLevel: number, quality =
 }
 
 /** Basic level 1 gear: exactly 100% quality and no modifiers (§7). Ids are tied to the hero. */
-export function starterEquipment(heroId: string, classId: HeroClass): Equipment {
+export function starterEquipment(heroId: string, classId: HeroClass, life = 0): Equipment {
   if (!(HERO_CLASSES as readonly string[]).includes(classId)) throw new Error(`unknown hero class '${classId}'`)
   const plan = STARTER[classId]
   const equipment = emptyEquipment()
-  const make = (slot: string, baseId: string) => newItem(`${heroId}-${slot}`, baseId, 1)
+  const prefix = life === 0 ? heroId : `${heroId}-L${life}`
+  const make = (slot: string, baseId: string) => newItem(`${prefix}-${slot}`, baseId, 1)
   equipment.mainHand = make('mainHand', plan.main)
   equipment.offHand = make('offHand', plan.off)
   for (const slot of ARMOR_SLOTS) equipment[slot] = make(slot, `armor-${plan.armor}-${slot}`)

@@ -13,6 +13,7 @@ import {
 import { gearFromEquipment, statBonusesFor } from '../sim/economy.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 
+import { masteryRank } from './reincarnation.ts'
 import type { SavedHero } from './save.ts'
 
 /** A boss in the fight gets the hero's chosen Echo rank. Other enemies keep rank 0. */
@@ -62,6 +63,7 @@ export function blueprintForHero(
       allocatedNodeIds: [...nodeIds],
       renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
       statBonuses: statBonusesFor(hero.equipment),
+      masteryRank: masteryRank(hero),
       ...(hero.classId === 'ranger' ? { specialAmmo: hero.specialAmmo } : {}),
       ...(hero.vow !== null ? { vow: hero.vow } : {}),
       ...(hero.curse !== null ? { curse: hero.curse } : {}),
