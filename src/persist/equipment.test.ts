@@ -8,7 +8,7 @@ import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats } from '../sim/stats.ts'
 
 import { selectedHero } from './character.ts'
-import { addDevelopmentItems, equipFromArchive, previewEquip, statLines, statsFor } from './equipment.ts'
+import { addDevelopmentItems, equipFromArchive, previewEquip, statLines, statsFor, unequipToArchive } from './equipment.ts'
 import { blueprintForHero, startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, newSave, parseSave, serializeSave, type SaveData } from './save.ts'
@@ -287,5 +287,29 @@ describe('gear on the road', () => {
     expect(hero(settled).equipment.accessory1?.durability).toBe(90)
     expect(() => assertSaveData(settled)).not.toThrow()
     stepExpedition(startExpedition(hero(save), 'splintered-road', 2), gameDefs())
+  })
+})
+
+describe('taking gear off', () => {
+  it('moves a worn item to the archive and leaves the slot empty', () => {
+    const save = plainHeroSave()
+    const result = unequipToArchive(save, 'hero-1', 'head')
+    if (!result.ok) throw new Error(result.reason)
+    expect(hero(result.save).equipment.head).toBeNull()
+    expect(result.save.account.archive.map((item) => item.id)).toContain('hero-1-head')
+    expect(gearGaps(hero(result.save).equipment, itemBase)).toEqual(['head'])
+    expect(unequipToArchive(result.save, 'hero-1', 'head')).toEqual({ ok: false, reason: 'Nothing is worn in that slot.' })
+    const back = equipFromArchive(result.save, 'hero-1', 'hero-1-head')
+    expect(back.ok).toBe(true)
+  })
+
+  it('sends a quiver away with its bow, and is closed during a run', () => {
+    const ranger = plainHeroSave('ranger')
+    const result = unequipToArchive(ranger, 'hero-1', 'mainHand')
+    if (!result.ok) throw new Error(result.reason)
+    expect(hero(result.save).equipment.offHand).toBeNull()
+    expect(result.save.account.archive.map((item) => item.id).sort()).toEqual(['hero-1-mainHand', 'hero-1-offHand'])
+    const running = { ...ranger, expedition: startExpedition(hero(ranger), 'splintered-road', 1) }
+    expect(unequipToArchive(running, 'hero-1', 'head')).toEqual({ ok: false, reason: 'Equipment is locked while an expedition is running.' })
   })
 })

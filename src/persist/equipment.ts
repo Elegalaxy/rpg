@@ -108,6 +108,36 @@ export function equipFromArchive(save: SaveData, heroId: string, itemId: string,
   }
 }
 
+/**
+ * Take a worn item off and put it in the archive. Taking off a bow also sends a worn quiver to the
+ * archive, because a quiver needs a bow. The hero cannot start a run until the slot is filled again.
+ */
+export function unequipToArchive(save: SaveData, heroId: string, slot: EquipmentSlotId): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  if (save.expedition !== null) return { ok: false, reason: 'Equipment is locked while an expedition is running.' }
+  const item = hero.equipment[slot]
+  if (item === null) return { ok: false, reason: 'Nothing is worn in that slot.' }
+  const equipment = { ...hero.equipment, [slot]: null }
+  const moved = [item]
+  const off = hero.equipment.offHand
+  if (slot === 'mainHand' && off !== null) {
+    const offBase = itemBase(off.baseId)
+    if (offBase?.type === 'offHand' && offBase.offHandKind === 'quiver') {
+      equipment.offHand = null
+      moved.push(off)
+    }
+  }
+  return {
+    ok: true,
+    save: {
+      ...save,
+      account: { ...save.account, archive: [...save.account.archive, ...moved] },
+      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment } : entry)),
+    },
+  }
+}
+
 /** Development builds only: add a spread of weapons to the archive to try the equip rules. */
 export function addDevelopmentItems(save: SaveData, heroId: string): SaveData {
   const hero = save.heroes.find((entry) => entry.id === heroId)

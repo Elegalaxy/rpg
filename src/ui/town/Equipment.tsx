@@ -5,7 +5,7 @@ import { previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { EQUIPMENT_SLOT_IDS, gearGaps, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { itemBase } from '../../content/items.ts'
-import { devAddItems, equipFromUi, useSaveStatus } from '../store.ts'
+import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
 
 const SLOT_LABELS: { [slot in EquipmentSlotId]: string } = {
   mainHand: 'Main hand',
@@ -61,6 +61,14 @@ export function Equipment() {
             <li key={slot} data-testid={`slot-${slot}`}>
               <strong>{SLOT_LABELS[slot]}:</strong>{' '}
               {item === null ? (disabled ? 'disabled by the two-handed weapon' : 'empty') : describeItem(item)}
+              {item !== null ? (
+                <>
+                  {' '}
+                  <button type="button" disabled={locked} aria-label={`Unequip ${SLOT_LABELS[slot]}`} onClick={() => setError(unequipFromUi(slot))}>
+                    Unequip
+                  </button>
+                </>
+              ) : null}
             </li>
           )
         })}

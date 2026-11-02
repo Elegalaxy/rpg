@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
-import { addDevelopmentItems, equipFromArchive } from '../persist/equipment.ts'
+import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../persist/equipment.ts'
 import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
@@ -448,6 +448,16 @@ export function savePreparationFromUi(draft: PreparationDraft): string[] {
   if (!result.ok) return [result.reason]
   commitSave(result.save, 'preparation saved')
   return []
+}
+
+/** Move a worn item of the selected hero into the archive. Returns the reason it was refused, or null. */
+export function unequipFromUi(slot: EquipmentSlotId): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  const result = unequipToArchive(saveStatus.save, hero.id, slot)
+  if (!result.ok) return result.reason
+  commitSave(result.save, 'unequipped')
+  return null
 }
 
 /** Equip an archive item for the selected hero. Returns the reason it was refused, or null. */

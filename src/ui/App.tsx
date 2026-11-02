@@ -256,43 +256,49 @@ function App() {
         </section>
       ) : (
         <>
-          <Header save={saved.save} onGo={setTab} />
-          <nav aria-label="Main">
-            {TABS.map((entry) => (
-              <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
-                {entry.label}
-              </button>
-            ))}
-          </nav>
-          {tab === 'heroes' ? (
-            <>
-              <Attributes />
-              <SkillWeb />
-              <Loadout />
-              <Rules />
-              <Equipment />
-              <Legacy />
-            </>
-          ) : null}
-          {tab === 'roster' ? (
-            <>
-              <Roster />
-              <CreateHero />
-            </>
-          ) : null}
-          {tab === 'town' ? (
-            <>
-              <Town />
-              <Contracts />
-              <Craft />
-            </>
-          ) : null}
-          {tab === 'map' ? (
-            <>
-              <MapView />
-              <ExpeditionPanel />
-            </>
-          ) : null}
+          <div className="shell">
+            <aside className="sidebar">
+              <Header save={saved.save} onGo={setTab} />
+              <nav aria-label="Main">
+                {TABS.map((entry) => (
+                  <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
+                    {entry.label}
+                  </button>
+                ))}
+              </nav>
+            </aside>
+            <main className="content">
+              {tab === 'heroes' ? (
+                <>
+                  <Attributes />
+                  <SkillWeb />
+                  <Loadout />
+                  <Rules />
+                  <Equipment />
+                  <Legacy />
+                </>
+              ) : null}
+              {tab === 'roster' ? (
+                <>
+                  <Roster />
+                  <CreateHero />
+                </>
+              ) : null}
+              {tab === 'town' ? (
+                <>
+                  <Town />
+                  <Contracts />
+                  <Craft />
+                </>
+              ) : null}
+              {tab === 'map' ? (
+                <>
+                  <MapView />
+                  <ExpeditionPanel />
+                </>
+              ) : null}
+                    </main>
+          </div>
         </>
       )}
       {tab === 'combat' ? <CombatViewer /> : null}

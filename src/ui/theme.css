@@ -49,7 +49,7 @@ body {
 :root {
   --accent: #2f6f3e;
   --accent-fg: #ffffff;
-  --radius: 6px;
+  --radius: 3px;
   --gap: 8px;
 }
 
@@ -75,9 +75,9 @@ body {
 }
 
 #root {
-  max-width: 960px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 8px 12px 40px;
+  padding: 0 12px 40px;
 }
 
 h1 {
@@ -281,4 +281,90 @@ nav[aria-label='Main'] button {
 
 .stat-chips small {
   opacity: 0.7;
+}
+
+/* ---- Desktop: top bar, side panel, content (wide screens) ---- */
+
+.shell {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .topbar {
+    margin: 0 -12px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 0;
+    margin: 0 -12px;
+    min-height: calc(100vh - 44px);
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding: 10px 12px;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+  }
+
+  .content {
+    min-width: 0;
+    padding: 8px 12px;
+  }
+
+  .sidebar header[aria-label='Status'] {
+    position: static;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .sidebar .status-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sidebar select {
+    width: 100%;
+  }
+
+  .sidebar .stat-chips {
+    display: block;
+    margin: 6px 0;
+  }
+
+  .sidebar .stat-chips li {
+    display: flex;
+    justify-content: space-between;
+    padding: 1px 0;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .sidebar nav[aria-label='Main'] {
+    flex-direction: column;
+    margin: 10px 0 0;
+  }
+
+  .sidebar nav[aria-label='Main'] button {
+    flex: none;
+    text-align: left;
+    padding: 6px 10px;
+  }
+
+  .content section[aria-label] {
+    margin: 0 0 8px;
+  }
 }
