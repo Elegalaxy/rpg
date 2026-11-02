@@ -620,8 +620,8 @@ describe('rootmaw', () => {
       skills: state.hero.equippedSkillIds,
     })
     expect(state.hero.equippedSkillIds).toEqual([])
-    expect(state.outcome).toBe('defeat')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 62_000 })
+    expect(state.outcome).toBe('victory')
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 50_824 })
   })
 })
 

@@ -879,7 +879,7 @@ describe('Rootmaw Stalker', () => {
       generic,
     })
     expect(enemy.level).toBe(14)
-    expect(enemy.maxHp).toBe(1350)
+    expect(enemy.maxHp).toBe(1000)
     expect(enemy.power).toBe(29)
     expect(enemy.armor).toBe(51)
     expect(enemy.resistance).toBe(51)
@@ -895,7 +895,7 @@ describe('Rootmaw Stalker', () => {
     expect(generic.resistance).toBe(31)
     expect(generic.actionTime).toBeCloseTo(1.76, 8)
     expect(generic.consistency).toBe(25)
-    expect(generic.maxHp).not.toBe(1350)
+    expect(generic.maxHp).not.toBe(1000)
     expect(generic.power).not.toBe(29)
     expect(generic.armor).not.toBe(51)
     expect(generic.actionTime).not.toBe(2)
@@ -1131,7 +1131,7 @@ describe('Rootmaw Stalker', () => {
       expiresMs: 60_000,
       tickMs: 1000,
       nextTickMs: 1000,
-      power: 1340,
+      power: 990,
       penetration: 0,
       coefficient: 0.1,
       attackerLevel: state.hero.level,
@@ -1140,7 +1140,7 @@ describe('Rootmaw Stalker', () => {
     }
     stepUntil(state, defs, () => state.timeMs >= 1000)
     console.log('[enemy] grasping roots under threshold', { hpTaken: enemy.telegraph?.hpTaken, hp: enemy.hp })
-    expect(enemy.telegraph?.hpTaken).toBe(134)
+    expect(enemy.telegraph?.hpTaken).toBe(99)
     expect(state.log.some((event) => event.type === 'telegraph' && event.reason === 'interrupt')).toBe(false)
     const burn = enemy.statuses.burn
     if (burn === null) throw new Error('missing burn')
@@ -1163,10 +1163,10 @@ describe('Rootmaw Stalker', () => {
       phase: 'cancel',
       reason: 'interrupt',
       tag: 'grasping-roots',
-      hpTaken: 135,
+      hpTaken: 100,
       timeMs: 2000,
     })
-    if (interrupted?.type === 'telegraph') expect(interrupted.hpNeeded).toBeCloseTo(135, 5)
+    if (interrupted?.type === 'telegraph') expect(interrupted.hpNeeded).toBeCloseTo(100, 5)
     expect(enemy.telegraph).toBeNull()
     expect(state.hero.timedEvasion).toBe(0)
     expect(state.log.some((event) => event.type === 'actionDelay')).toBe(false)

@@ -623,8 +623,8 @@ Fracture Wisp:
 Rootmaw Stalker:
 
 - Level 14 elite; Skirmisher/Tank hybrid.
-- Stats: 1,350 HP, 29 Power, 51 Armor/Resistance, 24 Accuracy, 26 Evasion, 2.0-second base action time, and 25 Consistency.
-- Regenerates 1% maximum HP per second; Burn pauses it and Expose halves it.
+- Stats: 1,000 HP, 29 Power, 51 Armor/Resistance, 24 Accuracy, 26 Evasion, 2.0-second base action time, and 25 Consistency. HP was 1,350 until 2026-11-02: at 1,350 no level-20 floor build beat it (0-2% wins over 60 runs each), so it was lowered to 1,000. The reference sweep at 1,000 aims for Warrior and Assassin near half, with player skills, gear, and accessories adding more. Ranger and Cleric floor builds still lose to both elites, and that is a class damage question, not an elite one.
+- Regenerates 1% maximum HP per second (10 HP per second at 1,000 HP); Burn pauses it and Expose halves it.
 - Venomous Rend deals 120% Physical Power and makes two independent Poison applications at 75% base chance. Each stack ticks for 10% snapshotted Power. Cooldown: 6 seconds.
 - Grasping Roots has a 2-second telegraph and a 10-second cooldown.
 - Grasping Roots is interrupted if the hero deals 10% of Rootmaw's maximum HP during its telegraph.

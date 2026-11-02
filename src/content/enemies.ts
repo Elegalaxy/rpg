@@ -404,7 +404,7 @@ export const rootmawStalker: EnemyDef = {
   school: 'physical',
   filler: { school: 'physical' },
   overrides: {
-    maxHp: 1350,
+    maxHp: 1000,
     power: 29,
     armor: 51,
     resistance: 51,

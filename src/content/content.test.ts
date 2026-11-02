@@ -457,7 +457,7 @@ describe('content integrity', () => {
       elite: true,
       traitIds: ['regeneration'],
       filler: { school: 'physical' },
-      overrides: { maxHp: 1350, power: 29, armor: 51, resistance: 51, actionTime: 2, consistency: 25 },
+      overrides: { maxHp: 1000, power: 29, armor: 51, resistance: 51, actionTime: 2, consistency: 25 },
     })
     expect(rootmawStalker.skills?.map((skill) => skill.id)).toEqual(['venomous-rend', 'grasping-roots'])
     expect(rootmawStalker.skills?.[0]?.effects.filter((effect) => effect.kind === 'applyStatus')).toEqual([
