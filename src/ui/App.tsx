@@ -62,6 +62,46 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'combat', label: 'Combat viewer' },
 ]
 
+type HeroPart = 'overview' | 'skills' | 'combat' | 'gear' | 'legacy'
+type TownSection = 'shop' | 'sell' | 'repair' | 'contracts' | 'craft'
+
+const HERO_PARTS: { id: HeroPart; label: string }[] = [
+  { id: 'overview', label: 'Attributes' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'combat', label: 'Combat setup' },
+  { id: 'gear', label: 'Gear' },
+  { id: 'legacy', label: 'Legacy' },
+]
+
+const TOWN_PARTS: { id: TownSection; label: string }[] = [
+  { id: 'shop', label: 'Shop' },
+  { id: 'sell', label: 'Sell' },
+  { id: 'repair', label: 'Repair & debt' },
+  { id: 'contracts', label: 'Contracts' },
+  { id: 'craft', label: 'Crafting' },
+]
+
+/** A second row of buttons inside a tab, so one screen shows one job. */
+function SubTabs<T extends string>({
+  tabs,
+  current,
+  onPick,
+}: {
+  tabs: { id: T; label: string }[]
+  current: T
+  onPick: (id: T) => void
+}) {
+  return (
+    <nav className="subtabs" aria-label="Sections">
+      {tabs.map((entry) => (
+        <button key={entry.id} type="button" aria-pressed={current === entry.id} onClick={() => onPick(entry.id)}>
+          {entry.label}
+        </button>
+      ))}
+    </nav>
+  )
+}
+
 function ThemeSwitch() {
   const [choice, setChoice] = useState<ThemeChoice>(storedTheme)
   return (
@@ -213,6 +253,8 @@ export function CombatViewer() {
 
 function App() {
   const [tab, setTab] = useState<Tab>('heroes')
+  const [heroPart, setHeroPart] = useState<HeroPart>('overview')
+  const [townPart, setTownPart] = useState<TownSection>('shop')
   const saved = useSaveStatus()
 
   useEffect(() => {
@@ -270,12 +312,17 @@ function App() {
             <main className="content">
               {tab === 'heroes' ? (
                 <>
-                  <Attributes />
-                  <SkillWeb />
-                  <Loadout />
-                  <Rules />
-                  <Equipment />
-                  <Legacy />
+                  <SubTabs tabs={HERO_PARTS} current={heroPart} onPick={setHeroPart} />
+                  {heroPart === 'overview' ? <Attributes /> : null}
+                  {heroPart === 'skills' ? <SkillWeb /> : null}
+                  {heroPart === 'combat' ? (
+                    <>
+                      <Loadout />
+                      <Rules />
+                    </>
+                  ) : null}
+                  {heroPart === 'gear' ? <Equipment /> : null}
+                  {heroPart === 'legacy' ? <Legacy /> : null}
                 </>
               ) : null}
               {tab === 'roster' ? (
@@ -286,9 +333,10 @@ function App() {
               ) : null}
               {tab === 'town' ? (
                 <>
-                  <Town />
-                  <Contracts />
-                  <Craft />
+                  <SubTabs tabs={TOWN_PARTS} current={townPart} onPick={setTownPart} />
+                  {townPart === 'shop' || townPart === 'sell' || townPart === 'repair' ? <Town part={townPart} /> : null}
+                  {townPart === 'contracts' ? <Contracts /> : null}
+                  {townPart === 'craft' ? <Craft /> : null}
                 </>
               ) : null}
               {tab === 'map' ? (

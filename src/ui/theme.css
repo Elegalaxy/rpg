@@ -401,3 +401,30 @@ nav[aria-label='Main'] button {
     padding: var(--s2) var(--s3);
   }
 }
+
+/* Second-level tabs inside a tab */
+
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0 0 var(--s4);
+  padding: 0 0 var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+
+.subtabs button {
+  min-height: var(--control-h);
+}
+
+@media (max-width: 899px) {
+  .subtabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .subtabs button {
+    flex: none;
+    white-space: nowrap;
+  }
+}

@@ -16,7 +16,9 @@ import {
   useSaveStatus,
 } from '../store.ts'
 
-export function Town() {
+export type TownPart = 'shop' | 'sell' | 'repair'
+
+export function Town({ part }: { part: TownPart }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const [message, setMessage] = useState<string | null>(null)
@@ -53,6 +55,8 @@ export function Town() {
       </p>
       {closed ? <p>The town is closed while an expedition is running.</p> : null}
 
+      {part === 'sell' ? (
+        <>
       <h3>Sell materials</h3>
       {materials.length === 0 ? <p>You have no materials.</p> : null}
       <ul>
@@ -104,6 +108,10 @@ export function Town() {
         ))}
       </ul>
 
+        </>
+      ) : null}
+      {part === 'shop' ? (
+        <>
       <h3>Shop</h3>
       {hero === null ? (
         <p>Select a hero to see what the shop has at their level.</p>
@@ -126,6 +134,10 @@ export function Town() {
       )}
       <p>The shop sells no supplies yet. No consumable exists.</p>
 
+        </>
+      ) : null}
+      {part === 'repair' ? (
+        <>
       <h3>Repair</h3>
       {damaged.length === 0 ? <p>Nothing is damaged.</p> : null}
       <ul>
@@ -171,6 +183,8 @@ export function Town() {
           </button>
         </div>
       )}
+        </>
+      ) : null}
       {message !== null ? <p data-testid="town-message">{message}</p> : null}
       {error !== null ? <p role="alert">{error}</p> : null}
     </section>
