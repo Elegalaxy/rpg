@@ -8,7 +8,7 @@ import { selectedHero } from './character.ts'
 import { canStartRoute } from './world.ts'
 import type { SaveData } from './save.ts'
 
-export type Tab = 'heroes' | 'town' | 'map' | 'combat'
+export type Tab = 'roster' | 'heroes' | 'town' | 'map' | 'combat'
 
 export type Hint = { tab: Tab; text: string }
 
@@ -29,8 +29,8 @@ export function nextHint(save: SaveData): Hint {
   const hero = selectedHero(save)
   if (hero === null) {
     return save.heroes.length === 0
-      ? { tab: 'heroes', text: 'Create your first hero.' }
-      : { tab: 'heroes', text: 'Select a hero from the roster.' }
+      ? { tab: 'roster', text: 'Create your first hero.' }
+      : { tab: 'roster', text: 'Select a hero from the roster.' }
   }
   if (save.expedition !== null) return { tab: 'map', text: `${hero.name} is out on an expedition. Watch it on the Map.` }
   if (hero.progress.unspentAttributePoints > 0 || hero.progress.unspentSkillPoints > 0) {

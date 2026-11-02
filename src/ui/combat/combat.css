@@ -9,9 +9,9 @@
 .actor-card {
   box-sizing: border-box;
   width: 260px;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--panel);
 }
 

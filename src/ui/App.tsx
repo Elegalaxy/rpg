@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { xpToNextLevel } from '../sim/stats.ts'
 import { selectedHero } from '../persist/character.ts'
+import { statLines, statsFor } from '../persist/equipment.ts'
 import { nextHint, type Tab } from '../persist/guidance.ts'
 import type { SaveData } from '../persist/save.ts'
 import { scenarios } from '../content/scenarios.ts'
@@ -36,6 +37,7 @@ import {
   startTownLoop,
   startExpeditionLoop,
   startNewGame,
+  chooseHero,
   togglePause,
   useCombatStore,
   useSaveStatus,
@@ -53,9 +55,10 @@ function shownTimeMs(combat: CombatState): number {
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'heroes', label: 'Heroes' },
+  { id: 'heroes', label: 'Hero' },
   { id: 'town', label: 'Town' },
   { id: 'map', label: 'Map' },
+  { id: 'roster', label: 'Roster' },
   { id: 'combat', label: 'Combat viewer' },
 ]
 
@@ -80,15 +83,64 @@ function ThemeSwitch() {
   )
 }
 
+const HEADER_STATS = ['Maximum HP', 'Physical Power', 'Magical Power', 'Armor', 'Resistance', 'Evasion', 'Critical chance'] as const
+const STAT_SHORT: { [label: string]: string } = {
+  'Maximum HP': 'HP',
+  'Physical Power': 'Phys',
+  'Magical Power': 'Magic',
+  Armor: 'Armor',
+  Resistance: 'Resist',
+  Evasion: 'Evade',
+  'Critical chance': 'Crit',
+}
+
 function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
   const hero = selectedHero(save)
   const hint = nextHint(save)
+  const stats = hero === null ? null : statsFor(hero)
+  const need = hero === null ? 1 : xpToNextLevel(hero.progress.level)
   return (
     <header aria-label="Status">
-      <p>
-        {hero === null ? 'No hero selected' : `${hero.name} — level ${hero.progress.level} (${hero.progress.xp} / ${xpToNextLevel(hero.progress.level)} XP)`} · Gold {save.account.gold}
-        {save.account.debt > 0 ? ` · Debt ${save.account.debt}` : ''}
-      </p>
+      <div className="status-row">
+        <select
+          aria-label="Selected hero"
+          value={hero?.id ?? ''}
+          disabled={save.expedition !== null}
+          onChange={(event) => chooseHero(event.target.value)}
+        >
+          {hero === null ? <option value="">No hero selected</option> : null}
+          {save.heroes.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              {entry.name} (L{entry.progress.level} {entry.classId})
+            </option>
+          ))}
+        </select>
+        <span>
+          Gold {save.account.gold}
+          {save.account.debt > 0 ? ` · Debt ${save.account.debt}` : ''}
+        </span>
+      </div>
+      {hero !== null ? (
+        <div className="xp-row" title={`${hero.progress.xp} / ${need} XP to level ${hero.progress.level + 1}`}>
+          <span>Lv {hero.progress.level}</span>
+          <progress max={need} value={hero.progress.xp} aria-label="XP to the next level" />
+          <span>
+            {hero.progress.xp} / {need} XP
+          </span>
+        </div>
+      ) : null}
+      {stats !== null ? (
+        <ul className="stat-chips" aria-label="Hero stats">
+          {statLines(stats)
+            .filter((line) => (HEADER_STATS as readonly string[]).includes(line.label))
+            .map((line) => (
+              <li key={line.label}>
+                <small>{STAT_SHORT[line.label] ?? line.label}</small> {Math.round(line.value * 10) / 10}
+                {line.unit}
+              </li>
+            ))}
+        </ul>
+      ) : null}
       <p data-testid="next-hint">
         Next: {hint.text}{' '}
         <button type="button" onClick={() => onGo(hint.tab)}>
@@ -177,8 +229,10 @@ function App() {
 
   return (
     <>
-      <h1>RPG</h1>
-      <ThemeSwitch />
+      <div className="topbar">
+        <h1>RPG</h1>
+        <ThemeSwitch />
+      </div>
       {saved.loadError !== null ? (
         <div role="alert">
           <p>
@@ -212,14 +266,18 @@ function App() {
           </nav>
           {tab === 'heroes' ? (
             <>
-              <Roster />
-              <CreateHero />
               <Attributes />
               <SkillWeb />
               <Loadout />
               <Rules />
               <Equipment />
               <Legacy />
+            </>
+          ) : null}
+          {tab === 'roster' ? (
+            <>
+              <Roster />
+              <CreateHero />
             </>
           ) : null}
           {tab === 'town' ? (
