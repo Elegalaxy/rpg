@@ -68,7 +68,7 @@ export const CLASS_PREFERENCE: {
     readonly armor: ArmorCategory
   }
 } = {
-  warrior: { weapons: ['oneHanded'], offHands: ['shield'], armor: 'heavy' },
+  warrior: { weapons: ['oneHanded', 'twoHanded'], offHands: ['shield'], armor: 'heavy' },
   assassin: { weapons: ['dagger'], offHands: ['dagger'], armor: 'light' },
   ranger: { weapons: ['bow'], offHands: ['quiver'], armor: 'medium' },
   mage: { weapons: ['caster'], offHands: ['focus'], armor: 'cloth' },
