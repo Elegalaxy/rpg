@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { classIdentity, raceIdentity } from '../../content/heroes.ts'
 import { MAX_SLOTS } from '../../persist/save.ts'
+import { xpToNextLevel } from '../../sim/stats.ts'
 import { freeSlots } from '../../persist/roster.ts'
 import { chooseHero, devUnlockAllSlots, useSaveStatus } from '../store.ts'
 
@@ -29,7 +30,7 @@ export function Roster() {
           return (
             <li key={hero.id}>
               <strong>{hero.name}</strong> — {raceIdentity[hero.progress.race].name} {classIdentity[hero.classId].name},
-              level {hero.progress.level} ({hero.progress.xp} XP into the level){' '}
+              level {hero.progress.level} ({hero.progress.xp} / {xpToNextLevel(hero.progress.level)} XP to level {hero.progress.level + 1}){' '}
               {selected ? (
                 <em>(selected)</em>
               ) : (

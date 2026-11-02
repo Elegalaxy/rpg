@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { xpToNextLevel } from '../sim/stats.ts'
 import { selectedHero } from '../persist/character.ts'
 import { nextHint, type Tab } from '../persist/guidance.ts'
 import type { SaveData } from '../persist/save.ts'
@@ -63,7 +64,7 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
   return (
     <header aria-label="Status">
       <p>
-        {hero === null ? 'No hero selected' : `${hero.name} — level ${hero.progress.level}`} · Gold {save.account.gold}
+        {hero === null ? 'No hero selected' : `${hero.name} — level ${hero.progress.level} (${hero.progress.xp} / ${xpToNextLevel(hero.progress.level)} XP)`} · Gold {save.account.gold}
         {save.account.debt > 0 ? ` · Debt ${save.account.debt}` : ''}
       </p>
       <p data-testid="next-hint">
