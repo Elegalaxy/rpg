@@ -609,3 +609,37 @@ li.row + li.row {
 .node-preview > * + * {
   margin-top: var(--s2);
 }
+
+/* ---- Gear screen ---- */
+
+.chooser {
+  margin-top: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.stats-panel {
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.stats-panel table {
+  width: 100%;
+}
+
+.stats-panel td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+li.row > .row-text > .chooser {
+  display: block;
+}
+
+li.row:has(.chooser) {
+  align-items: flex-start;
+}
