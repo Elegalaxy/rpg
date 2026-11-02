@@ -1,3 +1,4 @@
+import { skills } from '../content/skills.ts'
 import { describe, expect, it } from 'vitest'
 
 import { classWebs } from '../content/webs/index.ts'
@@ -91,7 +92,7 @@ describe('node allocation', () => {
     if (unlock === undefined) throw new Error('no unlock node ready')
     const text = confirmationText(unlock, selectedHero(save)!)
     expect(text).toContain('no respec')
-    expect(text).toContain(String(unlock.preview.unlocksSkillId))
+    expect(text).toContain(skills[String(unlock.preview.unlocksSkillId)]?.name ?? '')
     expect(text).not.toContain('keystone')
   })
 

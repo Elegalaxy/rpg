@@ -10,7 +10,7 @@ import {
   type NodeState,
 } from '../../persist/world.ts'
 import { legs, nodes, routes } from '../../content/world.ts'
-import { startExpeditionFromUi, useSaveStatus } from '../store.ts'
+import { getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
 
 import './map.css'
 
@@ -36,7 +36,7 @@ function point(position: MarkerPosition): { x: number; y: number } {
 export function MapView() {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
-  const [routeId, setRouteId] = useState<string>('splintered-road')
+  const [routeId, setRouteId] = useState<string>(() => getLastRouteId() ?? 'splintered-road')
   const [error, setError] = useState<string | null>(null)
   const expedition = save.expedition
   const info = routeInfo(routeId, save)

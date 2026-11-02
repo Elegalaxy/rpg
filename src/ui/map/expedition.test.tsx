@@ -13,6 +13,7 @@ import {
   pushOnFromUi,
   returnFromUi,
   savePreparationFromUi,
+  settleAndRepeatFromUi,
   settleExpeditionFromUi,
   startExpeditionFromUi,
   TRAVEL_SPEEDUP,
@@ -142,5 +143,19 @@ describe('the expedition panel', () => {
     expect(kept[0]?.combat.log.length).toBeGreaterThan(0)
     expect(kept[0]?.combat.outcome).not.toBe('ongoing')
     expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Past fights')
+  })
+
+  it('settles a finished run and starts the same route again', () => {
+    commitSave({ ...getSaveStatus().save, expedition: null }, 'test reset')
+    seeds([7])
+    expect(startExpeditionFromUi('withered-grove')).not.toBeNull()
+    seeds([7])
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    expedition().outcome = 'returned'
+    seeds([8])
+    expect(settleAndRepeatFromUi()).toBeNull()
+    expect(expedition().id).toBe('splintered-road')
+    expect(expedition().outcome).toBe('ongoing')
+    expect(expedition().history).toHaveLength(0)
   })
 })

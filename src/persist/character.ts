@@ -1,3 +1,4 @@
+import { skills } from '../content/skills.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { racialWebs } from '../content/webs/racial.ts'
 import {
@@ -80,7 +81,7 @@ export function confirmationText(view: NodeView, hero: SavedHero): string {
       `${node.name} is a keystone. Only one keystone can be active during a life, so ${blocked.join(' and ')} will become unavailable until reincarnation.`,
     )
   }
-  if (preview.unlocksSkillId !== null) parts.push(`It unlocks the skill ${preview.unlocksSkillId}.`)
+  if (preview.unlocksSkillId !== null) parts.push(`It unlocks the skill ${skills[preview.unlocksSkillId]?.name ?? preview.unlocksSkillId}.`)
   return parts.join(' ')
 }
 

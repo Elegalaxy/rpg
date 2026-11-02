@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { skills } from '../../content/skills.ts'
 import { classWebIntro, clusterIntro, racialIntro } from '../../content/webs/intro.ts'
 import { nodeText } from '../../content/webs/nodeText.ts'
 import { confirmationText, nodeViews, selectedHero, type NodeView } from '../../persist/character.ts'
@@ -159,7 +160,7 @@ export function SkillWeb() {
                   ? 'nothing (starts this line)'
                   : (views.find((view) => view.node.id === chosen.node.requires)?.node.name ?? chosen.node.requires)}
               </li>
-              {chosen.preview.unlocksSkillId !== null ? <li>Unlocks skill: {chosen.preview.unlocksSkillId}</li> : null}
+              {chosen.preview.unlocksSkillId !== null ? <li>Unlocks skill: {skills[chosen.preview.unlocksSkillId]?.name ?? chosen.preview.unlocksSkillId}</li> : null}
               {chosen.node.keystone ? (
                 <li>
                   Closes the other keystones:{' '}

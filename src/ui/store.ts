@@ -408,6 +408,7 @@ export function startExpeditionFromUi(routeId: string): string | null {
   const begun = beginExpedition(saveStatus.save, routeId, seed)
   if (!begun.ok) return begun.reason
   pushedAt = null
+  lastRouteId = routeId
   finishedFights = []
   debugLog('[ui]', 'expedition start', { routeId, seed })
   commitSave(begun.save, 'expedition start')
@@ -623,6 +624,20 @@ export function settleExpeditionFromUi(): void {
   const settled = settleExpedition(saveStatus.save)
   if (settled === saveStatus.save) return
   commitSave(settled, 'expedition settled')
+}
+
+/** The route of the last run the player started. Not saved: a reload goes back to the first route. */
+let lastRouteId: string | null = null
+
+export function getLastRouteId(): string | null {
+  return lastRouteId
+}
+
+/** Close the finished run and start the same route again. Returns the reason the new run was refused, or null. */
+export function settleAndRepeatFromUi(): string | null {
+  const route = saveStatus.save.expedition?.id ?? lastRouteId
+  settleExpeditionFromUi()
+  return route === null ? null : startExpeditionFromUi(route)
 }
 
 function startScenario(scenarioId: string, seed: number, seedText: string): void {

@@ -22,6 +22,7 @@ import {
   returnFromUi,
   savePreparationFromUi,
   settleExpeditionFromUi,
+  settleAndRepeatFromUi,
   expeditionWaiting,
   getFinishedFights,
   TRAVEL_SPEEDUP,
@@ -265,6 +266,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
 
 function Ended({ expedition }: { expedition: ExpeditionState }) {
   const summary = outcomeSummary(expedition)
+  const [error, setError] = useState<string | null>(null)
   return (
     <section aria-label="Expedition outcome">
       <h3 data-testid="expedition-ended">{summary.title}</h3>
@@ -275,7 +277,11 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
       </ul>
       <button type="button" onClick={settleExpeditionFromUi}>
         Return to town
+      </button>{' '}
+      <button type="button" onClick={() => setError(settleAndRepeatFromUi())}>
+        Return and run this route again
       </button>
+      {error !== null ? <p role="alert">{error}</p> : null}
       <PastFights />
     </section>
   )
