@@ -1,5 +1,5 @@
 import { itemBase } from '../content/items.ts'
-import { ITEM_MODIFIERS, classBlock, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, classBlock, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { wearerOf } from './equipment.ts'
@@ -134,12 +134,44 @@ export function queueCraft(save: SaveData, heroId: string, request: CraftRequest
   }
 }
 
-/** Why an archive item cannot be upgraded, or null. */
+/** Gold a modifier recipe costs in Greyhaven: 25 per level the modifier needs. */
+export function recipePrice(modifierId: string): number {
+  return (ITEM_MODIFIERS[modifierId]?.minLevel ?? 1) * 25
+}
+
+/** The recipes the account has not learned yet, with their prices. */
+export function recipesForSale(save: SaveData): { modifierId: string; price: number }[] {
+  return Object.keys(ITEM_MODIFIERS)
+    .filter((id) => !save.account.recipes.includes(id))
+    .map((id) => ({ modifierId: id, price: recipePrice(id) }))
+}
+
+/** Learn a modifier recipe for the whole account. */
+export function buyRecipe(save: SaveData, modifierId: string): RosterResult {
+  const shut = closed(save)
+  if (shut !== null) return { ok: false, reason: shut }
+  const modifier = ITEM_MODIFIERS[modifierId]
+  if (modifier === undefined) return { ok: false, reason: 'Unknown recipe.' }
+  if (save.account.recipes.includes(modifierId)) return { ok: false, reason: `You already know the ${modifier.name} recipe.` }
+  const price = recipePrice(modifierId)
+  if (save.account.gold < price) return { ok: false, reason: `The ${modifier.name} recipe costs ${price} gold. You have ${save.account.gold}.` }
+  return {
+    ok: true,
+    save: { ...save, account: { ...save.account, gold: save.account.gold - price, recipes: [...save.account.recipes, modifierId] } },
+  }
+}
+
+/** The slot a hero wears this item in, or null. */
+export function wornSlot(hero: SavedHero, itemId: string): EquipmentSlotId | null {
+  return EQUIPMENT_SLOT_IDS.find((slot) => hero.equipment[slot]?.id === itemId) ?? null
+}
+
+/** Why an archive item, or an item the hero wears, cannot be upgraded, or null. */
 export function upgradeCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, materialId: string): string | null {
   const shut = closed(save)
   if (shut !== null) return shut
   if (save.account.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
-  if (item === undefined) return 'Only archive items can be upgraded.'
+  if (item === undefined) return 'That item is not in the archive or worn by this hero.'
   if (item.itemLevel >= hero.progress.level) return `This hero is level ${hero.progress.level}. An item cannot go above the hero's level.`
   if (upgradeChance(item.itemLevel) <= 0) return 'That item cannot be upgraded further.'
   if (MATERIAL_QUALITY[materialId] === undefined) return 'Pick scrap, hide, or shard.'
@@ -150,14 +182,17 @@ export function upgradeCheck(save: SaveData, hero: SavedHero, item: ItemInstance
 export function queueUpgrade(save: SaveData, heroId: string, itemId: string, materialId: string): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
-  const item = save.account.archive.find((entry) => entry.id === itemId)
+  const archived = save.account.archive.find((entry) => entry.id === itemId)
+  const slot = archived === undefined ? wornSlot(hero, itemId) : null
+  const item = archived ?? (slot === null ? undefined : (hero.equipment[slot] ?? undefined))
   const problem = upgradeCheck(save, hero, item, materialId)
-  if (problem !== null || item === undefined) return { ok: false, reason: problem ?? 'Only archive items can be upgraded.' }
+  if (problem !== null || item === undefined) return { ok: false, reason: problem ?? 'That item is not in the archive or worn by this hero.' }
   const job: CraftJob = {
     id: nextJobId(save),
     kind: 'upgrade',
     heroId,
     item,
+    ...(slot === null ? {} : { slot }),
     materialId,
     remainingMs: CRAFT_MS,
     seedIndex: save.account.craftCounter,
@@ -174,6 +209,10 @@ export function queueUpgrade(save: SaveData, heroId: string, itemId: string, mat
         archive: account.archive.filter((entry) => entry.id !== itemId),
         craftQueue: [...account.craftQueue, job],
       },
+      heroes:
+        slot === null
+          ? save.heroes
+          : save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment: { ...entry.equipment, [slot]: null } } : entry)),
     },
   }
 }
@@ -206,8 +245,15 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
   const worked = nextFloat(rng) < chance
   const returned: ItemInstance = worked ? { ...job.item, itemLevel: job.item.itemLevel + 1 } : job.item
   const name = itemBase(job.item.baseId)?.name ?? job.item.baseId
+  const owner = heroes.find((entry) => entry.id === job.heroId)
+  const backInSlot = job.slot !== undefined && owner !== undefined && owner.equipment[job.slot] === null
+  const slot = job.slot
+  const worn =
+    backInSlot && slot !== undefined
+      ? heroes.map((entry) => (entry.id === job.heroId ? { ...entry, equipment: { ...entry.equipment, [slot]: returned } } : entry))
+      : heroes
   return {
-    save: { ...save, heroes, account: { ...account, archive: [...account.archive, returned] } },
+    save: { ...save, heroes: worn, account: { ...account, archive: backInSlot ? account.archive : [...account.archive, returned] } },
     notice: {
       jobId: job.id,
       text: worked

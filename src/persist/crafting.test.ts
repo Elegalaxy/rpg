@@ -9,6 +9,9 @@ import { selectedHero } from './character.ts'
 import {
   CRAFT_MS,
   advanceCrafting,
+  buyRecipe,
+  recipePrice,
+  recipesForSale,
   craftCheck,
   grantCraftingKit,
   proficiencyRank,
@@ -236,7 +239,7 @@ describe('upgrades', () => {
       ok: false,
       reason: "This hero is level 2. An item cannot go above the hero's level.",
     })
-    expect(queueUpgrade(save, 'hero-1', 'hero-1-mainHand', 'scrap')).toEqual({ ok: false, reason: 'Only archive items can be upgraded.' })
+    expect(queueUpgrade(save, 'hero-1', 'nothing', 'scrap')).toEqual({ ok: false, reason: 'That item is not in the archive or worn by this hero.' })
     const deep = { ...withItem(17, 0), heroes: withItem(17, 0).heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 20 } })) }
     expect(queueUpgrade(deep, 'hero-1', 'old', 'scrap')).toEqual({ ok: false, reason: 'That item cannot be upgraded further.' })
     expect(queueUpgrade(save, 'hero-1', 'old', 'iron').ok).toBe(false)
@@ -303,5 +306,53 @@ describe('modifiers in play', () => {
     const again = JSON.parse(serializeSave(save)) as { account: { craftQueue: unknown[] } }
     again.account.craftQueue = [1, 2, 3, 4]
     expect(parseSave(JSON.stringify(again))).toMatchObject({ ok: false, reason: expect.stringMatching(/at most 3 jobs/) })
+  })
+})
+
+describe('worn items and recipes', () => {
+  function levelled(): SaveData {
+    const save = stocked(4)
+    return { ...save, heroes: save.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 4 } })) }
+  }
+
+  it('upgrades a worn item, holding it away from its slot and returning it to the same slot', () => {
+    let kept = false
+    for (let counter = 0; counter < 40 && !kept; counter += 1) {
+      const base = levelled()
+      const start = { ...base, account: { ...base.account, craftCounter: counter } }
+      const queued = ok(queueUpgrade(start, 'hero-1', 'hero-1-mainHand', 'scrap'))
+      expect(hero(queued).equipment.mainHand).toBeNull()
+      expect(queued.account.craftQueue[0]).toMatchObject({ kind: 'upgrade', slot: 'mainHand' })
+      const done = finish(queued)
+      expect(hero(done).equipment.mainHand?.id).toBe('hero-1-mainHand')
+      expect(done.account.archive.some((item) => item.id === 'hero-1-mainHand')).toBe(false)
+      expect(() => assertSaveData(queued)).not.toThrow()
+      expect(parseSave(serializeSave(queued)).ok).toBe(true)
+      kept = true
+    }
+    expect(kept).toBe(true)
+  })
+
+  it('returns a worn item to the archive when its slot was refilled meanwhile', () => {
+    const queued = ok(queueUpgrade(levelled(), 'hero-1', 'hero-1-mainHand', 'scrap'))
+    const refilled = { ...queued, heroes: queued.heroes.map((h) => ({ ...h, equipment: { ...h.equipment, mainHand: newItem('other', 'weapon-one-handed', 1) } })) }
+    const done = finish(refilled)
+    expect(hero(done).equipment.mainHand?.id).toBe('other')
+    expect(done.account.archive.some((item) => item.id === 'hero-1-mainHand')).toBe(true)
+  })
+
+  it('sells the unknown recipes for 25 gold per required level, once', () => {
+    const base = levelled()
+    const save = { ...base, account: { ...base.account, gold: 300, recipes: [...STARTING_MODIFIER_RECIPES] } }
+    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['mending', 'nimble', 'piercing', 'quick'])
+    expect(recipePrice('nimble')).toBe(75)
+    expect(recipePrice('quick')).toBe(225)
+    const bought = ok(buyRecipe(save, 'nimble'))
+    expect(bought.account.recipes).toContain('nimble')
+    expect(bought.account.gold).toBe(save.account.gold - 75)
+    expect(buyRecipe(bought, 'nimble')).toEqual({ ok: false, reason: 'You already know the Nimble recipe.' })
+    const poor = { ...save, account: { ...save.account, gold: 10 } }
+    expect(buyRecipe(poor, 'quick')).toEqual({ ok: false, reason: `The Quick recipe costs 225 gold. You have 10.` })
+    expect(buyRecipe(save, 'bogus')).toEqual({ ok: false, reason: 'Unknown recipe.' })
   })
 })

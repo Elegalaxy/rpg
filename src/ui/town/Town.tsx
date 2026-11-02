@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
+import { recipePrice, recipesForSale } from '../../persist/crafting.ts'
+import { ITEM_MODIFIERS } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
 import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
 import { wearerOf } from '../../persist/equipment.ts'
@@ -8,6 +10,7 @@ import { selectedHero } from '../../persist/character.ts'
 import { repairAllCost } from '../../persist/town.ts'
 import {
   buyItemFromUi,
+  buyRecipeFromUi,
   devTownTools,
   payDebtFromUi,
   repairAllFromUi,
@@ -162,6 +165,33 @@ export function Town({ part }: { part: TownPart }) {
         </ul>
       )}
       <p>The shop sells no supplies yet. No consumable exists.</p>
+
+      <h3>Recipes</h3>
+      {recipesForSale(save).length === 0 ? <p>You know every recipe.</p> : <p>A recipe lets you craft gear with that modifier. It is learned once for the whole account.</p>}
+      <ul className="rows">
+        {recipesForSale(save).map((entry) => {
+          const modifier = ITEM_MODIFIERS[entry.modifierId]
+          if (modifier === undefined) return null
+          return (
+            <Row
+              key={entry.modifierId}
+              actions={
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={closed || save.account.gold < recipePrice(entry.modifierId)}
+                  aria-label={`Learn ${modifier.name} recipe`}
+                  onClick={() => run(buyRecipeFromUi(entry.modifierId), `Learned the ${modifier.name} recipe.`)}
+                >
+                  Learn
+                </button>
+              }
+            >
+              <strong>{modifier.name}</strong> — {modifier.text}. Needs hero level {modifier.minLevel}. {recipePrice(entry.modifierId)} gold
+            </Row>
+          )
+        })}
+      </ul>
 
         </>
       ) : null}

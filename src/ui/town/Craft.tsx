@@ -17,10 +17,21 @@ import {
   upgradeCheck,
 } from '../../persist/crafting.ts'
 import { wearerOf } from '../../persist/equipment.ts'
-import { ITEM_MODIFIERS, classBlock } from '../../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, classBlock, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
 
 const MATERIALS = Object.keys(MATERIAL_QUALITY)
+
+const SLOT_NAMES: { [slot in EquipmentSlotId]: string } = {
+  mainHand: 'Main hand',
+  offHand: 'Off hand',
+  head: 'Head',
+  chest: 'Chest',
+  hands: 'Hands',
+  feet: 'Feet',
+  accessory0: 'Accessory 1',
+  accessory1: 'Accessory 2',
+}
 
 function percent(value: number): string {
   return `${Math.round(value * 1000) / 10}%`
@@ -53,6 +64,11 @@ export function Craft() {
   const request = { baseId: chosenBase, itemLevel: level, materialId, modifierId: modifierId === '' ? null : modifierId }
   const problem = craftCheck(save, hero, request)
   const notices = getCraftNotices()
+  const worn = EQUIPMENT_SLOT_IDS.flatMap((slot) => {
+    const item = hero.equipment[slot]
+    return item === null ? [] : [{ item, worn: SLOT_NAMES[slot] }]
+  })
+  const upgradable: { item: ItemInstance; worn: string | null }[] = [...worn, ...save.account.archive.map((item) => ({ item, worn: null }))]
 
   return (
     <section aria-label="Crafting">
@@ -141,9 +157,9 @@ export function Craft() {
           ))}
         </select>
       </label>
-      {save.account.archive.length === 0 ? <p>The archive is empty.</p> : null}
+      {upgradable.length === 0 ? <p>Nothing to upgrade. The archive is empty and nothing is worn.</p> : null}
       <ul className="rows">
-        {save.account.archive.map((item) => {
+        {upgradable.map(({ item, worn }) => {
           const block = upgradeCheck(save, hero, item, upgradeMaterial)
           return (
             <Row
@@ -154,6 +170,7 @@ export function Craft() {
                 </button>
               }
             >
+              {worn === null ? '' : `Worn (${worn}): `}
               {itemName(item)}, item level {item.itemLevel} — {percent(upgradeChance(item.itemLevel))} chance, {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {craftGold(item.itemLevel)} gold
               {block !== null ? <small className="row-note">{block}</small> : null}
             </Row>

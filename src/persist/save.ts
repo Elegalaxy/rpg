@@ -1,7 +1,7 @@
 import { itemBase, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { contracts as contractTable } from '../content/contracts.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import type { PriorityRow } from '../sim/types.ts'
@@ -42,8 +42,10 @@ export type CraftJob =
       id: string
       kind: 'upgrade'
       heroId: string
-      /** The item is held here while the upgrade runs, and returned to the archive when it ends. */
+      /** The item is held here while the upgrade runs. It returns to `slot` when that slot is still empty, else to the archive. */
       item: ItemInstance
+      /** The slot the item was worn in, or absent when it came from the archive. */
+      slot?: EquipmentSlotId
       materialId: string
       remainingMs: number
       seedIndex: number
@@ -246,6 +248,10 @@ function assertJob(value: unknown): asserts value is CraftJob {
     check(value.modifierId === null || (typeof value.modifierId === 'string' && ITEM_MODIFIERS[value.modifierId] !== undefined), 'craft job has an unknown modifier')
   } else {
     assertItem(value.item, 'craft job item')
+    check(
+      value.slot === undefined || (typeof value.slot === 'string' && (EQUIPMENT_SLOT_IDS as readonly string[]).includes(value.slot)),
+      'craft job slot is unknown',
+    )
   }
 }
 
