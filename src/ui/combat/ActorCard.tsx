@@ -68,6 +68,26 @@ function latestActSignature(log: readonly LogEvent[], actorId: string): string |
   return null
 }
 
+/** Whole numbers for large values, one decimal for small ones, never a long float. */
+function shown(value: number): string {
+  if (!Number.isFinite(value)) return '0'
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
+/** Milliseconds as seconds with one decimal, such as `4.6 s`. */
+function seconds(ms: number): string {
+  return `${(Math.max(0, ms) / 1000).toFixed(1)} s`
+}
+
+function capitalized(text: string): string {
+  return text.length === 0 ? text : text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+function skillLabel(skillId: string): string {
+  return skills[skillId]?.name ?? capitalized(skillId.replaceAll('-', ' '))
+}
+
 function ratioPercent(current: number, max: number): number {
   if (!Number.isFinite(current) || !Number.isFinite(max) || max <= 0) return 0
   if (current <= 0) return 0
@@ -136,7 +156,7 @@ function badgeText(badge: StatusBadge): string {
   let text = badge.name
   if (badge.stacks !== null) text += ` · ${badge.stacks} stacks`
   if (badge.intensity !== null) text += ` · intensity ${badge.intensity}`
-  if (badge.remainingMs !== null) text += ` · ${badge.remainingMs} ms`
+  if (badge.remainingMs !== null) text += ` · ${seconds(badge.remainingMs)}`
   return text
 }
 
@@ -198,7 +218,7 @@ function Meter({
       <div className="meter-row">
         <span className="meter-label">{label}</span>
         <span className="meter-value">
-          {current} / {max}
+          {shown(current)} / {shown(max)}
         </span>
       </div>
       <div
@@ -241,12 +261,12 @@ function SkillList({
         const eligible = queueState !== undefined && skillIsEligible(queueState, skillId, timeMs)
         return (
           <li key={`${skillId}:${index}`} className={cooling ? 'skill cooling' : 'skill ready'}>
-            <span className="skill-id">{skillId}</span>
+            <span className="skill-id">{skillLabel(skillId)}</span>
             {eligible ? (
               <button
                 type="button"
                 className="skill-queue"
-                aria-label={`Queue ${skillId}`}
+                aria-label={`Queue ${skillLabel(skillId)}`}
                 onClick={() => {
                   if (queueState === undefined) return
                   debugLog('[ui]', 'queue skill', { skillId })
@@ -263,7 +283,7 @@ function SkillList({
                 Queue
               </button>
             ) : null}
-            {cooling ? <span className="cooldown-overlay">{remaining} ms</span> : null}
+            {cooling ? <span className="cooldown-overlay">{seconds(remaining)}</span> : null}
           </li>
         )
       })}
@@ -288,7 +308,7 @@ function TimingBar({
       <div className="timing-row">
         <span className="timing-label">{label}</span>
         <span className="timing-tag">{telegraph.tag}</span>
-        <span className="timing-remaining">{remaining} ms</span>
+        <span className="timing-remaining">{seconds(remaining)}</span>
       </div>
       <div className="timing-track" aria-hidden="true">
         <div className={`timing-fill timing-fill-${kind}`} style={{ width: `${telegraphFillPercent(telegraph, timeMs)}%` }} />
@@ -373,13 +393,13 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
       <Meter label="HP" current={actor.hp} max={actor.maxHp} kind="hp" />
       {barrierActive ? <Meter label="Barrier" current={actor.barrier} max={actor.maxHp} kind="barrier" /> : null}
       {classResource !== undefined ? (
-        <Meter label={classResource.id} current={classResource.current} max={classResource.max} kind="resource" />
+        <Meter label={capitalized(classResource.id)} current={classResource.current} max={classResource.max} kind="resource" />
       ) : null}
       {equippedSkillIds !== undefined ? (
         <SkillList skillIds={equippedSkillIds} cooldowns={actor.cooldowns} timeMs={timeMs} manualQueue={manualQueue} />
       ) : null}
       {manualQueue !== undefined && manualQueue.state.queuedSkillId !== null ? (
-        <p className="skill-queued">Queued: {manualQueue.state.queuedSkillId}</p>
+        <p className="skill-queued">Queued: {skillLabel(manualQueue.state.queuedSkillId)}</p>
       ) : null}
       {manualQueue !== undefined && manualQueue.queueError !== null ? (
         <p className="skill-queue-error" role="alert">

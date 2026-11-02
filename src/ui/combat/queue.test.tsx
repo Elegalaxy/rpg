@@ -13,6 +13,10 @@ function queueButtons(html: string): string[] {
   return [...html.matchAll(/aria-label="Queue ([^"]+)"/g)].map((match) => match[1] ?? '')
 }
 
+function skillName(id: string): string {
+  return skills[id]?.name ?? id
+}
+
 function eligibleSkillIds(state: CombatState): string[] {
   const ids: string[] = []
   for (const skillId of state.hero.equippedSkillIds) {
@@ -42,11 +46,11 @@ describe('manual queue button', () => {
       hp: state.hero.hp,
       resource: state.hero.classResource,
     })
-    expect(initialButtons).toEqual(['driving-blow', 'shield-brace'])
-    expect(initialButtons).toEqual(eligibleSkillIds(state))
-    expect(initial).not.toContain('aria-label="Queue sundering-blow"')
-    expect(initial).not.toContain('aria-label="Queue second-wind"')
-    expect(initial).not.toContain('aria-label="Queue cleave"')
+    expect(initialButtons).toEqual(['Driving Blow', 'Shield Brace'])
+    expect(initialButtons).toEqual(eligibleSkillIds(state).map(skillName))
+    expect(initial).not.toContain('aria-label="Queue Sundering Blow"')
+    expect(initial).not.toContain('aria-label="Queue Second Wind"')
+    expect(initial).not.toContain('aria-label="Queue Cleave"')
     expect(initial).not.toContain('Queued:')
 
     state.hero.classResource = 50
@@ -54,18 +58,18 @@ describe('manual queue button', () => {
     const paidButtons = queueButtons(paid)
     console.log('[ui] queue buttons at 50 fury', { buttons: paidButtons, hp: state.hero.hp, maxHp: state.hero.maxHp })
     expect(state.hero.hp).toBe(state.hero.maxHp)
-    expect(paidButtons).toEqual(['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'])
-    expect(paidButtons).toEqual(eligibleSkillIds(state))
+    expect(paidButtons).toEqual(['Driving Blow', 'Sundering Blow', 'Shield Brace', 'Second Wind'])
+    expect(paidButtons).toEqual(eligibleSkillIds(state).map(skillName))
 
     state.hero.cooldowns['driving-blow'] = state.timeMs + 3000
     state.hero.offHandKind = 'dagger'
     const blocked = renderToStaticMarkup(<CombatPanel combat={state} />)
     const blockedButtons = queueButtons(blocked)
     console.log('[ui] queue buttons after cooldown and shield loss', { buttons: blockedButtons })
-    expect(blockedButtons).toEqual(['sundering-blow', 'second-wind'])
-    expect(blockedButtons).toEqual(eligibleSkillIds(state))
-    expect(blocked).not.toContain('aria-label="Queue driving-blow"')
-    expect(blocked).not.toContain('aria-label="Queue shield-brace"')
+    expect(blockedButtons).toEqual(['Sundering Blow', 'Second Wind'])
+    expect(blockedButtons).toEqual(eligibleSkillIds(state).map(skillName))
+    expect(blocked).not.toContain('aria-label="Queue Driving Blow"')
+    expect(blocked).not.toContain('aria-label="Queue Shield Brace"')
 
     state.hero.cooldowns = {}
     state.hero.offHandKind = 'shield'
@@ -75,13 +79,13 @@ describe('manual queue button', () => {
     queueManualAction(state, 'shield-brace')
     const queued = renderToStaticMarkup(<CombatPanel combat={state} />)
     console.log('[ui] queued shield-brace', {
-      text: queued.includes('Queued: shield-brace'),
+      text: queued.includes('Queued: Shield Brace'),
       timeMs: state.timeMs,
       nextReadyMs: state.hero.nextReadyMs,
       queuedSkillId: state.queuedSkillId,
     })
-    expect(queued).toContain('Queued: shield-brace')
-    expect(queueButtons(queued)).toEqual(['driving-blow', 'shield-brace'])
+    expect(queued).toContain('Queued: Shield Brace')
+    expect(queueButtons(queued)).toEqual(['Driving Blow', 'Shield Brace'])
     expect(state.timeMs).toBe(timeMs)
     expect(state.hero.nextReadyMs).toBe(readyAt)
     expect(state.hero.nextReadyMs).toBe(nextReadyMs)
