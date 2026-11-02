@@ -2,6 +2,7 @@ import { itemBase, newItem } from '../content/items.ts'
 import { MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, repairCost } from '../content/shop.ts'
 import { EQUIPMENT_SLOT_IDS, classBlock, type Equipment, type ItemInstance } from '../sim/economy.ts'
 
+import { selectedHero } from './character.ts'
 import { wearerOf } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import type { SaveData, SavedHero } from './save.ts'
@@ -30,15 +31,29 @@ export function sellMaterial(save: SaveData, materialId: string, quantity: numbe
   return { ok: true, save: { ...next, account: { ...next.account, materials } } }
 }
 
-/** Sell an archive item. Equipped items cannot be sold. */
+/**
+ * Sell an archive item, or an item the selected hero is wearing (its slot is left empty, so the hero
+ * cannot fight until it is filled). An heirloom cannot be sold.
+ */
 export function sellItem(save: SaveData, itemId: string): RosterResult {
   const shut = closed(save)
   if (shut !== null) return { ok: false, reason: shut }
-  const item = save.account.archive.find((entry) => entry.id === itemId)
-  if (item === undefined) return { ok: false, reason: 'Only archive items can be sold.' }
+  const archived = save.account.archive.find((entry) => entry.id === itemId)
+  const hero = selectedHero(save)
+  const slot = hero === null ? undefined : EQUIPMENT_SLOT_IDS.find((id) => hero.equipment[id]?.id === itemId)
+  const worn = hero !== null && slot !== undefined ? hero.equipment[slot] : null
+  const item = archived ?? worn
+  if (item === null || item === undefined) return { ok: false, reason: 'That item is not in the archive or worn by the selected hero.' }
+  if (item.heirloom !== undefined) return { ok: false, reason: 'An heirloom cannot be sold.' }
   const next = withGold(save, save.account.gold + itemSellPrice(item))
-  const archive = next.account.archive.filter((entry) => entry.id !== itemId)
-  return { ok: true, save: { ...next, account: { ...next.account, archive } } }
+  if (archived !== undefined) {
+    const archive = next.account.archive.filter((entry) => entry.id !== itemId)
+    return { ok: true, save: { ...next, account: { ...next.account, archive } } }
+  }
+  const heroes = next.heroes.map((entry) =>
+    entry.id === hero?.id && slot !== undefined ? { ...entry, equipment: { ...entry.equipment, [slot]: null } } : entry,
+  )
+  return { ok: true, save: { ...next, heroes } }
 }
 
 function nextShopId(save: SaveData): string {
@@ -127,9 +142,9 @@ export function payDebt(save: SaveData, amount: number): RosterResult {
   if (shut !== null) return { ok: false, reason: shut }
   if (!Number.isInteger(amount) || amount < 1) return { ok: false, reason: 'Pay at least 1 gold.' }
   if (save.account.debt === 0) return { ok: false, reason: 'You owe nothing.' }
-  if (amount > save.account.debt) return { ok: false, reason: `You only owe ${save.account.debt}.` }
-  if (amount > save.account.gold) return { ok: false, reason: `You have ${save.account.gold} gold.` }
-  return { ok: true, save: { ...save, account: { ...save.account, gold: save.account.gold - amount, debt: save.account.debt - amount } } }
+  const paid = Math.min(amount, save.account.debt)
+  if (paid > save.account.gold) return { ok: false, reason: `You have ${save.account.gold} gold.` }
+  return { ok: true, save: { ...save, account: { ...save.account, gold: save.account.gold - paid, debt: save.account.debt - paid } } }
 }
 
 /** Development builds only: some gold to try the shop. */

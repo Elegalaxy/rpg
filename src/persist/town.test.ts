@@ -71,7 +71,10 @@ describe('selling and buying', () => {
     const sold = ok(sellItem(save, 'x'))
     expect(sold.account.gold).toBe(17)
     expect(sold.account.archive).toEqual([])
-    expect(sellItem(save, 'hero-1-mainHand')).toEqual({ ok: false, reason: 'Only archive items can be sold.' })
+    const worn = ok(sellItem(save, 'hero-1-mainHand'))
+    expect(selectedHero(worn)?.equipment.mainHand).toBeNull()
+    expect(worn.account.gold).toBeGreaterThan(save.account.gold)
+    expect(sellItem(save, 'nothing')).toEqual({ ok: false, reason: 'That item is not in the archive or worn by the selected hero.' })
   })
 
   it('buys a base item at the hero level and 100% quality into the archive', () => {
@@ -132,7 +135,7 @@ describe('debt', () => {
     const part = ok(payDebt(indebted(25, 100), 10))
     expect(part.account).toMatchObject({ debt: 15, gold: 90 })
     expect(ok(payDebt(part, 15)).account).toMatchObject({ debt: 0, gold: 75 })
-    expect(payDebt(indebted(25, 100), 26)).toEqual({ ok: false, reason: 'You only owe 25.' })
+    expect(ok(payDebt(indebted(25, 100), 26)).account).toMatchObject({ debt: 0, gold: 75 })
     expect(payDebt(indebted(25, 5), 6)).toEqual({ ok: false, reason: 'You have 5 gold.' })
     expect(payDebt(indebted(0, 5), 1)).toEqual({ ok: false, reason: 'You owe nothing.' })
     expect(payDebt(indebted(25, 100), 0).ok).toBe(false)

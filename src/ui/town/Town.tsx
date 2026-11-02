@@ -74,6 +74,23 @@ export function Town() {
         ))}
       </ul>
 
+      <h3>Worn gear</h3>
+      {hero === null ? <p>Select a hero to see what they wear.</p> : null}
+      <ul>
+        {hero === null
+          ? null
+          : Object.values(hero.equipment).flatMap((item) =>
+              item === null ? [] : [
+                <li key={item.id}>
+                  {itemName(item)}, item level {item.itemLevel} — sells for {itemSellPrice(item)} gold{' '}
+                  <button type="button" disabled={closed} aria-label={`Sell worn ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}. Fill the slot before the next expedition.`)}>
+                    Sell
+                  </button>
+                </li>,
+              ],
+            )}
+      </ul>
+
       <h3>Archive</h3>
       {save.account.archive.length === 0 ? <p>The archive is empty.</p> : null}
       <ul>
@@ -146,7 +163,7 @@ export function Town() {
             type="button"
             disabled={closed}
             onClick={() => {
-              run(payDebtFromUi(Number(pay.trim())), `Paid ${pay.trim()} gold of debt.`)
+              run(payDebtFromUi(Number(pay.trim())), `Paid ${Math.min(Number(pay.trim()), save.account.debt)} gold of debt.`)
               setPay('')
             }}
           >
