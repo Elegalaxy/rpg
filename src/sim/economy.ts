@@ -1,3 +1,4 @@
+import { CLASS_PREFERENCE, type HeroClass } from './constants.ts'
 import type { ArmorCategory, ArmorSlot, OffHandKind, WeaponKind } from './constants.ts'
 import type { AccessoryPiece, ArmorPiece, HeroGear, OffHandPiece, WeaponPiece } from './stats.ts'
 
@@ -77,14 +78,35 @@ function mainHandKind(equipment: Equipment, lookup: BaseLookup): WeaponKind | nu
 }
 
 /** Null when the item can go in the slot. Otherwise the reason, in the words the screen shows. */
+/** Who is wearing the item. A Cross-Trained hero can use any gear. */
+export type Wearer = { classId: HeroClass; crossTrained: boolean }
+
+/** The reason a class cannot use this kind of item, or null. Accessories are open to everyone. */
+export function classBlock(wearer: Wearer, base: ItemBase): string | null {
+  if (wearer.crossTrained || base.type === 'accessory') return null
+  const preference = CLASS_PREFERENCE[wearer.classId]
+  const allowed =
+    base.type === 'weapon'
+      ? preference.weapons.includes(base.weaponKind)
+      : base.type === 'offHand'
+        ? preference.offHands.includes(base.offHandKind)
+        : preference.armor === base.category
+  return allowed ? null : `${base.name} cannot be used by a ${wearer.classId}.`
+}
+
 export function equipBlock(
   equipment: Equipment,
   item: ItemInstance,
   slot: EquipmentSlotId,
   heroLevel: number,
   lookup: BaseLookup,
+  wearer?: Wearer,
 ): string | null {
   const base = baseOf(item, lookup)
+  if (wearer !== undefined) {
+    const blocked = classBlock(wearer, base)
+    if (blocked !== null) return blocked
+  }
   for (const id of item.modifiers) {
     const modifier = ITEM_MODIFIERS[id]
     if (modifier !== undefined && modifier.minLevel > heroLevel) {
@@ -117,6 +139,7 @@ export function equipItem(
   slot: EquipmentSlotId | null,
   heroLevel: number,
   lookup: BaseLookup,
+  wearer?: Wearer,
 ): EquipResult {
   const item = archive.find((entry) => entry.id === itemId)
   if (item === undefined) return { ok: false, reason: 'That item is not in the archive.' }
@@ -125,7 +148,7 @@ export function equipItem(
   let chosen: EquipmentSlotId | null = null
   let lastReason = `${base.name} does not fit any slot.`
   for (const candidate of choices) {
-    const block = equipBlock(equipment, item, candidate, heroLevel, lookup)
+    const block = equipBlock(equipment, item, candidate, heroLevel, lookup, wearer)
     if (block === null) {
       chosen = candidate
       if (slot === null && base.type === 'accessory' && equipment[candidate] !== null) {

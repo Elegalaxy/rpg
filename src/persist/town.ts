@@ -1,7 +1,8 @@
 import { itemBase, newItem } from '../content/items.ts'
 import { MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, repairCost } from '../content/shop.ts'
-import { EQUIPMENT_SLOT_IDS, type Equipment, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, classBlock, type Equipment, type ItemInstance } from '../sim/economy.ts'
 
+import { wearerOf } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import type { SaveData, SavedHero } from './save.ts'
 
@@ -56,7 +57,10 @@ export function buyItem(save: SaveData, heroId: string, baseId: string): RosterR
   if (shut !== null) return { ok: false, reason: shut }
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
-  if (itemBase(baseId) === undefined) return { ok: false, reason: 'Greyhaven does not sell that.' }
+  const base = itemBase(baseId)
+  if (base === undefined) return { ok: false, reason: 'Greyhaven does not sell that.' }
+  const blocked = classBlock(wearerOf(hero), base)
+  if (blocked !== null) return { ok: false, reason: blocked }
   const price = itemBuyPrice(hero.progress.level)
   if (save.account.gold < price) return { ok: false, reason: `That costs ${price} gold. You have ${save.account.gold}.` }
   const item = newItem(nextShopId(save), baseId, hero.progress.level)

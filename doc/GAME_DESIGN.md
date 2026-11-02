@@ -1334,7 +1334,9 @@ Reference loadouts:
 - Mage: cloth armor, caster weapon, and focus.
 - Cleric: medium armor, caster weapon, and shield.
 
-Preferred equipment operates at 100% primary-stat effectiveness. Equipment outside class preferences operates at 90% Power/Defense effectiveness until a relevant skill-web node removes the penalty. Active skills still enforce explicit requirements such as Shield Brace requiring a shield. Unconventional equipment remains possible through skill-web investment. These reference sets exist for balance simulation, not as hard class locks.
+Preferred equipment operates at 100% primary-stat effectiveness. Equipment outside class preferences operates at 90% Power/Defense effectiveness until a relevant skill-web node removes the penalty. Active skills still enforce explicit requirements such as Shield Brace requiring a shield. Unconventional equipment remains possible through skill-web investment. These reference sets exist for balance simulation.
+
+Class gear rule, decided 2026-11-02 (changes the earlier "not hard class locks"): a hero can equip only the weapon kinds, off-hand kinds, and armor category their class prefers, listed above. Accessories are open to every class. Human Cross-Training lifts the rule (it already counts every item as preferred). The shop sells only gear the selected hero can use, and buying anything else is refused. Gear already worn by a hero is not removed by the rule. The 90% off-preference effectiveness stays in the simulation and now applies only if a later change allows off-class gear. The two-handed weapon is on no class's list, so for now only a Cross-Trained hero can use it. Other skill-web nodes that unlock off-class gear are not yet defined.
 
 ### Level-20 reference heroes
 

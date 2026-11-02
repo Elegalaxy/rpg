@@ -1,5 +1,6 @@
 import { developmentItems, itemBase } from '../content/items.ts'
-import { equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId } from '../sim/economy.ts'
+import { equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type Wearer } from '../sim/economy.ts'
+import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats, type HeroDerivedStats } from '../sim/stats.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 import { classWebs } from '../content/webs/index.ts'
@@ -54,8 +55,13 @@ export type EquipPreview = {
   changes: { label: string; before: number; after: number; unit: string }[]
 }
 
+/** Who the hero is for the class gear rule. */
+export function wearerOf(hero: SavedHero): Wearer {
+  return { classId: hero.classId, crossTrained: hero.progress.allocatedNodeIds.includes(NODE_HUMAN_CROSS_TRAINING) }
+}
+
 function withEquipped(hero: SavedHero, archive: SaveData['account']['archive'], itemId: string, slot: EquipmentSlotId | null) {
-  return equipItem(hero.equipment, archive, itemId, slot, hero.progress.level, itemBase)
+  return equipItem(hero.equipment, archive, itemId, slot, hero.progress.level, itemBase, wearerOf(hero))
 }
 
 /** What equipping an archive item would do, without changing anything. */
@@ -66,7 +72,7 @@ export function previewEquip(save: SaveData, heroId: string, itemId: string, slo
   const result = withEquipped(hero, save.account.archive, itemId, slot)
   if (!result.ok) return { block: result.reason, slot: null, changes: [] }
   const base = itemBase(item.baseId)
-  const chosen = slot ?? (base === undefined ? null : (slotsFor(base).find((candidate) => equipBlock(hero.equipment, item, candidate, hero.progress.level, itemBase) === null) ?? null))
+  const chosen = slot ?? (base === undefined ? null : (slotsFor(base).find((candidate) => equipBlock(hero.equipment, item, candidate, hero.progress.level, itemBase, wearerOf(hero)) === null) ?? null))
   const before = statsFor(hero)
   const after = statsFor({ ...hero, equipment: result.equipment })
   if (before === null || after === null) return { block: null, slot: chosen, changes: [] }

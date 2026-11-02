@@ -1,4 +1,4 @@
-import type { ItemInstance } from '../sim/economy.ts'
+import { classBlock, type ItemInstance, type Wearer } from '../sim/economy.ts'
 
 import { itemBases } from './items.ts'
 
@@ -33,12 +33,14 @@ export function repairCost(item: ItemInstance): number {
 
 export type ShopEntry = { baseId: string; name: string; itemLevel: number; price: number }
 
-/** Every base item at the hero's level, in the order the content lists them. No supplies are sold. */
-export function shopStock(heroLevel: number): ShopEntry[] {
-  return Object.values(itemBases).map((base) => ({
-    baseId: base.id,
-    name: base.name,
-    itemLevel: heroLevel,
-    price: itemBuyPrice(heroLevel),
-  }))
+/** Every base item the hero's class can use, at the hero's level, in the order the content lists them. No supplies are sold. */
+export function shopStock(heroLevel: number, wearer?: Wearer): ShopEntry[] {
+  return Object.values(itemBases)
+    .filter((base) => wearer === undefined || classBlock(wearer, base) === null)
+    .map((base) => ({
+      baseId: base.id,
+      name: base.name,
+      itemLevel: heroLevel,
+      price: itemBuyPrice(heroLevel),
+    }))
 }

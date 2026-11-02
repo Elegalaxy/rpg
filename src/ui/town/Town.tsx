@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
+import { wearerOf } from '../../persist/equipment.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { repairAllCost } from '../../persist/town.ts'
 import {
@@ -91,7 +92,7 @@ export function Town() {
         <p>Select a hero to see what the shop has at their level.</p>
       ) : (
         <ul>
-          {shopStock(hero.progress.level).map((entry) => (
+          {shopStock(hero.progress.level, wearerOf(hero)).map((entry) => (
             <li key={entry.baseId}>
               {entry.name}, item level {entry.itemLevel}, quality 100% — {entry.price} gold{' '}
               <button

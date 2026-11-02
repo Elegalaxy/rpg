@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import { developmentItems, itemBase, newItem, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES } from '../sim/constants.ts'
-import { equipBlock, equipItem, gearFromEquipment, gearGaps, slotsFor, type Equipment, type ItemInstance } from '../sim/economy.ts'
+import { classBlock, equipBlock, equipItem, gearFromEquipment, gearGaps, slotsFor, type Equipment, type ItemInstance } from '../sim/economy.ts'
 import { stepExpedition } from '../sim/expedition.ts'
+import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats } from '../sim/stats.ts'
 
 import { selectedHero } from './character.ts'
@@ -14,10 +15,20 @@ import { assertSaveData, newSave, parseSave, serializeSave, type SaveData } from
 import { canStartRoute, settleExpedition } from './world.ts'
 import { gameDefs } from '../content/scenarios.ts'
 
-function heroSave(classId: (typeof HERO_CLASSES)[number] = 'warrior'): SaveData {
+/** A plain hero, bound by the class gear rule. */
+function plainHeroSave(classId: (typeof HERO_CLASSES)[number] = 'warrior'): SaveData {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId })
   if (!made.ok) throw new Error(made.reason)
   return made.save
+}
+
+/** A Cross-Trained hero, so the generic equip rules can be tried with any gear. */
+function heroSave(classId: (typeof HERO_CLASSES)[number] = 'warrior'): SaveData {
+  const save = plainHeroSave(classId)
+  return {
+    ...save,
+    heroes: save.heroes.map((h) => ({ ...h, progress: { ...h.progress, allocatedNodeIds: [...h.progress.allocatedNodeIds, NODE_HUMAN_CROSS_TRAINING] } })),
+  }
 }
 
 function withItems(save: SaveData, items: ItemInstance[]): SaveData {
@@ -37,6 +48,41 @@ function equip(save: SaveData, itemId: string, slot: Parameters<typeof equipFrom
 }
 
 const armorSlots = ['head', 'chest', 'hands', 'feet'] as const
+
+describe('class gear rule', () => {
+  it('lets a class equip only its own weapon, off-hand and armor kinds', () => {
+    const save = withItems(plainHeroSave('warrior'), [
+      newItem('bow', 'weapon-bow', 1),
+      newItem('focus', 'offhand-focus', 1),
+      newItem('robe', 'armor-cloth-chest', 1),
+      newItem('maul', 'weapon-two-handed', 1),
+      newItem('sword', 'weapon-one-handed', 1),
+      newItem('ring', 'accessory-ring', 1),
+    ])
+    expect(equipFromArchive(save, 'hero-1', 'bow')).toEqual({ ok: false, reason: 'Bow cannot be used by a warrior.' })
+    expect(equipFromArchive(save, 'hero-1', 'focus')).toEqual({ ok: false, reason: 'Caster Focus cannot be used by a warrior.' })
+    expect(equipFromArchive(save, 'hero-1', 'robe').ok).toBe(false)
+    expect(equipFromArchive(save, 'hero-1', 'maul').ok).toBe(false)
+    expect(equipFromArchive(save, 'hero-1', 'sword').ok).toBe(true)
+    expect(equipFromArchive(save, 'hero-1', 'ring').ok).toBe(true)
+    expect(previewEquip(save, 'hero-1', 'bow').block).toBe('Bow cannot be used by a warrior.')
+  })
+
+  it('has every class able to wear its own starter gear', () => {
+    for (const classId of HERO_CLASSES) {
+      const gear = Object.values(hero(plainHeroSave(classId)).equipment).filter((item): item is ItemInstance => item !== null)
+      for (const item of gear) {
+        const base = itemBase(item.baseId)!
+        expect(classBlock({ classId, crossTrained: false }, base), `${classId} ${item.baseId}`).toBeNull()
+      }
+    }
+  })
+
+  it('is lifted by Human Cross-Training', () => {
+    const save = withItems(heroSave('warrior'), [newItem('bow', 'weapon-bow', 1)])
+    expect(equipFromArchive(save, 'hero-1', 'bow').ok).toBe(true)
+  })
+})
 
 describe('starter gear', () => {
   it('gives every class a complete level 1 set at exactly 100% quality with no modifiers', () => {
