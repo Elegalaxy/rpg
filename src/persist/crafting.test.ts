@@ -113,7 +113,8 @@ describe('queueing a craft', () => {
     expect(craftCheck(save, hero(save), { ...bow, modifierId: 'bogus' })).toBe('Unknown modifier.')
     const learned = stocked(2)
     expect(craftCheck(learned, hero(learned), { ...bow, modifierId: 'nimble' })).toBe('Nimble needs level 3. This hero is level 2.')
-    expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, modifierId: 'nimble' })).toBeNull()
+    expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, modifierId: 'nimble' })).toBe('Nimble can only go on armor and accessories.')
+    expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, baseId: 'armor-heavy-chest', modifierId: 'nimble' })).toBeNull()
     expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(6)
   })
 

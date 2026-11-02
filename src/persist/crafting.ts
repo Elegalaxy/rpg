@@ -1,5 +1,5 @@
 import { itemBase } from '../content/items.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, classBlock, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { wearerOf } from './equipment.ts'
@@ -105,6 +105,7 @@ export function craftCheck(save: SaveData, hero: SavedHero, request: CraftReques
     if (modifier === undefined) return 'Unknown modifier.'
     if (!save.account.recipes.includes(request.modifierId)) return `You have not learned the ${modifier.name} recipe.`
     if (hero.progress.level < modifier.minLevel) return `${modifier.name} needs level ${modifier.minLevel}. This hero is level ${hero.progress.level}.`
+    if (!modifierFits(modifier, base)) return `${modifier.name} can only go on ${appliesToText(modifier)}.`
   }
   return spend(save, request.materialId, CRAFT_MATERIAL_COST, craftGold(request.itemLevel))
 }

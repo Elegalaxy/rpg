@@ -17,7 +17,7 @@ import {
   upgradeCheck,
 } from '../../persist/crafting.ts'
 import { wearerOf } from '../../persist/equipment.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, classBlock, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
 
 const MATERIALS = Object.keys(MATERIAL_QUALITY)
@@ -61,7 +61,8 @@ export function Craft() {
   const craftable = Object.values(itemBases).filter((base) => classBlock(wearerOf(hero), base) === null)
   const chosenBase = craftable.some((base) => base.id === baseId) ? baseId : (craftable[0]?.id ?? baseId)
   const range = qualityRange(materialId, rank)
-  const request = { baseId: chosenBase, itemLevel: level, materialId, modifierId: modifierId === '' ? null : modifierId }
+  const shownModifier = modifierId !== '' && ITEM_MODIFIERS[modifierId] !== undefined && itemBases[chosenBase] !== undefined && modifierFits(ITEM_MODIFIERS[modifierId], itemBases[chosenBase]) ? modifierId : ''
+  const request = { baseId: chosenBase, itemLevel: level, materialId, modifierId: shownModifier === '' ? null : shownModifier }
   const problem = craftCheck(save, hero, request)
   const notices = getCraftNotices()
   const worn = EQUIPMENT_SLOT_IDS.flatMap((slot) => {
@@ -125,10 +126,14 @@ export function Craft() {
         </label>{' '}
         <label>
           Modifier{' '}
-          <select aria-label="Craft modifier" value={modifierId} onChange={(event) => setModifierId(event.target.value)}>
+          <select aria-label="Craft modifier" value={shownModifier} onChange={(event) => setModifierId(event.target.value)}>
             <option value="">None</option>
             {save.account.recipes
-              .filter((id) => ITEM_MODIFIERS[id] !== undefined)
+              .filter((id) => {
+                const modifier = ITEM_MODIFIERS[id]
+                const base = itemBases[chosenBase]
+                return modifier !== undefined && base !== undefined && modifierFits(modifier, base)
+              })
               .map((id) => (
                 <option key={id} value={id}>
                   {ITEM_MODIFIERS[id]?.name} ({ITEM_MODIFIERS[id]?.text}, level {ITEM_MODIFIERS[id]?.minLevel})

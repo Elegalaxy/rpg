@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { recipePrice, recipesForSale } from '../../persist/crafting.ts'
-import { ITEM_MODIFIERS } from '../../sim/economy.ts'
+import { ITEM_MODIFIERS, appliesToText } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
 import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
 import { wearerOf } from '../../persist/equipment.ts'
@@ -187,7 +187,7 @@ export function Town({ part }: { part: TownPart }) {
                 </button>
               }
             >
-              <strong>{modifier.name}</strong> — {modifier.text}. Needs hero level {modifier.minLevel}. {recipePrice(entry.modifierId)} gold
+              <strong>{modifier.name}</strong> — {modifier.text}, on {appliesToText(modifier)}. Needs hero level {modifier.minLevel}. {recipePrice(entry.modifierId)} gold
             </Row>
           )
         })}

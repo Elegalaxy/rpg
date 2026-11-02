@@ -276,22 +276,43 @@ export type ItemModifier = {
   bonus: StatBonuses
   /** One line for the screens. */
   text: string
+  /** The kinds of item it can be crafted on. */
+  appliesTo: readonly ItemBase['type'][]
+}
+
+const TYPE_NAMES: { readonly [type in ItemBase['type']]: string } = {
+  weapon: 'weapons',
+  offHand: 'off-hand items',
+  armor: 'armor',
+  accessory: 'accessories',
+}
+
+/** The kinds of item a modifier can go on, in words, such as `weapons and accessories`. */
+export function appliesToText(modifier: ItemModifier): string {
+  const names = modifier.appliesTo.map((type) => TYPE_NAMES[type])
+  return names.length <= 1 ? (names[0] ?? 'nothing') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+}
+
+/** Whether a modifier can be crafted on this kind of item. */
+export function modifierFits(modifier: ItemModifier, base: ItemBase): boolean {
+  return modifier.appliesTo.includes(base.type)
 }
 
 /** The six first-playable modifiers (G8). Percent values are fractions: 0.02 is 2 points. */
 export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
-  keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance' },
-  precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy' },
-  nimble: { id: 'nimble', name: 'Nimble', minLevel: 3, bonus: { evasionBonus: 3 }, text: '+3 Evasion' },
+  keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance', appliesTo: ['weapon', 'accessory'] },
+  precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy', appliesTo: ['weapon', 'offHand', 'accessory'] },
+  nimble: { id: 'nimble', name: 'Nimble', minLevel: 3, bonus: { evasionBonus: 3 }, text: '+3 Evasion', appliesTo: ['armor', 'accessory'] },
   piercing: {
     id: 'piercing',
     name: 'Piercing',
     minLevel: 6,
     bonus: { armorPenetrationBonus: 0.03, magicalPenetrationBonus: 0.03 },
     text: '+3 points armor and magical penetration',
+    appliesTo: ['weapon'],
   },
-  mending: { id: 'mending', name: 'Mending', minLevel: 6, bonus: { equipmentHealingPower: 5 }, text: '+5 Healing Power' },
-  quick: { id: 'quick', name: 'Quick', minLevel: 9, bonus: { cooldownReductionBonus: 0.02 }, text: '+2 points cooldown reduction' },
+  mending: { id: 'mending', name: 'Mending', minLevel: 6, bonus: { equipmentHealingPower: 5 }, text: '+5 Healing Power', appliesTo: ['offHand', 'accessory'] },
+  quick: { id: 'quick', name: 'Quick', minLevel: 9, bonus: { cooldownReductionBonus: 0.02 }, text: '+2 points cooldown reduction', appliesTo: ['weapon', 'accessory'] },
 }
 
 /** The modifiers every hero's account knows at the start. */
