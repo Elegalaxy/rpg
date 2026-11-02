@@ -1,13 +1,28 @@
+/* Fractured Frontier theme: ink-dark panels, parchment text, ember accent.
+   Light mode flips it to parchment paper with ink text. */
+
 :root {
   color-scheme: light dark;
-  --bg: #ffffff;
-  --fg: #1a1a1a;
-  --panel: #fafafa;
-  --panel-2: #ffffff;
-  --border: #c8c8c8;
-  --track: #e4e4e4;
-  --chip: #eeeeee;
-  --danger: #8a3d3d;
+  --bg: #f3eddd;
+  --fg: #2a2418;
+  --panel: #fbf7ea;
+  --panel-2: #fffdf5;
+  --border: #cfc3a6;
+  --track: #e3d9bd;
+  --chip: #eee5cc;
+  --muted: #6d6450;
+  --accent: #a8620f;
+  --accent-fg: #ffffff;
+  --good: #2f7a3d;
+  --warn: #8a6a12;
+  --danger: #a63a3a;
+  --info: #2c5fa8;
+  --gold: #8a6a12;
+  --class-warrior: #a63a3a;
+  --class-assassin: #6a45a0;
+  --class-ranger: #2f7a3d;
+  --class-mage: #2c5fa8;
+  --class-cleric: #8a6a12;
 }
 
 :root[data-theme='light'] {
@@ -16,26 +31,50 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #15171c;
-  --fg: #e6e8ec;
-  --panel: #1e2128;
-  --panel-2: #262a33;
-  --border: #3d4350;
-  --track: #333843;
-  --chip: #2d323d;
-  --danger: #e08a8a;
+  --bg: #12141a;
+  --fg: #ebe5d3;
+  --panel: #1a1d26;
+  --panel-2: #232733;
+  --border: #353b4d;
+  --track: #2c3140;
+  --chip: #2a2f3d;
+  --muted: #9a95a3;
+  --accent: #e0963a;
+  --accent-fg: #1a1208;
+  --good: #62b86f;
+  --warn: #e0b84c;
+  --danger: #e07070;
+  --info: #6aa0e6;
+  --gold: #e0b84c;
+  --class-warrior: #e07070;
+  --class-assassin: #b48ae6;
+  --class-ranger: #62b86f;
+  --class-mage: #6aa0e6;
+  --class-cleric: #e0b84c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']):not([data-theme='dark']) {
-    --bg: #15171c;
-    --fg: #e6e8ec;
-    --panel: #1e2128;
-    --panel-2: #262a33;
-    --border: #3d4350;
-    --track: #333843;
-    --chip: #2d323d;
-    --danger: #e08a8a;
+    --bg: #12141a;
+    --fg: #ebe5d3;
+    --panel: #1a1d26;
+    --panel-2: #232733;
+    --border: #353b4d;
+    --track: #2c3140;
+    --chip: #2a2f3d;
+    --muted: #9a95a3;
+    --accent: #e0963a;
+    --accent-fg: #1a1208;
+    --good: #62b86f;
+    --warn: #e0b84c;
+    --danger: #e07070;
+    --info: #6aa0e6;
+    --gold: #e0b84c;
+    --class-warrior: #e07070;
+    --class-assassin: #b48ae6;
+    --class-ranger: #62b86f;
+    --class-mage: #6aa0e6;
+    --class-cleric: #e0b84c;
   }
 }
 
@@ -54,22 +93,8 @@ body {
   --s4: 16px;
   --s5: 24px;
   --s6: 32px;
-  --accent: #2f6f3e;
-  --accent-fg: #ffffff;
   --radius: 4px;
   --control-h: 36px;
-}
-
-:root[data-theme='dark'] {
-  --accent: #4fae68;
-  --accent-fg: #0e1a12;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']):not([data-theme='dark']) {
-    --accent: #4fae68;
-    --accent-fg: #0e1a12;
-  }
 }
 
 * {
@@ -89,9 +114,16 @@ body {
 
 /* Headings */
 
+h1,
+h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.02em;
+}
+
 h1 {
   margin: 0;
   font-size: 1.4rem;
+  color: var(--accent);
 }
 
 h2 {
@@ -214,8 +246,8 @@ label {
   gap: var(--s2);
 }
 
-/* Rows of controls (buttons, selects, inputs side by side) keep one gap. */
-section[aria-label] > div {
+/* Rows of controls (buttons, selects, inputs side by side) keep one gap. Use class="controls". */
+.controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -427,4 +459,153 @@ nav[aria-label='Main'] button {
     flex: none;
     white-space: nowrap;
   }
+}
+
+/* ---- Choice chips: radio groups (race, class, route) ---- */
+
+fieldset.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+}
+
+fieldset.choices > p {
+  flex: 1 0 100%;
+}
+
+fieldset.choices > label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s1) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  cursor: pointer;
+}
+
+fieldset.choices > label:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+fieldset.choices input[type='radio'] {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* ---- Button colours: one meaning per colour ---- */
+
+button.btn-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+button.btn-good {
+  border-color: var(--good);
+  color: var(--good);
+}
+
+button.btn-warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+button.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+button.btn-info {
+  border-color: var(--info);
+  color: var(--info);
+}
+
+button.btn-primary:hover:not(:disabled),
+button.btn-good:hover:not(:disabled),
+button.btn-warn:hover:not(:disabled),
+button.btn-danger:hover:not(:disabled),
+button.btn-info:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+/* ---- Rows: text on the left, actions aligned at the end ---- */
+
+ul.rows {
+  padding: 0;
+  list-style: none;
+}
+
+li.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+li.row + li.row {
+  margin-top: 0;
+}
+
+.row-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.row-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+  min-width: 96px;
+}
+
+.row-note {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ---- Two-column screens ---- */
+
+.split {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1100px) {
+  .split {
+    grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr);
+    align-items: start;
+  }
+}
+
+.sticky-panel {
+  position: sticky;
+  top: var(--s4);
+}
+
+/* ---- Skill web layout ---- */
+
+.skill-web {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+}
+
+.node-preview {
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.node-preview > * + * {
+  margin-top: var(--s2);
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { classIdentity, raceIdentity } from '../../content/heroes.ts'
+import { Row } from '../Row.tsx'
 import { MAX_SLOTS } from '../../persist/save.ts'
 import { xpToNextLevel } from '../../sim/stats.ts'
 import { freeSlots } from '../../persist/roster.ts'
@@ -24,21 +25,27 @@ export function Roster() {
         ) : null}
       </p>
       {save.heroes.length === 0 ? <p>No heroes yet. Create one below.</p> : null}
-      <ul>
+      <ul className="rows">
         {save.heroes.map((hero) => {
           const selected = hero.id === save.selectedHeroId
           return (
-            <li key={hero.id}>
-              <strong>{hero.name}</strong> — {raceIdentity[hero.progress.race].name} {classIdentity[hero.classId].name},
-              level {hero.progress.level} ({hero.progress.xp} / {xpToNextLevel(hero.progress.level)} XP to level {hero.progress.level + 1}){' '}
-              {selected ? (
-                <em>(selected)</em>
-              ) : (
-                <button type="button" onClick={() => setError(chooseHero(hero.id))}>
-                  Select
-                </button>
-              )}
-            </li>
+            <Row
+              key={hero.id}
+              actions={
+                selected ? (
+                  <em>Selected</em>
+                ) : (
+                  <button type="button" className="btn-primary" onClick={() => setError(chooseHero(hero.id))}>
+                    Select
+                  </button>
+                )
+              }
+            >
+              <strong>{hero.name}</strong> — {raceIdentity[hero.progress.race].name} {classIdentity[hero.classId].name}, level {hero.progress.level}
+              <span className="row-note">
+                {hero.progress.xp} / {xpToNextLevel(hero.progress.level)} XP to level {hero.progress.level + 1}
+              </span>
+            </Row>
           )
         })}
       </ul>

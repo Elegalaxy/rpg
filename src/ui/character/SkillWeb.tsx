@@ -92,6 +92,7 @@ export function SkillWeb() {
           <strong>{hero.progress.race.charAt(0).toUpperCase() + hero.progress.race.slice(1)} branch (teal).</strong> {racialIntro[hero.progress.race]}
         </li>
       </ul>
+      <div className="split">
       <svg className="skill-web" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="group" aria-label="Skill web nodes">
         {placed.map(({ view, x, y }) => {
           if (view.node.requires === null) return null
@@ -140,7 +141,7 @@ export function SkillWeb() {
           )
         })}
       </svg>
-      <div aria-label="Node preview">
+      <div className="node-preview sticky-panel" aria-label="Node preview">
         {chosen === null ? (
           <p>Select a node to preview it.</p>
         ) : (
@@ -194,6 +195,7 @@ export function SkillWeb() {
           </>
         )}
         {error !== null ? <p role="alert">{error}</p> : null}
+      </div>
       </div>
     </section>
   )

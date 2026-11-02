@@ -1,3 +1,4 @@
+import { Row } from '../Row.tsx'
 import { useState } from 'react'
 
 import { MAX_ACTIVE_CONTRACTS, contractList } from '../../content/contracts.ts'
@@ -22,38 +23,46 @@ export function Contracts() {
         Active: <strong data-testid="active-count">{active.length}</strong> of {MAX_ACTIVE_CONTRACTS}. Won fights count when an expedition ends, even after a
         defeat. Collect finished contracts here.
       </p>
-      <ul>
+      <ul className="rows">
         {contractList.map((def) => {
           const entry = active.find((item) => item.contractId === def.id)
           const done = entry !== undefined && entry.progress >= def.count
           return (
-            <li key={def.id} data-testid={`contract-${def.id}`}>
-              <strong>{def.name}</strong> — {def.description} Reward: {def.reward.xp} XP, {def.reward.gold} gold, {def.reward.materialQuantity}{' '}
-              {def.reward.materialId}.{' '}
-              {entry !== undefined ? (
-                <span data-testid={`progress-${def.id}`}>
-                  Progress {entry.progress} of {def.count}.
-                </span>
-              ) : null}{' '}
-              {entry === undefined ? (
-                <button
-                  type="button"
-                  disabled={closed || active.length >= MAX_ACTIVE_CONTRACTS}
-                  aria-label={`Accept ${def.name}`}
-                  onClick={() => run(acceptContractFromUi(def.id), `Accepted ${def.name}.`)}
-                >
-                  Accept
-                </button>
-              ) : done ? (
-                <button type="button" disabled={closed} aria-label={`Collect ${def.name}`} onClick={() => run(collectContractFromUi(def.id), `Collected ${def.name}.`)}>
-                  Collect
-                </button>
-              ) : (
-                <button type="button" disabled={closed} aria-label={`Abandon ${def.name}`} onClick={() => run(abandonContractFromUi(def.id), `Abandoned ${def.name}.`)}>
-                  Abandon
-                </button>
-              )}
-            </li>
+            <Row
+              key={def.id}
+              testId={`contract-${def.id}`}
+              actions={
+                entry === undefined ? (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={closed || active.length >= MAX_ACTIVE_CONTRACTS}
+                    aria-label={`Accept ${def.name}`}
+                    onClick={() => run(acceptContractFromUi(def.id), `Accepted ${def.name}.`)}
+                  >
+                    Accept
+                  </button>
+                ) : done ? (
+                  <button type="button" className="btn-good" disabled={closed} aria-label={`Collect ${def.name}`} onClick={() => run(collectContractFromUi(def.id), `Collected ${def.name}.`)}>
+                    Collect
+                  </button>
+                ) : (
+                  <button type="button" className="btn-danger" disabled={closed} aria-label={`Abandon ${def.name}`} onClick={() => run(abandonContractFromUi(def.id), `Abandoned ${def.name}.`)}>
+                    Abandon
+                  </button>
+                )
+              }
+            >
+              <strong>{def.name}</strong> — {def.description}
+              <span className="row-note">
+                Reward: {def.reward.xp} XP, {def.reward.gold} gold, {def.reward.materialQuantity} {def.reward.materialId}.{' '}
+                {entry !== undefined ? (
+                  <span data-testid={`progress-${def.id}`}>
+                    Progress {entry.progress} of {def.count}.
+                  </span>
+                ) : null}
+              </span>
+            </Row>
           )
         })}
       </ul>

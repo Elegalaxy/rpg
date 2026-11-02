@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { itemBases, itemName } from '../../content/items.ts'
+import { Row } from '../Row.tsx'
 import { selectedHero } from '../../persist/character.ts'
 import {
   CRAFT_MATERIAL_COST,
@@ -70,7 +71,7 @@ export function Craft() {
       </p>
 
       <h3>Craft</h3>
-      <div>
+      <div className="controls">
         <label>
           Item{' '}
           <select aria-label="Craft item" value={chosenBase} onChange={(event) => setBaseId(event.target.value)}>
@@ -124,7 +125,7 @@ export function Craft() {
         Quality range: {range === null ? 'none' : `${percent(range.low)} to ${percent(range.high)}`}. Cost: {CRAFT_MATERIAL_COST} {materialId} and{' '}
         {Number.isInteger(level) && level > 0 ? craftGold(level) : '?'} gold. Time: {CRAFT_MS / 1000} seconds.
       </p>
-      <button type="button" disabled={problem !== null} onClick={() => setError(queueCraftFromUi(request))}>
+      <button type="button" className="btn-primary" disabled={problem !== null} onClick={() => setError(queueCraftFromUi(request))}>
         Queue craft
       </button>
       {problem !== null ? <small data-testid="craft-block"> {problem}</small> : null}
@@ -141,18 +142,21 @@ export function Craft() {
         </select>
       </label>
       {save.account.archive.length === 0 ? <p>The archive is empty.</p> : null}
-      <ul>
+      <ul className="rows">
         {save.account.archive.map((item) => {
           const block = upgradeCheck(save, hero, item, upgradeMaterial)
           return (
-            <li key={item.id}>
-              {itemName(item)}, item level {item.itemLevel} — {percent(upgradeChance(item.itemLevel))} chance, {UPGRADE_MATERIAL_COST} {upgradeMaterial} and{' '}
-              {craftGold(item.itemLevel)} gold{' '}
-              <button type="button" disabled={block !== null} aria-label={`Upgrade ${item.id}`} onClick={() => setError(queueUpgradeFromUi(item.id, upgradeMaterial))}>
-                Upgrade
-              </button>
-              {block !== null ? <small> {block}</small> : null}
-            </li>
+            <Row
+              key={item.id}
+              actions={
+                <button type="button" className="btn-primary" disabled={block !== null} aria-label={`Upgrade ${item.id}`} onClick={() => setError(queueUpgradeFromUi(item.id, upgradeMaterial))}>
+                  Upgrade
+                </button>
+              }
+            >
+              {itemName(item)}, item level {item.itemLevel} — {percent(upgradeChance(item.itemLevel))} chance, {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {craftGold(item.itemLevel)} gold
+              {block !== null ? <small className="row-note">{block}</small> : null}
+            </Row>
           )
         })}
       </ul>

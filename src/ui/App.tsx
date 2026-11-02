@@ -198,7 +198,7 @@ export function CombatViewer() {
       <p>
         {view.combat.outcome} at {shownTimeMs(view.combat)} ms
       </p>
-      <div>
+      <div className="controls">
         <label htmlFor="rpg-scenario">Scenario</label>{' '}
         <select
           id="rpg-scenario"
@@ -212,7 +212,7 @@ export function CombatViewer() {
           ))}
         </select>
       </div>
-      <div>
+      <div className="controls">
         <label htmlFor="rpg-seed">Seed</label>{' '}
         <input
           id="rpg-seed"
@@ -223,7 +223,7 @@ export function CombatViewer() {
         />
       </div>
       {view.seedError !== null ? <p role="alert">{view.seedError}</p> : null}
-      <div>
+      <div className="controls">
         <button type="button" onClick={restart}>
           Restart
         </button>{' '}

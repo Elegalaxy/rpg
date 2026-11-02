@@ -93,11 +93,12 @@ export function MapView() {
           </circle>
         ) : null}
       </svg>
-      <fieldset disabled={expedition !== null}>
+      <fieldset className="choices" disabled={expedition !== null}>
         <legend>Route</legend>
         {Object.values(routes).map((route) => (
           <label key={route.id}>
-            <input type="radio" name="rpg-route" checked={routeId === route.id} onChange={() => setRouteId(route.id)} /> {route.name}{' '}
+            <input type="radio" name="rpg-route" checked={routeId === route.id} onChange={() => setRouteId(route.id)} />
+            {route.name}
           </label>
         ))}
       </fieldset>
@@ -121,6 +122,7 @@ export function MapView() {
           <>
             <button
               type="button"
+              className="btn-primary"
               disabled={!start.ok}
               onClick={() => setError(startExpeditionFromUi(routeId))}
             >

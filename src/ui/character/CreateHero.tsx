@@ -26,7 +26,7 @@ export function CreateHero() {
     <section aria-label="Create a hero">
       <h2>Create a hero</h2>
       <form onSubmit={submit}>
-        <div>
+        <div className="controls">
           <label htmlFor="rpg-hero-name">Name</label>{' '}
           <input
             id="rpg-hero-name"
@@ -40,7 +40,7 @@ export function CreateHero() {
             aria-invalid={name.length > 0 && nameProblem(name, save) !== null}
           />
         </div>
-        <fieldset>
+        <fieldset className="choices">
           <legend>Race</legend>
           {HERO_RACES.map((id) => (
             <label key={id}>
@@ -52,7 +52,7 @@ export function CreateHero() {
             <strong>{race_.name}.</strong> {race_.summary} <em>{race_.core}</em>
           </p>
         </fieldset>
-        <fieldset>
+        <fieldset className="choices">
           <legend>Class</legend>
           {HERO_CLASSES.map((id) => (
             <label key={id}>

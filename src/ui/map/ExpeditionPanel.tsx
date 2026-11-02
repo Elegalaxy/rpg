@@ -58,7 +58,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   return (
     <section aria-label="Preparation">
       <h3>Preparation — {hero.name}</h3>
-      <div>
+      <div className="controls">
         <label>
           Retreat when HP is at most (%){' '}
           <input
@@ -74,7 +74,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </small>
       </div>
       {hero.classId === 'cleric' ? (
-        <div>
+        <div className="controls">
           <label>
             Vow{' '}
             <select aria-label="Vow" value={draft.vow} onChange={(event) => patch({ vow: event.target.value })}>
@@ -89,7 +89,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </div>
       ) : null}
       {canPickCurse(hero) ? (
-        <div>
+        <div className="controls">
           <label>
             Curse{' '}
             <select aria-label="Curse" value={draft.curse} onChange={(event) => patch({ curse: event.target.value })}>
@@ -104,7 +104,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </div>
       ) : null}
       {hero.classId === 'ranger' ? (
-        <div>
+        <div className="controls">
           <label>
             Special arrows in the quiver{' '}
             <input
@@ -118,7 +118,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           <small>0 to {limit}.</small>
         </div>
       ) : null}
-      <div>
+      <div className="controls">
         <label>
           Gold to carry{' '}
           <input
@@ -132,7 +132,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         <small>The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</small>
       </div>
       {hero.echoRank > 0 ? (
-        <div>
+        <div className="controls">
           <label>
             Fractured Warden Echo rank{' '}
             <input

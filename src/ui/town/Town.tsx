@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
+import { Row } from '../Row.tsx'
 import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
 import { wearerOf } from '../../persist/equipment.ts'
 import { selectedHero } from '../../persist/character.ts'
@@ -59,52 +60,75 @@ export function Town({ part }: { part: TownPart }) {
         <>
       <h3>Sell materials</h3>
       {materials.length === 0 ? <p>You have no materials.</p> : null}
-      <ul>
+      <ul className="rows">
         {materials.map(([id, quantity]) => (
-          <li key={id}>
-            {quantity} {id} ({MATERIAL_SELL_PRICE[id] ?? 0} gold each){' '}
-            <button type="button" disabled={closed} aria-label={`Sell 1 ${id}`} onClick={() => run(sellMaterialFromUi(id, 1), `Sold 1 ${id}.`)}>
-              Sell 1
-            </button>{' '}
-            <button
-              type="button"
-              disabled={closed}
-              aria-label={`Sell all ${id}`}
-              onClick={() => run(sellMaterialFromUi(id, quantity), `Sold ${quantity} ${id}.`)}
-            >
-              Sell all
-            </button>
-          </li>
+          <Row
+            key={id}
+            actions={
+              <>
+                <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell 1 ${id}`} onClick={() => run(sellMaterialFromUi(id, 1), `Sold 1 ${id}.`)}>
+                  Sell 1
+                </button>
+                <button
+                  type="button"
+                  className="btn-warn"
+                  disabled={closed}
+                  aria-label={`Sell all ${id}`}
+                  onClick={() => run(sellMaterialFromUi(id, quantity), `Sold ${quantity} ${id}.`)}
+                >
+                  Sell all
+                </button>
+              </>
+            }
+          >
+            {quantity} {id} ({MATERIAL_SELL_PRICE[id] ?? 0} gold each)
+          </Row>
         ))}
       </ul>
 
       <h3>Worn gear</h3>
       {hero === null ? <p>Select a hero to see what they wear.</p> : null}
-      <ul>
+      <ul className="rows">
         {hero === null
           ? null
           : Object.values(hero.equipment).flatMap((item) =>
-              item === null ? [] : [
-                <li key={item.id}>
-                  {itemName(item)}, item level {item.itemLevel} — sells for {itemSellPrice(item)} gold{' '}
-                  <button type="button" disabled={closed} aria-label={`Sell worn ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}. Fill the slot before the next expedition.`)}>
-                    Sell
-                  </button>
-                </li>,
-              ],
+              item === null
+                ? []
+                : [
+                    <Row
+                      key={item.id}
+                      actions={
+                        <button
+                          type="button"
+                          className="btn-warn"
+                          disabled={closed}
+                          aria-label={`Sell worn ${item.id}`}
+                          onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}. Fill the slot before the next expedition.`)}
+                        >
+                          Sell
+                        </button>
+                      }
+                    >
+                      {itemName(item)}, item level {item.itemLevel} — sells for {itemSellPrice(item)} gold
+                    </Row>,
+                  ],
             )}
       </ul>
 
       <h3>Archive</h3>
       {save.account.archive.length === 0 ? <p>The archive is empty.</p> : null}
-      <ul>
+      <ul className="rows">
         {save.account.archive.map((item) => (
-          <li key={item.id}>
-            {itemName(item)}, item level {item.itemLevel}, quality {Math.round(item.quality * 100)}% — sells for {itemSellPrice(item)} gold{' '}
-            <button type="button" disabled={closed} aria-label={`Sell ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}.`)}>
-              Sell
-            </button>
-          </li>
+          <Row
+            key={item.id}
+            actions={
+              <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}.`)}>
+                Sell
+              </button>
+            }
+          >
+            {itemName(item)}, item level {item.itemLevel}, quality {Math.round(item.quality * 100)}% — sells for {itemSellPrice(item)} gold
+          </Row>
         ))}
       </ul>
 
@@ -116,19 +140,24 @@ export function Town({ part }: { part: TownPart }) {
       {hero === null ? (
         <p>Select a hero to see what the shop has at their level.</p>
       ) : (
-        <ul>
+        <ul className="rows">
           {shopStock(hero.progress.level, wearerOf(hero)).map((entry) => (
-            <li key={entry.baseId}>
-              {entry.name}, item level {entry.itemLevel}, quality 100% — {entry.price} gold{' '}
-              <button
-                type="button"
-                disabled={closed || save.account.gold < entry.price}
-                aria-label={`Buy ${entry.baseId}`}
-                onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}.`)}
-              >
-                Buy
-              </button>
-            </li>
+            <Row
+              key={entry.baseId}
+              actions={
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={closed || save.account.gold < entry.price}
+                  aria-label={`Buy ${entry.baseId}`}
+                  onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}.`)}
+                >
+                  Buy
+                </button>
+              }
+            >
+              {entry.name}, item level {entry.itemLevel}, quality 100% — {entry.price} gold
+            </Row>
           ))}
         </ul>
       )}
@@ -140,24 +169,29 @@ export function Town({ part }: { part: TownPart }) {
         <>
       <h3>Repair</h3>
       {damaged.length === 0 ? <p>Nothing is damaged.</p> : null}
-      <ul>
+      <ul className="rows">
         {damaged.map((item) => (
-          <li key={item.id}>
+          <Row
+            key={item.id}
+            actions={
+              <button
+                type="button"
+                className="btn-good"
+                disabled={closed || save.account.gold < repairCost(item)}
+                aria-label={`Repair ${item.id}`}
+                onClick={() => run(repairOneFromUi(item.id), `Repaired ${itemName(item)}.`)}
+              >
+                Repair
+              </button>
+            }
+          >
             {itemName(item)} {item.durability}/{item.maxDurability}
-            {item.durability === 0 ? ' (disabled)' : ''} — {repairCost(item)} gold{' '}
-            <button
-              type="button"
-              disabled={closed || save.account.gold < repairCost(item)}
-              aria-label={`Repair ${item.id}`}
-              onClick={() => run(repairOneFromUi(item.id), `Repaired ${itemName(item)}.`)}
-            >
-              Repair
-            </button>
-          </li>
+            {item.durability === 0 ? ' (disabled)' : ''} — {repairCost(item)} gold
+          </Row>
         ))}
       </ul>
       {hero !== null && repairAllCost(hero) > 0 ? (
-        <button type="button" disabled={closed || save.account.gold < repairAllCost(hero)} onClick={() => run(repairAllFromUi(), 'Repaired everything equipped.')}>
+        <button type="button" className="btn-good" disabled={closed || save.account.gold < repairAllCost(hero)} onClick={() => run(repairAllFromUi(), 'Repaired everything equipped.')}>
           Repair everything equipped ({repairAllCost(hero)} gold)
         </button>
       ) : null}
@@ -166,13 +200,14 @@ export function Town({ part }: { part: TownPart }) {
       {save.account.debt === 0 ? (
         <p>You owe nothing.</p>
       ) : (
-        <div>
+        <div className="controls">
           <label>
             Pay{' '}
             <input aria-label="Debt payment" value={pay} inputMode="numeric" size={5} onChange={(event) => setPay(event.target.value)} />
           </label>{' '}
           <button
             type="button"
+            className="btn-good"
             disabled={closed}
             onClick={() => {
               run(payDebtFromUi(Number(pay.trim())), `Paid ${Math.min(Number(pay.trim()), save.account.debt)} gold of debt.`)
