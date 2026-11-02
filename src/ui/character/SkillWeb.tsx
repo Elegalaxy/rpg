@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { classWebIntro, clusterIntro, racialIntro } from '../../content/webs/intro.ts'
+import { nodeText } from '../../content/webs/nodeText.ts'
 import { confirmationText, nodeViews, selectedHero, type NodeView } from '../../persist/character.ts'
 import { takeNodeFromUi, useSaveStatus } from '../store.ts'
 
@@ -23,6 +25,11 @@ function place(views: NodeView[]): Placed[] {
     const column = view.kind === 'racial' ? clusters.length : clusters.indexOf(view.node.cluster)
     return { view, x: COLUMN_X + column * COLUMN_GAP, y: ROW_Y + (view.node.index - 1) * ROW_GAP }
   })
+}
+
+function nodeDescription(id: string): string {
+  const text = nodeText[id] ?? ''
+  return text.length === 0 ? '' : text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 function stateOf(view: NodeView): 'allocated' | 'available' | 'blocked' | 'locked' {
@@ -73,6 +80,17 @@ export function SkillWeb() {
         Skill points: <strong data-testid="skill-points">{points}</strong>. Class clusters are blue; the racial branch is
         teal.
       </p>
+      <p data-testid="web-intro">{classWebIntro[hero.classId]}</p>
+      <ul aria-label="Clusters" data-testid="cluster-intros">
+        {Object.entries(clusterIntro[hero.classId]).map(([name, text]) => (
+          <li key={name}>
+            <strong>{name}.</strong> {text}
+          </li>
+        ))}
+        <li>
+          <strong>{hero.progress.race.charAt(0).toUpperCase() + hero.progress.race.slice(1)} branch (teal).</strong> {racialIntro[hero.progress.race]}
+        </li>
+      </ul>
       <svg className="skill-web" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="group" aria-label="Skill web nodes">
         {placed.map(({ view, x, y }) => {
           if (view.node.requires === null) return null
@@ -113,6 +131,7 @@ export function SkillWeb() {
               ) : (
                 <circle cx={x} cy={y} r={15} />
               )}
+              <title>{`${view.node.name}: ${nodeDescription(view.node.id)}`}</title>
               <text x={x} y={y + 30} textAnchor="middle">
                 {view.node.name}
               </text>
@@ -128,6 +147,9 @@ export function SkillWeb() {
             <h3>
               {chosen.node.name} {chosen.node.keystone ? '(keystone)' : chosen.kind === 'racial' ? '(racial)' : ''}
             </h3>
+            <p data-testid="node-description" style={{ whiteSpace: 'pre-line' }}>
+              {nodeDescription(chosen.node.id)}
+            </p>
             <ul>
               <li>Cluster: {chosen.node.cluster}</li>
               <li>Cost: 1 skill point</li>
