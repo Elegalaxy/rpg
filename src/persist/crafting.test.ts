@@ -43,7 +43,7 @@ function hero(save: SaveData) {
   return found
 }
 
-const bow = { baseId: 'weapon-bow', itemLevel: 1, materialId: 'shard', modifierId: null }
+const bow = { baseId: 'weapon-one-handed', itemLevel: 1, materialId: 'shard', modifierId: null }
 
 function finish(save: SaveData): SaveData {
   return advanceCrafting(save, CRAFT_MS * 5).save
@@ -94,6 +94,7 @@ describe('queueing a craft', () => {
       reason: 'Item level 3 needs hero level 3. This hero is level 2.',
     })
     expect(queueCraft(stocked(), 'hero-1', { ...bow, baseId: 'nothing' }).ok).toBe(false)
+    expect(queueCraft(stocked(), 'hero-1', { ...bow, baseId: 'weapon-bow' })).toEqual({ ok: false, reason: 'Bow cannot be used by a warrior.' })
     expect(queueCraft(stocked(), 'hero-1', { ...bow, materialId: 'iron' }).ok).toBe(false)
     expect(queueCraft(stocked(), 'hero-1', { ...bow, itemLevel: 0 }).ok).toBe(false)
     expect(queueCraft(stocked(), 'nobody', bow).ok).toBe(false)
@@ -124,17 +125,17 @@ describe('crafting time', () => {
   it('advances only the first job, keeps the leftover time, and finishes in order', () => {
     let save = stocked()
     save = ok(queueCraft(save, 'hero-1', bow))
-    save = ok(queueCraft(save, 'hero-1', { ...bow, baseId: 'weapon-dagger' }))
+    save = ok(queueCraft(save, 'hero-1', { ...bow, baseId: 'weapon-two-handed' }))
     const half = advanceCrafting(save, 10_000)
     expect(half.finished).toEqual([])
     expect(half.save.account.craftQueue.map((job) => job.remainingMs)).toEqual([20_000, 30_000])
     const first = advanceCrafting(half.save, 25_000)
     expect(first.finished).toHaveLength(1)
     expect(first.save.account.craftQueue.map((job) => job.remainingMs)).toEqual([25_000])
-    expect(first.save.account.archive.map((item) => item.baseId)).toEqual(['weapon-bow'])
+    expect(first.save.account.archive.map((item) => item.baseId)).toEqual(['weapon-one-handed'])
     const both = advanceCrafting(first.save, 25_000)
     expect(both.finished).toHaveLength(1)
-    expect(both.save.account.archive.map((item) => item.baseId)).toEqual(['weapon-bow', 'weapon-dagger'])
+    expect(both.save.account.archive.map((item) => item.baseId)).toEqual(['weapon-one-handed', 'weapon-two-handed'])
     expect(both.save.account.craftQueue).toEqual([])
     expect(advanceCrafting(both.save, 1000).finished).toEqual([])
     const one = advanceCrafting(save, 70_000)
@@ -146,7 +147,7 @@ describe('crafting time', () => {
     const save = ok(queueCraft(stocked(), 'hero-1', { ...bow, materialId: 'hide', modifierId: 'keen' }))
     const done = finish(save)
     const item = done.account.archive[0]!
-    expect(item).toMatchObject({ id: 'craft-1', baseId: 'weapon-bow', itemLevel: 1, modifiers: ['keen'], durability: 100 })
+    expect(item).toMatchObject({ id: 'craft-1', baseId: 'weapon-one-handed', itemLevel: 1, modifiers: ['keen'], durability: 100 })
     expect(item.quality).toBeGreaterThanOrEqual(0.95)
     expect(item.quality).toBeLessThanOrEqual(1.05)
     expect(hero(done).craftXp).toBe(1)

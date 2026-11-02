@@ -1,7 +1,8 @@
 import { itemBase } from '../content/items.ts'
-import { ITEM_MODIFIERS, type ItemInstance } from '../sim/economy.ts'
+import { ITEM_MODIFIERS, classBlock, type ItemInstance } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
+import { wearerOf } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import type { CraftJob, SaveData, SavedHero } from './save.ts'
 
@@ -90,7 +91,10 @@ export function craftCheck(save: SaveData, hero: SavedHero, request: CraftReques
   const shut = closed(save)
   if (shut !== null) return shut
   if (save.account.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
-  if (itemBase(request.baseId) === undefined) return 'Pick something to craft.'
+  const base = itemBase(request.baseId)
+  if (base === undefined) return 'Pick something to craft.'
+  const classProblem = classBlock(wearerOf(hero), base)
+  if (classProblem !== null) return classProblem
   if (!Number.isInteger(request.itemLevel) || request.itemLevel < 1) return 'Item level must be a whole number of at least 1.'
   if (request.itemLevel > hero.progress.level) {
     return `Item level ${request.itemLevel} needs hero level ${request.itemLevel}. This hero is level ${hero.progress.level}.`

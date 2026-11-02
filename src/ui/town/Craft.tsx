@@ -15,7 +15,8 @@ import {
   upgradeChance,
   upgradeCheck,
 } from '../../persist/crafting.ts'
-import { ITEM_MODIFIERS } from '../../sim/economy.ts'
+import { wearerOf } from '../../persist/equipment.ts'
+import { ITEM_MODIFIERS, classBlock } from '../../sim/economy.ts'
 import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
 
 const MATERIALS = Object.keys(MATERIAL_QUALITY)
@@ -45,8 +46,10 @@ export function Craft() {
 
   const rank = proficiencyRank(hero.craftXp)
   const level = levelText.trim() === '' ? hero.progress.level : Number(levelText.trim())
+  const craftable = Object.values(itemBases).filter((base) => classBlock(wearerOf(hero), base) === null)
+  const chosenBase = craftable.some((base) => base.id === baseId) ? baseId : (craftable[0]?.id ?? baseId)
   const range = qualityRange(materialId, rank)
-  const request = { baseId, itemLevel: level, materialId, modifierId: modifierId === '' ? null : modifierId }
+  const request = { baseId: chosenBase, itemLevel: level, materialId, modifierId: modifierId === '' ? null : modifierId }
   const problem = craftCheck(save, hero, request)
   const notices = getCraftNotices()
 
@@ -70,8 +73,8 @@ export function Craft() {
       <div>
         <label>
           Item{' '}
-          <select aria-label="Craft item" value={baseId} onChange={(event) => setBaseId(event.target.value)}>
-            {Object.values(itemBases).map((base) => (
+          <select aria-label="Craft item" value={chosenBase} onChange={(event) => setBaseId(event.target.value)}>
+            {craftable.map((base) => (
               <option key={base.id} value={base.id}>
                 {base.name}
               </option>
@@ -80,7 +83,18 @@ export function Craft() {
         </label>{' '}
         <label>
           Item level{' '}
-          <input aria-label="Craft item level" value={levelText} placeholder={String(hero.progress.level)} size={3} onChange={(event) => setLevelText(event.target.value)} />
+          <input
+            aria-label="Craft item level"
+            type="number"
+            min={1}
+            max={hero.progress.level}
+            value={levelText}
+            placeholder={String(hero.progress.level)}
+            onChange={(event) => {
+              const typed = event.target.value.trim()
+              setLevelText(typed === '' ? '' : String(Math.min(hero.progress.level, Math.max(1, Math.floor(Number(typed) || 1)))))
+            }}
+          />
         </label>{' '}
         <label>
           Material{' '}
