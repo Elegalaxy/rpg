@@ -2,9 +2,9 @@
 .outcome-card {
   margin-top: 16px;
   padding: 10px;
-  border: 1px solid #c8c8c8;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fafafa;
+  background: var(--panel);
 }
 
 .log-panel h2,
@@ -61,7 +61,7 @@
 }
 
 .log-row[data-expanded='true'] .log-row-button {
-  background: #eee;
+  background: var(--chip);
 }
 
 .log-payload {

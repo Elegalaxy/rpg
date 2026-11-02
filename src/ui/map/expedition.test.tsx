@@ -8,6 +8,7 @@ import {
   createHeroFromUi,
   expeditionSpeed,
   expeditionWaiting,
+  getFinishedFights,
   getSaveStatus,
   pushOnFromUi,
   returnFromUi,
@@ -127,5 +128,19 @@ describe('the expedition panel', () => {
     expect(expeditionSpeed()).toBe(TRAVEL_SPEEDUP)
     advanceUntil(() => expedition().combat !== null)
     expect(expeditionSpeed()).toBe(1)
+  })
+
+  it('keeps each finished fight with its log after the fight panel closes', () => {
+    commitSave({ ...getSaveStatus().save, expedition: null }, 'test reset')
+    seeds([5])
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    expect(getFinishedFights()).toEqual([])
+    advanceUntil(() => expedition().history.length >= 1)
+    const kept = getFinishedFights()
+    expect(kept).toHaveLength(1)
+    expect(kept[0]?.fight).toBe(1)
+    expect(kept[0]?.combat.log.length).toBeGreaterThan(0)
+    expect(kept[0]?.combat.outcome).not.toBe('ongoing')
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Past fights')
   })
 })

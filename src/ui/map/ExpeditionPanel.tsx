@@ -23,6 +23,7 @@ import {
   savePreparationFromUi,
   settleExpeditionFromUi,
   expeditionWaiting,
+  getFinishedFights,
   TRAVEL_SPEEDUP,
   useSaveStatus,
 } from '../store.ts'
@@ -169,6 +170,36 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   )
 }
 
+/** The fights already finished on this run, so a result can be read in detail after the fight panel closes. */
+function PastFights() {
+  const fights = getFinishedFights()
+  const [chosen, setChosen] = useState<number | null>(null)
+  if (fights.length === 0) return null
+  const shown = fights.find((entry) => entry.fight === chosen) ?? fights[fights.length - 1]
+  if (shown === undefined) return null
+  return (
+    <section aria-label="Past fights">
+      <h3>Past fights</h3>
+      <label>
+        Fight{' '}
+        <select value={shown.fight} onChange={(event) => setChosen(Number(event.target.value))} aria-label="Past fight">
+          {fights.map((entry) => (
+            <option key={entry.fight} value={entry.fight}>
+              Fight {entry.fight}: {encounterLabel(entry.encounterId)} ({entry.combat.outcome})
+            </option>
+          ))}
+        </select>
+      </label>
+      <CombatPanel combat={shown.combat} queueError={null} />
+      <LogPanel log={shown.combat.log} />
+    </section>
+  )
+}
+
+function encounterLabel(id: string): string {
+  return id.replace(/-/g, ' ')
+}
+
 function lootLine(stacks: readonly { materialId: string; quantity: number }[]): string {
   return stacks.length === 0 ? 'none' : stacks.map((stack) => `${stack.quantity} ${stack.materialId}`).join(', ')
 }
@@ -225,7 +256,9 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
           <CombatPanel combat={expedition.combat} queueError={null} />
           <LogPanel log={expedition.combat.log} />
         </>
-      ) : null}
+      ) : (
+        <PastFights />
+      )}
     </section>
   )
 }
@@ -243,6 +276,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
       <button type="button" onClick={settleExpeditionFromUi}>
         Return to town
       </button>
+      <PastFights />
     </section>
   )
 }

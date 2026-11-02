@@ -327,6 +327,17 @@ export function expeditionWaiting(): boolean {
   return expedition !== null && shouldHold(expedition, pushedAt)
 }
 
+/** A fight that has ended, kept so its log and final state can be read after the panel moves on. */
+export type FinishedFight = { fight: number; encounterId: string; combat: CombatState }
+
+const KEPT_FIGHTS = 10
+let finishedFights: FinishedFight[] = []
+
+/** The most recent finished fights of this run, oldest first. Kept in memory only: a reload clears them. */
+export function getFinishedFights(): readonly FinishedFight[] {
+  return finishedFights
+}
+
 /** Advance the running expedition by this many simulation steps. The clock calls this each frame. */
 export function advanceExpedition(count: number): void {
   const expedition = saveStatus.save.expedition
@@ -335,7 +346,15 @@ export function advanceExpedition(count: number): void {
   const phase = expedition.phase
   for (let index = 0; index < count; index += 1) {
     if (shouldHold(expedition, pushedAt)) break
+    const inFight = expedition.combat
+    const before = expedition.history.length
     stepExpedition(expedition, defs)
+    if (inFight !== null && expedition.history.length > before) {
+      const entry = expedition.history[expedition.history.length - 1]
+      if (entry !== undefined) {
+        finishedFights = [...finishedFights, { fight: entry.index + 1, encounterId: entry.encounterId, combat: inFight }].slice(-KEPT_FIGHTS)
+      }
+    }
     if (expedition.outcome !== 'ongoing') break
   }
   const moved = expedition.history.length !== fights || expedition.phase !== phase || expedition.outcome !== 'ongoing'
@@ -389,6 +408,7 @@ export function startExpeditionFromUi(routeId: string): string | null {
   const begun = beginExpedition(saveStatus.save, routeId, seed)
   if (!begun.ok) return begun.reason
   pushedAt = null
+  finishedFights = []
   debugLog('[ui]', 'expedition start', { routeId, seed })
   commitSave(begun.save, 'expedition start')
   expeditionLoop.resetClock()

@@ -2,7 +2,7 @@
 
 Status: living plan, Step 0.1 verified  
 Last updated: 2026-10-24  
-Next step: Step 11.2  
+Next step: none (all steps verified). Choose what comes next.  
 Design source of truth: [GAME_DESIGN.md](GAME_DESIGN.md). Section numbers below (for example §7) refer to that document.  
 Portfolio brief: [docs/ideas/incremental-rpg.md](../../docs/ideas/incremental-rpg.md)
 
@@ -882,7 +882,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-01: Verified. `src/persist/walkthrough.test.ts` plays a boosted hero through the Splintered Road, the Grove and the Bastion with the same persist calls the UI makes (begin, fight, return, settle) and shows the Fracture Gate route then starts with a Warden fight, so no step needs a dev tool. `npm test` (640 tests), `npm run typecheck`, `npm run lint` passed. In the dev server on a cleared profile: the welcome screen showed, creating Ash moved to the Heroes tab with the header, Go took me to the Map, and Start expedition began a run. Not done: a hand playthrough of the whole route to the Warden, because the browser pane throttles the clock; the user's playtest in Step 11.2 covers it. The page is still unstyled.
 
 ### Step 11.2: Success-criteria playtest
-- Status: `done`
+- Status: `verified`
 - Depends on: 11.1
 - Files: this plan (Progress), `rpg/doc/GAME_DESIGN.md` (findings and open questions), `docs/ideas/incremental-rpg.md` (status, only if it changes)
 - Change: The user plays through the ten §15 success criteria. Run the `combos` and `reference` matrices for a preliminary balance check. Record the findings.
@@ -895,6 +895,8 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-02: Playtest feedback: the roster and the header now show XP as `current / needed` (`xpToNextLevel`), so the player can see how far the next level is. Tests, typecheck, lint pass.
   - 2026-11-02: Playtest feedback: hard class gear limit, decided as a general recommendation (GAME_DESIGN §9, class gear rule). `classBlock` and `Wearer` in `src/sim/economy.ts`; `equipBlock`/`equipItem` take the wearer, `wearerOf` in `src/persist/equipment.ts` builds it (Cross-Training lifts the rule), `buyItem` refuses off-class gear, and `shopStock(level, wearer)` lists only usable gear. Starter gear is allowed for every class (tested). Generic equip tests now use a Cross-Trained hero, and new tests cover the rule. 644 tests, typecheck, lint pass; duel-basic seed 42 still 20688 ms. Open: the two-handed weapon has no class that can use it, and no skill-web node unlocks off-class gear yet.
   - 2026-11-02: Fix: the class gear rule had locked Warriors out of the two-handed weapon that Reckless Strike requires. `CLASS_PREFERENCE.warrior.weapons` now includes `twoHanded`. This closes the open item above: the two-handed weapon is the Warrior's, and Reckless Strike is reachable again. 644 tests pass, duel-basic still 20688 ms, combos errors 0.
+  - 2026-11-02: User playtest results for the criteria that needed play. 2 pass (race and class identity is clear). 5 pass with a note (combat is readable, but the fight panel closed the moment a fight ended, so the result could not be read in detail). 6 pass (the log explains outcomes). 7 pass (return versus push is a real decision). 10 pass (interesting enough to repeat). With the five machine-checked criteria (1, 3, 4, 8, 9) all ten §15 criteria pass.
+  - 2026-11-02: Follow-ups from the note and a question. Past fights: `src/ui/store.ts` keeps the last 10 finished fights of the run in memory (`getFinishedFights`, cleared when a new run starts and on reload), and the expedition panel shows a `Past fights` section with a fight picker, the final combat panel, and the full log, both between fights and on the outcome screen. Dark mode: `src/ui/theme.css` defines colour variables for light and dark, the combat and log panels use them, and a Theme selector (System, Light, Dark) in `App.tsx` stores the choice with `src/ui/theme.ts`. Test added; 645 tests, typecheck, lint pass; browser check set the dark theme and the page colours changed. Not saved: past fight logs do not survive a reload. Not restyled: the SVG map and skill web already use dark colours.
 ---
 
 ## 8. Risks, and what would reveal them early

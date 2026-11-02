@@ -10,9 +10,9 @@
   box-sizing: border-box;
   width: 260px;
   padding: 10px;
-  border: 1px solid #c8c8c8;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fafafa;
+  background: var(--panel);
 }
 
 .actor-card[data-side='hero'] {
@@ -93,7 +93,7 @@
   height: 8px;
   margin-top: 2px;
   overflow: hidden;
-  background: #e4e4e4;
+  background: var(--track);
   border-radius: 4px;
 }
 
@@ -139,9 +139,9 @@
   align-items: center;
   min-height: 1.6rem;
   padding: 2px 6px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background: #fff;
+  background: var(--panel-2);
 }
 
 .skill-queue {
@@ -157,7 +157,7 @@
 }
 
 .skill-queue-error {
-  color: #8a3d3d;
+  color: var(--danger);
 }
 
 .cooldown-overlay {
@@ -180,9 +180,9 @@
 
 .status-badge {
   padding: 2px 6px;
-  border: 1px solid #b9b9b9;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
+  background: var(--panel-2);
   font-size: 0.75rem;
 }
 

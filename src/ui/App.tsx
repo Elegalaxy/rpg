@@ -19,6 +19,7 @@ import { Craft } from './town/Craft.tsx'
 import { Legacy } from './character/Legacy.tsx'
 import { Town } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
+import { applyTheme, storedTheme, type ThemeChoice } from './theme.ts'
 import { debugLog } from './debug.ts'
 import { LogPanel } from './log/LogPanel.tsx'
 import { ExpeditionPanel } from './map/ExpeditionPanel.tsx'
@@ -57,6 +58,27 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'map', label: 'Map' },
   { id: 'combat', label: 'Combat viewer' },
 ]
+
+function ThemeSwitch() {
+  const [choice, setChoice] = useState<ThemeChoice>(storedTheme)
+  return (
+    <label>
+      Theme{' '}
+      <select
+        value={choice}
+        onChange={(event) => {
+          const next = event.target.value as ThemeChoice
+          setChoice(next)
+          applyTheme(next)
+        }}
+      >
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </label>
+  )
+}
 
 function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
   const hero = selectedHero(save)
@@ -156,6 +178,7 @@ function App() {
   return (
     <>
       <h1>RPG</h1>
+      <ThemeSwitch />
       {saved.loadError !== null ? (
         <div role="alert">
           <p>
