@@ -203,3 +203,121 @@
 .actor-card.is-acting {
   animation: act-bump 180ms ease-out;
 }
+
+/* ---- Fight view: result header, hero versus enemies, log beside or below ---- */
+
+.fight {
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.fight[data-state='victory'] {
+  border-color: var(--good);
+}
+
+.fight[data-state='defeat'] {
+  border-color: var(--danger);
+}
+
+.fight[data-state='live'] {
+  border-color: var(--accent);
+}
+
+.fight-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2) var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.fight-badge {
+  padding: var(--s1) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.fight[data-state='victory'] .fight-badge {
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.fight[data-state='defeat'] .fight-badge {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.fight[data-state='live'] .fight-badge {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fight-body {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1280px) {
+  .fight-body {
+    grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+    align-items: start;
+  }
+
+  .fight-log .log-panel {
+    max-height: 560px;
+    overflow-y: auto;
+  }
+}
+
+.fight-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+.fight-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+.fight-vs {
+  align-self: center;
+  color: var(--muted);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+}
+
+.fight-field .actor-card {
+  margin: 0;
+}
+
+.fight-log .log-panel {
+  margin-top: 0;
+}
+
+.fight-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+
+.actor-card[data-side='hero'] {
+  border-color: var(--good);
+}
+
+.actor-card[data-side='enemy'] {
+  border-color: var(--danger);
+}
+
+.actor-card[data-alive='false'] {
+  opacity: 0.6;
+}

@@ -142,7 +142,7 @@ describe('the expedition panel', () => {
     expect(kept[0]?.fight).toBe(1)
     expect(kept[0]?.combat.log.length).toBeGreaterThan(0)
     expect(kept[0]?.combat.outcome).not.toBe('ongoing')
-    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Past fights')
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Fights of this run')
   })
 
   it('settles a finished run and starts the same route again', () => {

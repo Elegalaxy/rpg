@@ -15,8 +15,7 @@ import { outcomeSummary } from '../../persist/world.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
-import { CombatPanel } from '../combat/CombatPanel.tsx'
-import { LogPanel } from '../log/LogPanel.tsx'
+import { FightView } from '../combat/FightView.tsx'
 import {
   pushOnFromUi,
   returnFromUi,
@@ -171,28 +170,40 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   )
 }
 
-/** The fights already finished on this run, so a result can be read in detail after the fight panel closes. */
-function PastFights() {
+/**
+ * The fight area of a run. It follows the live fight, and the same view then stays on the fight that
+ * just ended, so the result never snaps away. Chips above it open any earlier fight of the run.
+ */
+function FightArea({ live }: { live: ExpeditionState['combat'] }) {
   const fights = getFinishedFights()
-  const [chosen, setChosen] = useState<number | null>(null)
-  if (fights.length === 0) return null
-  const shown = fights.find((entry) => entry.fight === chosen) ?? fights[fights.length - 1]
-  if (shown === undefined) return null
+  const [chosen, setChosen] = useState<number | 'follow'>('follow')
+  const latest = fights[fights.length - 1]
+  const picked = chosen === 'follow' ? undefined : fights.find((entry) => entry.fight === chosen)
+  const showLive = live !== null && picked === undefined
+  if (live === null && fights.length === 0) return null
+  const shown = picked ?? (showLive ? undefined : latest)
   return (
-    <section aria-label="Past fights">
-      <h3>Past fights</h3>
-      <label>
-        Fight{' '}
-        <select value={shown.fight} onChange={(event) => setChosen(Number(event.target.value))} aria-label="Past fight">
-          {fights.map((entry) => (
-            <option key={entry.fight} value={entry.fight}>
-              Fight {entry.fight}: {encounterLabel(entry.encounterId)} ({entry.combat.outcome})
-            </option>
-          ))}
-        </select>
-      </label>
-      <CombatPanel combat={shown.combat} queueError={null} />
-      <LogPanel log={shown.combat.log} />
+    <section aria-label="Fights">
+      <div className="fight-tabs" role="group" aria-label="Fights of this run">
+        {fights.map((entry) => (
+          <button
+            key={entry.fight}
+            type="button"
+            className={entry.combat.outcome === 'victory' ? 'btn-good' : 'btn-danger'}
+            aria-pressed={shown !== undefined && shown.fight === entry.fight}
+            onClick={() => setChosen(entry.fight)}
+          >
+            Fight {entry.fight}
+          </button>
+        ))}
+        {live !== null ? (
+          <button type="button" className="btn-primary" aria-pressed={showLive} onClick={() => setChosen('follow')}>
+            Live
+          </button>
+        ) : null}
+      </div>
+      {showLive && live !== null ? <FightView combat={live} title={`Fight ${fights.length + 1}`} /> : null}
+      {shown !== undefined ? <FightView combat={shown.combat} title={`Fight ${shown.fight}: ${encounterLabel(shown.encounterId)}`} /> : null}
     </section>
   )
 }
@@ -252,14 +263,6 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         </p>
       )}
       {error !== null ? <p role="alert">{error}</p> : null}
-      {expedition.combat !== null ? (
-        <>
-          <CombatPanel combat={expedition.combat} queueError={null} />
-          <LogPanel log={expedition.combat.log} />
-        </>
-      ) : (
-        <PastFights />
-      )}
     </section>
   )
 }
@@ -282,7 +285,6 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
         Return and run this route again
       </button>
       {error !== null ? <p role="alert">{error}</p> : null}
-      <PastFights />
     </section>
   )
 }
@@ -292,7 +294,12 @@ export function ExpeditionPanel() {
   const hero = selectedHero(save)
   const expedition = save.expedition
   if (expedition !== null) {
-    return expedition.outcome === 'ongoing' ? <Running expedition={expedition} /> : <Ended expedition={expedition} />
+    return (
+      <>
+        {expedition.outcome === 'ongoing' ? <Running expedition={expedition} /> : <Ended expedition={expedition} />}
+        <FightArea live={expedition.combat} />
+      </>
+    )
   }
   if (hero === null) return null
   return <PreparationForm key={hero.id} hero={hero} />
