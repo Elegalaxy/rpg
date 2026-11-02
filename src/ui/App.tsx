@@ -20,7 +20,7 @@ import { Craft } from './town/Craft.tsx'
 import { Legacy } from './character/Legacy.tsx'
 import { Town } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
-import { applyTheme, storedTheme, type ThemeChoice } from './theme.ts'
+import { PALETTES, applyPalette, applyTheme, storedPalette, storedTheme, type PaletteChoice, type ThemeChoice } from './theme.ts'
 import { debugLog } from './debug.ts'
 import { LogPanel } from './log/LogPanel.tsx'
 import { ExpeditionPanel } from './map/ExpeditionPanel.tsx'
@@ -104,22 +104,42 @@ function SubTabs<T extends string>({
 
 function ThemeSwitch() {
   const [choice, setChoice] = useState<ThemeChoice>(storedTheme)
+  const [palette, setPalette] = useState<PaletteChoice>(storedPalette)
   return (
-    <label>
-      Theme{' '}
-      <select
-        value={choice}
-        onChange={(event) => {
-          const next = event.target.value as ThemeChoice
-          setChoice(next)
-          applyTheme(next)
-        }}
-      >
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-    </label>
+    <div className="controls">
+      <label>
+        Style{' '}
+        <select
+          value={palette}
+          onChange={(event) => {
+            const next = event.target.value as PaletteChoice
+            setPalette(next)
+            applyPalette(next)
+          }}
+        >
+          {(Object.keys(PALETTES) as PaletteChoice[]).map((key) => (
+            <option key={key} value={key}>
+              {PALETTES[key]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Mode{' '}
+        <select
+          value={choice}
+          onChange={(event) => {
+            const next = event.target.value as ThemeChoice
+            setChoice(next)
+            applyTheme(next)
+          }}
+        >
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
+    </div>
   )
 }
 

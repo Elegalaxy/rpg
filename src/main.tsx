@@ -1,10 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './ui/App.tsx'
-import { applyTheme, storedTheme } from './ui/theme.ts'
+import { applyPalette, applyTheme, storedPalette, storedTheme } from './ui/theme.ts'
 import './ui/theme.css'
 
 applyTheme(storedTheme())
+applyPalette(storedPalette())
 
 const rootElement = document.getElementById('root')
 

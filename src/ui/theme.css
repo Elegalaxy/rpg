@@ -643,3 +643,161 @@ li.row > .row-text > .chooser {
 li.row:has(.chooser) {
   align-items: flex-start;
 }
+
+/* ---- Colour styles: pick one in the Style menu. Light and dark mode both work with each. ---- */
+
+/* Verdant Wild */
+:root[data-palette='verdant'] {
+  --bg: #eef3e6;
+  --fg: #1f2a1a;
+  --panel: #f7faf0;
+  --panel-2: #fcfdf8;
+  --border: #bccaa8;
+  --track: #dbe6c8;
+  --chip: #e6efd6;
+  --accent: #3f7a2a;
+  --accent-fg: #ffffff;
+}
+
+:root[data-palette='verdant'][data-theme='dark'] {
+  --bg: #0f1712;
+  --fg: #e3ecdc;
+  --panel: #16221a;
+  --panel-2: #1d2d22;
+  --border: #2f4636;
+  --track: #25382b;
+  --chip: #233328;
+  --accent: #8fcf6a;
+  --accent-fg: #0c1a08;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='verdant']:not([data-theme='light']):not([data-theme='dark']) {
+    --bg: #0f1712;
+    --fg: #e3ecdc;
+    --panel: #16221a;
+    --panel-2: #1d2d22;
+    --border: #2f4636;
+    --track: #25382b;
+    --chip: #233328;
+    --accent: #8fcf6a;
+    --accent-fg: #0c1a08;
+  }
+}
+
+/* Arcane Night */
+:root[data-palette='arcane'] {
+  --bg: #f1eefb;
+  --fg: #221c36;
+  --panel: #f8f6fe;
+  --panel-2: #fdfcff;
+  --border: #cbc3e8;
+  --track: #e1dcf3;
+  --chip: #e9e5f7;
+  --accent: #5b3fb0;
+  --accent-fg: #ffffff;
+}
+
+:root[data-palette='arcane'][data-theme='dark'] {
+  --bg: #11101c;
+  --fg: #e8e4f5;
+  --panel: #1a1829;
+  --panel-2: #232038;
+  --border: #3b3660;
+  --track: #2b2845;
+  --chip: #2a2744;
+  --accent: #a98af0;
+  --accent-fg: #120c26;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='arcane']:not([data-theme='light']):not([data-theme='dark']) {
+    --bg: #11101c;
+    --fg: #e8e4f5;
+    --panel: #1a1829;
+    --panel-2: #232038;
+    --border: #3b3660;
+    --track: #2b2845;
+    --chip: #2a2744;
+    --accent: #a98af0;
+    --accent-fg: #120c26;
+  }
+}
+
+/* Crimson Court */
+:root[data-palette='crimson'] {
+  --bg: #f8eeee;
+  --fg: #2c1a1a;
+  --panel: #fdf6f5;
+  --panel-2: #fffcfb;
+  --border: #e2c3c0;
+  --track: #efd8d5;
+  --chip: #f3e2e0;
+  --accent: #a92a2a;
+  --accent-fg: #ffffff;
+}
+
+:root[data-palette='crimson'][data-theme='dark'] {
+  --bg: #160f10;
+  --fg: #f1e2e0;
+  --panel: #211517;
+  --panel-2: #2c1c1f;
+  --border: #4a2c31;
+  --track: #382226;
+  --chip: #33201f;
+  --accent: #e0524f;
+  --accent-fg: #1a0707;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='crimson']:not([data-theme='light']):not([data-theme='dark']) {
+    --bg: #160f10;
+    --fg: #f1e2e0;
+    --panel: #211517;
+    --panel-2: #2c1c1f;
+    --border: #4a2c31;
+    --track: #382226;
+    --chip: #33201f;
+    --accent: #e0524f;
+    --accent-fg: #1a0707;
+  }
+}
+
+/* Frostwatch */
+:root[data-palette='frost'] {
+  --bg: #edf3f7;
+  --fg: #17232c;
+  --panel: #f6fafc;
+  --panel-2: #fcfeff;
+  --border: #bfd0dc;
+  --track: #d9e5ee;
+  --chip: #e3edf4;
+  --accent: #1f6f94;
+  --accent-fg: #ffffff;
+}
+
+:root[data-palette='frost'][data-theme='dark'] {
+  --bg: #0f151c;
+  --fg: #e0ecf4;
+  --panel: #162029;
+  --panel-2: #1d2a36;
+  --border: #2f4252;
+  --track: #253443;
+  --chip: #223040;
+  --accent: #5ec2e8;
+  --accent-fg: #06151c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='frost']:not([data-theme='light']):not([data-theme='dark']) {
+    --bg: #0f151c;
+    --fg: #e0ecf4;
+    --panel: #162029;
+    --panel-2: #1d2a36;
+    --border: #2f4252;
+    --track: #253443;
+    --chip: #223040;
+    --accent: #5ec2e8;
+    --accent-fg: #06151c;
+  }
+}

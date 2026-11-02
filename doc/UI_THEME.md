@@ -47,3 +47,17 @@ One scale for every margin, padding, and gap: 4, 8, 12, 16, 24, 32 px (`--s1` to
 - Radio groups (race, class, route) are chips with a clear selected state.
 - Wide screens: top bar, left side panel with the hero and tabs, and a content area. Two-column screens (skills, gear) put the preview or stats on the right.
 - Phones: the layout stacks and the hero header stays on top.
+
+## Colour styles
+
+The Style menu (next to Mode) switches the whole palette, and every style works in light and dark. The choice is saved in the browser. The accent colour, panels, borders and text change; the button colours (good, warn, danger, info) stay the same so their meaning never changes.
+
+| Style | Mood | Dark accent | Light accent |
+|---|---|---|---|
+| Fractured Frontier (default) | ink and parchment, ember | `#e0963a` | `#a8620f` |
+| Verdant Wild | forest night, living green | `#8fcf6a` | `#3f7a2a` |
+| Arcane Night | deep violet, spell-light | `#a98af0` | `#5b3fb0` |
+| Crimson Court | blood-red and black | `#e0524f` | `#a92a2a` |
+| Frostwatch | cold steel and ice blue | `#5ec2e8` | `#1f6f94` |
+
+To add one, add an entry to `PALETTES` in `src/ui/theme.ts` and a `:root[data-palette='name']` block set in `src/ui/theme.css`.
