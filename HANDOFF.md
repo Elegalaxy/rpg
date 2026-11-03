@@ -1,15 +1,14 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code
-- **Current Goal:** First playable is built through Step 11.1. Step 11.2 (success-criteria playtest) is waiting on the user.
+- **Current Goal:** First playable is built through Step 11.1. Step 11.2 (success-criteria playtest) waits on the user. A balance pass on elites and the Ranger/Assassin is done (2026-11-03).
 - **Recent Changes & Files Touched:**
-  - Stages 6-10 and Step 11.1 are committed and pushed to `origin/main` (last code commit 56ab991).
-  - 11.1: `src/ui/App.tsx` (start screen, header, tabs, exported `CombatViewer`), `src/persist/guidance.ts` (`nextHint`), `src/persist/walkthrough.test.ts`.
-  - 11.2: matrices run (seed 1, 50 runs): combos errors 0; reference shows only accepted misses. Results and the §15 table are in `doc/IMPLEMENTATION_PLAN.md` Step 11.2 Progress.
-  - `npm test` 640 tests, typecheck and lint clean on 2026-11-01.
+  - Rule conditions `stance` and `interruptible` (`src/sim/automation.ts`, `src/persist/loadout.ts`); built-hero harness `src/harness/builds.ts` (`--matrix built`) and `src/harness/skill.test.ts`.
+  - Elites: Rootmaw interrupt 6% of max HP; Echo Knight 3,200 HP, 26 Power, Assault Armor/Resistance x0.6, Fractured Charge telegraph 2.0 s.
+  - Ranger: 20 Readiness per basic hit, Aimed Shot 304% (node 338%), Piercing Arrow 220%, new Fade Back skill (+30 Evasion), rows target lowest Armor. Assassin rows target lowest Armor; built Assassin takes Smoke Step early.
+  - Last commit 95caa79 pushed to `origin/main`. 659 tests, typecheck and lint clean.
 - **Active Decisions / Constraints:**
-  - Do not change combat coefficients to force a matrix match. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - Preserved checks: duel-basic seed 42 victory 20688 ms; road seed 5 `encounters 4 victories 3 defeats 0 timeouts 0 retreats 1`, 8 shard, 8 hide, 4 scrap.
-  - One commit per finished step, pushed to `origin/main`. No force-push.
-  - Known gaps: page unstyled; no skill-allocation policy in the harness; no floor build beats the Rootmaw Stalker.
-- **Exact Next Step:** The user plays from a fresh profile and marks §15 criteria 2, 5, 6, 7, 10 pass or fail in Step 11.2 Progress, then sets the step to `verified`. Then decide whether to tune elite difficulty (record in GAME_DESIGN first).
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
+  - One commit per finished part, pushed to `origin/main`. No force-push.
+  - Known leftovers: Ranger and Assassin cannot beat the Echo Knight at its own level 16; Ranger nodes past the fourth add nothing to the reference loadout; Cleric floor build loses both elites; Rootmaw is 97-100% at level 20; no consumables exist; existing saves do not learn Fade Back.
+- **Exact Next Step:** The user plays from a fresh profile and marks §15 criteria 2, 5, 6, 7, 10 in Step 11.2 Progress. Optional balance follow-ups: consumables, a Ranger/Assassin survivability tool, Cleric floor damage.
