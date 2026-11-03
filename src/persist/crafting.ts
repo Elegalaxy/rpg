@@ -4,7 +4,7 @@ import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { wearerOf } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
-import type { CraftJob, SaveData, SavedHero } from './save.ts'
+import { purseOf, updatePurse, withPurse, type CraftJob, type Purse, type SaveData, type SavedHero } from './save.ts'
 
 export const CRAFT_MATERIAL_COST = 6
 export const UPGRADE_MATERIAL_COST = 4
@@ -59,23 +59,23 @@ function closed(save: SaveData): string | null {
   return save.expedition === null ? null : 'Crafting is closed while an expedition is running.'
 }
 
-function nextJobId(save: SaveData): string {
-  return `job-${save.account.craftCounter + 1}`
+function nextJobId(purse: Purse): string {
+  return `job-${purse.craftCounter + 1}`
 }
 
-function spend(save: SaveData, materialId: string, quantity: number, gold: number): string | null {
-  const owned = save.account.materials[materialId] ?? 0
+function spend(purse: Purse, materialId: string, quantity: number, gold: number): string | null {
+  const owned = purse.materials[materialId] ?? 0
   if (owned < quantity) return `That needs ${quantity} ${materialId}. You have ${owned}.`
-  if (save.account.gold < gold) return `That costs ${gold} gold. You have ${save.account.gold}.`
+  if (purse.gold < gold) return `That costs ${gold} gold. You have ${purse.gold}.`
   return null
 }
 
-function charge(save: SaveData, materialId: string, quantity: number, gold: number): SaveData['account'] {
-  const materials = { ...save.account.materials }
+function charge(purse: Purse, materialId: string, quantity: number, gold: number): Purse {
+  const materials = { ...purse.materials }
   const left = (materials[materialId] ?? 0) - quantity
   if (left > 0) materials[materialId] = left
   else delete materials[materialId]
-  return { ...save.account, materials, gold: save.account.gold - gold }
+  return { ...purse, materials, gold: purse.gold - gold }
 }
 
 export type CraftRequest = {
@@ -86,11 +86,11 @@ export type CraftRequest = {
   modifierId: string | null
 }
 
-/** What a craft would cost and roll, or the reason it is refused. */
+/** What a craft would cost and roll, or the reason it is refused. The hero pays from its own purse. */
 export function craftCheck(save: SaveData, hero: SavedHero, request: CraftRequest): string | null {
   const shut = closed(save)
   if (shut !== null) return shut
-  if (save.account.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
+  if (hero.purse.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
   const base = itemBase(request.baseId)
   if (base === undefined) return 'Pick something to craft.'
   const classProblem = classBlock(wearerOf(hero), base)
@@ -107,7 +107,7 @@ export function craftCheck(save: SaveData, hero: SavedHero, request: CraftReques
     if (hero.progress.level < modifier.minLevel) return `${modifier.name} needs level ${modifier.minLevel}. This hero is level ${hero.progress.level}.`
     if (!modifierFits(modifier, base)) return `${modifier.name} can only go on ${appliesToText(modifier)}.`
   }
-  return spend(save, request.materialId, CRAFT_MATERIAL_COST, craftGold(request.itemLevel))
+  return spend(hero.purse, request.materialId, CRAFT_MATERIAL_COST, craftGold(request.itemLevel))
 }
 
 /** Pay for a craft and queue it. The quality is rolled when the job ends, from a seed fixed now. */
@@ -117,7 +117,7 @@ export function queueCraft(save: SaveData, heroId: string, request: CraftRequest
   const problem = craftCheck(save, hero, request)
   if (problem !== null) return { ok: false, reason: problem }
   const job: CraftJob = {
-    id: nextJobId(save),
+    id: nextJobId(hero.purse),
     kind: 'craft',
     heroId,
     baseId: request.baseId,
@@ -125,13 +125,13 @@ export function queueCraft(save: SaveData, heroId: string, request: CraftRequest
     materialId: request.materialId,
     modifierId: request.modifierId,
     remainingMs: CRAFT_MS,
-    seedIndex: save.account.craftCounter,
+    seedIndex: hero.purse.craftCounter,
     rank: proficiencyRank(hero.craftXp),
   }
-  const account = charge(save, request.materialId, CRAFT_MATERIAL_COST, craftGold(request.itemLevel))
+  const purse = charge(hero.purse, request.materialId, CRAFT_MATERIAL_COST, craftGold(request.itemLevel))
   return {
     ok: true,
-    save: { ...save, account: { ...account, craftCounter: account.craftCounter + 1, craftQueue: [...account.craftQueue, job] } },
+    save: withPurse(save, { ...purse, craftCounter: purse.craftCounter + 1, craftQueue: [...purse.craftQueue, job] }, heroId),
   }
 }
 
@@ -147,19 +147,19 @@ export function recipesForSale(save: SaveData): { modifierId: string; price: num
     .map((id) => ({ modifierId: id, price: recipePrice(id) }))
 }
 
-/** Learn a modifier recipe for the whole account. */
+/** Learn a modifier recipe for the whole account, paid with the selected hero's gold. */
 export function buyRecipe(save: SaveData, modifierId: string): RosterResult {
   const shut = closed(save)
   if (shut !== null) return { ok: false, reason: shut }
   const modifier = ITEM_MODIFIERS[modifierId]
   if (modifier === undefined) return { ok: false, reason: 'Unknown recipe.' }
   if (save.account.recipes.includes(modifierId)) return { ok: false, reason: `You already know the ${modifier.name} recipe.` }
+  if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero to pay for the recipe.' }
   const price = recipePrice(modifierId)
-  if (save.account.gold < price) return { ok: false, reason: `The ${modifier.name} recipe costs ${price} gold. You have ${save.account.gold}.` }
-  return {
-    ok: true,
-    save: { ...save, account: { ...save.account, gold: save.account.gold - price, recipes: [...save.account.recipes, modifierId] } },
-  }
+  const gold = purseOf(save).gold
+  if (gold < price) return { ok: false, reason: `The ${modifier.name} recipe costs ${price} gold. You have ${gold}.` }
+  const paid = updatePurse(save, { gold: gold - price })
+  return { ok: true, save: { ...paid, account: { ...paid.account, recipes: [...paid.account.recipes, modifierId] } } }
 }
 
 /** The slot a hero wears this item in, or null. */
@@ -167,67 +167,64 @@ export function wornSlot(hero: SavedHero, itemId: string): EquipmentSlotId | nul
   return EQUIPMENT_SLOT_IDS.find((slot) => hero.equipment[slot]?.id === itemId) ?? null
 }
 
-/** Why an archive item, or an item the hero wears, cannot be upgraded, or null. */
+/** Why an item from the hero's archive, or one the hero wears, cannot be upgraded, or null. */
 export function upgradeCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, materialId: string): string | null {
   const shut = closed(save)
   if (shut !== null) return shut
-  if (save.account.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
+  if (hero.purse.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
   if (item === undefined) return 'That item is not in the archive or worn by this hero.'
   if (item.itemLevel >= hero.progress.level) return `This hero is level ${hero.progress.level}. An item cannot go above the hero's level.`
   if (upgradeChance(item.itemLevel) <= 0) return 'That item cannot be upgraded further.'
   if (MATERIAL_QUALITY[materialId] === undefined) return 'Pick scrap, hide, or shard.'
-  return spend(save, materialId, UPGRADE_MATERIAL_COST, craftGold(item.itemLevel))
+  return spend(hero.purse, materialId, UPGRADE_MATERIAL_COST, craftGold(item.itemLevel))
 }
 
 /** Pay for an upgrade and queue it. The item leaves the archive until the job ends. */
 export function queueUpgrade(save: SaveData, heroId: string, itemId: string, materialId: string): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
-  const archived = save.account.archive.find((entry) => entry.id === itemId)
+  const archived = hero.purse.archive.find((entry) => entry.id === itemId)
   const slot = archived === undefined ? wornSlot(hero, itemId) : null
   const item = archived ?? (slot === null ? undefined : (hero.equipment[slot] ?? undefined))
   const problem = upgradeCheck(save, hero, item, materialId)
   if (problem !== null || item === undefined) return { ok: false, reason: problem ?? 'That item is not in the archive or worn by this hero.' }
   const job: CraftJob = {
-    id: nextJobId(save),
+    id: nextJobId(hero.purse),
     kind: 'upgrade',
     heroId,
     item,
     ...(slot === null ? {} : { slot }),
     materialId,
     remainingMs: CRAFT_MS,
-    seedIndex: save.account.craftCounter,
+    seedIndex: hero.purse.craftCounter,
     rank: proficiencyRank(hero.craftXp),
   }
-  const account = charge(save, materialId, UPGRADE_MATERIAL_COST, craftGold(item.itemLevel))
+  const paid = charge(hero.purse, materialId, UPGRADE_MATERIAL_COST, craftGold(item.itemLevel))
+  const purse: Purse = {
+    ...paid,
+    craftCounter: paid.craftCounter + 1,
+    archive: paid.archive.filter((entry) => entry.id !== itemId),
+    craftQueue: [...paid.craftQueue, job],
+  }
+  const equipment = slot === null ? hero.equipment : { ...hero.equipment, [slot]: null }
   return {
     ok: true,
-    save: {
-      ...save,
-      account: {
-        ...account,
-        craftCounter: account.craftCounter + 1,
-        archive: account.archive.filter((entry) => entry.id !== itemId),
-        craftQueue: [...account.craftQueue, job],
-      },
-      heroes:
-        slot === null
-          ? save.heroes
-          : save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment: { ...entry.equipment, [slot]: null } } : entry)),
-    },
+    save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment, purse } : entry)) },
   }
 }
 
 export type CraftNotice = { jobId: string; text: string }
 
+/** End a job: the item goes to the hero who queued it, who also gains crafting experience. */
 function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: CraftNotice } {
-  const account = save.account
   const heroes = save.heroes.map((hero) => (hero.id === job.heroId ? { ...hero, craftXp: hero.craftXp + 1 } : hero))
+  const keep = (item: ItemInstance) =>
+    heroes.map((hero) => (hero.id === job.heroId ? { ...hero, purse: { ...hero.purse, archive: [...hero.purse.archive, item] } } : hero))
   if (job.kind === 'craft') {
     const range = qualityRange(job.materialId, job.rank) ?? { low: 1, high: 1 }
     const quality = averagedRoll(job.seedIndex, range)
     const item: ItemInstance = {
-      id: `craft-${job.seedIndex + 1}`,
+      id: `craft-${job.heroId}-${job.seedIndex + 1}`,
       baseId: job.baseId,
       itemLevel: job.itemLevel,
       quality,
@@ -237,7 +234,7 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
     }
     const name = itemBase(job.baseId)?.name ?? job.baseId
     return {
-      save: { ...save, heroes, account: { ...account, archive: [...account.archive, item] } },
+      save: { ...save, heroes: keep(item) },
       notice: { jobId: job.id, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
@@ -252,9 +249,9 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
   const worn =
     backInSlot && slot !== undefined
       ? heroes.map((entry) => (entry.id === job.heroId ? { ...entry, equipment: { ...entry.equipment, [slot]: returned } } : entry))
-      : heroes
+      : keep(returned)
   return {
-    save: { ...save, heroes: worn, account: { ...account, archive: backInSlot ? account.archive : [...account.archive, returned] } },
+    save: { ...save, heroes: worn },
     notice: {
       jobId: job.id,
       text: worked
@@ -265,34 +262,37 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
 }
 
 /**
- * Let town time pass. Only the first job advances, and nothing moves while an expedition runs.
- * Time left over when a job ends goes to the next one.
+ * Let town time pass for the selected hero's queue. Only the first job advances, and nothing moves
+ * while an expedition runs. Time left over when a job ends goes to the next one.
  */
 export function advanceCrafting(save: SaveData, elapsedMs: number): { save: SaveData; finished: CraftNotice[] } {
-  if (save.expedition !== null || save.account.craftQueue.length === 0 || !(elapsedMs > 0)) return { save, finished: [] }
+  if (save.expedition !== null || purseOf(save).craftQueue.length === 0 || !(elapsedMs > 0)) return { save, finished: [] }
   let current = save
   let left = elapsedMs
   const finished: CraftNotice[] = []
-  while (left > 0 && current.account.craftQueue.length > 0) {
-    const [job, ...rest] = current.account.craftQueue
+  while (left > 0 && purseOf(current).craftQueue.length > 0) {
+    const [job, ...rest] = purseOf(current).craftQueue
     if (job === undefined) break
     if (job.remainingMs > left) {
-      current = { ...current, account: { ...current.account, craftQueue: [{ ...job, remainingMs: job.remainingMs - left }, ...rest] } }
+      current = updatePurse(current, { craftQueue: [{ ...job, remainingMs: job.remainingMs - left }, ...rest] })
       left = 0
       break
     }
     left -= job.remainingMs
-    const done = finishJob(job, { ...current, account: { ...current.account, craftQueue: rest } })
+    const done = finishJob(job, updatePurse(current, { craftQueue: rest }))
     current = done.save
     finished.push(done.notice)
   }
   return { save: current, finished }
 }
 
-/** Development builds only: learn every modifier recipe and get materials to try crafting. */
+/** Development builds only: learn every modifier recipe and give the selected hero materials and gold to try crafting. */
 export function grantCraftingKit(save: SaveData): SaveData {
   const recipes = Object.keys(ITEM_MODIFIERS)
-  const materials = { ...save.account.materials }
+  const learned = { ...save, account: { ...save.account, recipes } }
+  if (save.selectedHeroId === null) return learned
+  const purse = purseOf(save)
+  const materials = { ...purse.materials }
   for (const id of Object.keys(MATERIAL_QUALITY)) materials[id] = (materials[id] ?? 0) + 30
-  return { ...save, account: { ...save.account, recipes, materials, gold: save.account.gold + 300 } }
+  return updatePurse(learned, { materials, gold: purse.gold + 300 })
 }

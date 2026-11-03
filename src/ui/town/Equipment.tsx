@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { purseOf } from '../../persist/save.ts'
 
 import { itemBase, itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
@@ -62,7 +63,7 @@ export function Equipment() {
   const twoHanded = mainBase?.type === 'weapon' && mainBase.weaponKind === 'twoHanded'
 
   function candidatesFor(slot: EquipmentSlotId): ItemInstance[] {
-    return save.account.archive.filter((item) => {
+    return purseOf(save).archive.filter((item) => {
       const base = itemBase(item.baseId)
       return base !== undefined && slotsFor(base).includes(slot)
     })
@@ -168,9 +169,9 @@ export function Equipment() {
           {gaps.length > 0 ? <p role="alert">Cannot fight yet. Missing: {gaps.map((gap) => SLOT_LABELS[gap as EquipmentSlotId] ?? gap).join(', ')}.</p> : null}
           {error !== null ? <p role="alert">{error}</p> : null}
           <h3>In the archive</h3>
-          {save.account.archive.length === 0 ? <p>The archive is empty.</p> : <p>Pick a slot above to equip one of these.</p>}
+          {purseOf(save).archive.length === 0 ? <p>The archive is empty.</p> : <p>Pick a slot above to equip one of these.</p>}
           <ul className="rows" aria-label="Archive">
-            {save.account.archive.map((item) => (
+            {purseOf(save).archive.map((item) => (
               <Row key={item.id}>{describeItem(item)}</Row>
             ))}
           </ul>

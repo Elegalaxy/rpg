@@ -9,14 +9,14 @@ import { stepExpedition } from '../sim/expedition.ts'
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
-import { assertSaveData, newSave, type SaveData } from './save.ts'
+import { assertSaveData, newSave, type SaveData, purseOf, updatePurse } from './save.ts'
 import { buyItem, payDebt, repairAll, repairAllCost, repairOne, sellItem, sellMaterial, wearGear } from './town.ts'
 import { beginExpedition, settleExpedition } from './world.ts'
 
 function heroSave(gold = 0): SaveData {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
   if (!made.ok) throw new Error(made.reason)
-  return { ...made.save, account: { ...made.save.account, gold } }
+  return updatePurse(made.save, { gold })
 }
 
 function hero(save: SaveData) {
@@ -51,13 +51,13 @@ describe('prices', () => {
 
 describe('selling and buying', () => {
   it('sells materials one at a time or all, and keeps the account valid', () => {
-    const save = { ...heroSave(), account: { ...heroSave().account, materials: { shard: 4, scrap: 3 } } }
+    const save = updatePurse(heroSave(), { materials: { shard: 4, scrap: 3 } })
     const one = ok(sellMaterial(save, 'shard', 1))
-    expect(one.account.gold).toBe(3)
-    expect(one.account.materials).toEqual({ shard: 3, scrap: 3 })
+    expect(purseOf(one).gold).toBe(3)
+    expect(purseOf(one).materials).toEqual({ shard: 3, scrap: 3 })
     const all = ok(sellMaterial(one, 'scrap', 3))
-    expect(all.account.gold).toBe(9)
-    expect(all.account.materials).toEqual({ shard: 3 })
+    expect(purseOf(all).gold).toBe(9)
+    expect(purseOf(all).materials).toEqual({ shard: 3 })
     expect(() => assertSaveData(all)).not.toThrow()
     expect(sellMaterial(save, 'shard', 5)).toEqual({ ok: false, reason: 'You only have 4 shard.' })
     expect(sellMaterial(save, 'iron', 1)).toEqual({ ok: false, reason: 'Greyhaven does not buy that.' })
@@ -67,23 +67,23 @@ describe('selling and buying', () => {
 
   it('sells only archive items', () => {
     const item = newItem('x', 'weapon-bow', 3, 1.1)
-    const save = { ...heroSave(), account: { ...heroSave().account, archive: [item] } }
+    const save = updatePurse(heroSave(), { archive: [item] })
     const sold = ok(sellItem(save, 'x'))
-    expect(sold.account.gold).toBe(17)
-    expect(sold.account.archive).toEqual([])
+    expect(purseOf(sold).gold).toBe(17)
+    expect(purseOf(sold).archive).toEqual([])
     const worn = ok(sellItem(save, 'hero-1-mainHand'))
     expect(selectedHero(worn)?.equipment.mainHand).toBeNull()
-    expect(worn.account.gold).toBeGreaterThan(save.account.gold)
+    expect(purseOf(worn).gold).toBeGreaterThan(purseOf(save).gold)
     expect(sellItem(save, 'nothing')).toEqual({ ok: false, reason: 'That item is not in the archive or worn by the selected hero.' })
   })
 
   it('buys a base item at the hero level and 100% quality into the archive', () => {
     const save = heroSave(25)
     const bought = ok(buyItem(save, 'hero-1', 'weapon-one-handed'))
-    expect(bought.account.gold).toBe(15)
-    expect(bought.account.archive[0]).toMatchObject({ id: 'shop-1', baseId: 'weapon-one-handed', itemLevel: 1, quality: 1, durability: 100 })
+    expect(purseOf(bought).gold).toBe(15)
+    expect(purseOf(bought).archive[0]).toMatchObject({ id: 'shop-1', baseId: 'weapon-one-handed', itemLevel: 1, quality: 1, durability: 100 })
     const again = ok(buyItem(bought, 'hero-1', 'offhand-shield'))
-    expect(again.account.archive.map((item) => item.id)).toEqual(['shop-1', 'shop-2'])
+    expect(purseOf(again).archive.map((item) => item.id)).toEqual(['shop-1', 'shop-2'])
     expect(buyItem(save, 'hero-1', 'nothing')).toEqual({ ok: false, reason: 'Greyhaven does not sell that.' })
     expect(buyItem(heroSave(9), 'hero-1', 'weapon-one-handed')).toEqual({ ok: false, reason: 'That costs 10 gold. You have 9.' })
     expect(buyItem(save, 'hero-1', 'weapon-bow')).toEqual({ ok: false, reason: 'Bow cannot be used by a warrior.' })
@@ -99,11 +99,11 @@ describe('repair', () => {
     expect(repairAllCost(hero(worn))).toBe(8 * repairCost({ ...newItem('r', 'weapon-bow', 1), durability: 70 }))
     const one = ok(repairOne(worn, 'hero-1-mainHand'))
     expect(hero(one).equipment.mainHand?.durability).toBe(100)
-    expect(one.account.gold).toBe(100 - 5)
-    const stored = { ...worn, account: { ...worn.account, gold: 300, archive: [{ ...newItem('old', 'weapon-bow', 20), durability: 0 }] } }
+    expect(purseOf(one).gold).toBe(100 - 5)
+    const stored = updatePurse(worn, { gold: 300, archive: [{ ...newItem('old', 'weapon-bow', 20), durability: 0 }] })
     const fixed = ok(repairOne(stored, 'old'))
-    expect(fixed.account.archive[0]?.durability).toBe(100)
-    expect(fixed.account.gold).toBe(300 - 110)
+    expect(purseOf(fixed).archive[0]?.durability).toBe(100)
+    expect(purseOf(fixed).gold).toBe(300 - 110)
   })
 
   it('refuses a repair it cannot afford, an undamaged item, and an unknown item', () => {
@@ -118,9 +118,9 @@ describe('repair', () => {
     const cost = repairAllCost(hero(worn))
     expect(cost).toBe(40)
     const repaired = ok(repairAll(worn, 'hero-1'))
-    expect(repaired.account.gold).toBe(100 - cost)
+    expect(purseOf(repaired).gold).toBe(100 - cost)
     expect(Object.values(hero(repaired).equipment).every((item) => item?.durability === 100)).toBe(true)
-    expect(repairAll({ ...worn, account: { ...worn.account, gold: cost - 1 } }, 'hero-1')).toEqual({
+    expect(repairAll(updatePurse(worn, { gold: cost - 1 }), 'hero-1')).toEqual({
       ok: false,
       reason: `Repairing everything costs ${cost} gold. You have ${cost - 1}.`,
     })
@@ -129,13 +129,13 @@ describe('repair', () => {
 })
 
 describe('debt', () => {
-  const indebted = (debt: number, gold: number): SaveData => ({ ...heroSave(gold), account: { ...heroSave(gold).account, debt } })
+  const indebted = (debt: number, gold: number): SaveData => (updatePurse(heroSave(gold), { debt }))
 
   it('pays any amount up to what is owed and held', () => {
     const part = ok(payDebt(indebted(25, 100), 10))
-    expect(part.account).toMatchObject({ debt: 15, gold: 90 })
-    expect(ok(payDebt(part, 15)).account).toMatchObject({ debt: 0, gold: 75 })
-    expect(ok(payDebt(indebted(25, 100), 26)).account).toMatchObject({ debt: 0, gold: 75 })
+    expect(purseOf(part)).toMatchObject({ debt: 15, gold: 90 })
+    expect(purseOf(ok(payDebt(part, 15)))).toMatchObject({ debt: 0, gold: 75 })
+    expect(purseOf(ok(payDebt(indebted(25, 100), 26)))).toMatchObject({ debt: 0, gold: 75 })
     expect(payDebt(indebted(25, 5), 6)).toEqual({ ok: false, reason: 'You have 5 gold.' })
     expect(payDebt(indebted(0, 5), 1)).toEqual({ ok: false, reason: 'You owe nothing.' })
     expect(payDebt(indebted(25, 100), 0).ok).toBe(false)
@@ -157,7 +157,7 @@ describe('gold on the road', () => {
     let won = false
     for (let seed = 1; seed < 40 && !won; seed += 1) {
       const save = ok(beginExpedition(heroSave(100), 'splintered-road', seed))
-      expect(save.account.gold).toBe(0)
+      expect(purseOf(save).gold).toBe(0)
       const run = save.expedition!
       expect(run.carriedGold).toBe(25)
       expect(run.depositedGold).toBe(75)
@@ -173,8 +173,8 @@ describe('gold on the road', () => {
       run.returning = true
       run.outcome = 'returned'
       const settled = settleExpedition(save)
-      expect(settled.account.gold).toBe(75 + 25 + 12)
-      expect(settled.account.debt).toBe(0)
+      expect(purseOf(settled).gold).toBe(75 + 25 + 12)
+      expect(purseOf(settled).debt).toBe(0)
     }
     expect(won).toBe(true)
   })
@@ -190,15 +190,15 @@ describe('gold on the road', () => {
     run.debt = 15
     run.history = [{ index: 0, encounterId: 'shardling-pair', seed: 1, outcome: 'defeat', durationMs: 1 }]
     const settled = settleExpedition(save)
-    expect(settled.account.gold).toBe(75)
-    expect(settled.account.debt).toBe(15)
+    expect(purseOf(settled).gold).toBe(75)
+    expect(purseOf(settled).debt).toBe(15)
     expect(() => assertSaveData(settled)).not.toThrow()
-    const withDebt = ok(payDebt({ ...settled, account: { ...settled.account, gold: 20 } }, 15))
-    expect(withDebt.account).toMatchObject({ gold: 5, debt: 0 })
+    const withDebt = ok(payDebt(updatePurse(settled, { gold: 20 }), 15))
+    expect(purseOf(withDebt)).toMatchObject({ gold: 5, debt: 0 })
   })
 
   it('closes the town while an expedition runs', () => {
-    const save = { ...heroSave(100), account: { ...heroSave(100).account, materials: { shard: 2 } } }
+    const save = updatePurse(heroSave(100), { materials: { shard: 2 } })
     const running = { ...save, expedition: startExpedition(hero(save), 'splintered-road', 1) }
     const shut = { ok: false, reason: 'Town services are closed while an expedition is running.' }
     expect(sellMaterial(running, 'shard', 1)).toEqual(shut)

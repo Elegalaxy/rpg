@@ -58,26 +58,39 @@ export type ActiveContract = {
   progress: number
 }
 
+/**
+ * What the whole account shares: knowledge and character slots. Wealth is not shared, decided
+ * 2026-11-03, so a grown hero cannot fund a new one (see `Purse`).
+ */
 export type AccountData = {
-  gold: number
-  /** Material id to quantity. */
-  materials: { [materialId: string]: number }
+  /** Modifier recipes every hero can craft. */
   recipes: string[]
   /** Shared world discoveries: node ids from the world content, such as `node:splintered-road`. */
   discoveries: string[]
   slots: number
   /** One-time account milestones reached so far. Each one opens a character slot. */
   milestones: string[]
+}
+
+/** One hero's wealth and town business. Nothing in it moves between heroes. */
+export type Purse = {
+  gold: number
+  /** Material id to quantity. */
+  materials: { [materialId: string]: number }
   /** Contracts taken from the board, at most three. */
   contracts: ActiveContract[]
-  /** Queued crafting jobs, at most three. */
+  /** Queued crafting jobs, at most three. Only the selected hero's queue advances. */
   craftQueue: CraftJob[]
-  /** How many crafting rolls have been used. The next job takes this index. */
+  /** How many crafting rolls this hero has used. The next job takes this index. */
   craftCounter: number
   /** Gold owed from defeats. It is paid off at the town and blocks nothing. */
   debt: number
-  /** Items the player owns that no hero has equipped. Shared across heroes. */
+  /** Items this hero owns but is not wearing. */
   archive: ItemInstance[]
+}
+
+export function emptyPurse(): Purse {
+  return { gold: 0, materials: {}, contracts: [], craftQueue: [], craftCounter: 0, debt: 0, archive: [] }
 }
 
 /** One hero's saved record. Combat state is rebuilt from this and the content tables. */
@@ -116,7 +129,7 @@ export type SavedHero = {
   retreatAtMost: number | null
   /** Special arrows a Ranger packs for an expedition. 0 for other classes. */
   specialAmmo: number
-  /** Gold to carry into an expedition. The rest of the account's gold stays deposited and safe. */
+  /** Gold to carry into an expedition. The rest of the hero's gold stays deposited and safe. */
   carryGold: number
   /** The highest Fractured Warden Echo rank this hero can fight. Each victory unlocks the next. Personal to the hero. */
   echoRank: number
@@ -136,6 +149,8 @@ export type SavedHero = {
   craftXp: number
   /** Equipped items. Gear is bound to its hero. */
   equipment: Equipment
+  /** Gold, materials, unequipped items, contracts, crafting, and debt. Personal to the hero. */
+  purse: Purse
 }
 
 export type SaveData = {
@@ -177,17 +192,10 @@ export function newSave(): SaveData {
   return {
     version: SAVE_VERSION,
     account: {
-      gold: 0,
-      materials: {},
       recipes: [...STARTING_MODIFIER_RECIPES],
       discoveries: [...STARTING_DISCOVERIES],
       slots: STARTING_SLOTS,
       milestones: [],
-      archive: [],
-      contracts: [],
-      craftQueue: [],
-      craftCounter: 0,
-      debt: 0,
     },
     heroes: [],
     selectedHeroId: null,
@@ -257,18 +265,22 @@ function assertJob(value: unknown): asserts value is CraftJob {
 
 function assertAccount(value: unknown): asserts value is AccountData {
   check(isRecord(value), 'account is missing')
-  whole(value.gold, 'gold')
   whole(value.slots, 'slots')
   check(value.slots >= STARTING_SLOTS && value.slots <= MAX_SLOTS, `slots must be from ${STARTING_SLOTS} through ${MAX_SLOTS}, received ${value.slots}`)
-  check(isRecord(value.materials), 'materials must be an object')
-  for (const id of Object.keys(value.materials)) whole(value.materials[id], `material ${id}`)
   stringList(value.recipes, 'recipes')
   stringList(value.discoveries, 'discoveries')
   stringList(value.milestones, 'milestones')
   check(value.milestones.length <= MAX_SLOTS - STARTING_SLOTS, 'too many milestones')
-  whole(value.debt, 'debt')
-  whole(value.craftCounter, 'craft counter')
-  check(Array.isArray(value.contracts) && value.contracts.length <= 3, 'at most 3 contracts can be active')
+}
+
+function assertPurse(value: unknown, label: string, heroId: string): asserts value is Purse {
+  check(isRecord(value), `${label} purse is missing`)
+  whole(value.gold, `${label} gold`)
+  check(isRecord(value.materials), `${label} materials must be an object`)
+  for (const id of Object.keys(value.materials)) whole(value.materials[id], `${label} material ${id}`)
+  whole(value.debt, `${label} debt`)
+  whole(value.craftCounter, `${label} craft counter`)
+  check(Array.isArray(value.contracts) && value.contracts.length <= 3, `${label}: at most 3 contracts can be active`)
   const taken: string[] = []
   for (const entry of value.contracts) {
     check(isRecord(entry) && typeof entry.contractId === 'string' && contractTable[entry.contractId] !== undefined, 'a contract id is unknown')
@@ -277,12 +289,15 @@ function assertAccount(value: unknown): asserts value is AccountData {
     check(!taken.includes(entry.contractId), `contract ${entry.contractId} is taken twice`)
     taken.push(entry.contractId)
   }
-  check(Array.isArray(value.craftQueue) && value.craftQueue.length <= 3, 'the craft queue holds at most 3 jobs')
-  for (const job of value.craftQueue) assertJob(job)
-  check(Array.isArray(value.archive), 'archive must be a list')
+  check(Array.isArray(value.craftQueue) && value.craftQueue.length <= 3, `${label}: the craft queue holds at most 3 jobs`)
+  for (const job of value.craftQueue) {
+    assertJob(job)
+    check(job.heroId === heroId, `${label} craft job ${job.id} belongs to another hero`)
+  }
+  check(Array.isArray(value.archive), `${label} archive must be a list`)
   const archiveIds: string[] = []
   value.archive.forEach((item, index) => {
-    assertItem(item, `archive item ${index + 1}`)
+    assertItem(item, `${label} archive item ${index + 1}`)
     check(!archiveIds.includes(item.id), `item id ${item.id} is duplicated`)
     archiveIds.push(item.id)
   })
@@ -339,6 +354,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     check(item !== undefined, `${label} equipment is missing the ${slot} slot`)
     if (item !== null) assertItem(item, `${label} ${slot}`)
   }
+  assertPurse(value.purse, label, value.id)
 }
 
 /** Version 1 shape check. Throws a readable message on the first problem. */
@@ -368,15 +384,42 @@ export function serializeSave(data: SaveData): string {
   return JSON.stringify(data)
 }
 
+const PURSE_KEYS = ['gold', 'materials', 'contracts', 'craftQueue', 'craftCounter', 'debt', 'archive'] as const
+
+/**
+ * Saves from before 2026-11-03 kept gold, materials, items, contracts, crafting, and debt on the
+ * account. They move to the selected hero (or the first hero when none is selected). A queued
+ * craft job goes to the hero who queued it. Every other hero starts with an empty purse.
+ */
+function splitAccountPurse(parsed: Record<string, unknown>): void {
+  const account = parsed.account
+  if (!isRecord(account) || !PURSE_KEYS.some((key) => key in account)) return
+  const old: Record<string, unknown> = {}
+  for (const key of PURSE_KEYS) {
+    old[key] = account[key]
+    delete account[key]
+  }
+  const heroes = Array.isArray(parsed.heroes) ? parsed.heroes.filter(isRecord) : []
+  for (const hero of heroes) if (hero.purse === undefined) hero.purse = emptyPurse()
+  const receiver = heroes.find((hero) => hero.id === parsed.selectedHeroId) ?? heroes[0]
+  if (receiver === undefined) return
+  const target = receiver.purse as Record<string, unknown>
+  for (const key of ['gold', 'materials', 'contracts', 'craftCounter', 'debt', 'archive'] as const) {
+    if (old[key] !== undefined) target[key] = old[key]
+  }
+  const jobs = Array.isArray(old.craftQueue) ? old.craftQueue : []
+  for (const job of jobs) {
+    const owner = (isRecord(job) ? heroes.find((hero) => hero.id === job.heroId) : undefined) ?? receiver
+    const queue = (owner.purse as Record<string, unknown>).craftQueue as unknown[]
+    queue.push(isRecord(job) ? { ...job, heroId: owner.id } : job)
+  }
+}
+
 /** Saves from before the world record existed get empty lists. Nothing else is guessed. */
 function fillWorldFields(parsed: unknown): void {
   if (!isRecord(parsed)) return
   if (isRecord(parsed.account) && parsed.account.milestones === undefined) parsed.account.milestones = []
-  if (isRecord(parsed.account) && parsed.account.archive === undefined) parsed.account.archive = []
-  if (isRecord(parsed.account) && parsed.account.debt === undefined) parsed.account.debt = 0
-  if (isRecord(parsed.account) && parsed.account.craftQueue === undefined) parsed.account.craftQueue = []
-  if (isRecord(parsed.account) && parsed.account.contracts === undefined) parsed.account.contracts = []
-  if (isRecord(parsed.account) && parsed.account.craftCounter === undefined) parsed.account.craftCounter = 0
+  splitAccountPurse(parsed)
   if (!Array.isArray(parsed.heroes)) return
   for (const hero of parsed.heroes) {
     if (!isRecord(hero)) continue
@@ -396,6 +439,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.equipment === undefined && typeof hero.id === 'string' && (HERO_CLASSES as readonly string[]).includes(String(hero.classId))) {
       hero.equipment = starterEquipment(hero.id, hero.classId as HeroClass)
     }
+    if (hero.purse === undefined) hero.purse = emptyPurse()
   }
 }
 
@@ -478,4 +522,20 @@ export function reachMilestone(account: AccountData, milestone: (typeof SLOT_MIL
   if (account.milestones.includes(milestone)) return account
   const milestones = [...account.milestones, milestone]
   return { ...account, milestones, slots: Math.min(MAX_SLOTS, STARTING_SLOTS + milestones.length) }
+}
+
+/** The purse of a hero, by default the selected one. An empty roster has an empty purse. */
+export function purseOf(save: SaveData, heroId: string | null = save.selectedHeroId): Purse {
+  return save.heroes.find((hero) => hero.id === heroId)?.purse ?? emptyPurse()
+}
+
+/** Replace a hero's purse, by default the selected hero's. */
+export function withPurse(save: SaveData, purse: Purse, heroId: string | null = save.selectedHeroId): SaveData {
+  if (!save.heroes.some((hero) => hero.id === heroId)) throw new Error(`no hero ${String(heroId)} to hold a purse`)
+  return { ...save, heroes: save.heroes.map((hero) => (hero.id === heroId ? { ...hero, purse } : hero)) }
+}
+
+/** Change some purse fields of a hero, by default the selected hero. */
+export function updatePurse(save: SaveData, patch: Partial<Purse>, heroId: string | null = save.selectedHeroId): SaveData {
+  return withPurse(save, { ...purseOf(save, heroId), ...patch }, heroId)
 }

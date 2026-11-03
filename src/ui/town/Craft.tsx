@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { purseOf } from '../../persist/save.ts'
 
 import { itemBases, itemName } from '../../content/items.ts'
 import { Row } from '../Row.tsx'
@@ -69,13 +70,13 @@ export function Craft() {
     const item = hero.equipment[slot]
     return item === null ? [] : [{ item, worn: SLOT_NAMES[slot] }]
   })
-  const upgradable: { item: ItemInstance; worn: string | null }[] = [...worn, ...save.account.archive.map((item) => ({ item, worn: null }))]
+  const upgradable: { item: ItemInstance; worn: string | null }[] = [...worn, ...purseOf(save).archive.map((item) => ({ item, worn: null }))]
 
   return (
     <section aria-label="Crafting">
       <h2>Crafting — {hero.name}</h2>
       <p>
-        Proficiency rank <strong data-testid="rank">{rank}</strong> ({hero.craftXp} experience). Queue: {save.account.craftQueue.length} of{' '}
+        Proficiency rank <strong data-testid="rank">{rank}</strong> ({hero.craftXp} experience). Queue: {purseOf(save).craftQueue.length} of{' '}
         {QUEUE_MAX}. Time passes only while no expedition runs.
         {import.meta.env.DEV ? (
           <>
@@ -119,7 +120,7 @@ export function Craft() {
           <select aria-label="Craft material" value={materialId} onChange={(event) => setMaterialId(event.target.value)}>
             {MATERIALS.map((id) => (
               <option key={id} value={id}>
-                {id} (have {save.account.materials[id] ?? 0})
+                {id} (have {purseOf(save).materials[id] ?? 0})
               </option>
             ))}
           </select>
@@ -184,9 +185,9 @@ export function Craft() {
       </ul>
 
       <h3>Queue</h3>
-      {save.account.craftQueue.length === 0 ? <p>Nothing is being made.</p> : null}
+      {purseOf(save).craftQueue.length === 0 ? <p>Nothing is being made.</p> : null}
       <ol>
-        {save.account.craftQueue.map((job, index) => (
+        {purseOf(save).craftQueue.map((job, index) => (
           <li key={job.id} data-testid="job">
             {job.kind === 'craft'
               ? `Craft ${itemBases[job.baseId]?.name ?? job.baseId}, item level ${job.itemLevel}${job.modifierId === null ? '' : `, ${ITEM_MODIFIERS[job.modifierId]?.name}`}`

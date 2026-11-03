@@ -1,4 +1,5 @@
 import { Row } from '../Row.tsx'
+import { purseOf } from '../../persist/save.ts'
 import { useState } from 'react'
 
 import { MAX_ACTIVE_CONTRACTS, contractList } from '../../content/contracts.ts'
@@ -9,7 +10,7 @@ export function Contracts() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const closed = save.expedition !== null
-  const active = save.account.contracts
+  const active = purseOf(save).contracts
 
   function run(problem: string | null, done: string): void {
     setError(problem)

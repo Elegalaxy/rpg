@@ -13,7 +13,7 @@ import { selectedHero } from './character.ts'
 import { abandonContract, acceptContract, addContractProgress, collectContract, isComplete, unitsFrom } from './contracts.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
-import { assertSaveData, newSave, parseSave, serializeSave, type SaveData } from './save.ts'
+import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
 import { outcomeSummary, settleExpedition } from './world.ts'
 
 function heroSave(race: 'human' | 'elf' = 'human'): SaveData {
@@ -93,30 +93,30 @@ describe('taking and collecting', () => {
     expect(acceptContract(save, 'cull-the-pack')).toEqual({ ok: false, reason: 'You already have that contract.' })
     save = ok(acceptContract(save, 'clear-the-shards'))
     save = ok(acceptContract(save, 'hunt-deserters'))
-    expect(save.account.contracts).toHaveLength(MAX_ACTIVE_CONTRACTS)
+    expect(purseOf(save).contracts).toHaveLength(MAX_ACTIVE_CONTRACTS)
     expect(acceptContract(save, 'thicket-sweep')).toEqual({ ok: false, reason: 'You can have at most 3 contracts at once.' })
     expect(acceptContract(save, 'nothing')).toEqual({ ok: false, reason: 'That contract is not on the board.' })
     const fewer = ok(abandonContract(save, 'clear-the-shards'))
-    expect(fewer.account.contracts.map((entry) => entry.contractId)).toEqual(['cull-the-pack', 'hunt-deserters'])
+    expect(purseOf(fewer).contracts.map((entry) => entry.contractId)).toEqual(['cull-the-pack', 'hunt-deserters'])
     expect(abandonContract(fewer, 'clear-the-shards')).toEqual({ ok: false, reason: 'You do not have that contract.' })
     expect(() => assertSaveData(save)).not.toThrow()
   })
 
-  it('pays gold and materials to the account and XP to the collecting hero, then frees the contract', () => {
+  it('pays gold, materials, and XP to the collecting hero, then frees the contract', () => {
     let save = ok(acceptContract(heroSave(), 'hunt-deserters'))
     expect(collectContract(save, 'hero-1', 'hunt-deserters')).toEqual({
       ok: false,
       reason: 'Hunt Deserters is not finished: 0 of 3.',
     })
-    save = { ...save, account: { ...save.account, contracts: [{ contractId: 'hunt-deserters', progress: 3 }] } }
-    expect(isComplete(save.account.contracts[0]!)).toBe(true)
+    save = updatePurse(save, { contracts: [{ contractId: 'hunt-deserters', progress: 3 }] })
+    expect(isComplete(purseOf(save).contracts[0]!)).toBe(true)
     const paid = ok(collectContract(save, 'hero-1', 'hunt-deserters'))
-    expect(paid.account.gold).toBe(18)
-    expect(paid.account.materials).toEqual({ scrap: 2 })
-    expect(paid.account.contracts).toEqual([])
+    expect(purseOf(paid).gold).toBe(18)
+    expect(purseOf(paid).materials).toEqual({ scrap: 2 })
+    expect(purseOf(paid).contracts).toEqual([])
     expect(hero(paid).progress).toEqual(awardXp(hero(save).progress, 31))
-    expect(ok(acceptContract(paid, 'hunt-deserters')).account.contracts).toHaveLength(1)
-    expect(collectContract(save, 'nobody', 'hunt-deserters')).toEqual({ ok: false, reason: 'Select a hero to collect the experience.' })
+    expect(purseOf(ok(acceptContract(paid, 'hunt-deserters'))).contracts).toHaveLength(1)
+    expect(collectContract(save, 'nobody', 'hunt-deserters')).toEqual({ ok: false, reason: 'Select a hero to collect the reward.' })
     expect(() => assertSaveData(paid)).not.toThrow()
     expect(parseSave(serializeSave(paid)).ok).toBe(true)
   })
@@ -131,11 +131,11 @@ describe('taking and collecting', () => {
 
   it('rejects a bad contract list in a save', () => {
     const save = ok(acceptContract(heroSave(), 'cull-the-pack'))
-    const raw = JSON.parse(serializeSave(save)) as { account: { contracts: Record<string, unknown>[] } }
-    raw.account.contracts[0]!.contractId = 'nothing'
+    const raw = JSON.parse(serializeSave(save)) as { heroes: { purse: { contracts: Record<string, unknown>[] } }[] }
+    raw.heroes[0]!.purse.contracts[0]!.contractId = 'nothing'
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: expect.stringMatching(/contract id is unknown/) })
-    raw.account.contracts[0]!.contractId = 'cull-the-pack'
-    raw.account.contracts[0]!.progress = 99
+    raw.heroes[0]!.purse.contracts[0]!.contractId = 'cull-the-pack'
+    raw.heroes[0]!.purse.contracts[0]!.progress = 99
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: expect.stringMatching(/past its target/) })
   })
 })
@@ -164,11 +164,11 @@ describe('progress from expeditions', () => {
     save.expedition!.outcome = 'defeat'
     save.expedition!.history.push({ index: 5, encounterId: 'fractured-warden', seed: 9, outcome: 'defeat', durationMs: 1 })
     const settled = settleExpedition(save)
-    const progress = Object.fromEntries(settled.account.contracts.map((entry) => [entry.contractId, entry.progress]))
+    const progress = Object.fromEntries(purseOf(settled).contracts.map((entry) => [entry.contractId, entry.progress]))
     expect(progress).toEqual({ 'cull-the-pack': 2, 'break-the-elite': 1, 'thicket-sweep': 2 })
     const again = addContractProgress(addContractProgress(settled, save.expedition!), save.expedition!)
-    expect(again.account.contracts.find((entry) => entry.contractId === 'break-the-elite')?.progress).toBe(1)
-    expect(again.account.contracts.find((entry) => entry.contractId === 'cull-the-pack')?.progress).toBe(6)
+    expect(purseOf(again).contracts.find((entry) => entry.contractId === 'break-the-elite')?.progress).toBe(1)
+    expect(purseOf(again).contracts.find((entry) => entry.contractId === 'cull-the-pack')?.progress).toBe(6)
     expect(() => assertSaveData(again)).not.toThrow()
   })
 

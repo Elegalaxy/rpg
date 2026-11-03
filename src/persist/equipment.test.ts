@@ -11,7 +11,7 @@ import { selectedHero } from './character.ts'
 import { addDevelopmentItems, equipFromArchive, previewEquip, statLines, statsFor, unequipToArchive } from './equipment.ts'
 import { blueprintForHero, startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
-import { assertSaveData, newSave, parseSave, serializeSave, type SaveData } from './save.ts'
+import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
 import { canStartRoute, settleExpedition } from './world.ts'
 import { gameDefs } from '../content/scenarios.ts'
 
@@ -32,7 +32,7 @@ function heroSave(classId: (typeof HERO_CLASSES)[number] = 'warrior'): SaveData 
 }
 
 function withItems(save: SaveData, items: ItemInstance[]): SaveData {
-  return { ...save, account: { ...save.account, archive: [...save.account.archive, ...items] } }
+  return updatePurse(save, { archive: [...purseOf(save).archive, ...items] })
 }
 
 function hero(save: SaveData) {
@@ -113,21 +113,21 @@ describe('starter gear', () => {
   })
 
   it('fills the starter set for a save that has none', () => {
-    const raw = JSON.parse(serializeSave(heroSave('mage'))) as { heroes: Record<string, unknown>[]; account: Record<string, unknown> }
+    const raw = JSON.parse(serializeSave(heroSave('mage'))) as { heroes: { equipment?: unknown; purse?: unknown }[] }
     delete raw.heroes[0]!.equipment
-    delete raw.account.archive
+    delete raw.heroes[0]!.purse
     const parsed = parseSave(JSON.stringify(raw))
     expect(parsed.ok && parsed.data.heroes[0]?.equipment.mainHand?.baseId).toBe('weapon-caster')
-    expect(parsed.ok && parsed.data.account.archive).toEqual([])
+    expect(parsed.ok && purseOf(parsed.data).archive).toEqual([])
   })
 
   it('rejects a broken item in the save', () => {
     const save = withItems(heroSave(), [newItem('x', 'weapon-bow', 1)])
-    const raw = JSON.parse(serializeSave(save)) as { account: { archive: Record<string, unknown>[] } }
-    raw.account.archive[0]!.baseId = 'nonsense'
+    const raw = JSON.parse(serializeSave(save)) as { heroes: { purse: { archive: Record<string, unknown>[] } }[] }
+    raw.heroes[0]!.purse.archive[0]!.baseId = 'nonsense'
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: expect.stringMatching(/unknown base/) })
-    raw.account.archive[0]!.baseId = 'weapon-bow'
-    raw.account.archive[0]!.durability = 500
+    raw.heroes[0]!.purse.archive[0]!.baseId = 'weapon-bow'
+    raw.heroes[0]!.purse.archive[0]!.durability = 500
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: expect.stringMatching(/above its maximum/) })
   })
 })
@@ -151,8 +151,8 @@ describe('equip rules', () => {
     const save = withItems(heroSave(), [newItem('sword', 'weapon-one-handed', 1, 1.1)])
     const next = equip(save, 'sword')
     expect(hero(next).equipment.mainHand?.id).toBe('sword')
-    expect(next.account.archive.map((item) => item.id)).toEqual(['hero-1-mainHand'])
-    const count = (s: SaveData) => s.account.archive.length + Object.values(hero(s).equipment).filter((item) => item !== null).length
+    expect(purseOf(next).archive.map((item) => item.id)).toEqual(['hero-1-mainHand'])
+    const count = (s: SaveData) => purseOf(s).archive.length + Object.values(hero(s).equipment).filter((item) => item !== null).length
     expect(count(next)).toBe(count(save))
   })
 
@@ -160,7 +160,7 @@ describe('equip rules', () => {
     const save = withItems(heroSave(), [newItem('maul', 'weapon-two-handed', 1), newItem('shield2', 'offhand-shield', 1)])
     const next = equip(save, 'maul')
     expect(hero(next).equipment.offHand).toBeNull()
-    expect(next.account.archive.map((item) => item.id)).toEqual(['shield2', 'hero-1-mainHand', 'hero-1-offHand'])
+    expect(purseOf(next).archive.map((item) => item.id)).toEqual(['shield2', 'hero-1-mainHand', 'hero-1-offHand'])
     expect(gearGaps(hero(next).equipment, itemBase)).toEqual([])
     expect(equipFromArchive(next, 'hero-1', 'shield2')).toEqual({ ok: false, reason: 'A two-handed weapon disables the off-hand slot.' })
     const back = equip(next, 'hero-1-mainHand')
@@ -173,7 +173,7 @@ describe('equip rules', () => {
     const swapped = equip(ranger, 'sword')
     expect(hero(swapped).equipment.mainHand?.id).toBe('sword')
     expect(hero(swapped).equipment.offHand).toBeNull()
-    expect(swapped.account.archive.map((item) => item.id)).toContain('hero-1-offHand')
+    expect(purseOf(swapped).archive.map((item) => item.id)).toContain('hero-1-offHand')
     expect(equipFromArchive(swapped, 'hero-1', 'hero-1-offHand')).toEqual({ ok: false, reason: 'A quiver needs a bow in the main hand.' })
     const warrior = withItems(heroSave(), [newItem('q', 'offhand-quiver', 1)])
     expect(equipFromArchive(warrior, 'hero-1', 'q').ok).toBe(false)
@@ -260,8 +260,8 @@ describe('what equipping changes', () => {
   it('adds test weapons with fresh ids each time', () => {
     const once = addDevelopmentItems(heroSave(), 'hero-1')
     const twice = addDevelopmentItems(once, 'hero-1')
-    expect(twice.account.archive).toHaveLength(12)
-    expect(new Set(twice.account.archive.map((item) => item.id)).size).toBe(12)
+    expect(purseOf(twice).archive).toHaveLength(12)
+    expect(new Set(purseOf(twice).archive.map((item) => item.id)).size).toBe(12)
     expect(() => assertSaveData(twice)).not.toThrow()
   })
 })
@@ -296,7 +296,7 @@ describe('taking gear off', () => {
     const result = unequipToArchive(save, 'hero-1', 'head')
     if (!result.ok) throw new Error(result.reason)
     expect(hero(result.save).equipment.head).toBeNull()
-    expect(result.save.account.archive.map((item) => item.id)).toContain('hero-1-head')
+    expect(purseOf(result.save).archive.map((item) => item.id)).toContain('hero-1-head')
     expect(gearGaps(hero(result.save).equipment, itemBase)).toEqual(['head'])
     expect(unequipToArchive(result.save, 'hero-1', 'head')).toEqual({ ok: false, reason: 'Nothing is worn in that slot.' })
     const back = equipFromArchive(result.save, 'hero-1', 'hero-1-head')
@@ -308,7 +308,7 @@ describe('taking gear off', () => {
     const result = unequipToArchive(ranger, 'hero-1', 'mainHand')
     if (!result.ok) throw new Error(result.reason)
     expect(hero(result.save).equipment.offHand).toBeNull()
-    expect(result.save.account.archive.map((item) => item.id).sort()).toEqual(['hero-1-mainHand', 'hero-1-offHand'])
+    expect(purseOf(result.save).archive.map((item) => item.id).sort()).toEqual(['hero-1-mainHand', 'hero-1-offHand'])
     const running = { ...ranger, expedition: startExpedition(hero(ranger), 'splintered-road', 1) }
     expect(unequipToArchive(running, 'hero-1', 'head')).toEqual({ ok: false, reason: 'Equipment is locked while an expedition is running.' })
   })

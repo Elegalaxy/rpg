@@ -6,7 +6,7 @@ import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
 import { createProgress, legacyFromProgress } from '../sim/progression.ts'
 import type { Attributes } from '../sim/stats.ts'
 
-import { reachMilestone, type AccountData, type HeroPurchases, type SaveData, type SavedHero } from './save.ts'
+import { reachMilestone, type HeroPurchases, type SaveData, type SavedHero } from './save.ts'
 import type { RosterResult } from './roster.ts'
 
 export const MASTERY_MAX = 10
@@ -76,12 +76,12 @@ export function heirloomLevel(item: ItemInstance, heroLevel: number): number {
   return level < 1 ? 1 : level
 }
 
-function allItems(hero: SavedHero, account: AccountData): ItemInstance[] {
+function allItems(hero: SavedHero): ItemInstance[] {
   const equipped = EQUIPMENT_SLOT_IDS.flatMap((slot) => {
     const item = hero.equipment[slot]
     return item === null ? [] : [item]
   })
-  return [...equipped, ...account.archive]
+  return [...equipped, ...hero.purse.archive]
 }
 
 /** Bring every one of this hero's heirlooms to the level their level allows. Run after any level change. */
@@ -101,12 +101,11 @@ export function scaleHeirlooms(save: SaveData, heroId: string): SaveData {
     const item = equipment[slot]
     if (item !== null) equipment[slot] = fix(item)
   }
-  const archive = save.account.archive.map(fix)
+  const archive = hero.purse.archive.map(fix)
   if (!changed) return save
   return {
     ...save,
-    account: { ...save.account, archive },
-    heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment } : entry)),
+    heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment, purse: { ...entry.purse, archive } } : entry)),
   }
 }
 
@@ -124,8 +123,8 @@ function startingAttributes(hero: SavedHero): Attributes {
 
 /**
  * Reincarnate a hero. Level, XP, attributes, the skill web, personal gates and Echo ranks, and the
- * account's contracts reset. Mastery, purchases, Legacy, discoveries, recipes, crafting experience,
- * deposited gold, materials, and the archive stay. All worn gear goes to the archive and the hero gets
+ * hero's contracts reset. Mastery, purchases, Legacy, discoveries, recipes, crafting experience,
+ * the hero's deposited gold, materials, debt, and archive stay. All worn gear goes to the archive and the hero gets
  * fresh starter gear, and the chosen item becomes an heirloom.
  */
 export function reincarnate(save: SaveData, heroId: string, heirloomItemId: string | null): RosterResult {
@@ -134,7 +133,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
   const block = reincarnationBlock(save, hero)
   if (block !== null) return { ok: false, reason: block }
 
-  const owned = allItems(hero, save.account)
+  const owned = allItems(hero)
   const chosen = heirloomItemId === null ? null : owned.find((item) => item.id === heirloomItemId)
   if (heirloomItemId !== null && chosen === undefined) return { ok: false, reason: 'That item is not yours to keep.' }
   if (chosen !== null && chosen !== undefined && chosen.heirloom !== undefined && chosen.heirloom.heroId !== heroId) {
@@ -149,7 +148,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
   const loadout = referenceLoadoutFor(hero.classId)
 
   // Every worn item goes to the archive. Heirlooms already kept stay flagged up to the allowance.
-  const archive: ItemInstance[] = [...save.account.archive]
+  const archive: ItemInstance[] = [...hero.purse.archive]
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = hero.equipment[slot]
     if (item !== null) archive.push(item)
@@ -183,8 +182,9 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     lives,
     claimedBonuses: [...hero.claimedBonuses, ...preview.bonuses.map((bonus) => bonus.id)],
     equipment: starterEquipment(hero.id, hero.classId, lives),
+    purse: { ...hero.purse, archive: nextArchive, contracts: [] },
   }
-  const account = reachMilestone({ ...save.account, archive: nextArchive, contracts: [] }, 'first-reincarnation')
+  const account = reachMilestone(save.account, 'first-reincarnation')
   const next: SaveData = { ...save, account, heroes: save.heroes.map((entry) => (entry.id === heroId ? renewed : entry)) }
   return { ok: true, save: scaleHeirlooms(next, heroId), hero: renewed }
 }

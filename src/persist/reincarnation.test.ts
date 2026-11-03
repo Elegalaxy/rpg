@@ -26,7 +26,7 @@ import {
   reincarnationBlock,
   scaleHeirlooms,
 } from './reincarnation.ts'
-import { assertSaveData, newSave, parseSave, serializeSave, type SaveData } from './save.ts'
+import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
 import { settleExpedition } from './world.ts'
 
 function heroSave(race: 'human' | 'elf' = 'human'): SaveData {
@@ -53,19 +53,23 @@ function veteran(): SaveData {
     { ...hero(save).progress, allocatedNodeIds: ['warrior-driving-blow'], unspentSkillPoints: 2, unspentAttributePoints: 4 },
     1000,
   )
+  const purse = {
+    ...save.heroes[0]!.purse,
+    gold: 77,
+    materials: { shard: 5 },
+    contracts: [{ contractId: 'cull-the-pack', progress: 2 }],
+    archive: [newItem('spare', 'weapon-bow', 1, 1.07)],
+  }
   const withWork: SaveData = {
     ...save,
     account: {
       ...save.account,
-      gold: 77,
-      materials: { shard: 5 },
       recipes: ['keen', 'precise', 'nimble'],
       discoveries: [...save.account.discoveries, 'node:withered-grove'],
-      contracts: [{ contractId: 'cull-the-pack', progress: 2 }],
-      archive: [newItem('spare', 'weapon-bow', 1, 1.07)],
     },
     heroes: save.heroes.map((h) => ({
       ...h,
+      purse,
       progress,
       craftXp: 9,
       bossLossThisLife: true,
@@ -146,7 +150,7 @@ describe('what reincarnation resets', () => {
     expect(next.defeatedEnemyIds).toEqual([])
     expect(next.clearedNodeIds).toEqual([])
     expect([next.echoRank, next.fightRank, next.bossLossThisLife]).toEqual([0, 0, false])
-    expect(save.account.contracts).toEqual([])
+    expect(purseOf(save).contracts).toEqual([])
   })
 
   it('keeps mastery, purchases, Legacy, discoveries, recipes, crafting experience, gold, materials, and the archive', () => {
@@ -160,9 +164,9 @@ describe('what reincarnation resets', () => {
     expect(save.account.discoveries).toEqual(before.account.discoveries)
     expect(save.account.recipes).toEqual(['keen', 'precise', 'nimble'])
     expect(next.craftXp).toBe(9)
-    expect(save.account.gold).toBe(77)
-    expect(save.account.materials).toEqual({ shard: 5 })
-    expect(save.account.archive.find((item) => item.id === 'spare')).toEqual(before.account.archive[0])
+    expect(purseOf(save).gold).toBe(77)
+    expect(purseOf(save).materials).toEqual({ shard: 5 })
+    expect(purseOf(save).archive.find((item) => item.id === 'spare')).toEqual(purseOf(before).archive[0])
     expect(next.vow).toBe(hero(before).vow)
     expect(next.name).toBe('Ash')
   })
@@ -171,7 +175,7 @@ describe('what reincarnation resets', () => {
     const before = veteran()
     const save = ok(reincarnate(before, 'hero-1', null))
     const worn = Object.values(hero(before).equipment).map((item) => item!.id)
-    const archived = save.account.archive.map((item) => item.id)
+    const archived = purseOf(save).archive.map((item) => item.id)
     for (const id of worn) expect(archived).toContain(id)
     const fresh = Object.values(hero(save).equipment).map((item) => item!.id)
     expect(new Set(fresh).size).toBe(8)
@@ -197,9 +201,9 @@ describe('the heirloom', () => {
   it('flags the chosen item for its hero, caps it at the level it had, and scales it to level 1', () => {
     const lost = veteran()
     const strong = { ...lost, heroes: lost.heroes.map((h) => ({ ...h, equipment: { ...h.equipment, mainHand: { ...h.equipment.mainHand!, itemLevel: 1, quality: 1.08 } } })) }
-    const level7 = { ...strong, account: { ...strong.account, archive: [newItem('blade', 'weapon-one-handed', 7, 1.09)] } }
+    const level7 = updatePurse(strong, { archive: [newItem('blade', 'weapon-one-handed', 7, 1.09)] })
     const next = ok(reincarnate(level7, 'hero-1', 'blade'))
-    const blade = next.account.archive.find((item) => item.id === 'blade')!
+    const blade = purseOf(next).archive.find((item) => item.id === 'blade')!
     expect(blade.heirloom).toEqual({ heroId: 'hero-1', cap: 7 })
     expect(blade.itemLevel).toBe(1)
     expect(blade.quality).toBe(1.09)
@@ -207,12 +211,12 @@ describe('the heirloom', () => {
 
   it('grows with the hero up to its cap, and no further', () => {
     const lost = veteran()
-    const level7 = { ...lost, account: { ...lost.account, archive: [newItem('blade', 'weapon-one-handed', 7, 1.09)] } }
+    const level7 = updatePurse(lost, { archive: [newItem('blade', 'weapon-one-handed', 7, 1.09)] })
     let save = ok(reincarnate(level7, 'hero-1', 'blade'))
     const at = (level: number) => {
       save = { ...save, heroes: save.heroes.map((h) => ({ ...h, progress: { ...h.progress, level } })) }
       save = scaleHeirlooms(save, 'hero-1')
-      return save.account.archive.find((item) => item.id === 'blade')!.itemLevel
+      return purseOf(save).archive.find((item) => item.id === 'blade')!.itemLevel
     }
     expect([at(1), at(4), at(7), at(12)]).toEqual([1, 4, 7, 7])
     expect(heirloomLevel(newItem('x', 'weapon-bow', 9), 3)).toBe(3)
@@ -221,25 +225,26 @@ describe('the heirloom', () => {
 
   it('can be equipped by its hero at the scaled level, and by no one else', () => {
     const lost = veteran()
-    const save = ok(reincarnate({ ...lost, account: { ...lost.account, archive: [newItem('blade', 'weapon-one-handed', 7)] } }, 'hero-1', 'blade'))
+    const save = ok(reincarnate(updatePurse(lost, { archive: [newItem('blade', 'weapon-one-handed', 7)] }), 'hero-1', 'blade'))
     const equipped = ok(equipFromArchive(save, 'hero-1', 'blade'))
     expect(hero(equipped).equipment.mainHand?.id).toBe('blade')
     expect(hero(equipped).equipment.mainHand?.itemLevel).toBe(1)
     const other = createHero(save, { name: 'Cinder', race: 'elf', classId: 'mage' })
     if (!other.ok) throw new Error(other.reason)
     const shared = { ...other.save, account: { ...other.save.account, slots: 3 } }
-    expect(equipFromArchive(shared, 'hero-2', 'blade')).toEqual({ ok: false, reason: "That is another hero's heirloom." })
+    expect(equipFromArchive(shared, 'hero-2', 'blade')).toEqual({ ok: false, reason: 'That item is not in the archive.' })
   })
 
   it('keeps one heirloom, or two with the Second Heirloom, and releases an older one at its cap', () => {
     const lost = veteran()
-    const first = ok(reincarnate({ ...lost, account: { ...lost.account, archive: [newItem('a', 'weapon-bow', 5)] } }, 'hero-1', 'a'))
-    const armed = { ...first, account: { ...first.account, archive: [...first.account.archive, newItem('b', 'weapon-dagger', 6)] }, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true })) }
+    const first = ok(reincarnate(updatePurse(lost, { archive: [newItem('a', 'weapon-bow', 5)] }), 'hero-1', 'a'))
+    const stocked = updatePurse(first, { archive: [...purseOf(first).archive, newItem('b', 'weapon-dagger', 6)] })
+    const armed = { ...stocked, heroes: stocked.heroes.map((h) => ({ ...h, bossLossThisLife: true })) }
     const one = ok(reincarnate(armed, 'hero-1', 'b'))
-    const flagged = (save: SaveData) => save.account.archive.filter((item) => item.heirloom !== undefined).map((item) => item.id).sort()
+    const flagged = (save: SaveData) => purseOf(save).archive.filter((item) => item.heirloom !== undefined).map((item) => item.id).sort()
     expect(flagged(one)).toEqual(['b'])
-    expect(one.account.archive.find((item) => item.id === 'a')).toMatchObject({ itemLevel: 5 })
-    expect(one.account.archive.find((item) => item.id === 'a')?.heirloom).toBeUndefined()
+    expect(purseOf(one).archive.find((item) => item.id === 'a')).toMatchObject({ itemLevel: 5 })
+    expect(purseOf(one).archive.find((item) => item.id === 'a')?.heirloom).toBeUndefined()
     const second = { ...armed, heroes: armed.heroes.map((h) => ({ ...h, purchases: { ...h.purchases, secondHeirloom: true } })) }
     expect(flagged(ok(reincarnate(second, 'hero-1', 'b')))).toEqual(['a', 'b'])
     expect(reincarnate(lost, 'hero-1', 'nothing')).toEqual({ ok: false, reason: 'That item is not yours to keep.' })
@@ -336,17 +341,17 @@ describe('mastery', () => {
 describe('heirlooms keep up when the hero levels', () => {
   it('scales after XP from a settled expedition and from a collected contract', () => {
     const lost = veteran()
-    let save = ok(reincarnate({ ...lost, account: { ...lost.account, archive: [newItem('blade', 'weapon-one-handed', 9)] } }, 'hero-1', 'blade'))
-    save = { ...save, account: { ...save.account, contracts: [{ contractId: 'hunt-deserters', progress: 3 }] } }
+    let save = ok(reincarnate(updatePurse(lost, { archive: [newItem('blade', 'weapon-one-handed', 9)] }), 'hero-1', 'blade'))
+    save = updatePurse(save, { contracts: [{ contractId: 'hunt-deserters', progress: 3 }] })
     const collected = ok(collectContract(save, 'hero-1', 'hunt-deserters'))
     const level = hero(collected).progress.level
-    expect(collected.account.archive.find((item) => item.id === 'blade')?.itemLevel).toBe(Math.min(level, 9))
+    expect(purseOf(collected).archive.find((item) => item.id === 'blade')?.itemLevel).toBe(Math.min(level, 9))
     const run = startExpedition(hero(collected), 'splintered-road', 1)
     run.outcome = 'returned'
     run.xpEarned = 400
     const settled = settleExpedition({ ...collected, expedition: run })
     const now = hero(settled).progress.level
     expect(now).toBeGreaterThan(level)
-    expect(settled.account.archive.find((item) => item.id === 'blade')?.itemLevel).toBe(Math.min(now, 9))
+    expect(purseOf(settled).archive.find((item) => item.id === 'blade')?.itemLevel).toBe(Math.min(now, 9))
   })
 })

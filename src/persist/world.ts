@@ -20,7 +20,7 @@ import { awardXp } from '../sim/progression.ts'
 import { applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress } from './contracts.ts'
 import { scaleHeirlooms } from './reincarnation.ts'
-import { reachMilestone, type SaveData, type SavedHero } from './save.ts'
+import { purseOf, reachMilestone, updatePurse, type SaveData, type SavedHero } from './save.ts'
 
 export type NodeState = 'locked' | 'discovered' | 'cleared'
 
@@ -246,7 +246,7 @@ export function bossVictoryRanks(expedition: ExpeditionState): number[] {
 }
 
 /**
- * Begin a run for the selected hero. The gold the hero carries comes out of the account, up to their
+ * Begin a run for the selected hero. The gold the hero carries comes out of its purse, up to the
  * chosen amount, and the rest travels as safe deposited gold. Settling puts it back.
  */
 export function beginExpedition(save: SaveData, routeId: string, seed: number): { ok: true; save: SaveData } | { ok: false; reason: string } {
@@ -254,19 +254,20 @@ export function beginExpedition(save: SaveData, routeId: string, seed: number): 
   if (!check.ok) return check
   const hero = selectedHero(save)
   if (hero === null) return { ok: false, reason: 'Select a hero first.' }
-  const carried = Math.min(hero.carryGold, save.account.gold)
+  const gold = hero.purse.gold
+  const carried = Math.min(hero.carryGold, gold)
   let expedition
   try {
-    expedition = startExpedition(hero, routeId, seed, { carried, deposited: save.account.gold - carried })
+    expedition = startExpedition(hero, routeId, seed, { carried, deposited: gold - carried })
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : String(error) }
   }
-  return { ok: true, save: { ...save, account: { ...save.account, gold: 0 }, expedition } }
+  return { ok: true, save: { ...updatePurse(save, { gold: 0 }), expedition } }
 }
 
 /**
  * Close a finished expedition. A safe return opens the first-return slot. Secured loot, deposited
- * gold, and the carried gold of a safe return go to the account, and a defeat's debt is added, and a defeat keeps only what was already secured. The expedition is removed.
+ * gold, and the carried gold of a safe return go to the hero's purse, and a defeat's debt is added, and a defeat keeps only what was already secured. The expedition is removed.
  */
 /** A victory at Echo rank R unlocks rank R + 1 and sets the next fight to it. Nothing else changes the rank. */
 function unlockedRanks(hero: SavedHero, expedition: ExpeditionState): { echoRank: number; fightRank: number } {
@@ -279,15 +280,16 @@ export function settleExpedition(save: SaveData): SaveData {
   const expedition = save.expedition
   if (expedition === null || expedition.outcome === 'ongoing') return save
   const progressed = addContractProgress(recordProgress(save), expedition)
-  const materials = { ...progressed.account.materials }
+  const before = purseOf(progressed)
+  const materials = { ...before.materials }
   for (const stack of expedition.secured) materials[stack.materialId] = (materials[stack.materialId] ?? 0) + stack.quantity
-  let account = {
-    ...progressed.account,
+  const purse = {
+    ...before,
     materials,
     gold: expedition.depositedGold + (expedition.outcome === 'returned' ? expedition.carriedGold : 0),
-    debt: progressed.account.debt + expedition.debt,
+    debt: before.debt + expedition.debt,
   }
-  if (expedition.outcome === 'returned') account = reachMilestone(account, 'first-return')
+  const account = expedition.outcome === 'returned' ? reachMilestone(progressed.account, 'first-return') : progressed.account
   const heroes = progressed.heroes.map((hero) =>
     hero.id === selectedHero(progressed)?.id
       ? {
@@ -296,6 +298,7 @@ export function settleExpedition(save: SaveData): SaveData {
           progress: awardXp(hero.progress, expedition.xpEarned ?? 0),
           ...unlockedRanks(hero, expedition),
           bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
+          purse,
         }
       : hero,
   )

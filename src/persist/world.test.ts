@@ -7,7 +7,7 @@ import { stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
-import { assertSaveData, newSave, type SaveData } from './save.ts'
+import { assertSaveData, newSave, type SaveData, purseOf } from './save.ts'
 import {
   canStartRoute,
   fightNodeIds,
@@ -242,8 +242,8 @@ describe('settling an expedition', () => {
     expedition.carriedGold = 7
     const settled = settleExpedition(save)
     expect(settled.expedition).toBeNull()
-    expect(settled.account.materials).toEqual({ shard: 8, scrap: 4 })
-    expect(settled.account.gold).toBe(12)
+    expect(purseOf(settled).materials).toEqual({ shard: 8, scrap: 4 })
+    expect(purseOf(settled).gold).toBe(12)
     expect(settled.account.slots).toBe(3)
     expect(settled.account.milestones).toEqual(['first-return'])
     expect(() => assertSaveData(settled)).not.toThrow()
@@ -258,8 +258,8 @@ describe('settling an expedition', () => {
     expedition.depositedGold = 5
     expedition.carriedGold = 7
     const settled = settleExpedition(save)
-    expect(settled.account.materials).toEqual({ hide: 4 })
-    expect(settled.account.gold).toBe(5)
+    expect(purseOf(settled).materials).toEqual({ hide: 4 })
+    expect(purseOf(settled).gold).toBe(5)
     expect(settled.account.slots).toBe(2)
     expect(settled.account.milestones).toEqual([])
   })

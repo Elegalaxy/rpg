@@ -6,7 +6,7 @@ import { renaissanceActive } from '../sim/progression.ts'
 import { classWebs } from '../content/webs/index.ts'
 
 import type { RosterResult } from './roster.ts'
-import type { SaveData, SavedHero } from './save.ts'
+import { updatePurse, type SaveData, type SavedHero } from './save.ts'
 
 /** Derived stats for what the hero has equipped now, or null when the gear is incomplete. */
 export function statsFor(hero: SavedHero): HeroDerivedStats | null {
@@ -60,16 +60,16 @@ export function wearerOf(hero: SavedHero): Wearer {
   return { classId: hero.classId, crossTrained: hero.progress.allocatedNodeIds.includes(NODE_HUMAN_CROSS_TRAINING) }
 }
 
-function withEquipped(hero: SavedHero, archive: SaveData['account']['archive'], itemId: string, slot: EquipmentSlotId | null) {
-  return equipItem(hero.equipment, archive, itemId, slot, hero.progress.level, itemBase, wearerOf(hero))
+function withEquipped(hero: SavedHero, itemId: string, slot: EquipmentSlotId | null) {
+  return equipItem(hero.equipment, hero.purse.archive, itemId, slot, hero.progress.level, itemBase, wearerOf(hero))
 }
 
-/** What equipping an archive item would do, without changing anything. */
+/** What equipping an item from the hero's archive would do, without changing anything. */
 export function previewEquip(save: SaveData, heroId: string, itemId: string, slot: EquipmentSlotId | null = null): EquipPreview {
   const hero = save.heroes.find((entry) => entry.id === heroId)
-  const item = save.account.archive.find((entry) => entry.id === itemId)
+  const item = hero?.purse.archive.find((entry) => entry.id === itemId)
   if (hero === undefined || item === undefined) return { block: 'That item is not in the archive.', slot: null, changes: [] }
-  const result = withEquipped(hero, save.account.archive, itemId, slot)
+  const result = withEquipped(hero, itemId, slot)
   if (!result.ok) return { block: result.reason, slot: null, changes: [] }
   const base = itemBase(item.baseId)
   const chosen = slot ?? (base === undefined ? null : (slotsFor(base).find((candidate) => equipBlock(hero.equipment, item, candidate, hero.progress.level, itemBase, wearerOf(hero)) === null) ?? null))
@@ -87,29 +87,30 @@ export function previewEquip(save: SaveData, heroId: string, itemId: string, slo
   return { block: null, slot: chosen, changes }
 }
 
-/** Equip an archive item. Equipment cannot change while the hero is out on an expedition. */
+/** Equip an item from the hero's archive. Equipment cannot change while the hero is out on an expedition. */
 export function equipFromArchive(save: SaveData, heroId: string, itemId: string, slot: EquipmentSlotId | null = null): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
   if (save.expedition !== null) return { ok: false, reason: 'Equipment is locked while an expedition is running.' }
-  const wanted = save.account.archive.find((entry) => entry.id === itemId)
+  const wanted = hero.purse.archive.find((entry) => entry.id === itemId)
   if (wanted?.heirloom !== undefined && wanted.heirloom.heroId !== heroId) {
     return { ok: false, reason: 'That is another hero\'s heirloom.' }
   }
-  const result = withEquipped(hero, save.account.archive, itemId, slot)
+  const result = withEquipped(hero, itemId, slot)
   if (!result.ok) return { ok: false, reason: result.reason }
   return {
     ok: true,
     save: {
       ...save,
-      account: { ...save.account, archive: result.archive },
-      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment: result.equipment } : entry)),
+      heroes: save.heroes.map((entry) =>
+        entry.id === heroId ? { ...entry, equipment: result.equipment, purse: { ...entry.purse, archive: result.archive } } : entry,
+      ),
     },
   }
 }
 
 /**
- * Take a worn item off and put it in the archive. Taking off a bow also sends a worn quiver to the
+ * Take a worn item off and put it in the hero's archive. Taking off a bow also sends a worn quiver to the
  * archive, because a quiver needs a bow. The hero cannot start a run until the slot is filled again.
  */
 export function unequipToArchive(save: SaveData, heroId: string, slot: EquipmentSlotId): RosterResult {
@@ -132,20 +133,22 @@ export function unequipToArchive(save: SaveData, heroId: string, slot: Equipment
     ok: true,
     save: {
       ...save,
-      account: { ...save.account, archive: [...save.account.archive, ...moved] },
-      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment } : entry)),
+      heroes: save.heroes.map((entry) =>
+        entry.id === heroId ? { ...entry, equipment, purse: { ...entry.purse, archive: [...entry.purse.archive, ...moved] } } : entry,
+      ),
     },
   }
 }
 
-/** Development builds only: add a spread of weapons to the archive to try the equip rules. */
+/** Development builds only: add a spread of weapons to the hero's archive to try the equip rules. */
 export function addDevelopmentItems(save: SaveData, heroId: string): SaveData {
   const hero = save.heroes.find((entry) => entry.id === heroId)
-  const level = hero === undefined ? 1 : hero.progress.level
+  if (hero === undefined) return save
   let highest = 0
-  for (const item of save.account.archive) {
+  for (const item of hero.purse.archive) {
     const match = /^dev-(\d+)$/.exec(item.id)
     if (match?.[1] !== undefined) highest = Math.max(highest, Number(match[1]))
   }
-  return { ...save, account: { ...save.account, archive: [...save.account.archive, ...developmentItems(highest + 1, level)] } }
+  const archive = [...hero.purse.archive, ...developmentItems(highest + 1, hero.progress.level)]
+  return updatePurse(save, { archive }, heroId)
 }

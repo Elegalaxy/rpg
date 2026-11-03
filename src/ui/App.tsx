@@ -4,7 +4,7 @@ import { xpToNextLevel } from '../sim/stats.ts'
 import { selectedHero } from '../persist/character.ts'
 import { statLines, statsFor } from '../persist/equipment.ts'
 import { nextHint, type Tab } from '../persist/guidance.ts'
-import type { SaveData } from '../persist/save.ts'
+import { purseOf, type SaveData } from '../persist/save.ts'
 import { scenarios } from '../content/scenarios.ts'
 import type { CombatState } from '../sim/types.ts'
 
@@ -176,8 +176,8 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
           ))}
         </select>
         <span>
-          Gold {save.account.gold}
-          {save.account.debt > 0 ? ` · Debt ${save.account.debt}` : ''}
+          Gold {purseOf(save).gold}
+          {purseOf(save).debt > 0 ? ` · Debt ${purseOf(save).debt}` : ''}
         </span>
       </div>
       {hero !== null ? (

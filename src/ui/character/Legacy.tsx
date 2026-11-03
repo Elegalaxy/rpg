@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { purseOf } from '../../persist/save.ts'
 
 import { itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
@@ -41,7 +42,7 @@ export function Legacy() {
   const skillCost = skillSeedCost(hero.purchases)
   const candidates = [
     ...EQUIPMENT_SLOT_IDS.flatMap((slot) => (hero.equipment[slot] === null ? [] : [hero.equipment[slot]!])),
-    ...save.account.archive.filter((item) => item.heirloom === undefined || item.heirloom.heroId === hero.id),
+    ...purseOf(save).archive.filter((item) => item.heirloom === undefined || item.heirloom.heroId === hero.id),
   ]
 
   function run(problem: string | null, done: string): void {
@@ -98,8 +99,8 @@ export function Legacy() {
       ) : (
         <div>
           <p>
-            Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and the account's contracts. Mastery, purchases,
-            Legacy, discoveries, recipes, crafting, gold, materials, and the archive stay. Your worn gear goes to the archive.
+            Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and this hero's contracts. Mastery, purchases,
+            Legacy, discoveries, recipes, crafting, and this hero's gold, materials, and archive stay. Your worn gear goes to the archive.
           </p>
           <p data-testid="legacy-preview">
             You would gain {preview.total} Legacy: {preview.fromLevel} from level and XP

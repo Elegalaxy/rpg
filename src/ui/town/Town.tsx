@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { purseOf } from '../../persist/save.ts'
 
 import { itemName } from '../../content/items.ts'
 import { recipePrice, recipesForSale } from '../../persist/crafting.ts'
@@ -35,16 +36,16 @@ export function Town({ part }: { part: TownPart }) {
     setMessage(problem === null ? done : null)
   }
 
-  const materials = Object.entries(save.account.materials)
+  const materials = Object.entries(purseOf(save).materials)
   const damaged = [
     ...Object.values(hero?.equipment ?? {}).flatMap((item) => (item !== null && item.durability < item.maxDurability ? [item] : [])),
-    ...save.account.archive.filter((item) => item.durability < item.maxDurability),
+    ...purseOf(save).archive.filter((item) => item.durability < item.maxDurability),
   ]
   return (
     <section aria-label="Town">
       <h2>Greyhaven</h2>
       <p>
-        Gold: <strong data-testid="gold">{save.account.gold}</strong>. Debt: <strong data-testid="debt">{save.account.debt}</strong>.
+        {hero === null ? '' : `${hero.name}'s `}gold: <strong data-testid="gold">{purseOf(save).gold}</strong>. Debt: <strong data-testid="debt">{purseOf(save).debt}</strong>. Gold, materials, and items belong to each hero; recipes and the map are shared.
         {import.meta.env.DEV ? (
           <>
             {' '}
@@ -119,9 +120,9 @@ export function Town({ part }: { part: TownPart }) {
       </ul>
 
       <h3>Archive</h3>
-      {save.account.archive.length === 0 ? <p>The archive is empty.</p> : null}
+      {purseOf(save).archive.length === 0 ? <p>The archive is empty.</p> : null}
       <ul className="rows">
-        {save.account.archive.map((item) => (
+        {purseOf(save).archive.map((item) => (
           <Row
             key={item.id}
             actions={
@@ -151,7 +152,7 @@ export function Town({ part }: { part: TownPart }) {
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={closed || save.account.gold < entry.price}
+                  disabled={closed || purseOf(save).gold < entry.price}
                   aria-label={`Buy ${entry.baseId}`}
                   onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}.`)}
                 >
@@ -179,7 +180,7 @@ export function Town({ part }: { part: TownPart }) {
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={closed || save.account.gold < recipePrice(entry.modifierId)}
+                  disabled={closed || purseOf(save).gold < recipePrice(entry.modifierId)}
                   aria-label={`Learn ${modifier.name} recipe`}
                   onClick={() => run(buyRecipeFromUi(entry.modifierId), `Learned the ${modifier.name} recipe.`)}
                 >
@@ -207,7 +208,7 @@ export function Town({ part }: { part: TownPart }) {
               <button
                 type="button"
                 className="btn-good"
-                disabled={closed || save.account.gold < repairCost(item)}
+                disabled={closed || purseOf(save).gold < repairCost(item)}
                 aria-label={`Repair ${item.id}`}
                 onClick={() => run(repairOneFromUi(item.id), `Repaired ${itemName(item)}.`)}
               >
@@ -221,13 +222,13 @@ export function Town({ part }: { part: TownPart }) {
         ))}
       </ul>
       {hero !== null && repairAllCost(hero) > 0 ? (
-        <button type="button" className="btn-good" disabled={closed || save.account.gold < repairAllCost(hero)} onClick={() => run(repairAllFromUi(), 'Repaired everything equipped.')}>
+        <button type="button" className="btn-good" disabled={closed || purseOf(save).gold < repairAllCost(hero)} onClick={() => run(repairAllFromUi(), 'Repaired everything equipped.')}>
           Repair everything equipped ({repairAllCost(hero)} gold)
         </button>
       ) : null}
 
       <h3>Debt</h3>
-      {save.account.debt === 0 ? (
+      {purseOf(save).debt === 0 ? (
         <p>You owe nothing.</p>
       ) : (
         <div className="controls">
@@ -240,7 +241,7 @@ export function Town({ part }: { part: TownPart }) {
             className="btn-good"
             disabled={closed}
             onClick={() => {
-              run(payDebtFromUi(Number(pay.trim())), `Paid ${Math.min(Number(pay.trim()), save.account.debt)} gold of debt.`)
+              run(payDebtFromUi(Number(pay.trim())), `Paid ${Math.min(Number(pay.trim()), purseOf(save).debt)} gold of debt.`)
               setPay('')
             }}
           >

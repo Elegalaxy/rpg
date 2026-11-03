@@ -20,6 +20,7 @@ import {
   clearSave,
   loadSave,
   newSave,
+  purseOf,
   writeSave,
   type SaveData,
   type StorageLike,
@@ -532,7 +533,7 @@ export function getCraftNotices(): readonly string[] {
 
 /** Let town time pass for the crafting queue. The clock calls this each frame while no expedition runs. */
 export function advanceTown(count: number): void {
-  if (saveStatus.save.expedition !== null || saveStatus.save.account.craftQueue.length === 0) return
+  if (saveStatus.save.expedition !== null || purseOf(saveStatus.save).craftQueue.length === 0) return
   const result = advanceCrafting(saveStatus.save, count * STEP_MS)
   saveStatus = { ...saveStatus, save: result.save }
   if (result.finished.length > 0) {
@@ -546,7 +547,7 @@ const townLoop = createGameLoop({
   isPaused: () => snapshot.paused,
   applySteps: advanceTown,
   notify: () => {
-    if (saveStatus.save.account.craftQueue.length === 0 && craftNotices.length === 0) return
+    if (purseOf(saveStatus.save).craftQueue.length === 0 && craftNotices.length === 0) return
     saveStatus = { ...saveStatus }
     emit()
   },

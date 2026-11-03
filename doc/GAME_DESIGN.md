@@ -31,7 +31,7 @@ Combat begins with high variance. Individual hero mastery raises power and narro
 
 ### Every hero develops personally
 
-Mastery and reincarnation currency belong to the individual hero. Account-level benefits focus on shared knowledge, materials, recipes, and unlocking character slots rather than granting unearned combat power.
+Mastery and reincarnation currency belong to the individual hero. Account-level benefits are shared knowledge (recipes and map discoveries) and character slots rather than unearned combat power. Wealth stays with the hero who earned it.
 
 ### Preparation over direct control
 
@@ -61,9 +61,9 @@ A sufficiently brutal defeat by a superior boss, combined with the hero's extrao
 - The first playable has no way to delete or retire a hero, so a slot stays in use. Retiring heroes is left for later.
 - Only one selected hero makes active or offline progress at a time.
 - World-map discoveries are shared, but each hero must clear personal combat gates.
-- Materials and recipes are shared.
+- Recipes and world discoveries are shared. Decided 2026-11-03: gold, materials, unequipped items (the archive), contracts, the crafting queue, and defeat debt belong to each hero. Shared wealth let a grown hero fund a new one and skip the early game. A shared vault for sending gold or items between heroes was considered and rejected for the same reason. Saves from before this change give everything to the selected hero (or the first hero), each queued craft job goes to the hero who queued it, and the other heroes start empty. Only the selected hero's crafting queue advances.
 - Equipped gear is bound to its hero.
-- A hero must personally unlock the crafting tier required to use shared materials.
+- A hero must personally unlock the crafting tier required to use a material.
 - Race, class, mastery, permanent power, and reincarnation currency are personal to the hero.
 - Post-final-boss world tiers advance separately for each hero.
 
@@ -1443,8 +1443,8 @@ Reincarnation preserves:
 - Known map locations
 - Recipes and crafting proficiency
 - Deposited gold
-- Shared materials
-- Archived equipment
+- The hero's gold, materials, and debt
+- The hero's archived equipment
 
 ### Equipment across lives
 
@@ -1458,7 +1458,7 @@ First-playable reincarnation numbers, decided 2026-11-01:
 - One-time bonuses per hero, claimed at the next reincarnation after the hero first reaches them: +3 for each elite first defeated (Rootmaw Stalker, Echo Knight), +20 for the first Warden defeat, and +5 for each Echo rank first unlocked.
 - Legacy buys hero-bound purchases that last across lives. Attribute Seed adds 1 to a starting attribute of the hero's choice and costs 3, up to 10 in total. Skill Point Seed gives 1 unallocated skill point at the start of each life and costs 8, then 12, then 16, up to 3. Second Heirloom lets the hero keep one more heirloom and costs 25, once.
 - Mastery is the hero's completed lives, up to 10. Each rank adds 2% ordinary XP, up to +20%, and nothing else.
-- The reset and preserve lists above apply. The account's current contracts are cleared, because contracts are account-wide here. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
+- The reset and preserve lists above apply. The hero's current contracts are cleared. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
 
 ### Campaign and endgame
 
@@ -1598,7 +1598,7 @@ Raw mastery bonuses can eventually overwhelm buildcraft and world difficulty. Mo
 
 ### Shared resources
 
-Account-wide materials can accelerate new heroes too aggressively. Personal crafting-tier and hero-level requirements must remain effective gates.
+Account-wide materials could accelerate new heroes too aggressively. Since 2026-11-03 only recipes and discoveries are shared, so a new hero earns its own gold, materials, and items. Personal crafting-tier and hero-level requirements remain gates.
 
 ### Information overload
 

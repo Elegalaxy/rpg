@@ -22,6 +22,7 @@ import {
   writeSave,
   type SaveData,
   type StorageLike,
+  purseOf,
 } from './save.ts'
 
 const DUMMY = 'dummy-standard-20'
@@ -43,7 +44,7 @@ function fakeStorage(options?: { failWrites?: boolean }): StorageLike & { data: 
 
 function withHero(): SaveData {
   const save = newSave()
-  save.account = { gold: 40, materials: { shard: 8, hide: 3 }, recipes: ['patch'], discoveries: ['splintered-road'], slots: 3, milestones: ['first-return'], archive: [], debt: 0, craftQueue: [], craftCounter: 0, contracts: [] }
+  save.account = { recipes: ['patch'], discoveries: ['splintered-road'], slots: 3, milestones: ['first-return'] }
   save.heroes.push({
     id: 'hero-1',
     name: 'Ash',
@@ -67,6 +68,7 @@ function withHero(): SaveData {
     fightRank: 0,
     bossLossThisLife: false,
     equipment: starterEquipment('hero-1', 'warrior'),
+    purse: { gold: 40, materials: { shard: 8, hide: 3 }, archive: [], debt: 0, craftQueue: [], craftCounter: 0, contracts: [] },
   })
   save.selectedHeroId = 'hero-1'
   return save
@@ -147,7 +149,7 @@ describe('save', () => {
     const missingHero = { ...withHero(), selectedHeroId: 'nobody' }
     expect(parseSave(JSON.stringify(missingHero))).toMatchObject({ ok: false, reason: expect.stringMatching(/selected hero/) })
     const badGold = withHero()
-    badGold.account.gold = -1
+    purseOf(badGold).gold = -1
     expect(parseSave(JSON.stringify(badGold))).toMatchObject({ ok: false, reason: expect.stringMatching(/gold/) })
     const badClass = JSON.parse(JSON.stringify(withHero())) as SaveData
     ;(badClass.heroes[0] as { classId: string }).classId = 'bard'
