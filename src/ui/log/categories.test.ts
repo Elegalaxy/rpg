@@ -9,6 +9,9 @@ import {
   categoriesForEventType,
   eventMatchesCategories,
   limitLogRows,
+  rowKind,
+  splitDetail,
+  splitLeadTime,
 } from './categories.ts'
 
 const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
@@ -109,5 +112,27 @@ describe('log categories', () => {
     expect(limitLogRows(rows, true)).toBe(rows)
     const exact = rows.slice(0, LOG_ROW_LIMIT)
     expect(limitLogRows(exact, false)).toBe(exact)
+  })
+})
+
+describe('log row text', () => {
+  it('moves the time lead to its own column and keeps the working out of the headline', () => {
+    const line = 'At 1.600s, Shardling deals 5 physical damage to Tester (HP 155 to 150). Power 7 × 1 = 7; roll 0.8791429815813899.'
+    const { time, body } = splitLeadTime(line)
+    expect(time).toBe('1.6s')
+    expect(body).toBe('Shardling deals 5 physical damage to Tester (HP 155 to 150). Power 7 × 1 = 7; roll 0.8791429815813899.')
+    expect(splitDetail(body)).toEqual({
+      headline: 'Shardling deals 5 physical damage to Tester (HP 155 to 150).',
+      detail: 'Power 7 × 1 = 7; roll 0.8791429815813899.',
+    })
+    const roll = splitDetail('Shardling hit roll 0.6136190716642886 against 0.78 (Accuracy 13, Evasion 10): hit.')
+    expect(roll).toEqual({
+      headline: 'Shardling hit roll 0.61 against 0.78 (Accuracy 13, Evasion 10): hit.',
+      detail: 'Shardling hit roll 0.6136190716642886 against 0.78 (Accuracy 13, Evasion 10): hit.',
+    })
+    expect(splitDetail('Encounter ended: victory.')).toEqual({ headline: 'Encounter ended: victory.', detail: null })
+    expect(splitLeadTime('no lead')).toEqual({ time: null, body: 'no lead' })
+    expect(rowKind('damage')).toBe('damageHeal')
+    expect(rowKind('telegraph')).toBe('other')
   })
 })

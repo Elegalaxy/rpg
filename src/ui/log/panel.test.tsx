@@ -17,6 +17,8 @@ import {
   categoriesForEventType,
   filterLog,
   limitLogRows,
+  splitDetail,
+  splitLeadTime,
 } from './categories.ts'
 import { LogPanel } from './LogPanel.tsx'
 import { OutcomeCard } from './OutcomeCard.tsx'
@@ -58,9 +60,12 @@ function decodeText(value: string): string {
 }
 
 function rowTexts(html: string): string[] {
-  return [...html.matchAll(/<button[^>]*class="log-row-button"[^>]*>([\s\S]*?)<\/button>/g)].map((match) =>
-    decodeText(match[1] ?? ''),
-  )
+  return [...html.matchAll(/<span class="log-text">([\s\S]*?)<\/span>/g)].map((match) => decodeText(match[1] ?? ''))
+}
+
+/** What a row shows for an event: the first sentence without its time lead, long fractions rounded. */
+function headlineOf(event: LogEvent): string {
+  return splitDetail(splitLeadTime(formatEvent(event)).body).headline
 }
 
 function chainTexts(html: string): string[] {
@@ -110,33 +115,36 @@ describe('log panel', () => {
     const log = waits(501)
     const html = renderToStaticMarkup(<LogPanel log={log} />)
     const texts = rowTexts(html)
-    const expected = limitLogRows(log, false).map((event) => formatEvent(event))
+    const expected = limitLogRows(log, false).map((event) => headlineOf(event))
     console.log('[ui]', 'log panel window', {
       total: log.length,
       rendered: texts.length,
       first: texts[0],
       last: texts[texts.length - 1],
-      showAllPressed: html.includes('aria-pressed="true">Show all'),
+      olderButton: html.includes('Show 1 older'),
       followChecked: html.includes('checked'),
     })
 
     expect(texts).toEqual(expected)
     expect(texts).toHaveLength(500)
-    expect(texts[0]).toBe(formatEvent(log[1]!))
-    expect(texts[499]).toBe(formatEvent(log[500]!))
-    expect(html).toContain('Showing 500 of 501')
-    expect(html).toContain('>Show all<')
-    expect(html).not.toContain('aria-pressed="true">Show all')
-    expect(html).toContain('Follow')
+    expect(texts[0]).toBe(headlineOf(log[1]!))
+    expect(texts[499]).toBe(headlineOf(log[500]!))
+    expect(html).toContain('Newest 500 of 501 lines')
+    expect(html).toContain('>Show 1 older<')
+    expect(html).toContain('Stay on newest')
+    expect(html).toContain('Every line of the fight, oldest first.')
     expect(html).toContain('aria-label="Log"')
     expect(html).toContain('aria-label="Combat log"')
     expect(summarizeCalls).toEqual([])
 
     const exact = waits(500)
-    expect(rowTexts(renderToStaticMarkup(<LogPanel log={exact} />))).toEqual(exact.map((event) => formatEvent(event)))
+    const exactHtml = renderToStaticMarkup(<LogPanel log={exact} />)
+    expect(rowTexts(exactHtml)).toEqual(exact.map((event) => headlineOf(event)))
+    expect(exactHtml).toContain('500 lines')
+    expect(exactHtml).not.toContain('older<')
     const empty = renderToStaticMarkup(<LogPanel log={[]} />)
-    expect(empty).toContain('No matching events.')
-    expect(empty).toContain('Showing 0 of 0')
+    expect(empty).toContain('No lines match this filter yet.')
+    expect(empty).toContain('0 lines')
     expect(rowTexts(empty)).toEqual([])
   })
 
@@ -177,13 +185,13 @@ describe('log filters', () => {
     })
 
     expect(labels).toEqual([
-      'damage/heal',
-      'rolls',
-      'statuses',
-      'automation',
-      'resources',
-      'retreat',
-      'defeat cause',
+      'Damage & healing',
+      'Hits & misses',
+      'Effects',
+      'Rule choices',
+      'Resources',
+      'Escapes',
+      'Why it ended',
     ])
     expect(LOG_CATEGORIES).toContain('retreat')
     expect(retreatTypes).toEqual([])
@@ -200,8 +208,8 @@ describe('log filters', () => {
     for (const event of hidden) expect(categoriesForEventType(event.type)).not.toContain('damageHeal')
 
     const html = renderToStaticMarkup(<LogPanel log={victory.log} />)
-    expect(rowTexts(html)).toEqual(limitLogRows(victory.log, false).map((event) => formatEvent(event)))
-    for (const label of labels) expect(html).toContain(`>${label}<`)
+    expect(rowTexts(html)).toEqual(limitLogRows(victory.log, false).map((event) => headlineOf(event)))
+    for (const label of labels) expect(decodeText(html)).toContain(` ${label}</label>`)
   })
 })
 
