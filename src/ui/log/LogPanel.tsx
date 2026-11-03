@@ -16,6 +16,7 @@ import {
   splitDetail,
   splitLeadTime,
 } from './categories.ts'
+import { setLogFilter, useLogFilter } from './filterStore.ts'
 import './log.css'
 
 /**
@@ -25,7 +26,7 @@ import './log.css'
 export function LogPanel({ log }: { log: readonly LogEvent[] }) {
   const listRef = useRef<HTMLOListElement>(null)
   const name = useId()
-  const [category, setCategory] = useState<LogCategory | null>(null)
+  const category = useLogFilter()
   const [follow, setFollow] = useState(true)
   const [showAll, setShowAll] = useState(false)
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
@@ -45,7 +46,7 @@ export function LogPanel({ log }: { log: readonly LogEvent[] }) {
   function choose(next: LogCategory | null): void {
     const matched = filterLog(log, next === null ? new Set() : new Set([next])).length
     debugLog('[ui]', 'log filter', { category: next, matched, total: log.length })
-    setCategory(next)
+    setLogFilter(next)
   }
 
   function toggleFollow(): void {

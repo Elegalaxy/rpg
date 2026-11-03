@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - Log filter is global across fights (`src/ui/log/filterStore.ts`). Open questions for the user: upgrade is cost-inferior to crafting at nearly every level (proposal pending); no notification exists when a location is discovered.
   - Unspent-point badges (Hero, Attributes, Skills tabs); crafting clock moved to the wall clock (`advanceCraftingBy`, `startTownLoop` in `src/ui/store.ts`) because the old frame loop froze with the combat viewer's pause and in background tabs. 701 tests.
   - Log filters: Damage, Healing, and Items used (`src/ui/log/categories.ts`, new `supplyUse` event in `src/sim/types.ts`/`combat.ts`/`expedition.ts`/`log.ts`). 701 tests.
   - Wording pass: explanatory text moved into `?` tooltips (`src/ui/Help.tsx`, `.help` styles in theme.css) across Town, Map, Hero tab, and Legacy. The user is separately testing the Fractured Warden. 701 tests.
