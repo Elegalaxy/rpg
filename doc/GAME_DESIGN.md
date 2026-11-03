@@ -61,7 +61,7 @@ A sufficiently brutal defeat by a superior boss, combined with the hero's extrao
 - The first playable has no way to delete or retire a hero, so a slot stays in use. Retiring heroes is left for later.
 - Only one selected hero makes active or offline progress at a time.
 - World-map discoveries are shared, but each hero must clear personal combat gates.
-- Recipes and world discoveries are shared. Decided 2026-11-03: gold, materials, unequipped items (the archive), contracts, the crafting queue, and defeat debt belong to each hero. Shared wealth let a grown hero fund a new one and skip the early game. A shared vault for sending gold or items between heroes was considered and rejected for the same reason. Saves from before this change give everything to the selected hero (or the first hero), each queued craft job goes to the hero who queued it, and the other heroes start empty. Only the selected hero's crafting queue advances.
+- Recipes and world discoveries are shared. Decided 2026-11-03: gold, materials, unequipped items (the archive), contracts, the crafting queue, and defeat debt belong to each hero. Shared wealth let a grown hero fund a new one and skip the early game. A shared vault for sending gold or items between heroes was considered and rejected for the same reason. Saves from before this change give everything to the selected hero (or the first hero), each queued craft job goes to the hero who queued it, and the other heroes start empty. Every hero's crafting queue advances (since 2026-11-04).
 - Equipped gear is bound to its hero.
 - A hero must personally unlock the crafting tier required to use a material.
 - Race, class, mastery, permanent power, and reincarnation currency are personal to the hero.
@@ -1241,6 +1241,8 @@ First-playable defeat, decided 2026-10-24:
 - Regional towns have specialties, services, recipes, and predictable price differences.
 - Gold can be deposited to protect it from expedition risk.
 
+Greyhaven's places, decided 2026-11-04 (user): the town is a set of places, each with its own trade, like a real RPG town. The Weaponsmith (weapons and off-hands), the Armorer (head, chest, hands, feet), and the Jeweler (rings and charms) each buy, sell, repair, craft, and upgrade only their own kind of item. The Apothecary sells supplies, the Trading Post buys materials, the Enchanter teaches recipes, the Contract Board holds contracts, and the Moneylender takes debt payments. Prices and rules are unchanged.
+
 First-playable town numbers, decided 2026-10-31:
 
 - Gold comes from enemies. Each regular enemy drops its level × 2 gold. An elite or the boss drops its level × 3. Gold is added to the gold the hero is carrying.
@@ -1257,7 +1259,7 @@ First-playable town numbers, decided 2026-10-31:
 - Materials define a visible quality range.
 - Crafting proficiency raises and narrows the quality range.
 - A failed upgrade consumes the upgrade materials but leaves the item unchanged.
-- Crafting uses a short queue and progresses while the hero remains in town.
+- Crafting uses a short queue. Since 2026-11-04 it progresses whether the hero is in town or out on an expedition, and for every hero, not only the selected one.
 - Recipes and crafting proficiency persist through reincarnation.
 - Item tiers and modifiers have hero-level requirements.
 
@@ -1266,7 +1268,7 @@ First-playable crafting numbers, decided 2026-10-31:
 - Recipes: every base item can be made from the start. The account also knows two modifier recipes at the start (Keen and Precise). Later recipes add more modifiers. Decided 2026-11-02: the other four are bought in Greyhaven's shop for 25 gold per level the modifier needs (Nimble 75, Piercing 150, Mending 150, Quick 225). A recipe is learned once for the whole account and kept through reincarnation. Modifiers are limited by item type (decided 2026-11-02): Keen on weapons and accessories, Precise on weapons, off-hand items, and accessories, Nimble on armor and accessories, Piercing on weapons, Mending on off-hand items and accessories, Quick on weapons and accessories. Items already made keep their modifier. Upgrades work on an archive item or on an item the selected hero wears; a worn item leaves its slot for the job and returns to the same slot when the job ends (to the archive if the slot was filled meanwhile).
 - Materials set the visible quality range: scrap 90% to 100%, hide 95% to 105%, shard 100% to 110%. The quality roll is the average of two uniform rolls in that range. The rolls are seeded, and the seed is saved.
 - Proficiency is personal to the hero and survives reincarnation. Each craft or upgrade attempt adds 1 XP. Rank is `floor(√XP)`, up to 10, and each rank raises the range's minimum by 1 percentage point, never above its maximum.
-- A craft costs 6 of the chosen material plus `item level × 5` gold. The item level is at most the hero's level. It takes 30 seconds of town time, and the queue holds 3 jobs. Only the first job advances, and time passes only while no expedition is running.
+- A craft costs 6 of the chosen material plus `item level × 5` gold. The item level is at most the hero's level. It takes 30 seconds, and the queue holds 3 jobs. Only the first job advances. Time passes in town and on expeditions alike, for every hero's queue (changed 2026-11-04; before, only the selected hero's queue moved and only while no expedition ran).
 - One modifier per craft, from the recipes the account knows, and the hero's level must reach its minimum: Keen +2 points critical chance (level 1), Precise +3 Accuracy (level 1), Nimble +3 Evasion (level 3), Piercing +3 points Armor and magical penetration (level 6), Mending +5 Healing Power (level 6), Quick +2 points cooldown reduction (level 9). Modifiers on every equipped item add together.
 - An upgrade raises an archive item's level by 1, up to the hero's level, for 4 of a chosen material plus `item level × 5` gold, in the same queue and time. The chance is `85% − 5 × item level`. A failure uses the materials and returns the item unchanged.
 
@@ -1656,6 +1658,8 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-04: Greyhaven is split into eight places; each gear shop deals in one kind of item.
+- 2026-11-04: Crafting no longer waits in town: every hero's queue advances, during expeditions too.
 - 2026-11-03: Vow of Zeal 5 to 7 base Faith per damaging action, so Zeal matches the other vows.
 - 2026-11-03: Heroes made before supplies and Fade Back are updated once on load: the two supply rules, and for a Ranger, Fade Back learned and swapped in for a starting-kit Volley.
 - 2026-11-03: Fade Back also dodges the next enemy skill hit within 3 seconds, and its cooldown rises from 8 to 16 seconds.

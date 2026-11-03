@@ -6,10 +6,10 @@ import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../pers
 import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
-import { advanceCrafting, buyRecipe, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
+import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
-import type { EquipmentSlotId } from '../sim/economy.ts'
+import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { beginExpedition, canStartRoute, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
 import { returnToTown, stepExpedition } from '../sim/expedition.ts'
@@ -20,7 +20,6 @@ import {
   clearSave,
   loadSave,
   newSave,
-  purseOf,
   writeSave,
   type SaveData,
   type StorageLike,
@@ -509,10 +508,10 @@ export function repairOneFromUi(itemId: string): string | null {
   return applyTown(repairOne(saveStatus.save, itemId), 'repaired item')
 }
 
-export function repairAllFromUi(): string | null {
+export function repairAllFromUi(only?: (item: ItemInstance) => boolean): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
-  return applyTown(repairAll(saveStatus.save, hero.id), 'repaired all')
+  return applyTown(repairAll(saveStatus.save, hero.id, only), 'repaired all')
 }
 
 export function payDebtFromUi(amount: number): string | null {
@@ -537,7 +536,7 @@ export function getCraftNotices(): readonly string[] {
 
 /** Let town time pass for the crafting queue. The clock calls this each frame while no expedition runs. */
 export function advanceTown(count: number): void {
-  if (saveStatus.save.expedition !== null || purseOf(saveStatus.save).craftQueue.length === 0) return
+  if (!anyCrafting(saveStatus.save)) return
   const result = advanceCrafting(saveStatus.save, count * STEP_MS)
   saveStatus = { ...saveStatus, save: result.save }
   if (result.finished.length > 0) {
@@ -551,7 +550,7 @@ const townLoop = createGameLoop({
   isPaused: () => snapshot.paused,
   applySteps: advanceTown,
   notify: () => {
-    if (purseOf(saveStatus.save).craftQueue.length === 0 && craftNotices.length === 0) return
+    if (!anyCrafting(saveStatus.save) && craftNotices.length === 0) return
     saveStatus = { ...saveStatus }
     emit()
   },

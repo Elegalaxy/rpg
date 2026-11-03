@@ -38,7 +38,8 @@ function percent(value: number): string {
   return `${Math.round(value * 1000) / 10}%`
 }
 
-export function Craft() {
+/** Crafting and upgrades. A gear shop passes `accepts` so only its own kind of item shows. The queue is the hero's whole queue. */
+export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => boolean }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const [baseId, setBaseId] = useState('weapon-one-handed')
@@ -59,7 +60,7 @@ export function Craft() {
 
   const rank = proficiencyRank(hero.craftXp)
   const level = levelText.trim() === '' ? hero.progress.level : Number(levelText.trim())
-  const craftable = Object.values(itemBases).filter((base) => classBlock(wearerOf(hero), base) === null)
+  const craftable = Object.values(itemBases).filter((base) => accepts(base.id) && classBlock(wearerOf(hero), base) === null)
   const chosenBase = craftable.some((base) => base.id === baseId) ? baseId : (craftable[0]?.id ?? baseId)
   const range = qualityRange(materialId, rank)
   const shownModifier = modifierId !== '' && ITEM_MODIFIERS[modifierId] !== undefined && itemBases[chosenBase] !== undefined && modifierFits(ITEM_MODIFIERS[modifierId], itemBases[chosenBase]) ? modifierId : ''
@@ -68,16 +69,19 @@ export function Craft() {
   const notices = getCraftNotices()
   const worn = EQUIPMENT_SLOT_IDS.flatMap((slot) => {
     const item = hero.equipment[slot]
-    return item === null ? [] : [{ item, worn: SLOT_NAMES[slot] }]
+    return item === null || !accepts(item.baseId) ? [] : [{ item, worn: SLOT_NAMES[slot] }]
   })
-  const upgradable: { item: ItemInstance; worn: string | null }[] = [...worn, ...purseOf(save).archive.map((item) => ({ item, worn: null }))]
+  const upgradable: { item: ItemInstance; worn: string | null }[] = [
+    ...worn,
+    ...purseOf(save).archive.filter((item) => accepts(item.baseId)).map((item) => ({ item, worn: null })),
+  ]
 
   return (
     <section aria-label="Crafting">
-      <h2>Crafting — {hero.name}</h2>
+      <h3>Crafting</h3>
       <p>
         Proficiency rank <strong data-testid="rank">{rank}</strong> ({hero.craftXp} experience). Queue: {purseOf(save).craftQueue.length} of{' '}
-        {QUEUE_MAX}. Time passes only while no expedition runs.
+        {QUEUE_MAX}. Crafting keeps going while you are out on an expedition.
         {import.meta.env.DEV ? (
           <>
             {' '}
@@ -88,7 +92,6 @@ export function Craft() {
         ) : null}
       </p>
 
-      <h3>Craft</h3>
       <div className="controls">
         <label>
           Item{' '}
@@ -152,7 +155,7 @@ export function Craft() {
       </button>
       {problem !== null ? <small data-testid="craft-block"> {problem}</small> : null}
 
-      <h3>Upgrade</h3>
+      <h4>Upgrade</h4>
       <label>
         Material{' '}
         <select aria-label="Upgrade material" value={upgradeMaterial} onChange={(event) => setUpgradeMaterial(event.target.value)}>
@@ -163,7 +166,7 @@ export function Craft() {
           ))}
         </select>
       </label>
-      {upgradable.length === 0 ? <p>Nothing to upgrade. The archive is empty and nothing is worn.</p> : null}
+      {upgradable.length === 0 ? <p>Nothing of this kind to upgrade.</p> : null}
       <ul className="rows">
         {upgradable.map(({ item, worn }) => {
           const block = upgradeCheck(save, hero, item, upgradeMaterial)
@@ -184,7 +187,7 @@ export function Craft() {
         })}
       </ul>
 
-      <h3>Queue</h3>
+      <h4>Queue (all shops)</h4>
       {purseOf(save).craftQueue.length === 0 ? <p>Nothing is being made.</p> : null}
       <ol>
         {purseOf(save).craftQueue.map((job, index) => (

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { dealsIn, placeTable } from '../content/places.ts'
 
 import { encounters, toExpeditionEncounter } from '../content/encounters.ts'
 import { gameDefs } from '../content/scenarios.ts'
@@ -125,6 +126,19 @@ describe('repair', () => {
       reason: `Repairing everything costs ${cost} gold. You have ${cost - 1}.`,
     })
     expect(repairAll(heroSave(100), 'hero-1')).toEqual({ ok: false, reason: 'Nothing equipped is damaged.' })
+  })
+
+  it('repairs only the items one shop deals in when asked', () => {
+    const worn = wearGear(heroSave(100), 'hero-1')
+    const weapons = (item: { baseId: string }) => dealsIn(placeTable.weaponsmith, item.baseId)
+    const cost = repairAllCost(hero(worn), weapons)
+    expect(cost).toBeGreaterThan(0)
+    expect(cost).toBeLessThan(repairAllCost(hero(worn)))
+    const repaired = ok(repairAll(worn, 'hero-1', weapons))
+    expect(purseOf(repaired).gold).toBe(100 - cost)
+    for (const item of Object.values(hero(repaired).equipment)) {
+      if (item !== null) expect(item.durability === 100).toBe(weapons(item))
+    }
   })
 })
 

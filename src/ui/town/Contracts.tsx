@@ -19,7 +19,6 @@ export function Contracts() {
 
   return (
     <section aria-label="Contracts">
-      <h2>Contract board</h2>
       <p>
         Active: <strong data-testid="active-count">{active.length}</strong> of {MAX_ACTIVE_CONTRACTS}. Won fights count when an expedition ends, even after a
         defeat. Collect finished contracts here.

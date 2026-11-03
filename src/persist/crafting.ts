@@ -261,27 +261,34 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
   }
 }
 
+/** True when any hero has a job queued. */
+export function anyCrafting(save: SaveData): boolean {
+  return save.heroes.some((hero) => hero.purse.craftQueue.length > 0)
+}
+
 /**
- * Let town time pass for the selected hero's queue. Only the first job advances, and nothing moves
- * while an expedition runs. Time left over when a job ends goes to the next one.
+ * Let time pass for every hero's queue, in town or out on an expedition (decided 2026-11-04). Only
+ * the first job of a queue advances. Time left over when a job ends goes to that hero's next one.
  */
 export function advanceCrafting(save: SaveData, elapsedMs: number): { save: SaveData; finished: CraftNotice[] } {
-  if (save.expedition !== null || purseOf(save).craftQueue.length === 0 || !(elapsedMs > 0)) return { save, finished: [] }
+  if (!anyCrafting(save) || !(elapsedMs > 0)) return { save, finished: [] }
   let current = save
-  let left = elapsedMs
   const finished: CraftNotice[] = []
-  while (left > 0 && purseOf(current).craftQueue.length > 0) {
-    const [job, ...rest] = purseOf(current).craftQueue
-    if (job === undefined) break
-    if (job.remainingMs > left) {
-      current = updatePurse(current, { craftQueue: [{ ...job, remainingMs: job.remainingMs - left }, ...rest] })
-      left = 0
-      break
+  for (const hero of save.heroes) {
+    let left = elapsedMs
+    while (left > 0 && purseOf(current, hero.id).craftQueue.length > 0) {
+      const [job, ...rest] = purseOf(current, hero.id).craftQueue
+      if (job === undefined) break
+      if (job.remainingMs > left) {
+        current = updatePurse(current, { craftQueue: [{ ...job, remainingMs: job.remainingMs - left }, ...rest] }, hero.id)
+        left = 0
+        break
+      }
+      left -= job.remainingMs
+      const done = finishJob(job, updatePurse(current, { craftQueue: rest }, hero.id))
+      current = done.save
+      finished.push({ ...done.notice, text: `${hero.name}: ${done.notice.text}` })
     }
-    left -= job.remainingMs
-    const done = finishJob(job, updatePurse(current, { craftQueue: rest }))
-    current = done.save
-    finished.push(done.notice)
   }
   return { save: current, finished }
 }

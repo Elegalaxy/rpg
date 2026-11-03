@@ -7,6 +7,8 @@ import { acceptContract } from './contracts.ts'
 import { createHero, selectHero } from './roster.ts'
 import { newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
 import { buyItem, sellMaterial } from './town.ts'
+import { beginExpedition } from './world.ts'
+import { SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
 
 function ok(result: { ok: true; save: SaveData } | { ok: false; reason: string }): SaveData {
   if (!result.ok) throw new Error(result.reason)
@@ -57,16 +59,20 @@ describe('each hero keeps its own purse', () => {
     expect(ok(acceptContract(ok(selectHero(save, 'hero-1')), 'cull-the-pack'))).toBeDefined()
   })
 
-  it('advances only the selected hero\'s crafting queue', () => {
+  it('advances every hero\'s crafting queue, even during an expedition', () => {
     const stocked = updatePurse(updatePurse(twoHeroes(), { gold: 100, materials: { scrap: 10 } }, 'hero-1'), { gold: 100, materials: { scrap: 10 } }, 'hero-2')
     const request = { baseId: 'weapon-caster', itemLevel: 1, materialId: 'scrap', modifierId: null }
     const queued = ok(queueCraft(ok(queueCraft(stocked, 'hero-1', { ...request, baseId: 'weapon-one-handed' })), 'hero-2', request))
-    const done = advanceCrafting(queued, CRAFT_MS).save
-    expect(purseOf(done, 'hero-2').craftQueue).toEqual([])
-    expect(purseOf(done, 'hero-2').archive.map((item) => item.id)).toEqual(['craft-hero-2-1'])
-    expect(purseOf(done, 'hero-1').craftQueue).toHaveLength(1)
-    expect(purseOf(done, 'hero-1').archive).toEqual([])
-    expect(parseSave(serializeSave(done)).ok).toBe(true)
+    const away = ok(beginExpedition(queued, SPLINTERED_ROAD_ID, 1))
+    const half = advanceCrafting(away, CRAFT_MS / 2)
+    expect(half.finished).toEqual([])
+    const done = advanceCrafting(half.save, CRAFT_MS / 2)
+    expect(done.finished.map((notice) => notice.text.split(':')[0])).toEqual(['Ash', 'Brin'])
+    expect(purseOf(done.save, 'hero-1').archive.map((item) => item.id)).toEqual(['craft-hero-1-1'])
+    expect(purseOf(done.save, 'hero-2').archive.map((item) => item.id)).toEqual(['craft-hero-2-1'])
+    expect(purseOf(done.save, 'hero-2').craftQueue).toEqual([])
+    expect(done.save.expedition).toBe(away.expedition)
+    expect(parseSave(serializeSave(done.save)).ok).toBe(true)
   })
 })
 

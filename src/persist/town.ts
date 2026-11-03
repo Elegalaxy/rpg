@@ -131,24 +131,24 @@ export function repairOne(save: SaveData, itemId: string): RosterResult {
   return { ok: true, save: restoreItem(save, itemId, gold - cost) }
 }
 
-/** What repairing everything the hero has equipped would cost. */
-export function repairAllCost(hero: SavedHero): number {
-  return Object.values(hero.equipment).reduce((sum, item) => sum + (item === null ? 0 : repairCost(item)), 0)
+/** What repairing everything the hero has equipped would cost. `only` limits it to some items, such as one shop's kind. */
+export function repairAllCost(hero: SavedHero, only: (item: ItemInstance) => boolean = () => true): number {
+  return Object.values(hero.equipment).reduce((sum, item) => sum + (item === null || !only(item) ? 0 : repairCost(item)), 0)
 }
 
-/** Repair every damaged item the hero has equipped, or none if the gold is short. */
-export function repairAll(save: SaveData, heroId: string): RosterResult {
+/** Repair every damaged item the hero has equipped (limited by `only`), or none if the gold is short. */
+export function repairAll(save: SaveData, heroId: string, only: (item: ItemInstance) => boolean = () => true): RosterResult {
   const shut = closed(save)
   if (shut !== null) return { ok: false, reason: shut }
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
-  const cost = repairAllCost(hero)
+  const cost = repairAllCost(hero, only)
   if (cost === 0) return { ok: false, reason: 'Nothing equipped is damaged.' }
   if (hero.purse.gold < cost) return { ok: false, reason: `Repairing everything costs ${cost} gold. You have ${hero.purse.gold}.` }
   const equipment = { ...hero.equipment } as Equipment
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = equipment[slot]
-    if (item !== null) equipment[slot] = { ...item, durability: item.maxDurability }
+    if (item !== null && only(item)) equipment[slot] = { ...item, durability: item.maxDurability }
   }
   const purse = { ...hero.purse, gold: hero.purse.gold - cost }
   return { ok: true, save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment, purse } : entry)) } }

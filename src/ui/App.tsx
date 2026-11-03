@@ -15,10 +15,8 @@ import { Roster } from './character/Roster.tsx'
 import { Rules } from './character/Rules.tsx'
 import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
-import { Contracts } from './town/Contracts.tsx'
-import { Craft } from './town/Craft.tsx'
 import { Legacy } from './character/Legacy.tsx'
-import { Town } from './town/Town.tsx'
+import { PLACES, Town, type PlaceId } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { PALETTES, applyPalette, applyTheme, storedPalette, storedTheme, type PaletteChoice, type ThemeChoice } from './theme.ts'
 import { debugLog } from './debug.ts'
@@ -63,7 +61,6 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 type HeroPart = 'overview' | 'skills' | 'combat' | 'gear' | 'legacy'
-type TownSection = 'shop' | 'sell' | 'repair' | 'contracts' | 'craft'
 
 const HERO_PARTS: { id: HeroPart; label: string }[] = [
   { id: 'overview', label: 'Attributes' },
@@ -73,13 +70,7 @@ const HERO_PARTS: { id: HeroPart; label: string }[] = [
   { id: 'legacy', label: 'Legacy' },
 ]
 
-const TOWN_PARTS: { id: TownSection; label: string }[] = [
-  { id: 'shop', label: 'Shop' },
-  { id: 'sell', label: 'Sell' },
-  { id: 'repair', label: 'Repair & debt' },
-  { id: 'contracts', label: 'Contracts' },
-  { id: 'craft', label: 'Crafting' },
-]
+const TOWN_PARTS: { id: PlaceId; label: string }[] = PLACES.map((place) => ({ id: place.id, label: place.name }))
 
 /** A second row of buttons inside a tab, so one screen shows one job. */
 function SubTabs<T extends string>({
@@ -274,7 +265,7 @@ export function CombatViewer() {
 function App() {
   const [tab, setTab] = useState<Tab>('heroes')
   const [heroPart, setHeroPart] = useState<HeroPart>('overview')
-  const [townPart, setTownPart] = useState<TownSection>('shop')
+  const [townPart, setTownPart] = useState<PlaceId>('weaponsmith')
   const saved = useSaveStatus()
 
   useEffect(() => {
@@ -354,9 +345,7 @@ function App() {
               {tab === 'town' ? (
                 <>
                   <SubTabs tabs={TOWN_PARTS} current={townPart} onPick={setTownPart} />
-                  {townPart === 'shop' || townPart === 'sell' || townPart === 'repair' ? <Town part={townPart} /> : null}
-                  {townPart === 'contracts' ? <Contracts /> : null}
-                  {townPart === 'craft' ? <Craft /> : null}
+                  <Town place={townPart} />
                 </>
               ) : null}
               {tab === 'map' ? (
@@ -365,11 +354,11 @@ function App() {
                   <ExpeditionPanel />
                 </>
               ) : null}
-                    </main>
+              {tab === 'combat' ? <CombatViewer /> : null}
+            </main>
           </div>
         </>
       )}
-      {tab === 'combat' ? <CombatViewer /> : null}
     </>
   )
 }
