@@ -161,7 +161,7 @@ export const GUARD_DEFENSE_MULTIPLIER = 1.3
 /** Assault stance multiplies Power. */
 export const ASSAULT_POWER_MULTIPLIER = 1.25
 /** Assault stance multiplies Armor and Resistance. */
-export const ASSAULT_DEFENSE_MULTIPLIER = 0.8
+export const ASSAULT_DEFENSE_MULTIPLIER = 0.6
 /** Stance traits switch on this clock. An already scheduled action stays where it is. */
 export const STANCE_INTERVAL_MS = 10_000
 /**

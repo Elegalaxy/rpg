@@ -467,7 +467,7 @@ describe('content integrity', () => {
     expect(rootmawStalker.skills?.[1]).toMatchObject({
       telegraphMs: 2000,
       cooldownSeconds: 10,
-      interruptMaxHpFraction: 0.1,
+      interruptMaxHpFraction: 0.06,
       coefficient: 0,
     })
     expect(echoKnight).toMatchObject({
@@ -481,7 +481,7 @@ describe('content integrity', () => {
     expect(echoKnight.skills?.map((skill) => skill.id)).toEqual(['fractured-charge', 'summon-oathbound-echo'])
     expect(echoKnight.skills?.[0]).toMatchObject({
       coefficient: 1.8,
-      telegraphMs: 1500,
+      telegraphMs: 2000,
       canCrit: true,
       cooldownSeconds: 8,
     })

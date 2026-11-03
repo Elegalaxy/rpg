@@ -384,7 +384,7 @@ const graspingRoots: EnemySkillDef = {
   tag: 'grasping-roots',
   tags: ['physical'],
   canCrit: false,
-  interruptMaxHpFraction: 0.1,
+  interruptMaxHpFraction: 0.06,
   effects: [
     { kind: 'actionDelay', delaySeconds: 2 },
     { kind: 'timedEvasion', amount: -20, durationSeconds: 6 },
@@ -421,7 +421,7 @@ const fracturedCharge: EnemySkillDef = {
   coefficient: 1.8,
   school: 'physical',
   cooldownSeconds: 8,
-  telegraphMs: 1500,
+  telegraphMs: 2000,
   tag: 'fractured-charge',
   tags: ['physical', 'attack'],
   canCrit: true,

@@ -1072,7 +1072,7 @@ describe('Rootmaw Stalker', () => {
     expect(enemy.cooldowns['grasping-roots']).toBe(resolvesAt + 10_000)
   })
 
-  it('interrupts Grasping Roots at 10% of maximum HP and ignores barrier-only and foreign damage', () => {
+  it('interrupts Grasping Roots at 6% of maximum HP and ignores barrier-only and foreign damage', () => {
     const { state, defs } = open([{ defId: 'rootmaw-stalker', slot: 0 }])
     const enemy = actorAt(state, 0)
     enemy.cooldowns['venomous-rend'] = 1_000_000
@@ -1131,7 +1131,7 @@ describe('Rootmaw Stalker', () => {
       expiresMs: 60_000,
       tickMs: 1000,
       nextTickMs: 1000,
-      power: 990,
+      power: 590,
       penetration: 0,
       coefficient: 0.1,
       attackerLevel: state.hero.level,
@@ -1140,7 +1140,7 @@ describe('Rootmaw Stalker', () => {
     }
     stepUntil(state, defs, () => state.timeMs >= 1000)
     console.log('[enemy] grasping roots under threshold', { hpTaken: enemy.telegraph?.hpTaken, hp: enemy.hp })
-    expect(enemy.telegraph?.hpTaken).toBe(99)
+    expect(enemy.telegraph?.hpTaken).toBe(59)
     expect(state.log.some((event) => event.type === 'telegraph' && event.reason === 'interrupt')).toBe(false)
     const burn = enemy.statuses.burn
     if (burn === null) throw new Error('missing burn')
@@ -1163,10 +1163,10 @@ describe('Rootmaw Stalker', () => {
       phase: 'cancel',
       reason: 'interrupt',
       tag: 'grasping-roots',
-      hpTaken: 100,
+      hpTaken: 60,
       timeMs: 2000,
     })
-    if (interrupted?.type === 'telegraph') expect(interrupted.hpNeeded).toBeCloseTo(100, 5)
+    if (interrupted?.type === 'telegraph') expect(interrupted.hpNeeded).toBeCloseTo(60, 5)
     expect(enemy.telegraph).toBeNull()
     expect(state.hero.timedEvasion).toBe(0)
     expect(state.log.some((event) => event.type === 'actionDelay')).toBe(false)
@@ -1288,7 +1288,7 @@ describe('Echo Knight', () => {
     stepUntil(state, defs, () => knight.telegraph !== null)
     const resolvesAt = knight.telegraph?.resolvesAtMs ?? 0
     const readyAt = knight.nextReadyMs
-    expect(resolvesAt).toBe(9000 + 1500)
+    expect(resolvesAt).toBe(9000 + 2000)
     stepUntil(state, defs, () => state.timeMs >= 10_000)
     const assault = state.log.filter((event) => event.type === 'stance')
     console.log('[enemy] echo knight assault', {
@@ -1301,8 +1301,8 @@ describe('Echo Knight', () => {
     expect(assault.map((event) => (event.type === 'stance' ? event.timeMs : 0))).toEqual([0, 10_000])
     expect(assault[1]).toMatchObject({ stance: 'assault' })
     expect(knight.power).toBeCloseTo(basePower * 1.25, 8)
-    expect(knight.armor).toBeCloseTo(baseArmor * 0.8, 8)
-    expect(knight.resistance).toBeCloseTo(baseArmor * 0.8, 8)
+    expect(knight.armor).toBeCloseTo(baseArmor * 0.6, 8)
+    expect(knight.resistance).toBeCloseTo(baseArmor * 0.6, 8)
     expect(knight.telegraph?.resolvesAtMs).toBe(resolvesAt)
     expect(knight.nextReadyMs).toBe(readyAt)
     stepUntil(state, defs, () => state.timeMs >= 20_000)
@@ -1313,7 +1313,7 @@ describe('Echo Knight', () => {
     expect(knight.stance).toBe('guard')
     expect(knight.armor).toBeCloseTo(baseArmor * 1.3, 8)
     expect(knight.power).toBeCloseTo(basePower, 8)
-    expect(knight.armor).not.toBeCloseTo(baseArmor * 1.3 * 0.8 * 1.3, 5)
+    expect(knight.armor).not.toBeCloseTo(baseArmor * 1.3 * 0.6 * 1.3, 5)
   })
 
   it('resolves Fractured Charge for 180% physical damage, can crit, and spends 8 seconds', () => {
@@ -1328,7 +1328,7 @@ describe('Echo Knight', () => {
     if (telegraph === null) return
     console.log('[enemy] fractured charge', { telegraph, nextReadyMs: knight.nextReadyMs })
     expect(telegraph.tag).toBe('fractured-charge')
-    expect(telegraph.resolvesAtMs - 10).toBe(1500)
+    expect(telegraph.resolvesAtMs - 10).toBe(2000)
     const resolvesAt = telegraph.resolvesAtMs
     stepUntil(state, defs, () => state.log.some((event) => event.type === 'damage' && event.actorId === knight.id))
     const hit = state.log.find((event) => event.type === 'damage' && event.actorId === knight.id)

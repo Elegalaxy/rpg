@@ -627,7 +627,7 @@ Rootmaw Stalker:
 - Regenerates 1% maximum HP per second (10 HP per second at 1,000 HP); Burn pauses it and Expose halves it.
 - Venomous Rend deals 120% Physical Power and makes two independent Poison applications at 75% base chance. Each stack ticks for 10% snapshotted Power. Cooldown: 6 seconds.
 - Grasping Roots has a 2-second telegraph and a 10-second cooldown.
-- Grasping Roots is interrupted if the hero deals 10% of Rootmaw's maximum HP during its telegraph.
+- Grasping Roots is interrupted if the hero deals 6% of Rootmaw's maximum HP during its telegraph (60 HP). It was 10% until 2026-11-03: one hero action deals 60-80, so 100 was unreachable and the "Telegraph can be interrupted" rule condition had nothing to answer. At 6% one well-timed hit cancels it.
 - If not interrupted, it pushes the hero's next action 2 seconds later and reduces Evasion by 20 for 6 seconds.
 
 #### Fallen Bastion enemies
@@ -661,10 +661,10 @@ Echo Knight:
 - Stats: approximately 1,920 HP, 25 Power, 69 Armor/Resistance, 26 Accuracy, 17 Evasion, 2.64-second base action time, and 25 Consistency.
 - Alternates stances every 10 seconds.
 - Guard stance grants +30% Armor and Resistance.
-- Assault stance grants +25% Power and reduces Armor and Resistance by 20%.
+- Assault stance grants +25% Power and reduces Armor and Resistance by 40%. It was 20% until 2026-11-03; the deeper cut makes Assault a real burst window (the "Target is in Assault stance" rule condition) while the Knight hits harder. (Proposed as +15% damage taken; a defense cut gives the same window without a new damage-taken mechanic on enemies.)
 - Once at 60% HP, uses a 2-second telegraph to summon one Oathbound Echo.
 - The summoned Echo uses the normal level-16 Support stat block.
-- Fractured Charge has a 1.5-second telegraph, deals 180% Physical Power, can critically hit, and has an 8-second cooldown.
+- Fractured Charge has a 2-second telegraph (1.5 seconds until 2026-11-03, too short for a defensive skill to answer reliably), deals 180% Physical Power, can critically hit, and has an 8-second cooldown.
 
 ### First boss: The Fractured Warden
 
