@@ -1248,7 +1248,7 @@ First-playable defeat, decided 2026-10-24:
 - Regional towns have specialties, services, recipes, and predictable price differences.
 - Gold can be deposited to protect it from expedition risk.
 
-Greyhaven's places, decided 2026-11-04 (user): the town is a set of places, each with its own trade, like a real RPG town. The Weaponsmith (weapons and off-hands), the Armorer (head, chest, hands, feet), and the Jeweler (rings and charms) each buy, sell, repair, craft, and upgrade only their own kind of item. The Apothecary sells supplies, the Trading Post buys materials, the Enchanter teaches recipes, the Contract Board holds contracts, and the Bank takes debt payments. Prices and rules are unchanged.
+Greyhaven's places, decided 2026-11-04 (user): the town is a set of places, each with its own trade, like a real RPG town. The Weaponsmith (weapons and off-hands), the Armorer (head, chest, hands, feet), and the Jeweler (rings and charms) each buy, sell, repair, craft, and upgrade only their own kind of item. The Potion Shop sells supplies, the Trading Post buys materials, the Enchanter teaches recipes, the Contract Board holds contracts, and the Bank takes debt payments. Prices and rules are unchanged.
 
 First-playable town numbers, decided 2026-10-31:
 

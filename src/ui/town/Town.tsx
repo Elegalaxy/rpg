@@ -182,7 +182,7 @@ function GearShop({ place }: { place: PlaceDef }) {
   )
 }
 
-function Apothecary() {
+function PotionShop() {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const { run, messages } = useMessages()
@@ -355,7 +355,7 @@ export function Town({ place: id }: { place: PlaceId }) {
       <p>{place.blurb}</p>
       <PurseLine save={save} />
       {place.gear !== undefined ? <GearShop place={place} /> : null}
-      {id === 'apothecary' ? <Apothecary /> : null}
+      {id === 'potion-shop' ? <PotionShop /> : null}
       {id === 'trading-post' ? <TradingPost /> : null}
       {id === 'enchanter' ? <Enchanter /> : null}
       {id === 'contract-board' ? <Contracts /> : null}
