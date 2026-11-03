@@ -1,6 +1,7 @@
 import { racialStartingAttributes } from '../content/heroes.ts'
 import { starterEquipment } from '../content/items.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
+import { startingRules } from '../content/supplies.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
 import { createProgress, legacyFromProgress } from '../sim/progression.ts'
@@ -171,7 +172,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
   const renewed: SavedHero = {
     ...hero,
     progress,
-    priorityRows: loadout.priorityRows.map((row) => ({ ...row })),
+    priorityRows: startingRules(loadout.priorityRows),
     preparedSpells: [],
     defeatedEnemyIds: [],
     clearedNodeIds: [],

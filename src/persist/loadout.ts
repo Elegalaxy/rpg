@@ -1,4 +1,5 @@
 import { skills } from '../content/skills.ts'
+import { RULE_SUPPLY_IDS } from '../content/supplies.ts'
 import { statuses } from '../content/statuses.ts'
 import { enemies } from '../content/enemies.ts'
 import { MAX_PRIORITY_ROWS, parsePriorityRules, STATUS_IDS } from '../sim/automation.ts'
@@ -30,6 +31,7 @@ export type ConditionType =
   | 'targetStatus'
   | 'targetStacks'
   | 'heroStatus'
+  | 'heroStacks'
   | 'telegraph'
   | 'telegraphWithin'
   | 'mark'
@@ -72,6 +74,7 @@ export const CONDITION_KINDS: readonly ConditionKind[] = [
   { type: 'targetStatus', label: 'Target status', operators: PRESENCE, numeric: false },
   { type: 'targetStacks', label: 'Target status stacks', operators: COMPARE, numeric: true },
   { type: 'heroStatus', label: 'Hero status', operators: PRESENCE, numeric: false },
+  { type: 'heroStacks', label: 'Hero status stacks', operators: COMPARE, numeric: true },
   { type: 'telegraph', label: 'Enemy telegraph', operators: PRESENCE, numeric: false },
   { type: 'telegraphWithin', label: 'Telegraph resolves within (seconds)', operators: ['atMost'], numeric: true },
   { type: 'mark', label: 'Target is marked', operators: PRESENCE, numeric: false, classes: ['assassin'] },
@@ -173,6 +176,8 @@ export function buildCondition(draft: ConditionDraft): AutomationCondition | str
         return { kind: 'telegraph', operator: 'atMost', value: Math.round(amount * 1000) }
       case 'targetStacks':
         return { kind: 'status', who: 'target', statusId: draft.statusId, measure: 'stacks', operator: compare, value: amount }
+      case 'heroStacks':
+        return { kind: 'status', who: 'hero', statusId: draft.statusId, measure: 'stacks', operator: compare, value: amount }
       default:
         return { kind: 'specialAmmo', operator: compare, value: amount }
     }
@@ -229,7 +234,9 @@ export function describeCondition(condition: AutomationCondition, classId: HeroC
         ? `Enemy telegraph ${op(condition.operator)}`
         : `Enemy telegraph resolves within ${condition.value / 1000} s`
     case 'status':
-      return `${condition.who === 'hero' ? 'Hero' : 'Target'} ${condition.statusId} ${op(condition.operator)}`
+      return condition.measure === 'stacks'
+        ? `${condition.who === 'hero' ? 'Hero' : 'Target'} ${condition.statusId} stacks ${op(condition.operator)} ${condition.value}`
+        : `${condition.who === 'hero' ? 'Hero' : 'Target'} ${condition.statusId} ${op(condition.operator)}`
     default:
       return condition.kind
   }
@@ -282,8 +289,8 @@ export function draftsFromRows(rows: readonly PriorityRow[]): RowDraft[] {
           if (condition.measure === 'presence') {
             return [{ ...base(condition.who === 'hero' ? 'heroStatus' : 'targetStatus', condition.operator), statusId: condition.statusId }]
           }
-          return condition.measure === 'stacks' && condition.who === 'target'
-            ? [{ ...base('targetStacks', condition.operator, String(condition.value)), statusId: condition.statusId }]
+          return condition.measure === 'stacks'
+            ? [{ ...base(condition.who === 'hero' ? 'heroStacks' : 'targetStacks', condition.operator, String(condition.value)), statusId: condition.statusId }]
             : []
         default:
           return []
@@ -292,9 +299,9 @@ export function draftsFromRows(rows: readonly PriorityRow[]): RowDraft[] {
   }))
 }
 
-/** Skills a rule row may name for this hero: the equipped four, plus the temporary slot skills. */
+/** Skills a rule row may name for this hero: the equipped four, the temporary slot skills, and the supplies a rule uses. */
 export function ruleSkillIds(hero: SavedHero): string[] {
-  const ids = [...hero.progress.loadout]
+  const ids = [...hero.progress.loadout, ...RULE_SUPPLY_IDS]
   const nodes = hero.progress.allocatedNodeIds
   if (hero.classId === 'mage' && nodes.includes(NODE_ELEMENTAL_CONVERGENCE)) ids.push(...CONVERGENCE_SKILL_IDS)
   if (hero.classId === 'cleric' && nodes.includes(NODE_LIVING_SANCTUARY)) ids.push(...RELEASE_IDS)

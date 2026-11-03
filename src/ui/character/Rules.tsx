@@ -132,7 +132,7 @@ function RulesForm({ hero }: { hero: SavedHero }) {
                         </option>
                       ))}
                     </select>{' '}
-                    {condition.type === 'targetStatus' || condition.type === 'heroStatus' || condition.type === 'targetStacks' ? (
+                    {condition.type === 'targetStatus' || condition.type === 'heroStatus' || condition.type === 'targetStacks' || condition.type === 'heroStacks' ? (
                       <select
                         aria-label={`Rule ${index + 1} condition ${conditionIndex + 1} status`}
                         value={condition.statusId}

@@ -9,8 +9,11 @@ import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../..
 import { wearerOf } from '../../persist/equipment.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { repairAllCost } from '../../persist/town.ts'
+import { SUPPLIES } from '../../content/supplies.ts'
+import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import {
   buyItemFromUi,
+  buySupplyFromUi,
   buyRecipeFromUi,
   devTownTools,
   payDebtFromUi,
@@ -165,7 +168,46 @@ export function Town({ part }: { part: TownPart }) {
           ))}
         </ul>
       )}
-      <p>The shop sells no supplies yet. No consumable exists.</p>
+
+      <h3>Supplies</h3>
+      <p>
+        Pack up to {SUPPLY_SLOT_COUNT} in the expedition preparation. A priority rule drinks a Healing Draught or an Antidote; a Smoke
+        Bomb is used by the next escape roll. Unused supplies come back after the run.
+      </p>
+      <ul className="rows">
+        {SUPPLIES.map((supply) => {
+          const owned = purseOf(save).supplies[supply.id] ?? 0
+          return (
+            <Row
+              key={supply.id}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={closed || hero === null || purseOf(save).gold < supply.price}
+                    aria-label={`Buy 1 ${supply.name}`}
+                    onClick={() => run(buySupplyFromUi(supply.id, 1), `Bought 1 ${supply.name}.`)}
+                  >
+                    Buy 1
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={closed || hero === null || purseOf(save).gold < supply.price * SUPPLY_SLOT_COUNT}
+                    aria-label={`Buy ${SUPPLY_SLOT_COUNT} ${supply.name}`}
+                    onClick={() => run(buySupplyFromUi(supply.id, SUPPLY_SLOT_COUNT), `Bought ${SUPPLY_SLOT_COUNT} ${supply.name}s.`)}
+                  >
+                    Buy {SUPPLY_SLOT_COUNT}
+                  </button>
+                </>
+              }
+            >
+              <strong>{supply.name}</strong> — {supply.effect} {supply.price} gold. You have <span data-testid={`stash-${supply.id}`}>{owned}</span>.
+            </Row>
+          )
+        })}
+      </ul>
 
       <h3>Recipes</h3>
       {recipesForSale(save).length === 0 ? <p>You know every recipe.</p> : <p>A recipe lets you craft gear with that modifier. It is learned once for the whole account.</p>}

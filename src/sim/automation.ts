@@ -401,6 +401,9 @@ function enemyTargets(state: CombatState, skill: SkillDef): CombatActor[] {
   return first === undefined ? [] : [first]
 }
 
+/** A supply row with none of that supply left in the slots. */
+export const SUPPLY_NONE_LEFT_REASON = 'none left'
+
 function priorityEvent(
   hero: CombatHero,
   timeMs: number,
@@ -432,6 +435,7 @@ export function skipReason(
   skill: SkillDef,
   timeMs: number,
 ): string | null {
+  if (skill.supply === true) return hero.supplies.includes(skill.id) ? null : SUPPLY_NONE_LEFT_REASON
   if (!skillEquipped(hero, skill.id)) return 'not equipped'
   if (!skillOffCooldown(hero, skill, timeMs)) return 'on cooldown'
   if (hero.classId === 'cleric') syncCleric(state)

@@ -1,5 +1,6 @@
 import { itemBase, newItem } from '../content/items.ts'
 import { MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, repairCost } from '../content/shop.ts'
+import { supplyTable } from '../content/supplies.ts'
 import { EQUIPMENT_SLOT_IDS, classBlock, type Equipment, type ItemInstance } from '../sim/economy.ts'
 
 import { selectedHero } from './character.ts'
@@ -78,6 +79,21 @@ export function buyItem(save: SaveData, heroId: string, baseId: string): RosterR
   if (purse.gold < price) return { ok: false, reason: `That costs ${price} gold. You have ${purse.gold}.` }
   const item = newItem(nextShopId(save), baseId, hero.progress.level)
   return { ok: true, save: updatePurse(save, { gold: purse.gold - price, archive: [...purse.archive, item] }, heroId) }
+}
+
+/** Buy supplies with the selected hero's gold. They go to that hero's stash. */
+export function buySupply(save: SaveData, supplyId: string, quantity = 1): RosterResult {
+  const shut = closed(save)
+  if (shut !== null) return { ok: false, reason: shut }
+  const supply = supplyTable[supplyId]
+  if (supply === undefined) return { ok: false, reason: 'Greyhaven does not sell that.' }
+  if (!Number.isInteger(quantity) || quantity < 1) return { ok: false, reason: 'Buy at least 1.' }
+  if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero first.' }
+  const purse = purseOf(save)
+  const price = supply.price * quantity
+  if (purse.gold < price) return { ok: false, reason: `That costs ${price} gold. You have ${purse.gold}.` }
+  const supplies = { ...purse.supplies, [supplyId]: (purse.supplies[supplyId] ?? 0) + quantity }
+  return { ok: true, save: updatePurse(save, { gold: purse.gold - price, supplies }) }
 }
 
 /** An item the selected hero wears or keeps in its archive. */

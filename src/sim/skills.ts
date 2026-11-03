@@ -80,6 +80,7 @@ export const SKILL_EFFECT_KINDS = [
   'chanceGate',
   'summon',
   'defenseBonus',
+  'cleanse',
 ] as const
 
 /** Logged when a preventFatal health loss would leave 0 HP or less. */
@@ -459,6 +460,16 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     assertPositive(value.durationSeconds, `skill '${skillId}' defense bonus duration`)
     return { kind, multiplier: value.multiplier, durationSeconds: value.durationSeconds }
   }
+  if (kind === 'cleanse') {
+    const ids = value.statusIds
+    if (!Array.isArray(ids) || ids.length === 0) throw new Error(`skill '${skillId}' cleanse needs status ids`)
+    for (const id of ids) {
+      if (typeof id !== 'string' || id.length === 0) {
+        throw new Error(`skill '${skillId}' cleanse status id must be a non-empty string, received ${describeValue(id)}`)
+      }
+    }
+    return { kind, statusIds: [...(ids as string[])] }
+  }
   throw new Error(`skill '${skillId}' has unknown effect kind '${kind}'`)
 }
 
@@ -515,6 +526,15 @@ export function assertSkillDef(value: unknown): asserts value is SkillDef {
   if (value.supplyCost !== undefined) {
     if (typeof value.supplyCost !== 'number' || !Number.isInteger(value.supplyCost) || value.supplyCost < 0) {
       throw new Error(`skill '${id}' supply cost must be a whole number of at least 0, received ${describeValue(value.supplyCost)}`)
+    }
+  }
+  if (value.supply !== undefined && value.supply !== true) {
+    throw new Error(`skill '${id}' supply must be true or omitted, received ${describeValue(value.supply)}`)
+  }
+  for (const effect of value.effects as { kind: string }[]) {
+    if (effect.kind === 'cleanse' && value.supply !== true) throw new Error(`skill '${id}' cleanse is only for supplies`)
+    if (value.supply === true && effect.kind !== 'heal' && effect.kind !== 'cleanse') {
+      throw new Error(`supply '${id}' can only heal or cleanse, received '${effect.kind}'`)
     }
   }
 }
@@ -1168,6 +1188,9 @@ export function applySkillEffects(
       effect.kind === 'defenseBonus'
     ) {
       throw new Error(`skill '${skill.id}' effect '${effect.kind}' is resolved by enemy actions`)
+    }
+    if (effect.kind === 'cleanse') {
+      throw new Error(`skill '${skill.id}' effect 'cleanse' is resolved by supply use`)
     }
     if (effect.kind === 'loseHp') {
       const loss = hero.maxHp * effect.maxHpFraction

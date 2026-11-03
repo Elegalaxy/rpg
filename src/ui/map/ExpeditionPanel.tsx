@@ -7,6 +7,7 @@ import {
   canPickCurse,
   checkPreparation,
   draftFor,
+  packFromStash,
   quiverLimit,
   type PreparationDraft,
 } from '../../persist/preparation.ts'
@@ -15,6 +16,7 @@ import { outcomeSummary } from '../../persist/world.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
+import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { FightView } from '../combat/FightView.tsx'
 import {
   pushOnFromUi,
@@ -41,6 +43,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   const [saved, setSaved] = useState(false)
   const checked = checkPreparation(hero, draft)
   const limit = quiverLimit(hero)
+  const pack = packFromStash({ ...hero, packedSupplies: draft.supplies.filter((id) => id !== '') })
 
   function patch(next: Partial<PreparationDraft>): void {
     setDraft({ ...draft, ...next })
@@ -147,7 +150,30 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </small>
         </div>
       ) : null}
-      <p>Supplies: {SUPPLY_SLOT_COUNT} slots, all empty. No consumable exists yet.</p>
+      <fieldset className="supply-slots">
+        <legend>Supplies to pack</legend>
+        {draft.supplies.map((id, index) => (
+          <label key={index}>
+            Slot {index + 1}{' '}
+            <select
+              aria-label={`Supply slot ${index + 1}`}
+              value={id}
+              onChange={(event) => patch({ supplies: draft.supplies.map((entry, at) => (at === index ? event.target.value : entry)) })}
+            >
+              <option value="">Empty</option>
+              {SUPPLIES.map((supply) => (
+                <option key={supply.id} value={supply.id}>
+                  {supply.name} (have {hero.purse.supplies[supply.id] ?? 0})
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+        <small>
+          {SUPPLY_SLOT_COUNT} slots. Buy supplies in the Greyhaven shop. A pick you do not have stays empty.{' '}
+          {pack.missing.length > 0 ? `Short now: ${pack.missing.map(supplyName).join(', ')}.` : ''}
+        </small>
+      </fieldset>
       <button type="button" disabled={!checked.ok} onClick={save}>
         Save preparation
       </button>
@@ -216,6 +242,11 @@ function lootLine(stacks: readonly { materialId: string; quantity: number }[]): 
   return stacks.length === 0 ? 'none' : stacks.map((stack) => `${stack.quantity} ${stack.materialId}`).join(', ')
 }
 
+function slotLine(expedition: ExpeditionState): string {
+  const held = expedition.supplySlots.flatMap((slot) => (slot === null ? [] : [supplyName(slot.id)]))
+  return held.length === 0 ? 'none left' : held.join(', ')
+}
+
 function Running({ expedition }: { expedition: ExpeditionState }) {
   const [error, setError] = useState<string | null>(null)
   const waiting = expeditionWaiting()
@@ -238,6 +269,10 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
           Unsecured loot ({carried} of {LOOT_CAPACITY}): {lootLine(expedition.unsecured)}. Lost if you are defeated or retreat.
         </li>
         <li>Secured loot: {lootLine(expedition.secured)}.</li>
+        <li data-testid="supplies">
+          Supplies: {slotLine(expedition)}.
+          {expedition.consumedSupplyIds.length > 0 ? ` Used: ${expedition.consumedSupplyIds.map(supplyName).join(', ')}.` : ''}
+        </li>
         <li>Fights finished: {expedition.history.length}.</li>
       </ul>
       {waiting ? (

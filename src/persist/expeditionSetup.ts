@@ -31,6 +31,7 @@ export function blueprintForHero(
   hero: SavedHero,
   routeId: string,
   gold: { carried: number; deposited: number } = { carried: 0, deposited: 0 },
+  supplies: readonly string[] = [],
 ): ExpeditionBlueprint {
   const route = routes[routeId]
   if (route === undefined) throw new Error(`unknown route '${routeId}'`)
@@ -49,6 +50,7 @@ export function blueprintForHero(
     travelGapMs: TRAVEL_GAP_MS,
     carriedGold: gold.carried,
     depositedGold: gold.deposited,
+    supplies: [...supplies],
     retreatThresholds: hero.retreatAtMost === null ? [] : [{ kind: 'hpFraction', atMost: hero.retreatAtMost }],
     hero: {
       id: hero.id,
@@ -78,6 +80,7 @@ export function startExpedition(
   routeId: string,
   seed: number,
   gold?: { carried: number; deposited: number },
+  supplies?: readonly string[],
 ): ExpeditionState {
-  return createExpedition(blueprintForHero(hero, routeId, gold), seed)
+  return createExpedition(blueprintForHero(hero, routeId, gold, supplies), seed)
 }

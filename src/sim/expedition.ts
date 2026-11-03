@@ -81,6 +81,8 @@ export type ExpeditionBlueprint = {
   carriedGold?: number
   /** Deposited gold at the start. Omitted means 0. */
   depositedGold?: number
+  /** Supply ids for the slots, in slot order, at most `SUPPLY_SLOT_COUNT`. Omitted packs none. */
+  supplies?: readonly string[]
 }
 
 export const EQUIPMENT_SLOTS = [
@@ -130,8 +132,11 @@ export const SUPPLY_SLOT_COUNT = 4
 export const RARE_NODE_CHANCE_PER_STACK = 2
 /** +5% material quantity per stack already held. Counted in thousandths so 4 × 1.15 is 4.6. */
 export const MATERIAL_BONUS_THOUSANDTHS_PER_STACK = 50
-/** Escape chance before Agility. Supplies, zone, and momentum add 0 on top of this. */
+/** Escape chance before Agility. A Smoke Bomb adds to it. Zone and momentum add 0 on top of this. */
 export const ESCAPE_BASE_PERCENT = 50
+/** The supply the escape roll uses by itself. It is spent on the roll, success or failure. */
+export const SMOKE_BOMB_ID = 'smoke-bomb'
+export const SMOKE_BOMB_ESCAPE_POINTS = 15
 /** Added chance is `floor(Agility / 5)` percentage points, and it cannot exceed this. */
 export const ESCAPE_AGILITY_CAP = 20
 /** A failed escape waits this long on the fight clock before another roll. */
@@ -144,7 +149,6 @@ export const DEFEAT_DURABILITY_LOSS = 10
 export const RESCUE_FEE = 25
 /** Stored wait after defeat. This expedition does not tick it down. */
 export const DEFEAT_RECOVERY_MS = 300_000
-const ESCAPE_SUPPLIES_BONUS = 0
 const ESCAPE_ZONE_BONUS = 0
 const ESCAPE_MOMENTUM_BONUS = 0
 
@@ -576,6 +580,38 @@ function emptySupplySlots(): SupplySlot[] {
   return slots
 }
 
+function packedSupplySlots(supplies: readonly string[] | undefined): SupplySlot[] {
+  const slots = emptySupplySlots()
+  if (supplies === undefined) return slots
+  if (!Array.isArray(supplies) || supplies.length > SUPPLY_SLOT_COUNT) {
+    throw new Error(`an expedition packs at most ${SUPPLY_SLOT_COUNT} supplies, received ${describeValue(supplies)}`)
+  }
+  supplies.forEach((id: unknown, index) => {
+    if (typeof id !== 'string' || id.length === 0) throw new Error(`packed supply ${index + 1} needs a non-empty id`)
+    slots[index] = { id }
+  })
+  return slots
+}
+
+/** Move one slot's item to the used list. */
+function spendSlot(state: ExpeditionState, index: number): void {
+  const slot = state.supplySlots[index]
+  if (slot === null || slot === undefined) return
+  state.consumedSupplyIds.push(slot.id)
+  state.supplySlots[index] = null
+}
+
+/** After a fight, empty the slots of supplies the hero used. Earlier slots keep their item first. */
+function syncSupplies(state: ExpeditionState, remaining: readonly string[]): void {
+  const left = [...remaining]
+  state.supplySlots.forEach((slot, index) => {
+    if (slot === null) return
+    const at = left.indexOf(slot.id)
+    if (at >= 0) left.splice(at, 1)
+    else spendSlot(state, index)
+  })
+}
+
 function freshPiece(slot: ExpeditionEquipmentSlot, itemId: string): ExpeditionEquipment {
   return {
     slot,
@@ -720,7 +756,7 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
     unsecured: [],
     secured: [],
     overflow: 0,
-    supplySlots: emptySupplySlots(),
+    supplySlots: packedSupplySlots(blueprint.supplies),
     consumedSupplyIds: [],
     carriedGold,
     depositedGold,
@@ -801,11 +837,15 @@ function selectEncounter(state: ExpeditionState): ExpeditionEncounterDef {
 }
 
 function carriedSupplyCount(state: ExpeditionState): number {
-  let count = 0
+  return carriedSupplyIds(state).length
+}
+
+function carriedSupplyIds(state: ExpeditionState): string[] {
+  const ids: string[] = []
   for (const slot of state.supplySlots) {
-    if (slot !== null) count += 1
+    if (slot !== null) ids.push(slot.id)
   }
-  return count
+  return ids
 }
 
 function combatSetup(state: ExpeditionState, encounter: ExpeditionEncounterDef): CombatSetup {
@@ -815,6 +855,7 @@ function combatSetup(state: ExpeditionState, encounter: ExpeditionEncounterDef):
     startingHp: state.hero.hp,
     carryResource: classId === 'warrior' || classId === 'mage' || classId === 'cleric',
     ...setupRaceMeters(state.heroTemplate.race, state.hero.focus, state.ferocityProgress),
+    supplies: carriedSupplyIds(state),
   }
   if (state.heroTemplate.race === 'undead') setup.startingSouls = state.hero.souls ?? 0
   if (classId === 'assassin') delete setup.startingResource
@@ -873,6 +914,7 @@ function carryFromCombat(state: ExpeditionState): void {
   const combat = state.combat
   if (combat === null) throw new Error('expedition combat is missing')
   const hero = combat.hero
+  syncSupplies(state, hero.supplies)
   state.hero.hp = hero.hp
   state.hero.maxHp = hero.maxHp
   state.hero.vitality = hero.vitality
@@ -1184,7 +1226,14 @@ function tryEscape(state: ExpeditionState): boolean {
   const agilityPoints = Math.min(ESCAPE_AGILITY_CAP, Math.floor(hero.agility / 5))
   const trailEscape = pressTrailEscapePoints(state.heroTemplate.allocatedNodeIds, state.momentum)
   const momentumBonus = ESCAPE_MOMENTUM_BONUS + trailEscape
-  const chancePercent = ESCAPE_BASE_PERCENT + agilityPoints + ESCAPE_SUPPLIES_BONUS + ESCAPE_ZONE_BONUS + momentumBonus
+  const smokeSlot = state.supplySlots.findIndex((slot) => slot !== null && slot.id === SMOKE_BOMB_ID)
+  const suppliesBonus = smokeSlot >= 0 ? SMOKE_BOMB_ESCAPE_POINTS : 0
+  if (smokeSlot >= 0) {
+    spendSlot(state, smokeSlot)
+    const carried = hero.supplies.indexOf(SMOKE_BOMB_ID)
+    if (carried >= 0) hero.supplies.splice(carried, 1)
+  }
+  const chancePercent = ESCAPE_BASE_PERCENT + agilityPoints + suppliesBonus + ESCAPE_ZONE_BONUS + momentumBonus
   const roll = nextFloat(state.rng)
   const success = roll * 100 < chancePercent
   const event: EscapeEvent = {
@@ -1200,7 +1249,7 @@ function tryEscape(state: ExpeditionState): boolean {
     basePercent: ESCAPE_BASE_PERCENT,
     agility: hero.agility,
     agilityPoints,
-    suppliesBonus: ESCAPE_SUPPLIES_BONUS,
+    suppliesBonus,
     zoneBonus: ESCAPE_ZONE_BONUS,
     momentumBonus,
     success,

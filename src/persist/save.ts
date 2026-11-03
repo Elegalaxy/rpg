@@ -1,8 +1,9 @@
 import { itemBase, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { contracts as contractTable } from '../content/contracts.ts'
+import { supplyTable } from '../content/supplies.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
-import { assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
+import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import type { PriorityRow } from '../sim/types.ts'
 
@@ -87,10 +88,12 @@ export type Purse = {
   debt: number
   /** Items this hero owns but is not wearing. */
   archive: ItemInstance[]
+  /** Supply id to quantity in town. Packed supplies leave it for a run and unused ones come back. */
+  supplies: { [supplyId: string]: number }
 }
 
 export function emptyPurse(): Purse {
-  return { gold: 0, materials: {}, contracts: [], craftQueue: [], craftCounter: 0, debt: 0, archive: [] }
+  return { gold: 0, materials: {}, contracts: [], craftQueue: [], craftCounter: 0, debt: 0, archive: [], supplies: {} }
 }
 
 /** One hero's saved record. Combat state is rebuilt from this and the content tables. */
@@ -131,6 +134,8 @@ export type SavedHero = {
   specialAmmo: number
   /** Gold to carry into an expedition. The rest of the hero's gold stays deposited and safe. */
   carryGold: number
+  /** Supply ids to pack into the slots, in slot order, at most four. A run takes what the stash has. */
+  packedSupplies: string[]
   /** The highest Fractured Warden Echo rank this hero can fight. Each victory unlocks the next. Personal to the hero. */
   echoRank: number
   /** The Echo rank to fight on the next run to the Fracture Gate. At most `echoRank`. */
@@ -294,6 +299,11 @@ function assertPurse(value: unknown, label: string, heroId: string): asserts val
     assertJob(job)
     check(job.heroId === heroId, `${label} craft job ${job.id} belongs to another hero`)
   }
+  check(isRecord(value.supplies), `${label} supplies must be an object`)
+  for (const id of Object.keys(value.supplies)) {
+    check(supplyTable[id] !== undefined, `${label} has unknown supply ${id}`)
+    whole(value.supplies[id], `${label} supply ${id}`)
+  }
   check(Array.isArray(value.archive), `${label} archive must be a list`)
   const archiveIds: string[] = []
   value.archive.forEach((item, index) => {
@@ -329,6 +339,9 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   )
   whole(value.specialAmmo, `${label} special arrows`)
   whole(value.carryGold, `${label} carried gold`)
+  stringList(value.packedSupplies, `${label} packed supplies`)
+  check(value.packedSupplies.length <= SUPPLY_SLOT_COUNT, `${label} packs more than ${SUPPLY_SLOT_COUNT} supplies`)
+  for (const id of value.packedSupplies) check(supplyTable[id] !== undefined, `${label} packs unknown supply ${id}`)
   whole(value.craftXp, `${label} crafting experience`)
   whole(value.legacy, `${label} Legacy`)
   whole(value.lives, `${label} lives`)
@@ -428,6 +441,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.retreatAtMost === undefined) hero.retreatAtMost = DEFAULT_RETREAT
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
     if (hero.carryGold === undefined) hero.carryGold = DEFAULT_CARRY_GOLD
+    if (hero.packedSupplies === undefined) hero.packedSupplies = []
     if (hero.craftXp === undefined) hero.craftXp = 0
     if (hero.legacy === undefined) hero.legacy = 0
     if (hero.lives === undefined) hero.lives = 0
@@ -440,6 +454,7 @@ function fillWorldFields(parsed: unknown): void {
       hero.equipment = starterEquipment(hero.id, hero.classId as HeroClass)
     }
     if (hero.purse === undefined) hero.purse = emptyPurse()
+    if (isRecord(hero.purse) && hero.purse.supplies === undefined) hero.purse.supplies = {}
   }
 }
 

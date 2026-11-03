@@ -498,6 +498,31 @@ const sanctuaryReleaseStrike = {
   effects: [{ kind: 'damage', school: 'magical', coefficient: 1 }],
 } satisfies SkillDef
 
+/** Supplies a priority rule can use. They are bought, not learned (see `supplies.ts`). */
+const healingDraught = {
+  id: 'healing-draught',
+  name: 'Healing Draught',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 0.5,
+  tags: ['supply'],
+  target: 'single',
+  supply: true,
+  effects: [{ kind: 'heal', maxHpFraction: 0.3, healingCoefficient: 0 }],
+} satisfies SkillDef
+
+const antidote = {
+  id: 'antidote',
+  name: 'Antidote',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 0.5,
+  tags: ['supply'],
+  target: 'single',
+  supply: true,
+  effects: [{ kind: 'cleanse', statusIds: ['poison', 'bleed'] }],
+} satisfies SkillDef
+
 export const skills: { [id: string]: SkillDef } = {
   [drivingBlow.id]: drivingBlow,
   [cleave.id]: cleave,
@@ -538,4 +563,6 @@ export const skills: { [id: string]: SkillDef } = {
   [penance.id]: penance,
   [sanctuaryReleaseHeal.id]: sanctuaryReleaseHeal,
   [sanctuaryReleaseStrike.id]: sanctuaryReleaseStrike,
+  [healingDraught.id]: healingDraught,
+  [antidote.id]: antidote,
 }

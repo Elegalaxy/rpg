@@ -1187,7 +1187,7 @@ First-playable escape, decided 2026-10-24:
 - The starting threshold is hero HP at most 40% of maximum HP. No threshold means no attempt.
 - The check runs after each combat step. It does not spend the hero's action or move a scheduled action.
 - If that step already ended the fight, no escape is rolled.
-- Chance is 50% plus `floor(Agility / 5)` percentage points, capped at +20 points. Enemy, zone, supplies, and momentum add 0 until those modifiers exist. Press the Trail's escape bonus is a class node, not this base chance.
+- Chance is 50% plus `floor(Agility / 5)` percentage points, capped at +20 points. A packed Smoke Bomb adds 15 points (see Inventory). Enemy, zone, and momentum add 0 until those modifiers exist. Press the Trail's escape bonus is a class node, not this base chance.
 - The roll is one expedition `nextFloat`, compared with `<` against that chance. It does not use the combat RNG.
 - A failure waits 8 seconds of that fight's clock. Another roll happens only while the threshold is still met. Leaving the threshold does not erase the remaining wait.
 - Success abandons the fight with no loot and no momentum gain. The same 20-second safe walk as a chosen return starts at once. Loot stays unsecured until arrival, which then secures it and sets momentum to 0.
@@ -1227,7 +1227,7 @@ First-playable defeat, decided 2026-10-24:
 
 - Unsecured materials are destroyed. Secured materials stay. Overflow already lost stays recorded. Momentum and the stored rare-node chance become 0.
 - Each equipped piece, including both accessories and an off-hand, starts at 100 durability and loses 10 on defeat. The loss stops at 0. A piece at 0 stays equipped and is marked disabled. Nothing is destroyed. This mark does not change the fight that was just lost.
-- The four supply slots start empty. A slot that holds an item still holds it after defeat, and items already consumed stay consumed. No consumable is defined yet.
+- A slot that holds an item still holds it after defeat, and items already consumed stay consumed. Unused supplies go back to the hero's stash when the run is settled, after a return or a defeat.
 - The rescue fee is 25 gold, paid from gold the hero is carrying. Unpaid gold is added to debt. Debt is only stored. Deposited gold is not spent. Soul Debt's extra 50% is a racial node, not this base fee.
 - The hero must wait 5 minutes before the next expedition. The wait is stored on the defeat. It does not tick inside the lost expedition.
 - `bossLossThisLife` is set only when a non-summon enemy in that fight is a boss. Splintered Road enemies are not bosses.
@@ -1245,7 +1245,7 @@ First-playable town numbers, decided 2026-10-31:
 
 - Gold comes from enemies. Each regular enemy drops its level × 2 gold. An elite or the boss drops its level × 3. Gold is added to the gold the hero is carrying.
 - Before an expedition the player chooses how much gold to carry, with a default of 25, the rescue fee. The rest of the account's gold stays deposited and safe. On a safe return the carried gold goes back to the account. After a defeat the carried gold that is left after the rescue fee is lost.
-- Greyhaven buys materials at 3 gold each (scrap 2) and buys archive items for `item level × 5 × quality`, rounded half up. It sells base items at 100% quality for `item level × 10` gold at the hero's level, and sells no supplies, because no consumable exists yet. The four supply slots stay empty.
+- Greyhaven buys materials at 3 gold each (scrap 2) and buys archive items for `item level × 5 × quality`, rounded half up. It sells base items at 100% quality for `item level × 10` gold at the hero's level, and the three supplies at the prices under Inventory.
 - Repair restores an item to full durability. One item costs `ceil(missing durability × (1 + item level ÷ 2) ÷ 10)` gold. A disabled item is repaired the same way.
 - Debt is kept on the account and added to by each defeat. It can be paid off in any amount from the account's gold, and it still blocks nothing.
 
@@ -1400,7 +1400,22 @@ These are neutral calibration builds, not recommended player builds. Race bonuse
 ### Inventory
 
 - Expeditions use limited supply slots and loot capacity. The design avoids detailed per-item weight. Capacity counts total material quantity.
-- The first playable has 4 supply slots. They start empty. Which consumables fill them remains open, so Deserter supply pressure has nothing to spend yet.
+- The first playable has 4 supply slots.
+
+First-playable supplies, decided 2026-11-03:
+
+| Supply | Effect | Price | Default rule for a new hero |
+|---|---|---|---|
+| Healing Draught | Restores 30% of maximum HP. No roll, no Healing Power, no healing-received change. | 15 gold | Hero HP at most 40% |
+| Antidote | Removes every Poison and Bleed stack from the hero. | 10 gold | Hero Poison at least 3 stacks |
+| Smoke Bomb | +15 percentage points on the next escape roll, then used up, whether the roll succeeds or fails. | 20 gold | None: it is used by the escape roll |
+
+- Supplies are bought in Greyhaven with the hero's own gold and kept in the hero's stash. They are not shared between heroes.
+- Before a run the player picks what goes in each of the 4 slots. The run takes the picked items out of the stash. A pick the stash cannot cover leaves that slot empty.
+- Healing Draught and Antidote are used by priority rules. A rule can name a supply instead of a skill. The row is usable only while a slot holds that supply, and otherwise skips with `none left`. Using one is a hero action at 0.5× action time with no cost and no cooldown. It needs no target, is not a skill for class or race effects, and is not part of the four-skill loadout.
+- An Antidote with no Poison or Bleed on the hero still uses the action and the item, so its rule should say when.
+- New heroes start with the two default rules at the top of their rules. Existing heroes add them in the Rules editor.
+- Crafted supplies, more supply kinds, a supply shortcut during a fight, and Deserter supply pressure are later work.
 - Loot capacity is 20. Each Splintered Road enemy drops 4 of its own material: a Fracture Shardling drops a shard, a Starved Wolf drops a hide, and a Deserter drops a scrap.
 - The drop uses the momentum already held when the fight is won. The victory then adds its stack. Quantity is `4 × (1 + 5% × stacks)`, rounded half-up. Three stacks turn 4 into 5. One stack does not change a drop of 4, because 4.2 rounds to 4.
 - Drops are added in slot order. When the bag is full, older materials stay and the newest quantity that does not fit is lost.
@@ -1618,7 +1633,7 @@ Skill webs, priority rules, logs, crafting, routes, and risk systems can overwhe
 - Exact DoT coefficients, Expose magnitude, and cleanse availability
 - How much boss progress a retreat removes once a boss-progress counter exists. The first playable removes none.
 - What stored debt blocks, and how a disabled item is repaired. The first-playable fee is 25 gold from carried gold. Unpaid gold is stored as debt with no other effect. Deposited gold is untouched. The next expedition waits 5 minutes.
-- Which consumables fill the four supply slots (the first playable has none)
+- Crafted supplies, and what Deserter supply pressure takes. The first playable has the three supplies in §9 Inventory.
 - Crafting quality, proficiency, and upgrade formulas
 - Save format and local persistence
 - Accessibility options
@@ -1640,6 +1655,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-03: Decided the first-playable supplies: Healing Draught (30% HP, 15 gold), Antidote (clears Poison and Bleed, 10 gold), and Smoke Bomb (+15 escape points, 20 gold). Rules use the first two. Each hero buys and keeps its own.
 - 2026-11-01: Decided the first-playable reincarnation rules: Legacy currency, one-time bonuses, three purchases, mastery as +2% ordinary XP per completed life, and the heirloom's scaling.
 - 2026-10-31: Decided how expeditions award hero XP, and the six first-playable contracts with their tracking rules and rewards.
 - 2026-10-31: Decided the first-playable crafting rules: material quality ranges, seeded averaged rolls, personal proficiency, costs and time, a queue of 3, six modifiers with level requirements, and upgrades with a falling chance.

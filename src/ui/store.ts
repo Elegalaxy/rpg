@@ -7,7 +7,7 @@ import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarn
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { advanceCrafting, buyRecipe, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
-import { buyItem, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
+import { buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId } from '../sim/economy.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
@@ -499,6 +499,10 @@ export function buyItemFromUi(baseId: string): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   return applyTown(buyItem(saveStatus.save, hero.id, baseId), 'bought item')
+}
+
+export function buySupplyFromUi(supplyId: string, quantity = 1): string | null {
+  return applyTown(buySupply(saveStatus.save, supplyId, quantity), 'bought supply')
 }
 
 export function repairOneFromUi(itemId: string): string | null {

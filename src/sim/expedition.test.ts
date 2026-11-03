@@ -12,6 +12,8 @@ import {
   resetMomentum,
   returnToTown,
   runExpedition,
+  SMOKE_BOMB_ESCAPE_POINTS,
+  SMOKE_BOMB_ID,
   SPLINTERED_ROAD_ID,
   stepExpedition,
   SUPPLY_SLOT_COUNT,
@@ -1331,6 +1333,7 @@ describe('splintered road expedition', () => {
 
     const state = enterDefeatFight(defs, 70)
     state.supplySlots[0] = { id: 'held' }
+    state.combat?.hero.supplies.push('held')
     state.consumedSupplyIds = ['used']
     forceDefeat(state, defs)
     console.log('[sim]', 'supplies', {
@@ -1528,6 +1531,7 @@ describe('splintered road expedition', () => {
       state.overflow = 3
       setMomentum(state, 2)
       state.supplySlots[0] = { id: 'held' }
+      state.combat?.hero.supplies.push('held')
       state.consumedSupplyIds = ['used']
       return state
     }
@@ -1665,3 +1669,50 @@ function lootTotal(stacks: readonly { quantity: number }[]): number {
   for (const stack of stacks) total += stack.quantity
   return total
 }
+
+describe('packed supplies', () => {
+  const defs = fixtureDefs()
+
+  it('fills the slots in order and rejects more than four', () => {
+    const packed = createExpedition({ ...fixtureBlueprint(), supplies: ['healing-draught', 'antidote'] }, 1)
+    expect(packed.supplySlots).toEqual([{ id: 'healing-draught' }, { id: 'antidote' }, null, null])
+    expect(() => createExpedition({ ...fixtureBlueprint(), supplies: ['a', 'b', 'c', 'd', 'e'] }, 1)).toThrow(/at most 4/)
+    expect(() => createExpedition({ ...fixtureBlueprint(), supplies: [''] }, 1)).toThrow(/non-empty/)
+  })
+
+  it('carries the slots into each fight and empties the slot of a supply used there', () => {
+    const state = createExpedition({ ...fixtureBlueprint(), supplies: ['healing-draught', 'healing-draught', SMOKE_BOMB_ID] }, 1)
+    stepUntilCombat(state, defs)
+    const combat = state.combat
+    if (combat === null) throw new Error('fight is missing')
+    expect(combat.hero.supplies).toEqual(['healing-draught', 'healing-draught', SMOKE_BOMB_ID])
+    combat.hero.supplies.splice(0, 1)
+    combat.outcome = 'victory'
+    stepExpedition(state, defs)
+    expect(state.supplySlots).toEqual([{ id: 'healing-draught' }, null, { id: SMOKE_BOMB_ID }, null])
+    expect(state.consumedSupplyIds).toEqual(['healing-draught'])
+    stepUntilCombat(state, defs)
+    expect(state.combat?.hero.supplies).toEqual(['healing-draught', SMOKE_BOMB_ID])
+  })
+
+  it('spends a Smoke Bomb on the next escape roll, success or failure, for +15 points', () => {
+    const state = createExpedition(
+      {
+        ...fixtureBlueprint(),
+        retreatThresholds: [{ kind: 'hpFraction', atMost: 1 }],
+        travelGapMs: STEP_MS,
+        supplies: [SMOKE_BOMB_ID, 'antidote'],
+      },
+      3,
+    )
+    stepExpedition(state, defs)
+    stepExpedition(state, defs)
+    const attempt = state.escapeLog[0]
+    if (attempt === undefined) throw new Error('escape was not rolled')
+    expect(attempt.suppliesBonus).toBe(SMOKE_BOMB_ESCAPE_POINTS)
+    expect(attempt.chancePercent).toBe(50 + attempt.agilityPoints + SMOKE_BOMB_ESCAPE_POINTS)
+    expect(formatEvent(attempt)).toContain('supplies 15')
+    expect(state.supplySlots).toEqual([null, { id: 'antidote' }, null, null])
+    expect(state.consumedSupplyIds).toEqual([SMOKE_BOMB_ID])
+  })
+})

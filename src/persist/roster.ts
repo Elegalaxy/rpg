@@ -2,6 +2,7 @@ import { starterEquipment } from '../content/items.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { racialStartingAttributes } from '../content/heroes.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
+import { startingRules } from '../content/supplies.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createProgress, HERO_RACES, type HeroRace } from '../sim/progression.ts'
 
@@ -72,7 +73,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     progress: createProgress(request.race, racialStartingAttributes[request.race], {
       startingSkillIds: web.startingSkillIds,
     }),
-    priorityRows: loadout.priorityRows.map((row) => ({ ...row })),
+    priorityRows: startingRules(loadout.priorityRows),
     vow: request.classId === 'cleric' ? (loadout.vow ?? 'zeal') : null,
     curse: null,
     preparedSpells: [],
@@ -81,6 +82,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     retreatAtMost: DEFAULT_RETREAT,
     specialAmmo: loadout.specialAmmo ?? 0,
     carryGold: DEFAULT_CARRY_GOLD,
+    packedSupplies: [],
     craftXp: 0,
     legacy: 0,
     lives: 0,

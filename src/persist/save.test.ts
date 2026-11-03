@@ -59,6 +59,7 @@ function withHero(): SaveData {
     retreatAtMost: 0.4,
     specialAmmo: 0,
     carryGold: 25,
+    packedSupplies: [],
     craftXp: 0,
     legacy: 0,
     lives: 0,
@@ -68,7 +69,7 @@ function withHero(): SaveData {
     fightRank: 0,
     bossLossThisLife: false,
     equipment: starterEquipment('hero-1', 'warrior'),
-    purse: { gold: 40, materials: { shard: 8, hide: 3 }, archive: [], debt: 0, craftQueue: [], craftCounter: 0, contracts: [] },
+    purse: { gold: 40, materials: { shard: 8, hide: 3 }, archive: [], debt: 0, craftQueue: [], craftCounter: 0, contracts: [], supplies: {} },
   })
   save.selectedHeroId = 'hero-1'
   return save

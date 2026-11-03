@@ -15,6 +15,7 @@ import { TRAVEL_GAP_MS, rescueFee, type ExpeditionState } from '../sim/expeditio
 
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
+import { packFromStash } from './preparation.ts'
 import { itemBase } from '../content/items.ts'
 import { awardXp } from '../sim/progression.ts'
 import { applyDurability, gearGaps } from '../sim/economy.ts'
@@ -256,13 +257,19 @@ export function beginExpedition(save: SaveData, routeId: string, seed: number): 
   if (hero === null) return { ok: false, reason: 'Select a hero first.' }
   const gold = hero.purse.gold
   const carried = Math.min(hero.carryGold, gold)
+  const pack = packFromStash(hero)
   let expedition
   try {
-    expedition = startExpedition(hero, routeId, seed, { carried, deposited: gold - carried })
+    expedition = startExpedition(hero, routeId, seed, { carried, deposited: gold - carried }, pack.taken)
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : String(error) }
   }
-  return { ok: true, save: { ...updatePurse(save, { gold: 0 }), expedition } }
+  const supplies = { ...hero.purse.supplies }
+  for (const id of pack.taken) {
+    supplies[id] = (supplies[id] ?? 0) - 1
+    if (supplies[id] === 0) delete supplies[id]
+  }
+  return { ok: true, save: { ...updatePurse(save, { gold: 0, supplies }), expedition } }
 }
 
 /**
@@ -283,9 +290,12 @@ export function settleExpedition(save: SaveData): SaveData {
   const before = purseOf(progressed)
   const materials = { ...before.materials }
   for (const stack of expedition.secured) materials[stack.materialId] = (materials[stack.materialId] ?? 0) + stack.quantity
+  const supplies = { ...before.supplies }
+  for (const slot of expedition.supplySlots) if (slot !== null) supplies[slot.id] = (supplies[slot.id] ?? 0) + 1
   const purse = {
     ...before,
     materials,
+    supplies,
     gold: expedition.depositedGold + (expedition.outcome === 'returned' ? expedition.carriedGold : 0),
     debt: before.debt + expedition.debt,
   }

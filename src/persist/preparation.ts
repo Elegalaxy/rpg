@@ -1,4 +1,6 @@
+import { supplyTable } from '../content/supplies.ts'
 import { CLERIC_VOWS } from '../sim/classes/cleric.ts'
+import { SUPPLY_SLOT_COUNT } from '../sim/expedition.ts'
 import { EFFICIENT_QUIVER_CAPACITY, NODE_EFFICIENT_QUIVER, QUIVER_CAPACITY } from '../sim/classes/ranger.ts'
 import { CURSES, NODE_UNDEAD_CURSEBOUND } from '../sim/races/racialNodes.ts'
 
@@ -16,6 +18,8 @@ export type PreparationDraft = {
   carryGold: string
   /** The Warden's Echo rank for a run to the Fracture Gate. */
   fightRank: string
+  /** One supply id per slot, or an empty string for an empty slot. Always `SUPPLY_SLOT_COUNT` long. */
+  supplies: string[]
 }
 
 export const RETREAT_MIN_PERCENT = 5
@@ -29,7 +33,27 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     specialAmmo: String(hero.specialAmmo),
     carryGold: String(hero.carryGold),
     fightRank: String(hero.fightRank),
+    supplies: Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => hero.packedSupplies[index] ?? ''),
   }
+}
+
+/**
+ * What a run would take from the stash: the packed ids it can cover, in slot order, and the ones
+ * it cannot. A pick the stash cannot cover leaves its slot empty.
+ */
+export function packFromStash(hero: SavedHero): { taken: string[]; missing: string[] } {
+  const left = { ...hero.purse.supplies }
+  const taken: string[] = []
+  const missing: string[] = []
+  for (const id of hero.packedSupplies) {
+    if ((left[id] ?? 0) > 0) {
+      left[id] = (left[id] ?? 0) - 1
+      taken.push(id)
+    } else {
+      missing.push(id)
+    }
+  }
+  return { taken, missing }
 }
 
 /** Special arrows a Ranger can carry: 6, or 8 with Efficient Quiver. Other classes carry none. */
@@ -96,8 +120,11 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   } else {
     fightRank = rank
   }
+  const packedSupplies = draft.supplies.filter((id) => id !== '')
+  if (draft.supplies.length > SUPPLY_SLOT_COUNT) errors.push(`Pack at most ${SUPPLY_SLOT_COUNT} supplies.`)
+  if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold, fightRank } }
+  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold, fightRank, packedSupplies } }
 }
 
 /** Save a hero's preparation. It cannot change while that hero is out on an expedition. */

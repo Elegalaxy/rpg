@@ -201,6 +201,9 @@ export function formatEvent(event: LogEvent): string {
           event.ammoSpent === undefined || event.ammoSpent <= 0
             ? ''
             : ` Spends ${event.ammoSpent} special arrow (${event.ammoRemaining} remaining).`
+        if (event.suppliesLeft !== undefined) {
+          return `At ${seconds(event.timeMs)}s, ${event.actorName} uses a ${skillName} (${event.suppliesLeft} left). Next ready at ${seconds(event.nextReadyMs)}s.`
+        }
         return `At ${seconds(event.timeMs)}s, ${event.actorName} uses ${skillName} on ${event.targetName}. Next ready at ${seconds(event.nextReadyMs)}s.${cooldown}${ammo}`
       }
     case 'priority':

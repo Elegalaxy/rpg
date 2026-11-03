@@ -374,6 +374,8 @@ export type ActionEvent = {
   /** Special arrows spent with this action. Omitted when the skill spends none. */
   ammoSpent?: number
   ammoRemaining?: number
+  /** Carried supplies of this kind left after a supply is used. Omitted for every other action. */
+  suppliesLeft?: number
 }
 
 export type HitRollEvent = {
@@ -1206,6 +1208,12 @@ export type ApplyStatusEffect = {
   durationSeconds?: number
 }
 
+/** Remove every stack of each listed status from the user. Only supplies use it. */
+export type CleanseEffect = {
+  kind: 'cleanse'
+  statusIds: readonly string[]
+}
+
 /** Closed list. Add a kind only when a listed skill needs it. */
 export type SkillEffect =
   | DamageEffect
@@ -1226,6 +1234,7 @@ export type SkillEffect =
   | ChanceGateEffect
   | SummonEffect
   | DefenseBonusEffect
+  | CleanseEffect
 
 export type SkillRequirement = {
   mainHand?: WeaponKind
@@ -1249,6 +1258,11 @@ export type SkillDef = {
    * Omitted means the skill has no supply cost. No supply item is implied.
    */
   supplyCost?: number
+  /**
+   * True for a supply item used through a priority row. It needs one of itself in the carried
+   * supplies instead of a loadout slot, and is not a skill for class or race effects.
+   */
+  supply?: true
 }
 
 /** One automation row. All of its conditions must pass. The same skill on a later row is the OR. */
@@ -1333,6 +1347,8 @@ export type CombatHero = CombatActor & {
   expeditionMomentum: number
   /** Supplies carried into this fight. 0 when the setup omits it. */
   carriedSupplyCount: number
+  /** Supply ids still carried, one entry per item. A used supply is removed. */
+  supplies: string[]
   /** Special arrows already fired this expedition. Null when the setup omits the counter. */
   suppliedArrowCount: number | null
   /** Prepared-spell charges carried in as JSON `{skillId: charges}`. Null fills them to their maximum. */
@@ -1403,6 +1419,8 @@ export type CombatHeroSetup = {
   expeditionMomentum?: number
   /** Supplies carried into this fight. Omitted is 0. */
   carriedSupplyCount?: number
+  /** Supply ids the hero can use in this fight, one entry per item. Omitted is none. */
+  supplies?: readonly string[]
   /** Special arrows already fired on this expedition. Omitted starts the counter at 0. */
   specialArrowCount?: number
   /** Encounters remaining before Trapper deploys. Omitted lets a standalone fight deploy once. */

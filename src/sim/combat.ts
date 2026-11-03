@@ -62,6 +62,7 @@ import {
 import {
   applicationChance,
   assertStatusBook,
+  cleanseStatus,
   chillSlowFraction,
   collectStatusTicks,
   emptyStatuses,
@@ -101,6 +102,7 @@ import type {
   EnemyDef,
   EnemySkillDef,
   HealEffect,
+  HealEvent,
   TimedEvasionEffect,
   FallbackDecision,
   GameDefs,
@@ -1643,6 +1645,16 @@ function readSkillIdList(value: unknown, label: string): string[] {
   return ids
 }
 
+/** Supply ids for one fight. Repeats are separate items. Ids no rule can use, such as a Smoke Bomb, ride along unused. */
+function readSupplyList(value: unknown): string[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) throw new Error('carried supplies must be a list')
+  return value.map((id: unknown, index) => {
+    if (typeof id !== 'string' || id.length === 0) throw new Error(`carried supply ${index + 1} is missing an id`)
+    return id
+  })
+}
+
 function assertLoadout(equipped: readonly string[], rows: readonly PriorityRow[], defs: GameDefs): void {
   for (const id of equipped) {
     const skill = defs.skills[id]
@@ -1758,6 +1770,67 @@ function resolveSkill(
   commitDeaths(state, deaths)
 }
 
+/**
+ * Use one carried supply. It takes its action time, has no cost or cooldown, and runs no class or
+ * race hook. A Healing Draught restores a fixed share of maximum HP with no roll.
+ */
+function resolveSupply(state: CombatState, skill: SkillDef, scheduled: number): void {
+  const hero = state.hero
+  const index = hero.supplies.indexOf(skill.id)
+  if (index < 0) throw new Error(`${hero.name} has no ${skill.name} left`)
+  hero.supplies.splice(index, 1)
+  const timing = scheduleSkill(hero, skill, scheduled)
+  state.log.push({
+    type: 'action',
+    timeMs: scheduled,
+    actorId: hero.id,
+    actorName: hero.name,
+    targetId: hero.id,
+    targetName: hero.name,
+    action: 'skill',
+    skillId: skill.id,
+    skillName: skill.name,
+    scheduledMs: scheduled,
+    nextReadyMs: timing.nextReadyMs,
+    cooldownReadyMs: timing.cooldownReadyMs,
+    suppliesLeft: hero.supplies.filter((id) => id === skill.id).length,
+  })
+  for (const effect of skill.effects) {
+    if (effect.kind === 'heal') {
+      const result = resolveHeal({
+        maxHp: hero.maxHp,
+        maxHpFraction: effect.maxHpFraction,
+        healingPower: 0,
+        healingCoefficient: 0,
+        outgoingModifier: 1,
+        healingReceived: 1,
+        roll: 1,
+      })
+      const targetHpBefore = hero.hp
+      const targetHpAfter = Math.min(hero.maxHp, targetHpBefore + result.amount)
+      hero.hp = targetHpAfter
+      const event: HealEvent = {
+        type: 'heal',
+        timeMs: scheduled,
+        actorId: hero.id,
+        actorName: hero.name,
+        targetId: hero.id,
+        targetName: hero.name,
+        targetHpBefore,
+        targetHpAfter,
+        ...result,
+      }
+      state.log.push(event)
+      continue
+    }
+    if (effect.kind === 'cleanse') {
+      for (const statusId of effect.statusIds) cleanseStatus(state, hero, scheduled, statusId)
+      continue
+    }
+    throw new Error(`supply '${skill.id}' effect '${effect.kind}' cannot be used`)
+  }
+}
+
 function decideFallback(state: CombatState, defs: GameDefs, timeMs: number): FallbackDecision {
   const hook = classModule(state.hero.classId)?.fallbackAction
   if (hook === undefined) return { kind: 'basicAttack' }
@@ -1818,6 +1891,10 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
   }
   hero.waiting = false
   endUntilNextAction(state, hero, scheduled)
+  if (choice.skill.supply === true) {
+    resolveSupply(state, choice.skill, scheduled)
+    return
+  }
   if (choice.focus !== null && choice.focus.side === 'enemy') hero.currentTargetId = choice.focus.id
   resolveSkill(state, defs, choice.skill, choice.targets, scheduled)
 }
@@ -2305,6 +2382,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     allocatedNodeIds: readAllocatedNodeIds(hero.allocatedNodeIds),
     expeditionMomentum: readWholeCount(hero.expeditionMomentum, 'expedition momentum', 0),
     carriedSupplyCount: readWholeCount(hero.carriedSupplyCount, 'carried supplies', 0),
+    supplies: readSupplyList(hero.supplies),
     suppliedArrowCount: readOptionalCount(hero.specialArrowCount, 'special arrow count'),
     suppliedTrapperCooldown: readOptionalCount(hero.trapperCooldown, 'trapper cooldown'),
     suppliedMageCharges: readOptionalJson(hero.mageCharges, 'mage charges'),
