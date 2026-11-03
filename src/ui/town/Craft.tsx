@@ -51,10 +51,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
 
   if (hero === null) {
     return (
-      <section aria-label="Crafting">
-        <h2>Crafting</h2>
-        <p>Select a hero to craft.</p>
-      </section>
+      <p>Select a hero to craft.</p>
     )
   }
 
@@ -77,11 +74,11 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
   ]
 
   return (
-    <section aria-label="Crafting">
+    <>
       <h3>Crafting</h3>
       <p>
         Proficiency rank <strong data-testid="rank">{rank}</strong> ({hero.craftXp} experience). Queue: {purseOf(save).craftQueue.length} of{' '}
-        {QUEUE_MAX}. Crafting keeps going while you are out on an expedition.
+        {QUEUE_MAX}.
         {import.meta.env.DEV ? (
           <>
             {' '}
@@ -207,6 +204,6 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         </ul>
       ) : null}
       {error !== null ? <p role="alert">{error}</p> : null}
-    </section>
+    </>
   )
 }

@@ -2,7 +2,7 @@ import { Row } from '../Row.tsx'
 import { purseOf } from '../../persist/save.ts'
 import { useState } from 'react'
 
-import { MAX_ACTIVE_CONTRACTS, contractList } from '../../content/contracts.ts'
+import { MAX_ACTIVE_CONTRACTS } from '../../content/contracts.ts'
 import { abandonContractFromUi, acceptContractFromUi, collectContractFromUi, useSaveStatus } from '../store.ts'
 
 export function Contracts() {
@@ -11,6 +11,7 @@ export function Contracts() {
   const [message, setMessage] = useState<string | null>(null)
   const closed = save.expedition !== null
   const active = purseOf(save).contracts
+  const board = purseOf(save).board
 
   function run(problem: string | null, done: string): void {
     setError(problem)
@@ -21,10 +22,11 @@ export function Contracts() {
     <section aria-label="Contracts">
       <p>
         Active: <strong data-testid="active-count">{active.length}</strong> of {MAX_ACTIVE_CONTRACTS}. Won fights count when an expedition ends, even after a
-        defeat. Collect finished contracts here.
+        defeat. New work is posted each time you come back to town.
       </p>
       <ul className="rows">
-        {contractList.map((def) => {
+        {board.length === 0 ? <p>Nothing is posted. Select a hero to see their board.</p> : null}
+        {board.map((def) => {
           const entry = active.find((item) => item.contractId === def.id)
           const done = entry !== undefined && entry.progress >= def.count
           return (

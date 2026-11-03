@@ -1,6 +1,6 @@
 import { itemBase, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
-import { contracts as contractTable } from '../content/contracts.ts'
+import { contracts as contractTable, type ContractDef } from '../content/contracts.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { applyHeroUpdates } from './heroUpdates.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
@@ -91,10 +91,35 @@ export type Purse = {
   archive: ItemInstance[]
   /** Supply id to quantity in town. Packed supplies leave it for a run and unused ones come back. */
   supplies: { [supplyId: string]: number }
+  /** This hero's contract board: rolled offers, taken ones included, at most `BOARD_SIZE` plus old held contracts. */
+  board: ContractDef[]
+  /** How many offers this hero's board has rolled. The next roll takes this index. */
+  boardRolls: number
 }
 
 export function emptyPurse(): Purse {
-  return { gold: 0, materials: {}, contracts: [], craftQueue: [], craftCounter: 0, debt: 0, archive: [], supplies: {} }
+  return { gold: 0, materials: {}, contracts: [], craftQueue: [], craftCounter: 0, debt: 0, archive: [], supplies: {}, board: [], boardRolls: 0 }
+}
+
+/** A held or offered contract: the hero's board first, then the old fixed contracts for saves that hold one. */
+export function contractFor(purse: Purse, contractId: string): ContractDef | undefined {
+  return purse.board.find((entry) => entry.id === contractId) ?? contractTable[contractId]
+}
+
+function assertContractDef(value: unknown, label: string): asserts value is ContractDef {
+  check(isRecord(value), `${label} must be an object`)
+  check(typeof value.id === 'string' && value.id.length > 0, `${label} is missing an id`)
+  check(typeof value.name === 'string' && typeof value.description === 'string', `${label} is missing its text`)
+  whole(value.count, `${label} count`)
+  check((value.count as number) >= 1, `${label} count must be at least 1`)
+  whole(value.level, `${label} level`)
+  check(isRecord(value.target) && ['kill', 'fights', 'encounters'].includes(String(value.target.kind)), `${label} target is unknown`)
+  check(isRecord(value.reward), `${label} reward is missing`)
+  const reward = value.reward as Record<string, unknown>
+  whole(reward.xp, `${label} reward XP`)
+  whole(reward.gold, `${label} reward gold`)
+  whole(reward.materialQuantity, `${label} reward material`)
+  check(typeof reward.materialId === 'string', `${label} reward material is missing`)
 }
 
 /** One hero's saved record. Combat state is rebuilt from this and the content tables. */
@@ -288,12 +313,17 @@ function assertPurse(value: unknown, label: string, heroId: string): asserts val
   for (const id of Object.keys(value.materials)) whole(value.materials[id], `${label} material ${id}`)
   whole(value.debt, `${label} debt`)
   whole(value.craftCounter, `${label} craft counter`)
+  check(Array.isArray(value.board), `${label} contract board must be a list`)
+  value.board.forEach((entry, index) => assertContractDef(entry, `${label} board offer ${index + 1}`))
+  whole(value.boardRolls, `${label} board rolls`)
+  const board = value.board as ContractDef[]
+  const known = (id: string) => board.find((entry) => entry.id === id) ?? contractTable[id]
   check(Array.isArray(value.contracts) && value.contracts.length <= 3, `${label}: at most 3 contracts can be active`)
   const taken: string[] = []
   for (const entry of value.contracts) {
-    check(isRecord(entry) && typeof entry.contractId === 'string' && contractTable[entry.contractId] !== undefined, 'a contract id is unknown')
+    check(isRecord(entry) && typeof entry.contractId === 'string' && known(entry.contractId) !== undefined, 'a contract id is unknown')
     whole(entry.progress, 'contract progress')
-    check(entry.progress <= contractTable[entry.contractId]!.count, 'contract progress is past its target')
+    check(entry.progress <= known(entry.contractId)!.count, 'contract progress is past its target')
     check(!taken.includes(entry.contractId), `contract ${entry.contractId} is taken twice`)
     taken.push(entry.contractId)
   }
@@ -460,6 +490,8 @@ function fillWorldFields(parsed: unknown): void {
     }
     if (hero.purse === undefined) hero.purse = emptyPurse()
     if (isRecord(hero.purse) && hero.purse.supplies === undefined) hero.purse.supplies = {}
+    if (isRecord(hero.purse) && hero.purse.board === undefined) hero.purse.board = []
+    if (isRecord(hero.purse) && hero.purse.boardRolls === undefined) hero.purse.boardRolls = 0
   }
 }
 

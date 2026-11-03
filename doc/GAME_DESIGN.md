@@ -558,9 +558,16 @@ First-playable layout, decided 2026-10-31 (the contract list is still open for S
 First-playable contracts and XP, decided 2026-10-31:
 
 - A won fight awards the hero experience through the encounter XP rules (level-difference modifier, group discount, Spirit factor, and the Human bonus). The XP is added to the hero when the expedition is settled in town, and XP from fights already won is kept after a defeat. Level-ups give the attribute and skill points the progression rules define.
-- Greyhaven's board has six repeatable contracts: Cull the Pack (defeat 6 Starved Wolves), Clear the Shards (defeat 8 Fracture Shardlings), Hunt Deserters (defeat 3 Deserters), Thicket Sweep (win 4 fights in the Withered Grove), Bastion Patrol (win 4 fights in the Fallen Bastion), and Break the Elite (defeat the Rootmaw Stalker or the Echo Knight once).
+- Rolled contract board, decided 2026-11-04 (user). It replaced six fixed contracts (Cull the Pack, Clear the Shards, Hunt Deserters, Thicket Sweep, Bastion Patrol, Break the Elite); a contract a save already holds keeps its old target and reward.
+  - Each hero has its own board of 4 offers, rolled from a seed per hero, so a reload shows the same board.
+  - Three kinds. A Bounty asks the hero to defeat 3-8 of one regular monster (6-16 Fracture Shardlings, which come in pairs). A Patrol asks for 3-6 won fights in one zone. An Elite contract asks for one defeat of the Rootmaw Stalker or the Echo Knight.
+  - Bounty monsters are the regular monsters in the fixed and drawn fights of zones the account has discovered: Shardling, Wolf, and Deserter on the Splintered Road; Thornbeast and Blight Spider in the Withered Grove; Hollow Sentry and Fallen Arbalist in the Fallen Bastion. Patrols name a discovered zone. An elite is offered once its zone is discovered.
+  - Each offer rolls Elite with chance 1 in 8 (when an elite is known), Patrol 1 in 4, and Bounty otherwise. A board does not show two offers with the same target.
+  - The reward is the formula below times one roll from 80% to 130%, applied to XP, gold, and material and rounded half up (at least 1 material). `L` is the monster's level in its zone's fixed fight (the zone's highest regular level for a Patrol; 14 and 16 for the elites). The material is the monster's own drop when it has one, else the zone's resource material.
+  - Offers not taken are rerolled each time the hero comes back from an expedition. Collecting or abandoning a contract frees its slot for a new offer.
+  - A Patrol counts every won fight in its zone, including the drawn fights after a route's fixed ones (those are fought at the route's last zone).
 - Up to 3 contracts can be active. Progress counts fights won on any hero's expeditions, even if that expedition ends in defeat, and is added when the expedition is settled. A finished contract is collected in town and can then be taken again. The player can abandon one and lose its progress.
-- Rewards are about 60% of normal value for the units a contract asks for (kills or fights) at the zone's level `L`: XP is `round(0.6 × units × (5 + 2L))`, gold is `units × L`, and materials are `ceil(units ÷ 2)` of the zone's material. Gold and materials go to the account, and the XP goes to the hero who collects.
+- Rewards are about 60% of normal value for the units a contract asks for (kills or fights) at the zone's level `L`: XP is `round(0.6 × units × (5 + 2L))`, gold is `units × L`, and materials are `ceil(units ÷ 2)` of the zone's material. Gold, materials, and XP go to the hero who collects.
 
 #### Splintered Road enemies
 
@@ -1241,7 +1248,7 @@ First-playable defeat, decided 2026-10-24:
 - Regional towns have specialties, services, recipes, and predictable price differences.
 - Gold can be deposited to protect it from expedition risk.
 
-Greyhaven's places, decided 2026-11-04 (user): the town is a set of places, each with its own trade, like a real RPG town. The Weaponsmith (weapons and off-hands), the Armorer (head, chest, hands, feet), and the Jeweler (rings and charms) each buy, sell, repair, craft, and upgrade only their own kind of item. The Apothecary sells supplies, the Trading Post buys materials, the Enchanter teaches recipes, the Contract Board holds contracts, and the Moneylender takes debt payments. Prices and rules are unchanged.
+Greyhaven's places, decided 2026-11-04 (user): the town is a set of places, each with its own trade, like a real RPG town. The Weaponsmith (weapons and off-hands), the Armorer (head, chest, hands, feet), and the Jeweler (rings and charms) each buy, sell, repair, craft, and upgrade only their own kind of item. The Apothecary sells supplies, the Trading Post buys materials, the Enchanter teaches recipes, the Contract Board holds contracts, and the Bank takes debt payments. Prices and rules are unchanged.
 
 First-playable town numbers, decided 2026-10-31:
 
@@ -1658,6 +1665,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-04: The contract board is rolled per hero: 4 offers of Bounties, Patrols, and Elite contracts with random targets, counts, and an 80-130% reward roll.
 - 2026-11-04: Greyhaven is split into eight places; each gear shop deals in one kind of item.
 - 2026-11-04: Crafting no longer waits in town: every hero's queue advances, during expeditions too.
 - 2026-11-03: Vow of Zeal 5 to 7 base Faith per damaging action, so Zeal matches the other vows.

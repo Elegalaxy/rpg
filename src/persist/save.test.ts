@@ -71,7 +71,7 @@ function withHero(): SaveData {
     fightRank: 0,
     bossLossThisLife: false,
     equipment: starterEquipment('hero-1', 'warrior'),
-    purse: { gold: 40, materials: { shard: 8, hide: 3 }, archive: [], debt: 0, craftQueue: [], craftCounter: 0, contracts: [], supplies: {} },
+    purse: { gold: 40, materials: { shard: 8, hide: 3 }, archive: [], debt: 0, craftQueue: [], craftCounter: 0, contracts: [], supplies: {}, board: [], boardRolls: 0 },
   })
   save.selectedHeroId = 'hero-1'
   return save

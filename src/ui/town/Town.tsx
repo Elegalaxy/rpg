@@ -191,8 +191,7 @@ function Apothecary() {
   return (
     <>
       <p>
-        Pack up to {SUPPLY_SLOT_COUNT} in the expedition preparation. A priority rule drinks a Healing Draught or an Antidote; a Smoke Bomb is used by
-        the next escape roll. Unused supplies come back after the run.
+        "Pack up to {SUPPLY_SLOT_COUNT} before you set out. Whatever you don't use, you bring home."
       </p>
       <ul className="rows">
         {SUPPLIES.map((supply) => {
@@ -309,7 +308,7 @@ function Enchanter() {
   )
 }
 
-function Moneylender() {
+function Bank() {
   const { save } = useSaveStatus()
   const { run, messages } = useMessages()
   const [pay, setPay] = useState('')
@@ -360,7 +359,7 @@ export function Town({ place: id }: { place: PlaceId }) {
       {id === 'trading-post' ? <TradingPost /> : null}
       {id === 'enchanter' ? <Enchanter /> : null}
       {id === 'contract-board' ? <Contracts /> : null}
-      {id === 'moneylender' ? <Moneylender /> : null}
+      {id === 'bank' ? <Bank /> : null}
     </section>
   )
 }

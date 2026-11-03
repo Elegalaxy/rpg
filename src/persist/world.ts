@@ -19,7 +19,7 @@ import { packFromStash } from './preparation.ts'
 import { itemBase } from '../content/items.ts'
 import { awardXp } from '../sim/progression.ts'
 import { applyDurability, gearGaps } from '../sim/economy.ts'
-import { addContractProgress } from './contracts.ts'
+import { addContractProgress, refreshBoard } from './contracts.ts'
 import { scaleHeirlooms } from './reincarnation.ts'
 import { purseOf, reachMilestone, updatePurse, type SaveData, type SavedHero } from './save.ts'
 
@@ -286,7 +286,9 @@ function unlockedRanks(hero: SavedHero, expedition: ExpeditionState): { echoRank
 export function settleExpedition(save: SaveData): SaveData {
   const expedition = save.expedition
   if (expedition === null || expedition.outcome === 'ongoing') return save
-  const progressed = addContractProgress(recordProgress(save), expedition)
+  const heroId = save.selectedHeroId
+  const counted = addContractProgress(recordProgress(save), expedition)
+  const progressed = heroId === null ? counted : refreshBoard(counted, heroId)
   const before = purseOf(progressed)
   const materials = { ...before.materials }
   for (const stack of expedition.secured) materials[stack.materialId] = (materials[stack.materialId] ?? 0) + stack.quantity

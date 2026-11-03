@@ -3,6 +3,7 @@ import { classWebs } from '../content/webs/index.ts'
 import { racialStartingAttributes } from '../content/heroes.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { startingRules } from '../content/supplies.ts'
+import { withFilledBoard } from './contracts.ts'
 import { HERO_UPDATES } from './heroUpdates.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createProgress, HERO_RACES, type HeroRace } from '../sim/progression.ts'
@@ -96,12 +97,13 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     equipment: starterEquipment(id, request.classId),
     purse: emptyPurse(),
   }
+  const boarded = withFilledBoard(hero, save.account.discoveries)
   const next: SaveData = {
     ...save,
-    heroes: [...save.heroes, hero],
+    heroes: [...save.heroes, boarded],
     selectedHeroId: save.expedition === null || save.selectedHeroId === null ? hero.id : save.selectedHeroId,
   }
-  return { ok: true, save: next, hero }
+  return { ok: true, save: next, hero: boarded }
 }
 
 /** The selected hero cannot change while an expedition is running. */

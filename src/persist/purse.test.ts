@@ -4,6 +4,7 @@ import { newItem } from '../content/items.ts'
 
 import { CRAFT_MS, advanceCrafting, buyRecipe, queueCraft } from './crafting.ts'
 import { acceptContract } from './contracts.ts'
+import { contracts } from '../content/contracts.ts'
 import { createHero, selectHero } from './roster.ts'
 import { newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
 import { buyItem, sellMaterial } from './town.ts'
@@ -27,7 +28,11 @@ function twoHeroes(): SaveData {
 describe('each hero keeps its own purse', () => {
   it('starts every new hero empty and keeps one hero\'s gold, materials, and items away from another', () => {
     const save = twoHeroes()
-    expect(purseOf(save, 'hero-1')).toEqual(purseOf(save, 'hero-2'))
+    const { board: firstBoard, boardRolls: _firstRolls, ...first } = purseOf(save, 'hero-1')
+    const { board: secondBoard, boardRolls: _secondRolls, ...second } = purseOf(save, 'hero-2')
+    expect(first).toEqual(second)
+    expect(firstBoard).toHaveLength(4)
+    expect(secondBoard).toHaveLength(4)
     expect(purseOf(save, 'hero-2').gold).toBe(0)
 
     const rich = updatePurse(ok(selectHero(save, 'hero-1')), { gold: 500, materials: { shard: 10 } })
@@ -53,7 +58,8 @@ describe('each hero keeps its own purse', () => {
   })
 
   it('keeps contracts per hero', () => {
-    const save = ok(acceptContract(twoHeroes(), 'cull-the-pack'))
+    const posted = updatePurse(updatePurse(twoHeroes(), { board: [contracts['cull-the-pack']!] }, 'hero-1'), { board: [contracts['cull-the-pack']!] }, 'hero-2')
+    const save = ok(acceptContract(posted, 'cull-the-pack'))
     expect(purseOf(save, 'hero-2').contracts).toEqual([{ contractId: 'cull-the-pack', progress: 0 }])
     expect(purseOf(save, 'hero-1').contracts).toEqual([])
     expect(ok(acceptContract(ok(selectHero(save, 'hero-1')), 'cull-the-pack'))).toBeDefined()

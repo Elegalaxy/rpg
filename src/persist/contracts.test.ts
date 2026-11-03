@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { MAX_ACTIVE_CONTRACTS, contractList, contracts, rewardFor } from '../content/contracts.ts'
+import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, contractList, contracts, rewardFor, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
+import { createRng, nextFloat } from '../sim/rng.ts'
 import { encounters } from '../content/encounters.ts'
 import { enemies } from '../content/enemies.ts'
 import { gameDefs } from '../content/scenarios.ts'
@@ -16,10 +17,11 @@ import { createHero } from './roster.ts'
 import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
 import { outcomeSummary, settleExpedition } from './world.ts'
 
+/** A new hero whose board holds the six old fixed contracts, so tests can name them. */
 function heroSave(race: 'human' | 'elf' = 'human'): SaveData {
   const made = createHero(newSave(), { name: 'Ash', race, classId: 'warrior' })
   if (!made.ok) throw new Error(made.reason)
-  return made.save
+  return updatePurse(made.save, { board: contractList.map((def) => ({ ...def })) })
 }
 
 function ok(result: { ok: true; save: SaveData } | { ok: false; reason: string }): SaveData {
@@ -50,7 +52,7 @@ function victories(save: SaveData, count: number): SaveData {
 }
 
 describe('the contract board', () => {
-  it('lists six contracts with the decided rewards', () => {
+  it('keeps the six old fixed contracts, with their rewards, for saves that hold one', () => {
     expect(contractList.map((def) => def.id)).toEqual([
       'cull-the-pack',
       'clear-the-shards',
@@ -109,13 +111,14 @@ describe('taking and collecting', () => {
       reason: 'Hunt Deserters is not finished: 0 of 3.',
     })
     save = updatePurse(save, { contracts: [{ contractId: 'hunt-deserters', progress: 3 }] })
-    expect(isComplete(purseOf(save).contracts[0]!)).toBe(true)
+    expect(isComplete(purseOf(save).contracts[0]!, contracts['hunt-deserters'])).toBe(true)
     const paid = ok(collectContract(save, 'hero-1', 'hunt-deserters'))
     expect(purseOf(paid).gold).toBe(18)
     expect(purseOf(paid).materials).toEqual({ scrap: 2 })
     expect(purseOf(paid).contracts).toEqual([])
     expect(hero(paid).progress).toEqual(awardXp(hero(save).progress, 31))
-    expect(purseOf(ok(acceptContract(paid, 'hunt-deserters'))).contracts).toHaveLength(1)
+    expect(purseOf(paid).board.some((entry) => entry.id === 'hunt-deserters')).toBe(false)
+    expect(acceptContract(paid, 'hunt-deserters')).toEqual({ ok: false, reason: 'That contract is not on the board.' })
     expect(collectContract(save, 'nobody', 'hunt-deserters')).toEqual({ ok: false, reason: 'Select a hero to collect the reward.' })
     expect(() => assertSaveData(paid)).not.toThrow()
     expect(parseSave(serializeSave(paid)).ok).toBe(true)
@@ -234,5 +237,114 @@ describe('experience from fights', () => {
     const run = startExpedition(hero(heroSave()), 'splintered-road', 1)
     run.outcome = 'returned'
     expect(outcomeSummary(run).lines.some((line) => line.startsWith('Experience earned'))).toBe(false)
+  })
+})
+
+describe('the rolled board', () => {
+  const ROAD = ['node:greyhaven', 'node:splintered-road']
+  const ALL = [...ROAD, 'node:withered-grove', 'node:fallen-bastion']
+
+  function fresh(name = 'Ash'): SaveData {
+    const made = createHero(newSave(), { name, race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    return made.save
+  }
+
+  function rolls(discoveries: readonly string[], times: number): ContractDef[] {
+    const rng = createRng(7)
+    const out: ContractDef[] = []
+    for (let index = 0; index < times; index += 1) {
+      const offer = rollContract(`t-${index}`, discoveries, () => nextFloat(rng))
+      if (offer !== null) out.push(offer)
+    }
+    return out
+  }
+
+  it('gives a new hero four different Road offers, the same each time', () => {
+    const board = purseOf(fresh()).board
+    expect(board).toHaveLength(BOARD_SIZE)
+    expect(new Set(board.map((def) => targetKey(def.target))).size).toBe(BOARD_SIZE)
+    expect(purseOf(fresh()).board).toEqual(board)
+    for (const def of board) {
+      expect(def.target.kind === 'kill' ? ['fracture-shardling', 'starved-wolf', 'deserter'] : ['splintered-road']).toContain(
+        def.target.kind === 'kill' ? def.target.enemyId : def.target.kind === 'fights' ? def.target.nodeId : 'elite',
+      )
+    }
+  })
+
+  it('rolls counts and rewards inside the decided ranges', () => {
+    const offers = rolls(ALL, 400)
+    const kinds = new Set(offers.map((def) => def.target.kind))
+    expect([...kinds].sort()).toEqual(['encounters', 'fights', 'kill'])
+    const monsters = new Set(offers.flatMap((def) => (def.target.kind === 'kill' ? [def.target.enemyId] : [])))
+    expect([...monsters].sort()).toEqual(['blight-spider', 'deserter', 'fallen-arbalist', 'fracture-shardling', 'hollow-sentry', 'starved-wolf', 'thornbeast'])
+    for (const def of offers) {
+      if (def.target.kind === 'kill') {
+        const paired = def.target.enemyId === 'fracture-shardling'
+        expect(def.count).toBeGreaterThanOrEqual(paired ? 6 : 3)
+        expect(def.count).toBeLessThanOrEqual(paired ? 16 : 8)
+        if (paired) expect(def.count % 2).toBe(0)
+      } else if (def.target.kind === 'fights') {
+        expect(def.count).toBeGreaterThanOrEqual(3)
+        expect(def.count).toBeLessThanOrEqual(6)
+      } else {
+        expect(def.count).toBe(1)
+      }
+      const base = rewardFor(def.count, def.level, def.reward.materialId)
+      expect(def.reward.gold).toBeGreaterThanOrEqual(Math.floor(base.gold * 0.8))
+      expect(def.reward.gold).toBeLessThanOrEqual(Math.ceil(base.gold * 1.3))
+      expect(def.reward.materialQuantity).toBeGreaterThanOrEqual(1)
+    }
+    const elites = offers.filter((def) => def.target.kind === 'encounters').length
+    expect(elites / offers.length).toBeGreaterThan(0.06)
+    expect(elites / offers.length).toBeLessThan(0.2)
+  })
+
+  it('counts drawn fights past the fixed ones toward a Patrol of the last zone', () => {
+    const run = startExpedition(hero(fresh()), 'splintered-road', 1)
+    run.history = [0, 1, 2, 3, 4].map((index) => ({ index, encounterId: index < 3 ? run.opening[index]!.id : 'road-mixed', seed: index, outcome: 'victory' as const, durationMs: 1 }))
+    expect(unitsFrom(run, { ...contracts['thicket-sweep']!, target: { kind: 'fights', nodeId: 'splintered-road' } })).toBe(5)
+  })
+
+  it('offers nothing past the Road until a zone is discovered', () => {
+    for (const def of rolls(ROAD, 200)) {
+      expect(def.target.kind).not.toBe('encounters')
+      if (def.target.kind === 'fights') expect(def.target.nodeId).toBe('splintered-road')
+    }
+    expect(rollContract('none', [], () => 0.5)).toBeNull()
+  })
+
+  it('refills a collected or abandoned slot and rerolls untaken offers on return', () => {
+    let save = fresh()
+    const [first, second] = purseOf(save).board
+    save = ok(acceptContract(save, first!.id))
+    const abandoned = ok(abandonContract(save, first!.id))
+    expect(purseOf(abandoned).board).toHaveLength(BOARD_SIZE)
+    expect(purseOf(abandoned).board.some((def) => def.id === first!.id)).toBe(false)
+
+    save = ok(acceptContract(save, second!.id))
+    save = withRun(save, 'splintered-road')
+    save.expedition!.outcome = 'returned'
+    const settled = settleExpedition(save)
+    const board = purseOf(settled).board
+    expect(board).toHaveLength(BOARD_SIZE)
+    expect(board.map((def) => def.id)).toEqual(expect.arrayContaining([first!.id, second!.id]))
+    expect(board.filter((def) => def.id !== first!.id && def.id !== second!.id).every((def) => !purseOf(save).board.some((old) => old.id === def.id))).toBe(true)
+    expect(() => assertSaveData(settled)).not.toThrow()
+  })
+
+  it('moves a contract held from the old fixed board onto the new board', () => {
+    const save = fresh()
+    const raw = JSON.parse(serializeSave(save)) as { heroes: Record<string, unknown>[] }
+    const purse = raw.heroes[0]!.purse as Record<string, unknown>
+    delete purse.board
+    delete purse.boardRolls
+    purse.contracts = [{ contractId: 'cull-the-pack', progress: 2 }]
+    raw.heroes[0]!.updates = ['supply-rules', 'ranger-fade-back']
+    const parsed = parseSave(JSON.stringify(raw))
+    if (!parsed.ok) throw new Error(parsed.reason)
+    const board = purseOf(parsed.data).board
+    expect(board[0]).toEqual(contracts['cull-the-pack'])
+    expect(board).toHaveLength(BOARD_SIZE)
   })
 })
