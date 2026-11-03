@@ -4,7 +4,9 @@ import { xpToNextLevel } from '../sim/stats.ts'
 import { selectedHero } from '../persist/character.ts'
 import { statLines, statsFor } from '../persist/equipment.ts'
 import { nextHint, type Tab } from '../persist/guidance.ts'
-import { purseOf, type SaveData } from '../persist/save.ts'
+import { contractFor, purseOf, type SaveData } from '../persist/save.ts'
+import { isComplete } from '../persist/contracts.ts'
+import { PLACES as PLACE_LIST } from '../content/places.ts'
 import { scenarios } from '../content/scenarios.ts'
 import type { CombatState } from '../sim/types.ts'
 
@@ -38,6 +40,8 @@ import {
   chooseHero,
   togglePause,
   useCombatStore,
+  clearUnseenCrafts,
+  getUnseenCrafts,
   useSaveStatus,
 } from './store.ts'
 
@@ -73,20 +77,33 @@ const HERO_PARTS: { id: HeroPart; label: string }[] = [
 const TOWN_PARTS: { id: PlaceId; label: string }[] = PLACES.map((place) => ({ id: place.id, label: place.name }))
 
 /** A second row of buttons inside a tab, so one screen shows one job. */
+/** A small count pill on a tab: something is waiting there. */
+function Badge({ count, what }: { count: number; what: string }) {
+  if (count < 1) return null
+  return (
+    <span className="badge" role="status" aria-label={`${count} ${what}`}>
+      {count}
+    </span>
+  )
+}
+
 function SubTabs<T extends string>({
   tabs,
   current,
   onPick,
+  badges = {},
 }: {
   tabs: { id: T; label: string }[]
   current: T
   onPick: (id: T) => void
+  badges?: { [id: string]: { count: number; what: string } }
 }) {
   return (
     <nav className="subtabs" aria-label="Sections">
       {tabs.map((entry) => (
         <button key={entry.id} type="button" aria-pressed={current === entry.id} onClick={() => onPick(entry.id)}>
           {entry.label}
+          {badges[entry.id] === undefined ? null : <Badge count={badges[entry.id]!.count} what={badges[entry.id]!.what} />}
         </button>
       ))}
     </nav>
@@ -267,6 +284,14 @@ function App() {
   const [heroPart, setHeroPart] = useState<HeroPart>('overview')
   const [townPart, setTownPart] = useState<PlaceId>('weaponsmith')
   const saved = useSaveStatus()
+  const purse = purseOf(saved.save)
+  const finishedContracts = purse.contracts.filter((entry) => isComplete(entry, contractFor(purse, entry.contractId))).length
+  const unseenCrafts = getUnseenCrafts()
+  const inGearShop = tab === 'town' && PLACE_LIST.some((place) => place.id === townPart && place.gear !== undefined)
+
+  useEffect(() => {
+    if (inGearShop && unseenCrafts > 0) clearUnseenCrafts()
+  }, [inGearShop, unseenCrafts])
 
   useEffect(() => {
     debugLog('[ui]', 'app mounted')
@@ -316,6 +341,7 @@ function App() {
                 {TABS.map((entry) => (
                   <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
                     {entry.label}
+                    {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts} what="things waiting in town" /> : null}
                   </button>
                 ))}
               </nav>
@@ -344,7 +370,17 @@ function App() {
               ) : null}
               {tab === 'town' ? (
                 <>
-                  <SubTabs tabs={TOWN_PARTS} current={townPart} onPick={setTownPart} />
+                  <SubTabs
+                    tabs={TOWN_PARTS}
+                    current={townPart}
+                    onPick={setTownPart}
+                    badges={{
+                      'contract-board': { count: finishedContracts, what: 'finished contracts to collect' },
+                      ...Object.fromEntries(
+                        PLACE_LIST.filter((place) => place.gear !== undefined).map((place) => [place.id, { count: unseenCrafts, what: 'finished crafts' }]),
+                      ),
+                    }}
+                  />
                   <Town place={townPart} />
                 </>
               ) : null}

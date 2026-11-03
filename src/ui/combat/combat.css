@@ -328,3 +328,16 @@
 .actor-card[data-alive='false'] {
   opacity: 0.6;
 }
+
+/* The selected fight tab fills with its outcome colour, so the text never sits green on purple. */
+.fight-tabs button.btn-good[aria-pressed='true'] {
+  background: var(--good);
+  border-color: var(--good);
+  color: var(--panel);
+}
+
+.fight-tabs button.btn-danger[aria-pressed='true'] {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--panel);
+}

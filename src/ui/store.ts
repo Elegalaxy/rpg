@@ -534,6 +534,21 @@ export function getCraftNotices(): readonly string[] {
   return craftNotices
 }
 
+/** Crafts finished since the player last opened a gear shop. In memory only, so a reload clears it. */
+let unseenCrafts = 0
+
+export function getUnseenCrafts(): number {
+  return unseenCrafts
+}
+
+/** The player opened a gear shop and saw the finished crafts. */
+export function clearUnseenCrafts(): void {
+  if (unseenCrafts === 0) return
+  unseenCrafts = 0
+  saveStatus = { ...saveStatus }
+  emit()
+}
+
 /** Let town time pass for the crafting queue. The clock calls this each frame while no expedition runs. */
 export function advanceTown(count: number): void {
   if (!anyCrafting(saveStatus.save)) return
@@ -541,6 +556,7 @@ export function advanceTown(count: number): void {
   saveStatus = { ...saveStatus, save: result.save }
   if (result.finished.length > 0) {
     craftNotices = [...craftNotices, ...result.finished.map((notice) => notice.text)].slice(-5)
+    unseenCrafts += result.finished.length
     commitSave(saveStatus.save, 'craft finished', false)
   }
 }

@@ -3,7 +3,7 @@ import { purseOf } from '../../persist/save.ts'
 
 import { itemBase, itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
-import { previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
+import { changeIsBetter, previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
 import { EQUIPMENT_SLOT_IDS, gearGaps, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
 import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
@@ -151,8 +151,12 @@ export function Equipment() {
                                 ) : preview.changes.length === 0 ? (
                                   <small className="row-note">No stat changes.</small>
                                 ) : (
-                                  <small className="row-note" data-testid="equip-changes">
-                                    {preview.changes.map((change) => `${change.label} ${format(change.before, change.unit)} → ${format(change.after, change.unit)}`).join('; ')}
+                                  <small className="row-note change-list" data-testid="equip-changes">
+                                    {preview.changes.map((change) => (
+                                      <span key={change.label} className={changeIsBetter(change.label, change.before, change.after) ? 'change-better' : 'change-worse'}>
+                                        {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)}
+                                      </span>
+                                    ))}
                                   </small>
                                 )}
                               </Row>

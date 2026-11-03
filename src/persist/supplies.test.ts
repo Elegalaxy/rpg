@@ -4,7 +4,7 @@ import { DEFAULT_SUPPLY_ROWS } from '../content/supplies.ts'
 import { SMOKE_BOMB_ID, SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
 
 import { buildCondition, draftsFromRows, describeCondition } from './loadout.ts'
-import { checkPreparation, draftFor, packFromStash, savePreparation } from './preparation.ts'
+import { checkPreparation, draftFor, packFromStash, packedCounts, clampToStash, savePreparation, stepPacked } from './preparation.ts'
 import { createHero, selectHero } from './roster.ts'
 import { newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
 import { buySupply } from './town.ts'
@@ -97,5 +97,34 @@ describe('supply rules', () => {
     if (!parsed.ok) throw new Error(parsed.reason)
     expect(parsed.data.heroes[0]!.packedSupplies).toEqual([])
     expect(purseOf(parsed.data).supplies).toEqual({})
+  })
+})
+
+describe('packing with steppers', () => {
+  it('limits a saved pick to what the stash holds when the screen opens', () => {
+    expect(clampToStash(['healing-draught', 'healing-draught', 'smoke-bomb', 'smoke-bomb'], { 'healing-draught': 1, antidote: 4 })).toEqual([
+      'healing-draught',
+      '',
+      '',
+      '',
+    ])
+  })
+
+  const empty = ['', '', '', '']
+
+  it('adds and removes one at a time, filling from the left', () => {
+    let slots = stepPacked(empty, 'healing-draught', 1, 3)
+    slots = stepPacked(slots, 'antidote', 1, 2)
+    slots = stepPacked(slots, 'healing-draught', 1, 3)
+    expect(slots).toEqual(['healing-draught', 'antidote', 'healing-draught', ''])
+    expect(packedCounts(slots)).toEqual({ 'healing-draught': 2, antidote: 1 })
+    expect(stepPacked(slots, 'healing-draught', -1, 3)).toEqual(['healing-draught', 'antidote', '', ''])
+    expect(stepPacked(empty, 'antidote', -1, 3)).toEqual(empty)
+  })
+
+  it('stops at what the stash holds and at four slots', () => {
+    expect(stepPacked(['antidote', '', '', ''], 'antidote', 1, 1)).toEqual(['antidote', '', '', ''])
+    const full = ['healing-draught', 'healing-draught', 'healing-draught', 'healing-draught']
+    expect(stepPacked(full, 'antidote', 1, 5)).toEqual(full)
   })
 })

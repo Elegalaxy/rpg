@@ -47,6 +47,14 @@ export function statLines(stats: HeroDerivedStats): StatLine[] {
   ]
 }
 
+/** Stats where a lower number is the better one. */
+const LOWER_IS_BETTER = ['Base action time']
+
+/** Whether a change in a stat helps the hero. Always true or false, since a change has a direction. */
+export function changeIsBetter(label: string, before: number, after: number): boolean {
+  return LOWER_IS_BETTER.includes(label) ? after < before : after > before
+}
+
 export type EquipPreview = {
   /** The reason the item cannot be equipped, or null. */
   block: string | null

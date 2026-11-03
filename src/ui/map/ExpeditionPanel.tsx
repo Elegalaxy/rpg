@@ -6,9 +6,11 @@ import {
   RETREAT_MIN_PERCENT,
   canPickCurse,
   checkPreparation,
+  clampToStash,
   draftFor,
-  packFromStash,
+  packedCounts,
   quiverLimit,
+  stepPacked,
   type PreparationDraft,
 } from '../../persist/preparation.ts'
 import type { SavedHero } from '../../persist/save.ts'
@@ -17,6 +19,7 @@ import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
+import { Row } from '../Row.tsx'
 import { FightView } from '../combat/FightView.tsx'
 import {
   pushOnFromUi,
@@ -38,12 +41,16 @@ const CURSE_LABELS: { [curse: string]: string } = {
 }
 
 function PreparationForm({ hero }: { hero: SavedHero }) {
-  const [draft, setDraft] = useState<PreparationDraft>(() => draftFor(hero))
+  const [draft, setDraft] = useState<PreparationDraft>(() => {
+    const start = draftFor(hero)
+    return { ...start, supplies: clampToStash(start.supplies, hero.purse.supplies) }
+  })
   const [problems, setProblems] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
   const checked = checkPreparation(hero, draft)
   const limit = quiverLimit(hero)
-  const pack = packFromStash({ ...hero, packedSupplies: draft.supplies.filter((id) => id !== '') })
+  const counts = packedCounts(draft.supplies)
+  const packedTotal = draft.supplies.filter((id) => id !== '').length
 
   function patch(next: Partial<PreparationDraft>): void {
     setDraft({ ...draft, ...next })
@@ -150,29 +157,53 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </small>
         </div>
       ) : null}
-      <fieldset className="supply-slots">
-        <legend>Supplies to pack</legend>
-        {draft.supplies.map((id, index) => (
-          <label key={index}>
-            Slot {index + 1}{' '}
-            <select
-              aria-label={`Supply slot ${index + 1}`}
-              value={id}
-              onChange={(event) => patch({ supplies: draft.supplies.map((entry, at) => (at === index ? event.target.value : entry)) })}
-            >
-              <option value="">Empty</option>
-              {SUPPLIES.map((supply) => (
-                <option key={supply.id} value={supply.id}>
-                  {supply.name} (have {hero.purse.supplies[supply.id] ?? 0})
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
-        <small>
-          {SUPPLY_SLOT_COUNT} slots. Buy supplies in the Greyhaven shop. A pick you do not have stays empty.{' '}
-          {pack.missing.length > 0 ? `Short now: ${pack.missing.map(supplyName).join(', ')}.` : ''}
-        </small>
+      <fieldset className="supply-pack">
+        <legend>Pack for the road</legend>
+        <p>
+          Backpack: <strong data-testid="pack-used">{packedTotal}</strong> of {SUPPLY_SLOT_COUNT} slots.
+        </p>
+        <ul className="rows">
+          {SUPPLIES.map((supply) => {
+            const owned = hero.purse.supplies[supply.id] ?? 0
+            const count = counts[supply.id] ?? 0
+            return (
+              <Row
+                key={supply.id}
+                actions={
+                  <span className="stepper">
+                    <button
+                      type="button"
+                      aria-label={`Pack one fewer ${supply.name}`}
+                      disabled={count === 0}
+                      onClick={() => patch({ supplies: stepPacked(draft.supplies, supply.id, -1, owned) })}
+                    >
+                      −
+                    </button>
+                    <output aria-label={`${supply.name} packed`} data-testid={`pack-${supply.id}`}>
+                      {count}
+                    </output>
+                    <button
+                      type="button"
+                      aria-label={`Pack one more ${supply.name}`}
+                      disabled={packedTotal >= SUPPLY_SLOT_COUNT || count >= owned}
+                      onClick={() => patch({ supplies: stepPacked(draft.supplies, supply.id, 1, owned) })}
+                    >
+                      +
+                    </button>
+                  </span>
+                }
+              >
+                <strong>{supply.name}</strong> — {supply.effect}
+                <small className="row-note">{owned === 0 ? 'None in your stash. Buy some at the Potion Shop.' : `${owned} in your stash.`}</small>
+              </Row>
+            )
+          })}
+        </ul>
+        {packedTotal > 0 ? (
+          <button type="button" onClick={() => patch({ supplies: stepPacked([], '', 1, 0) })}>
+            Empty the backpack
+          </button>
+        ) : null}
       </fieldset>
       <button type="button" disabled={!checked.ok} onClick={save}>
         Save preparation

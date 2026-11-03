@@ -19,7 +19,7 @@ export function Contracts() {
   }
 
   return (
-    <section aria-label="Contracts">
+    <>
       <p>
         Active: <strong data-testid="active-count">{active.length}</strong> of {MAX_ACTIVE_CONTRACTS}. Won fights count when an expedition ends, even after a
         defeat. New work is posted each time you come back to town.
@@ -70,6 +70,6 @@ export function Contracts() {
       </ul>
       {message !== null ? <p data-testid="contract-message">{message}</p> : null}
       {error !== null ? <p role="alert">{error}</p> : null}
-    </section>
+    </>
   )
 }

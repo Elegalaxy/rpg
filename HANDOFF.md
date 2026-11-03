@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - Round-3 playtest fixes (2026-11-04): backpack steppers for supplies (`preparation.ts`, `ExpeditionPanel.tsx`), fight tab colours (`combat.css`), green/red gear comparison (`changeIsBetter`, `Equipment.tsx`), finished-contract and finished-craft badges (`App.tsx`, `store.ts`). 700 tests.
   - 2026-11-04: Rolled contract board per hero (`src/content/contracts.ts` roll, `src/persist/contracts.ts` board fill/refresh, `Purse.board`/`boardRolls`, `contractFor`, hero update `contract-board`); Bank (was Moneylender); crafting no longer nested. 696 tests.
   - 2026-11-04: Combat viewer fix (App.tsx); crafting advances for every hero, in town or away (`crafting.ts`); Greyhaven split into 8 places (`src/content/places.ts`, `src/ui/town/Town.tsx`, `Craft` `accepts` filter, filtered `repairAll`). 690 tests.
   - Vow of Zeal 5 to 7 Faith (`ZEAL_BASE` in `src/sim/classes/cleric.ts`, GAME_DESIGN Cleric: Faith). Built Cleric: Rootmaw 0/93/93%, Echo Knight 87/100/100% (0/6/9 nodes).
@@ -24,4 +25,4 @@
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
   - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** The user's 2026-11-04 notes are done. Suggest a third playtest round (places, contracts, supplies, Fade Back, Zeal) and record it in Step 11.2.
+- **Exact Next Step:** Round 3 is recorded and its notes are fixed. Untested by the user: Fade Back in play and Cleric Zeal. Ask for the next notes, or suggest verifying Step 11.2.

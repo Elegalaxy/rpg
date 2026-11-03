@@ -801,3 +801,43 @@ li.row:has(.chooser) {
     --accent-fg: #06151c;
   }
 }
+
+/* ---- Gear comparison: better stats green, worse stats red. The arrow and sign keep it readable without colour. ---- */
+
+.change-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s3);
+}
+
+.change-better {
+  color: var(--good);
+}
+
+.change-better::before {
+  content: '▲ ';
+}
+
+.change-worse {
+  color: var(--danger);
+}
+
+.change-worse::before {
+  content: '▼ ';
+}
+
+/* ---- Badge: a small count pill on a tab when something is waiting there ---- */
+
+.badge {
+  display: inline-block;
+  min-width: 1.4em;
+  margin-left: var(--s2);
+  padding: 0 0.4em;
+  border-radius: 999px;
+  background: var(--danger);
+  color: var(--panel);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}

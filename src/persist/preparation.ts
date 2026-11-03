@@ -37,6 +37,42 @@ export function draftFor(hero: SavedHero): PreparationDraft {
   }
 }
 
+/** How many of each supply the slots hold. */
+export function packedCounts(slots: readonly string[]): { [supplyId: string]: number } {
+  const counts: { [supplyId: string]: number } = {}
+  for (const id of slots) if (id !== '') counts[id] = (counts[id] ?? 0) + 1
+  return counts
+}
+
+/** The slots limited to what the stash holds, so the screen never shows a pick it cannot fill. */
+export function clampToStash(slots: readonly string[], stash: { readonly [supplyId: string]: number }): string[] {
+  const left = { ...stash }
+  const kept: string[] = []
+  for (const id of slots) {
+    if (id === '' || (left[id] ?? 0) <= 0) continue
+    left[id] = (left[id] ?? 0) - 1
+    kept.push(id)
+  }
+  return Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => kept[index] ?? '')
+}
+
+/**
+ * Pack one more or one fewer of a supply. The slots stay filled from the left, in the order the
+ * supplies were first packed. Adding stops at the slot count and at what the stash holds.
+ */
+export function stepPacked(slots: readonly string[], supplyId: string, delta: 1 | -1, owned: number): string[] {
+  const packed = slots.filter((id) => id !== '')
+  if (delta === 1) {
+    if (packed.length >= SUPPLY_SLOT_COUNT || (packedCounts(packed)[supplyId] ?? 0) >= owned) return [...slots]
+    packed.push(supplyId)
+  } else {
+    const at = packed.lastIndexOf(supplyId)
+    if (at < 0) return [...slots]
+    packed.splice(at, 1)
+  }
+  return Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => packed[index] ?? '')
+}
+
 /**
  * What a run would take from the stash: the packed ids it can cover, in slot order, and the ones
  * it cannot. A pick the stash cannot cover leaves its slot empty.

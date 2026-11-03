@@ -45,3 +45,27 @@
   stroke: #fff;
   stroke-width: 2;
 }
+
+/* Packing supplies: a row per supply with a minus, the count, and a plus. */
+.supply-pack {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--s3) var(--s4);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.stepper button {
+  min-width: var(--control-h);
+  font-weight: 700;
+}
+
+.stepper output {
+  min-width: 1.5em;
+  text-align: center;
+  font-weight: 700;
+}
