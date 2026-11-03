@@ -16,6 +16,6 @@
   - No shared vault between heroes. Supplies are per hero too.
   - Reference loadouts and the harness carry no supplies, so matrix numbers are unchanged.
   - One commit per finished part, pushed to `origin/main`. No force-push.
-  - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user has not yet said whether that is too strong.
+  - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
   - Known leftovers: rules matter late; Cleric floor build loses both elites; existing heroes do not get the supply rules or Fade Back automatically.
-- **Exact Next Step:** Ask the user whether supplies are too strong against elites (options: smaller heal, a per-run Draught cap, higher price) and record any change in GAME_DESIGN first.
+- **Exact Next Step:** Ask the user which follow-up is next: make rules matter early (give an early enemy a telegraph, numbers need approval), Cleric floor damage, or giving existing heroes the supply rules and Fade Back.

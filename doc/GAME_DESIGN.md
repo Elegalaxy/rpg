@@ -1416,6 +1416,7 @@ First-playable supplies, decided 2026-11-03:
 - An Antidote with no Poison or Bleed on the hero still uses the action and the item, so its rule should say when.
 - New heroes start with the two default rules at the top of their rules. Existing heroes add them in the Rules editor.
 - Crafted supplies, more supply kinds, a supply shortcut during a fight, and Deserter supply pressure are later work.
+- Kept after measurement, 2026-11-03: two Draughts lift the floor Assassin against the level-16 Echo Knight from 7% to 97% wins, and four let every class win. Buying supplies is the intended way past an elite early, paid for in gold.
 - Loot capacity is 20. Each Splintered Road enemy drops 4 of its own material: a Fracture Shardling drops a shard, a Starved Wolf drops a hide, and a Deserter drops a scrap.
 - The drop uses the momentum already held when the fight is won. The victory then adds its stack. Quantity is `4 × (1 + 5% × stacks)`, rounded half-up. Three stacks turn 4 into 5. One stack does not change a drop of 4, because 4.2 rounds to 4.
 - Drops are added in slot order. When the bag is full, older materials stay and the newest quantity that does not fit is lost.
