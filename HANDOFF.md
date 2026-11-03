@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - Vow of Zeal 5 to 7 Faith (`ZEAL_BASE` in `src/sim/classes/cleric.ts`, GAME_DESIGN Cleric: Faith). Built Cleric: Rootmaw 0/93/93%, Echo Knight 87/100/100% (0/6/9 nodes).
   - One-time hero updates (`src/persist/heroUpdates.ts`, applied in `parseSave`; `SavedHero.updates`): old heroes get the supply rules once; old Rangers learn Fade Back and swap it in for a starting-kit Volley. Test `src/persist/heroUpdates.test.ts`. 687 tests.
   - Fade Back dodge (2026-11-03, GAME_DESIGN Ranger skill 7): readies a 3 s dodge of the next enemy skill with a damage effect (no damage, no statuses); cooldown 16 s. `skillDodge` effect and log event in `src/sim/types.ts`, `skills.ts`, `combat.ts` (`spendSkillDodge`), `log.ts`, `src/ui/log/categories.ts`; content in `src/content/skills.ts`; test `src/content/fade-back.test.ts`. Ranger built matrix: Rootmaw 70/83/83%, Echo Knight 13/27/27%. 682 tests.
   - Early-rules check: early fights stay easy by choice (user); only Fade Back was fixed.
@@ -20,5 +21,5 @@
   - Reference loadouts and the harness carry no supplies, so matrix numbers are unchanged.
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
-  - Known leftovers: rules matter late (kept on purpose); Cleric floor build loses both elites. A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** Ask the user whether to look at the Cleric floor build (loses both elites), or run another playtest round.
+  - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
+- **Exact Next Step:** The follow-ups from the second playtest are done. Suggest a third playtest round (supplies, Fade Back, Zeal) and record it in Step 11.2.

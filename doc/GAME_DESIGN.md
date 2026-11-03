@@ -256,7 +256,7 @@ Each class has:
 - The Cleric leaves town at 0 Faith.
 - Faith persists between encounters for the expedition and does not naturally decay.
 - The three base vows are available at character creation; the skill web improves them. The Cleric equips one vow before leaving town and cannot change it during that expedition.
-- Vow of Zeal generates 5 base Faith when a hero action deals direct HP damage, at most once per hero action.
+- Vow of Zeal generates 7 base Faith when a hero action deals direct HP damage, at most once per hero action. It was 5 until 2026-11-03: Zeal was the weakest vow against the Rootmaw (built Cleric, 30 runs, 0/3/6/9 nodes: Zeal 0/0/50/50%, Endurance 0/7/100/100%, Temperance 0/10/93/93%). At 7 Zeal is 0/17/93/93%, and the 0-node Cleric beats the Echo Knight 87% (was 0%).
 - Vow of Endurance generates 1 base Faith per 1% of maximum HP lost or barrier damage absorbed, capped at 10 per enemy action.
 - Vow of Temperance generates 5 base Faith after an action ends at 40%-80% HP without overhealing or resource overcap.
 - Failing an ordinary vow condition only stops generation. Exalted Vow adds an actual break penalty.
@@ -1656,6 +1656,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-03: Vow of Zeal 5 to 7 base Faith per damaging action, so Zeal matches the other vows.
 - 2026-11-03: Heroes made before supplies and Fade Back are updated once on load: the two supply rules, and for a Ranger, Fade Back learned and swapped in for a starting-kit Volley.
 - 2026-11-03: Fade Back also dodges the next enemy skill hit within 3 seconds, and its cooldown rises from 8 to 16 seconds.
 - 2026-11-03: Decided the first-playable supplies: Healing Draught (30% HP, 15 gold), Antidote (clears Poison and Bleed, 10 gold), and Smoke Bomb (+15 escape points, 20 gold). Rules use the first two. Each hero buys and keeps its own.

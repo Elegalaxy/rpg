@@ -90,7 +90,7 @@ export type ClericVow = (typeof CLERIC_VOWS)[number]
 export const VOW_STATE_KEY = 'vow'
 
 /** Direct HP damage from a hero action. Not weapon-normalized. At most once per action. */
-export const ZEAL_BASE = 5
+export const ZEAL_BASE = 7
 /** Per 1% of maximum HP lost or absorbed, before the per-action cap. Full precision. */
 export const ENDURANCE_BASE_PER_PERCENT = 1
 /** Cap on the Endurance base, applied before Spirit. */
