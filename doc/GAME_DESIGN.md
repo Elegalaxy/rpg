@@ -393,7 +393,7 @@ The MVP Ranger web has fifteen nodes: five per cluster. Each node costs 1 skill 
 
 #### Marksmanship cluster
 
-1. Aimed Shot: improve the starting skill to 200% Physical Power when used at 80 or more Readiness.
+1. Aimed Shot: improve the starting skill to 260% Physical Power when used at 80 or more Readiness (200% until 2026-11-03).
 2. Steady Hands: at 75 or more Readiness, aimed skills gain +10 percentage points to their minimum damage roll and critical chance.
 3. Piercing Arrow: unlock the Armor-penetrating active skill.
 4. Patient Shot: after spending at least 4 seconds without using a Readiness-spending attack, the next aimed skill gains +20% damage. The effect is consumed on use and cannot stack.
@@ -1127,11 +1127,12 @@ These are a first broad roster for mechanical review. Names and effects are not 
 #### Ranger
 
 1. Hunter's Mark: no Readiness cost; reveal target defenses and traits for the encounter; 5-second cooldown; 0.5× action time.
-2. Aimed Shot: costs 40 Readiness; deals 180% Physical Power; 5-second cooldown; 1.2× action time.
+2. Aimed Shot: costs 40 Readiness; deals 234% Physical Power (180% until 2026-11-03); 5-second cooldown; 1.2× action time.
 3. Volley: costs 30 Readiness; deals 65% Physical Power to every enemy; 6-second cooldown; 1.2× action time.
 4. Snare Trap: costs 25 Readiness; arm one trap that triggers on the target's next action with a 75% base Stun chance; 8-second cooldown; 1.0× action time. Only one Ranger trap can be armed at a time.
-5. Piercing Arrow: costs 20 Readiness; deals 130% Physical Power; adds 30 percentage points of Armor penetration, subject to the total penetration cap; 5-second cooldown; 1.0× action time.
+5. Piercing Arrow: costs 20 Readiness; deals 169% Physical Power (130% until 2026-11-03); adds 30 percentage points of Armor penetration, subject to the total penetration cap; 5-second cooldown; 1.0× action time.
 6. Flame Arrow: costs 20 Readiness and one special arrow; deals magical damage equal to 100% Physical Power; applies one Burn intensity whose tick deals 10% of snapshotted Physical Power; 6-second cooldown; 1.0× action time.
+7. Fade Back: no Readiness cost; gain +30 Evasion until the next Ranger action; 8-second cooldown; 0.5× action time. Added 2026-11-03 so a Ranger can answer a telegraph; the Ranger's arrows were raised 30% in the same change. Measured at seed 1, 30 runs: a level-20 Ranger beats the Rootmaw 73% at 0 nodes and 87% at 9 nodes (33% and 60% before). The Echo Knight still beats it (0%).
 
 #### Mage
 

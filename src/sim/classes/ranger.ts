@@ -47,7 +47,7 @@ export const SNARE_TRAP_ID = 'snare-trap'
 
 /** Aimed Shot's coefficient at 80 or more Readiness, checked before the cost is paid. */
 export const AIMED_SHOT_READINESS = 80
-export const AIMED_SHOT_COEFFICIENT = 2
+export const AIMED_SHOT_COEFFICIENT = 2.6
 export const STEADY_HANDS_READINESS = 75
 export const STEADY_HANDS_FLOOR = 0.1
 export const STEADY_HANDS_CRIT = 0.1

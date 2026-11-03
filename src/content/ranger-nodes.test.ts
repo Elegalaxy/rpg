@@ -255,7 +255,7 @@ function stepTravel(state: ExpeditionState, defs: GameDefs, ms: number): void {
 describe('ranger nodes', () => {
   it('raises Aimed Shot to 200% Physical Power at 80 Readiness', () => {
     expect(nodeId('Aimed Shot')).toBe(NODE_AIMED_SHOT)
-    expect(authored(AIMED_SHOT_ID).effects[0]).toMatchObject({ coefficient: 1.8 })
+    expect(authored(AIMED_SHOT_ID).effects[0]).toMatchObject({ coefficient: 2.34 })
     const plain = open({ equipped: [AIMED_SHOT_ID], rows: [{ skillId: AIMED_SHOT_ID }], startingResource: 100 })
     useSkill(plain.state, plain.defs, AIMED_SHOT_ID, 100)
     const low = open({
@@ -278,8 +278,8 @@ describe('ranger nodes', () => {
       below: lowHit.coefficient,
       at80: highHit.coefficient,
     })
-    expect(plainHit.coefficient).toBe(1.8)
-    expect(lowHit.coefficient).toBe(1.8)
+    expect(plainHit.coefficient).toBe(2.34)
+    expect(lowHit.coefficient).toBe(2.34)
     expect(highHit.coefficient).toBe(AIMED_SHOT_COEFFICIENT)
     expect(high.state.hero.classResource).toBe(40)
   })
@@ -330,7 +330,7 @@ describe('ranger nodes', () => {
     expect(fresh.learnedSkillIds).not.toContain(PIERCING_ARROW_ID)
     const progress = learned(['Aimed Shot', 'Steady Hands', 'Piercing Arrow'])
     expect(progress.learnedSkillIds).toContain(PIERCING_ARROW_ID)
-    expect(authored(PIERCING_ARROW_ID).effects[0]).toMatchObject({ coefficient: 1.3, armorPenetrationBonus: 0.3 })
+    expect(authored(PIERCING_ARROW_ID).effects[0]).toMatchObject({ coefficient: 1.69, armorPenetrationBonus: 0.3 })
     const plain = open({ equipped: [PIERCING_ARROW_ID], rows: [{ skillId: PIERCING_ARROW_ID }] })
     useSkill(plain.state, plain.defs, PIERCING_ARROW_ID, 20)
     const fight = open({
@@ -342,7 +342,7 @@ describe('ranger nodes', () => {
     const plainHit = heroDamage(plain.state)
     const hit = heroDamage(fight.state)
     expect(hit.coefficient).toBe(plainHit.coefficient)
-    expect(hit.coefficient).toBe(1.3)
+    expect(hit.coefficient).toBe(1.69)
     expect(hit.penetration).toBe(plainHit.penetration)
     expect(fight.state.hero.classResource).toBe(plain.state.hero.classResource)
   })
@@ -407,7 +407,7 @@ describe('ranger nodes', () => {
       afterSnare: afterSnare.outgoingModifier,
       unallocated: plainHit.outgoingModifier,
     })
-    expect(first.coefficient).toBe(1.8)
+    expect(first.coefficient).toBe(2.34)
     expect(first.outgoingModifier).toBeCloseTo(PATIENT_DAMAGE, 10)
     expect(second.outgoingModifier).toBe(1)
     expect(held.outgoingModifier).toBeCloseTo(PATIENT_DAMAGE, 10)
@@ -446,7 +446,7 @@ describe('ranger nodes', () => {
     expect(shortHit.damageFloor).toBe(plainHit.damageFloor)
     expect(shortHit.critChance).toBe(plainHit.critChance)
     expect(short.state.hero.classResource).toBe(59)
-    expect(fullHit.coefficient).toBe(1.8)
+    expect(fullHit.coefficient).toBe(2.34)
     expect(fullHit.damageFloor).toBe(DEADEYE_ROLL_FLOOR)
     expect(fullHit.damageCeiling).toBe(1)
     expect(fullHit.consistencyRoll).toBeGreaterThanOrEqual(DEADEYE_ROLL_FLOOR)

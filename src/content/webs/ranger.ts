@@ -19,5 +19,5 @@ export const rangerWeb = defineWeb(
       unlocks: { "Hunter's Mark": 'hunters-mark', Volley: 'volley' },
     },
   ],
-  ['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'],
+  ['aimed-shot', 'piercing-arrow', 'fade-back', 'snare-trap'],
 )

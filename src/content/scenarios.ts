@@ -334,21 +334,17 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
   },
   ranger: {
     heroName: 'Ranger',
-    equippedSkillIds: ['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'],
+    equippedSkillIds: ['aimed-shot', 'piercing-arrow', 'fade-back', 'snare-trap'],
     startingResource: 100,
     specialAmmo: 6,
     priorityRows: [
       {
-        skillId: 'snare-trap',
+        skillId: 'fade-back',
         conditions: [{ kind: 'telegraph', operator: 'present' }],
       },
       {
-        skillId: 'volley',
-        conditions: [{ kind: 'enemyCount', operator: 'atLeast', value: 3 }],
-      },
-      {
         skillId: 'aimed-shot',
-        conditions: [{ kind: 'classResource', operator: 'atLeast', value: 80 }],
+        conditions: [{ kind: 'classResource', operator: 'atLeast', value: 40 }],
       },
       { skillId: 'piercing-arrow' },
     ],

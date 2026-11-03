@@ -327,7 +327,7 @@ describe('class reference fights', () => {
     const limit = 600_000
     const durationMs: { [id: string]: { [seed: number]: number } } = {
       [ASSASSIN_VS_STANDARD_ID]: { 1: 7_961, 42: 7_153 },
-      [RANGER_VS_STANDARD_ID]: { 1: 12_377, 42: 10_658 },
+      [RANGER_VS_STANDARD_ID]: { 1: 8_939, 42: 8_939 },
     }
     for (const id of [ASSASSIN_VS_STANDARD_ID, RANGER_VS_STANDARD_ID]) {
       for (const seed of [1, 42]) {
@@ -782,9 +782,8 @@ const referenceRows: { [classId in HeroClass]: readonly PriorityRow[] } = {
     { skillId: 'shadow-cut' },
   ],
   ranger: [
-    { skillId: 'snare-trap', conditions: [{ kind: 'telegraph', operator: 'present' }] },
-    { skillId: 'volley', conditions: [{ kind: 'enemyCount', operator: 'atLeast', value: 3 }] },
-    { skillId: 'aimed-shot', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 80 }] },
+    { skillId: 'fade-back', conditions: [{ kind: 'telegraph', operator: 'present' }] },
+    { skillId: 'aimed-shot', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 40 }] },
     { skillId: 'piercing-arrow' },
   ],
   mage: [
@@ -805,7 +804,7 @@ const referenceRows: { [classId in HeroClass]: readonly PriorityRow[] } = {
 const referenceSkills: { [classId in HeroClass]: readonly string[] } = {
   warrior: ['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'],
   assassin: ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'],
-  ranger: ['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'],
+  ranger: ['aimed-shot', 'piercing-arrow', 'fade-back', 'snare-trap'],
   mage: ['fireball', 'frost-lance', 'mana-ward', 'arcane-recovery'],
   cleric: ['smite', 'mend', 'ward', 'judgment'],
 }

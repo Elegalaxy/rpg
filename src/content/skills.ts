@@ -146,7 +146,7 @@ const piercingArrow = {
   actionTimeCoefficient: 1,
   tags: ['physical', 'attack'],
   target: 'single',
-  effects: [{ kind: 'damage', school: 'physical', coefficient: 1.3, armorPenetrationBonus: 0.3 }],
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 1.69, armorPenetrationBonus: 0.3 }],
 } satisfies SkillDef
 
 const flameArrow = {
@@ -208,7 +208,18 @@ const aimedShot = {
   actionTimeCoefficient: 1.2,
   tags: ['physical', 'attack'],
   target: 'single',
-  effects: [{ kind: 'damage', school: 'physical', coefficient: 1.8 }],
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 2.34 }],
+} satisfies SkillDef
+
+const fadeBack = {
+  id: 'fade-back',
+  name: 'Fade Back',
+  cost: 0,
+  cooldownSeconds: 8,
+  actionTimeCoefficient: 0.5,
+  tags: ['defense'],
+  target: 'single',
+  effects: [{ kind: 'evasion', amount: 30 }],
 } satisfies SkillDef
 
 const volley = {
@@ -502,6 +513,7 @@ export const skills: { [id: string]: SkillDef } = {
   [execute.id]: execute,
   [huntersMark.id]: huntersMark,
   [aimedShot.id]: aimedShot,
+  [fadeBack.id]: fadeBack,
   [volley.id]: volley,
   [snareTrap.id]: snareTrap,
   [piercingArrow.id]: piercingArrow,
