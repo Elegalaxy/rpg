@@ -12,6 +12,7 @@ import type { CombatState } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS, runBatch, runScenario, scenarioIds, type BatchSummary } from './batch.ts'
 import { routeBlueprint, routeFightCount } from './expedition.ts'
+import { formatBuiltTable, runBuiltMatrix } from './builds.ts'
 import { runComboMatrix } from './combos.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
@@ -225,13 +226,22 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
   const seed = parseSeed(args.seed)
   const runs = parseRuns(args.runs)
+  if (args.matrix === 'built') {
+    console.log(`[sim] matrix built seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const rows = runBuiltMatrix(seed, runs)
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatBuiltTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
   if (args.matrix === 'combos') {
     console.log(`[sim] matrix combos seed ${seed} runs ${runs}`)
     const started = performance.now()
