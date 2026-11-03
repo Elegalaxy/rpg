@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - Log filters: Damage, Healing, and Items used (`src/ui/log/categories.ts`, new `supplyUse` event in `src/sim/types.ts`/`combat.ts`/`expedition.ts`/`log.ts`). 701 tests.
   - Wording pass: explanatory text moved into `?` tooltips (`src/ui/Help.tsx`, `.help` styles in theme.css) across Town, Map, Hero tab, and Legacy. The user is separately testing the Fractured Warden. 701 tests.
   - Round-3 playtest fixes (2026-11-04): backpack steppers for supplies (`preparation.ts`, `ExpeditionPanel.tsx`), fight tab colours (`combat.css`), green/red gear comparison (`changeIsBetter`, `Equipment.tsx`), finished-contract and finished-craft badges (`App.tsx`, `store.ts`). 700 tests.
   - 2026-11-04: Rolled contract board per hero (`src/content/contracts.ts` roll, `src/persist/contracts.ts` board fill/refresh, `Purse.board`/`boardRolls`, `contractFor`, hero update `contract-board`); Bank (was Moneylender); crafting no longer nested. 696 tests.

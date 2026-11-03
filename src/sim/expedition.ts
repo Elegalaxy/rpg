@@ -1232,6 +1232,16 @@ function tryEscape(state: ExpeditionState): boolean {
     spendSlot(state, smokeSlot)
     const carried = hero.supplies.indexOf(SMOKE_BOMB_ID)
     if (carried >= 0) hero.supplies.splice(carried, 1)
+    combat.log.push({
+      type: 'supplyUse',
+      timeMs: combat.timeMs,
+      actorId: hero.id,
+      actorName: hero.name,
+      supplyId: SMOKE_BOMB_ID,
+      supplyName: 'Smoke Bomb',
+      left: hero.supplies.filter((id) => id === SMOKE_BOMB_ID).length,
+      nextReadyMs: null,
+    })
   }
   const chancePercent = ESCAPE_BASE_PERCENT + agilityPoints + suppliesBonus + ESCAPE_ZONE_BONUS + momentumBonus
   const roll = nextFloat(state.rng)

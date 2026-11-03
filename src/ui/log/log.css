@@ -143,12 +143,14 @@
   border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
 }
 
-[data-kind='damageHeal'] { --dot: var(--danger); }
+[data-kind='damage'] { --dot: var(--danger); }
+[data-kind='healing'] { --dot: var(--good); }
+[data-kind='items'] { --dot: var(--class-assassin); }
 [data-kind='rolls'] { --dot: var(--info); }
 [data-kind='statuses'] { --dot: var(--warn); }
 [data-kind='automation'] { --dot: var(--accent); }
 [data-kind='resources'] { --dot: var(--gold); }
-[data-kind='retreat'] { --dot: var(--good); }
+[data-kind='retreat'] { --dot: color-mix(in srgb, var(--good) 50%, var(--fg)); }
 [data-kind='defeatCause'] { --dot: var(--fg); }
 
 .log-row-button {

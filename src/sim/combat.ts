@@ -1806,19 +1806,14 @@ function resolveSupply(state: CombatState, skill: SkillDef, scheduled: number): 
   hero.supplies.splice(index, 1)
   const timing = scheduleSkill(hero, skill, scheduled)
   state.log.push({
-    type: 'action',
+    type: 'supplyUse',
     timeMs: scheduled,
     actorId: hero.id,
     actorName: hero.name,
-    targetId: hero.id,
-    targetName: hero.name,
-    action: 'skill',
-    skillId: skill.id,
-    skillName: skill.name,
-    scheduledMs: scheduled,
+    supplyId: skill.id,
+    supplyName: skill.name,
+    left: hero.supplies.filter((id) => id === skill.id).length,
     nextReadyMs: timing.nextReadyMs,
-    cooldownReadyMs: timing.cooldownReadyMs,
-    suppliesLeft: hero.supplies.filter((id) => id === skill.id).length,
   })
   for (const effect of skill.effects) {
     if (effect.kind === 'heal') {

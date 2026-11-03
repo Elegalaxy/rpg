@@ -173,7 +173,7 @@ describe('log filters', () => {
     const all = filterLog(victory.log, new Set())
     const retreated = filterLog(victory.log, new Set(['retreat']))
     const rolls = filterLog(victory.log, new Set(['rolls']))
-    const damage = filterLog(victory.log, new Set(['damageHeal']))
+    const damage = filterLog(victory.log, new Set(['damage']))
     console.log('[ui]', 'log filter sample', {
       events: victory.log.length,
       labels,
@@ -185,7 +185,9 @@ describe('log filters', () => {
     })
 
     expect(labels).toEqual([
-      'Damage & healing',
+      'Damage',
+      'Healing',
+      'Items used',
       'Hits & misses',
       'Effects',
       'Rule choices',
@@ -201,11 +203,11 @@ describe('log filters', () => {
     expect(rolls.length).toBeGreaterThan(0)
     expect(rolls.every((row) => row.event.type === 'hitRoll')).toBe(true)
     expect(damage.some((row) => row.event.type === 'hitRoll')).toBe(false)
-    expect(damage.every((row) => categoriesForEventType(row.event.type).includes('damageHeal'))).toBe(true)
+    expect(damage.every((row) => categoriesForEventType(row.event.type).includes('damage'))).toBe(true)
     for (const row of damage) expect(row.event).toBe(victory.log[row.index])
     const hidden = victory.log.filter((event) => !damage.some((row) => row.event === event))
     expect(hidden.length).toBeGreaterThan(0)
-    for (const event of hidden) expect(categoriesForEventType(event.type)).not.toContain('damageHeal')
+    for (const event of hidden) expect(categoriesForEventType(event.type)).not.toContain('damage')
 
     const html = renderToStaticMarkup(<LogPanel log={victory.log} />)
     expect(rowTexts(html)).toEqual(limitLogRows(victory.log, false).map((event) => headlineOf(event)))

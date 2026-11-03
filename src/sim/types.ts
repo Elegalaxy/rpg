@@ -374,8 +374,6 @@ export type ActionEvent = {
   /** Special arrows spent with this action. Omitted when the skill spends none. */
   ammoSpent?: number
   ammoRemaining?: number
-  /** Carried supplies of this kind left after a supply is used. Omitted for every other action. */
-  suppliesLeft?: number
 }
 
 export type HitRollEvent = {
@@ -1028,6 +1026,21 @@ export type LogEvent =
   | EscapeEvent
   | RaceEvent
   | SkillDodgeEvent
+  | SupplyUseEvent
+
+/** The hero used up a carried supply: a drink from a rule, or a Smoke Bomb on an escape roll. */
+export type SupplyUseEvent = {
+  type: 'supplyUse'
+  timeMs: number
+  actorId: string
+  actorName: string
+  supplyId: string
+  supplyName: string
+  /** Supplies of this kind still carried. */
+  left: number
+  /** When the hero can act again. Null for a Smoke Bomb, which takes no action. */
+  nextReadyMs: number | null
+}
 
 /** The hero's readied dodge took an enemy skill: no damage and no statuses from it. */
 export type SkillDodgeEvent = {

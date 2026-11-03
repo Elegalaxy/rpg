@@ -21,25 +21,25 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   manual: ['automation'],
   action: ['automation'],
   hitRoll: ['rolls'],
-  damage: ['damageHeal', 'defeatCause'],
-  heal: ['damageHeal'],
+  damage: ['damage', 'defeatCause'],
+  heal: ['healing'],
   barrier: ['statuses'],
   barrierExpired: ['statuses'],
   buff: ['statuses'],
   buffEnded: ['statuses'],
   actionDelay: ['statuses'],
   statusAttempt: ['statuses'],
-  statusTick: ['damageHeal', 'statuses', 'defeatCause'],
+  statusTick: ['damage', 'statuses', 'defeatCause'],
   statusExpired: ['statuses'],
   statusCleared: ['statuses'],
   markRefresh: ['statuses'],
   reveal: ['statuses'],
   trap: ['statuses'],
   field: ['statuses'],
-  fieldTick: ['damageHeal', 'statuses', 'defeatCause'],
-  fieldHeal: ['damageHeal', 'statuses'],
+  fieldTick: ['damage', 'statuses', 'defeatCause'],
+  fieldHeal: ['healing', 'statuses'],
   fieldExpired: ['statuses'],
-  hpLoss: ['damageHeal', 'defeatCause'],
+  hpLoss: ['damage', 'defeatCause'],
   vow: ['resources'],
   resource: ['resources'],
   resourceSnapshot: ['resources'],
@@ -47,7 +47,7 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   telegraph: [],
   stance: [],
   summon: [],
-  regen: ['damageHeal'],
+  regen: ['healing'],
   skillSkip: ['automation'],
   phase: [],
   stack: [],
@@ -57,6 +57,7 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   escape: ['retreat'],
   race: [],
   skillDodge: ['statuses'],
+  supplyUse: ['items'],
 }
 
 const DEFEAT_CAUSE_TYPES = ['damage', 'statusTick', 'fieldTick', 'hpLoss', 'death', 'encounterEnd'] as const
@@ -90,7 +91,7 @@ describe('log categories', () => {
     }
 
     expect(eventMatchesCategories('hitRoll', new Set(['rolls']))).toBe(true)
-    expect(eventMatchesCategories('hitRoll', new Set(['damageHeal']))).toBe(false)
+    expect(eventMatchesCategories('hitRoll', new Set(['damage']))).toBe(false)
     expect(eventMatchesCategories('damage', new Set(['defeatCause']))).toBe(true)
     expect(eventMatchesCategories('damage', new Set(['rolls']))).toBe(false)
     expect(eventMatchesCategories('priority', new Set(['automation', 'retreat']))).toBe(true)
@@ -133,7 +134,7 @@ describe('log row text', () => {
     })
     expect(splitDetail('Encounter ended: victory.')).toEqual({ headline: 'Encounter ended: victory.', detail: null })
     expect(splitLeadTime('no lead')).toEqual({ time: null, body: 'no lead' })
-    expect(rowKind('damage')).toBe('damageHeal')
+    expect(rowKind('damage')).toBe('damage')
     expect(rowKind('telegraph')).toBe('other')
   })
 })

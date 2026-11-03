@@ -6,7 +6,9 @@ import type { LogEvent } from '../../sim/types.ts'
  * `summarizeDefeat` reads: damage, statusTick, fieldTick, and hpLoss.
  */
 export const LOG_CATEGORIES = [
-  'damageHeal',
+  'damage',
+  'healing',
+  'items',
   'rolls',
   'statuses',
   'automation',
@@ -18,7 +20,9 @@ export const LOG_CATEGORIES = [
 export type LogCategory = (typeof LOG_CATEGORIES)[number]
 
 export const LOG_CATEGORY_LABELS: Record<LogCategory, string> = {
-  damageHeal: 'Damage & healing',
+  damage: 'Damage',
+  healing: 'Healing',
+  items: 'Items used',
   rolls: 'Hits & misses',
   statuses: 'Effects',
   automation: 'Rule choices',
@@ -29,7 +33,9 @@ export const LOG_CATEGORY_LABELS: Record<LogCategory, string> = {
 
 /** One line under the filter chips that says what the chosen filter keeps. */
 export const LOG_CATEGORY_HINTS: Record<LogCategory, string> = {
-  damageHeal: 'Every hit, damage-over-time tick, heal, and regeneration.',
+  damage: 'Every hit and damage-over-time tick.',
+  healing: 'Every heal and regeneration.',
+  items: 'Draughts, Antidotes, Smoke Bombs, and other supplies used.',
   rolls: 'Each hit roll: the chance, the roll, and whether it landed.',
   statuses: 'Poison, Burn, Stun, barriers, buffs, traps, telegraph delays, and other effects.',
   automation: 'Which rule fired on each action, and why rules above it were skipped.',
@@ -49,25 +55,25 @@ const EVENT_CATEGORIES = {
   manual: ['automation'],
   action: ['automation'],
   hitRoll: ['rolls'],
-  damage: ['damageHeal', 'defeatCause'],
-  heal: ['damageHeal'],
+  damage: ['damage', 'defeatCause'],
+  heal: ['healing'],
   barrier: ['statuses'],
   barrierExpired: ['statuses'],
   buff: ['statuses'],
   buffEnded: ['statuses'],
   actionDelay: ['statuses'],
   statusAttempt: ['statuses'],
-  statusTick: ['damageHeal', 'statuses', 'defeatCause'],
+  statusTick: ['damage', 'statuses', 'defeatCause'],
   statusExpired: ['statuses'],
   statusCleared: ['statuses'],
   markRefresh: ['statuses'],
   reveal: ['statuses'],
   trap: ['statuses'],
   field: ['statuses'],
-  fieldTick: ['damageHeal', 'statuses', 'defeatCause'],
-  fieldHeal: ['damageHeal', 'statuses'],
+  fieldTick: ['damage', 'statuses', 'defeatCause'],
+  fieldHeal: ['healing', 'statuses'],
   fieldExpired: ['statuses'],
-  hpLoss: ['damageHeal', 'defeatCause'],
+  hpLoss: ['damage', 'defeatCause'],
   vow: ['resources'],
   resource: ['resources'],
   resourceSnapshot: ['resources'],
@@ -75,7 +81,7 @@ const EVENT_CATEGORIES = {
   telegraph: [],
   stance: [],
   summon: [],
-  regen: ['damageHeal'],
+  regen: ['healing'],
   skillSkip: ['automation'],
   phase: [],
   stack: [],
@@ -85,6 +91,7 @@ const EVENT_CATEGORIES = {
   escape: ['retreat'],
   race: [],
   skillDodge: ['statuses'],
+  supplyUse: ['items'],
 } as const satisfies Record<LogEvent['type'], readonly LogCategory[]>
 
 /** The colour group of a row: its first category, or `other` for telegraphs, stances, summons, and similar. */
