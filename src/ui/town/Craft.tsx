@@ -14,7 +14,7 @@ import {
   craftGold,
   proficiencyRank,
   qualityRange,
-  upgradeChance,
+  upgradeGold,
   upgradeCheck,
 } from '../../persist/crafting.ts'
 import { wearerOf } from '../../persist/equipment.ts'
@@ -177,7 +177,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
               }
             >
               {worn === null ? '' : `Worn (${worn}): `}
-              {itemName(item)}, item level {item.itemLevel} — {percent(upgradeChance(item.itemLevel))} chance, {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {craftGold(item.itemLevel)} gold
+              {itemName(item)}, item level {item.itemLevel} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
               {block !== null ? <small className="row-note">{block}</small> : null}
             </Row>
           )

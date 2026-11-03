@@ -29,6 +29,7 @@ import {
   settleExpeditionFromUi,
   settleAndRepeatFromUi,
   expeditionWaiting,
+  getDiscoveryNotices,
   getFinishedFights,
   TRAVEL_SPEEDUP,
   useSaveStatus,
@@ -306,6 +307,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
           {expedition.consumedSupplyIds.length > 0 ? ` Used: ${expedition.consumedSupplyIds.map(supplyName).join(', ')}.` : ''}
         </li>
         <li>Fights finished: {expedition.history.length}.</li>
+        {getDiscoveryNotices().length > 0 ? <li data-testid="discovered">Discovered: {getDiscoveryNotices().join(', ')}.</li> : null}
       </ul>
       {waiting ? (
         <div role="group" aria-label="Push on or return">
@@ -346,6 +348,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
         {summary.lines.map((line) => (
           <li key={line}>{line}</li>
         ))}
+        {getDiscoveryNotices().length > 0 ? <li data-testid="discovered">Discovered: {getDiscoveryNotices().join(', ')}.</li> : null}
       </ul>
       <button type="button" onClick={settleExpeditionFromUi}>
         Return to town

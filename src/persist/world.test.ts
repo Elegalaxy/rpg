@@ -12,6 +12,7 @@ import {
   canStartRoute,
   fightNodeIds,
   markerPosition,
+  newlyDiscovered,
   nodeStatus,
   recordProgress,
   routeInfo,
@@ -284,4 +285,12 @@ describe('settling an expedition', () => {
     expect(settled.expedition).toBeNull()
     expect(() => assertSaveData(settled)).not.toThrow()
   }, 120_000)
+})
+
+describe('discovery notices', () => {
+  it('names the places whose discovery is new, and ignores ones already known', () => {
+    expect(newlyDiscovered(['node:greyhaven', 'node:splintered-road'], ['node:greyhaven', 'node:splintered-road', 'node:withered-grove'])).toEqual(['Withered Grove'])
+    expect(newlyDiscovered(['node:withered-grove'], ['node:withered-grove'])).toEqual([])
+    expect(newlyDiscovered([], ['node:unknown-place'])).toEqual([])
+  })
 })

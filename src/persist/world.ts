@@ -234,6 +234,14 @@ export function recordProgress(save: SaveData): SaveData {
   }
 }
 
+/** Names of the places whose discovery ids are in `after` but not in `before`. */
+export function newlyDiscovered(before: readonly string[], after: readonly string[]): string[] {
+  return after.filter((id) => !before.includes(id)).flatMap((id) => {
+    const node = Object.values(nodes).find((entry) => entry.discoveryId === id)
+    return node === undefined ? [] : [node.name]
+  })
+}
+
 /** The Echo rank of each boss fight the expedition won, in order. Empty when no boss fell. */
 export function bossVictoryRanks(expedition: ExpeditionState): number[] {
   const ranks: number[] = []

@@ -7,7 +7,7 @@ import type { RosterResult } from './roster.ts'
 import { purseOf, updatePurse, withPurse, type CraftJob, type Purse, type SaveData, type SavedHero } from './save.ts'
 
 export const CRAFT_MATERIAL_COST = 6
-export const UPGRADE_MATERIAL_COST = 4
+export const UPGRADE_MATERIAL_COST = 3
 export const CRAFT_MS = 30_000
 export const QUEUE_MAX = 3
 export const MAX_RANK = 10
@@ -38,10 +38,9 @@ export function craftGold(itemLevel: number): number {
   return itemLevel * 5
 }
 
-/** Chance an upgrade from this item level works: `85% − 5 × item level`, never below 0. */
-export function upgradeChance(itemLevel: number): number {
-  const chance = 0.85 - 0.05 * itemLevel
-  return chance > 0 ? Math.round(chance * 1000) / 1000 : 0
+/** Gold for an upgrade from this item level: `item level × 3`. An upgrade always succeeds. */
+export function upgradeGold(itemLevel: number): number {
+  return itemLevel * 3
 }
 
 function rngFor(seedIndex: number) {
@@ -174,9 +173,8 @@ export function upgradeCheck(save: SaveData, hero: SavedHero, item: ItemInstance
   if (hero.purse.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
   if (item === undefined) return 'That item is not in the archive or worn by this hero.'
   if (item.itemLevel >= hero.progress.level) return `This hero is level ${hero.progress.level}. An item cannot go above the hero's level.`
-  if (upgradeChance(item.itemLevel) <= 0) return 'That item cannot be upgraded further.'
   if (MATERIAL_QUALITY[materialId] === undefined) return 'Pick scrap, hide, or shard.'
-  return spend(hero.purse, materialId, UPGRADE_MATERIAL_COST, craftGold(item.itemLevel))
+  return spend(hero.purse, materialId, UPGRADE_MATERIAL_COST, upgradeGold(item.itemLevel))
 }
 
 /** Pay for an upgrade and queue it. The item leaves the archive until the job ends. */
@@ -199,7 +197,7 @@ export function queueUpgrade(save: SaveData, heroId: string, itemId: string, mat
     seedIndex: hero.purse.craftCounter,
     rank: proficiencyRank(hero.craftXp),
   }
-  const paid = charge(hero.purse, materialId, UPGRADE_MATERIAL_COST, craftGold(item.itemLevel))
+  const paid = charge(hero.purse, materialId, UPGRADE_MATERIAL_COST, upgradeGold(item.itemLevel))
   const purse: Purse = {
     ...paid,
     craftCounter: paid.craftCounter + 1,
@@ -238,10 +236,7 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       notice: { jobId: job.id, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
-  const rng = rngFor(job.seedIndex)
-  const chance = upgradeChance(job.item.itemLevel)
-  const worked = nextFloat(rng) < chance
-  const returned: ItemInstance = worked ? { ...job.item, itemLevel: job.item.itemLevel + 1 } : job.item
+  const returned: ItemInstance = { ...job.item, itemLevel: job.item.itemLevel + 1 }
   const name = itemBase(job.item.baseId)?.name ?? job.item.baseId
   const owner = heroes.find((entry) => entry.id === job.heroId)
   const backInSlot = job.slot !== undefined && owner !== undefined && owner.equipment[job.slot] === null
@@ -254,9 +249,7 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
     save: { ...save, heroes: worn },
     notice: {
       jobId: job.id,
-      text: worked
-        ? `${name} was upgraded to item level ${returned.itemLevel}.`
-        : `The upgrade of ${name} failed. The materials are gone and the item is unchanged.`,
+      text: `${name} was upgraded to item level ${returned.itemLevel}.`,
     },
   }
 }

@@ -1265,7 +1265,7 @@ First-playable town numbers, decided 2026-10-31:
 - A craft selects a base recipe, material, and one controlled modifier or rune.
 - Materials define a visible quality range.
 - Crafting proficiency raises and narrows the quality range.
-- A failed upgrade consumes the upgrade materials but leaves the item unchanged.
+- An upgrade always succeeds (changed 2026-11-04; it used to fail often and cost more than crafting a new item).
 - Crafting uses a short queue. Since 2026-11-04 it progresses whether the hero is in town or out on an expedition, and for every hero, not only the selected one.
 - Recipes and crafting proficiency persist through reincarnation.
 - Item tiers and modifiers have hero-level requirements.
@@ -1277,7 +1277,7 @@ First-playable crafting numbers, decided 2026-10-31:
 - Proficiency is personal to the hero and survives reincarnation. Each craft or upgrade attempt adds 1 XP. Rank is `floor(√XP)`, up to 10, and each rank raises the range's minimum by 1 percentage point, never above its maximum.
 - A craft costs 6 of the chosen material plus `item level × 5` gold. The item level is at most the hero's level. It takes 30 seconds, and the queue holds 3 jobs. Only the first job advances. Time passes in town and on expeditions alike, for every hero's queue (changed 2026-11-04; before, only the selected hero's queue moved and only while no expedition ran). Crafting counts real time, so it does not depend on the combat viewer's speed or pause, and a tab in the background catches up when it returns. A closed page does not craft (offline progress is deferred).
 - One modifier per craft, from the recipes the account knows, and the hero's level must reach its minimum: Keen +2 points critical chance (level 1), Precise +3 Accuracy (level 1), Nimble +3 Evasion (level 3), Piercing +3 points Armor and magical penetration (level 6), Mending +5 Healing Power (level 6), Quick +2 points cooldown reduction (level 9). Modifiers on every equipped item add together.
-- An upgrade raises an archive item's level by 1, up to the hero's level, for 4 of a chosen material plus `item level × 5` gold, in the same queue and time. The chance is `85% − 5 × item level`. A failure uses the materials and returns the item unchanged.
+- An upgrade raises the level of an item the hero owns (worn or in the archive) by 1, up to the hero's level, for 3 of a chosen material plus `item level × 3` gold, in the same queue and time. It always succeeds, and the item keeps its modifier, quality, and durability. Decided 2026-11-04 (user): upgrading is the cheap, safe way to keep a good item current, while crafting is for a new item or a different modifier. Cost of one more level against crafting a new item at the next level (6 materials plus `5 × (L + 1)` gold): L = 1, 3 materials and 3 gold against 6 and 10; L = 10, 3 materials and 30 gold against 6 and 55. Before this change the cost was 4 materials plus `5 × L` gold with chance `85% − 5 × L`, and a failure lost the cost.
 
 ### Equipment math
 
@@ -1665,6 +1665,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-04: Upgrades always succeed and cost 3 materials plus `item level × 3` gold. A discovered location is announced on the expedition outcome and badges the Map tab.
 - 2026-11-04: The contract board is rolled per hero: 4 offers of Bounties, Patrols, and Elite contracts with random targets, counts, and an 80-130% reward roll.
 - 2026-11-04: Greyhaven is split into eight places; each gear shop deals in one kind of item.
 - 2026-11-04: Crafting no longer waits in town: every hero's queue advances, during expeditions too.

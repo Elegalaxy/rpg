@@ -41,7 +41,9 @@ import {
   togglePause,
   useCombatStore,
   clearUnseenCrafts,
+  clearUnseenDiscoveries,
   getUnseenCrafts,
+  getUnseenDiscoveries,
   useSaveStatus,
 } from './store.ts'
 
@@ -287,6 +289,7 @@ function App() {
   const purse = purseOf(saved.save)
   const finishedContracts = purse.contracts.filter((entry) => isComplete(entry, contractFor(purse, entry.contractId))).length
   const unseenCrafts = getUnseenCrafts()
+  const unseenDiscoveries = getUnseenDiscoveries()
   const chosenHero = selectedHero(saved.save)
   const attributePoints = chosenHero?.progress.unspentAttributePoints ?? 0
   const skillPoints = chosenHero === null ? 0 : chosenHero.progress.unspentSkillPoints + chosenHero.progress.legacySkillPoints
@@ -295,6 +298,10 @@ function App() {
   useEffect(() => {
     if (inGearShop && unseenCrafts > 0) clearUnseenCrafts()
   }, [inGearShop, unseenCrafts])
+
+  useEffect(() => {
+    if (tab === 'map' && unseenDiscoveries > 0) clearUnseenDiscoveries()
+  }, [tab, unseenDiscoveries])
 
   useEffect(() => {
     debugLog('[ui]', 'app mounted')
@@ -345,6 +352,7 @@ function App() {
                   <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
                     {entry.label}
                     {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts} what="things waiting in town" /> : null}
+                    {entry.id === 'map' ? <Badge count={unseenDiscoveries} what="new places discovered" /> : null}
                     {entry.id === 'heroes' ? <Badge count={attributePoints + skillPoints} what="unspent points" /> : null}
                   </button>
                 ))}

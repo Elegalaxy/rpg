@@ -18,7 +18,8 @@ import {
   qualityRange,
   queueCraft,
   queueUpgrade,
-  upgradeChance,
+  craftGold,
+  upgradeGold,
 } from './crafting.ts'
 import { equipFromArchive, statsFor } from './equipment.ts'
 import { blueprintForHero } from './expeditionSetup.ts'
@@ -67,8 +68,9 @@ describe('proficiency and quality range', () => {
     expect(qualityRange('iron', 3)).toBeNull()
   })
 
-  it('has an upgrade chance of 85% minus 5 points per item level', () => {
-    expect([1, 2, 10, 16, 17, 30].map(upgradeChance)).toEqual([0.8, 0.75, 0.35, 0.05, 0, 0])
+  it('charges 3 gold per item level for an upgrade, against 5 for a craft', () => {
+    expect([1, 2, 10, 19].map(upgradeGold)).toEqual([3, 6, 30, 57])
+    expect([1, 2, 10, 19].map(craftGold)).toEqual([5, 10, 50, 95])
   })
 })
 
@@ -194,46 +196,28 @@ describe('upgrades', () => {
     return updatePurse(save, { craftCounter: counter, archive: [newItem('old', 'weapon-bow', level, 1.05)] })
   }
 
-  it('holds the item while it works, charges 4 material and item level × 5 gold, and adds 1 level on success', () => {
-    let worked = false
-    for (let counter = 0; counter < 60 && !worked; counter += 1) {
+  it('holds the item while it works, charges 3 material and item level × 3 gold, and always adds 1 level', () => {
+    for (let counter = 0; counter < 40; counter += 1) {
       const queued = ok(queueUpgrade(withItem(2, counter), 'hero-1', 'old', 'scrap'))
       expect(purseOf(queued).archive).toEqual([])
-      expect(purseOf(queued).materials.scrap).toBe(26)
-      expect(purseOf(queued).gold).toBe(300 - 10)
+      expect(purseOf(queued).materials.scrap).toBe(27)
+      expect(purseOf(queued).gold).toBe(300 - 6)
       expect(purseOf(queued).craftQueue[0]).toMatchObject({ kind: 'upgrade', materialId: 'scrap' })
       const done = advanceCrafting(queued, CRAFT_MS)
       const item = purseOf(done.save).archive[0]!
-      expect(item.id).toBe('old')
-      expect(item.quality).toBe(1.05)
-      if (item.itemLevel === 3) {
-        worked = true
-        expect(done.finished[0]?.text).toMatch(/upgraded to item level 3/)
-      }
+      expect(item).toEqual(newItem('old', 'weapon-bow', 3, 1.05))
+      expect(done.finished[0]?.text).toMatch(/upgraded to item level 3/)
       expect(hero(done.save).craftXp).toBe(1)
     }
-    expect(worked).toBe(true)
   })
 
-  it('on a failure uses the materials and returns the item unchanged', () => {
-    let failed = false
-    for (let counter = 0; counter < 80 && !failed; counter += 1) {
-      const queued = ok(queueUpgrade(withItem(12, counter), 'hero-1', 'old', 'shard'))
-      const done = advanceCrafting(queued, CRAFT_MS)
-      const item = purseOf(done.save).archive[0]!
-      if (item.itemLevel === 12) {
-        failed = true
-        expect(item).toEqual(newItem('old', 'weapon-bow', 12, 1.05))
-        expect(purseOf(done.save).materials.shard).toBe(26)
-        expect(purseOf(done.save).gold).toBe(300 - 60)
-        expect(done.finished[0]?.text).toMatch(/failed\. The materials are gone and the item is unchanged/)
-        expect(hero(done.save).craftXp).toBe(1)
-      }
-    }
-    expect(failed).toBe(true)
+  it('keeps a deep item upgrading, since there is no failure chance', () => {
+    const queued = ok(queueUpgrade(withItem(16, 0), 'hero-1', 'old', 'shard'))
+    expect(purseOf(queued).gold).toBe(300 - 48)
+    expect(purseOf(advanceCrafting(queued, CRAFT_MS).save).archive[0]?.itemLevel).toBe(17)
   })
 
-  it('refuses items above the hero, in the wrong place, past the chance, or with no queue room', () => {
+  it('refuses items above the hero, in the wrong place, or with no queue room', () => {
     const save = withItem(2, 0)
     const capped = { ...save, heroes: save.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 2 } })) }
     expect(queueUpgrade(capped, 'hero-1', 'old', 'scrap')).toEqual({
@@ -241,8 +225,6 @@ describe('upgrades', () => {
       reason: "This hero is level 2. An item cannot go above the hero's level.",
     })
     expect(queueUpgrade(save, 'hero-1', 'nothing', 'scrap')).toEqual({ ok: false, reason: 'That item is not in the archive or worn by this hero.' })
-    const deep = { ...withItem(17, 0), heroes: withItem(17, 0).heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 20 } })) }
-    expect(queueUpgrade(deep, 'hero-1', 'old', 'scrap')).toEqual({ ok: false, reason: 'That item cannot be upgraded further.' })
     expect(queueUpgrade(save, 'hero-1', 'old', 'iron').ok).toBe(false)
     let full = save
     for (let index = 0; index < 3; index += 1) full = ok(queueCraft(full, 'hero-1', bow))

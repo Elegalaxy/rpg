@@ -11,7 +11,7 @@ import { buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem,
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
-import { beginExpedition, canStartRoute, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
+import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
 import { returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
 import { setPriorityRules } from '../sim/automation.ts'
@@ -326,6 +326,27 @@ export function expeditionWaiting(): boolean {
   return expedition !== null && shouldHold(expedition, pushedAt)
 }
 
+/** Places discovered during this run, for the run's panels. In memory only. */
+let discoveryNotices: string[] = []
+/** Places discovered since the player last opened the Map tab. In memory only. */
+let unseenDiscoveries = 0
+
+export function getDiscoveryNotices(): readonly string[] {
+  return discoveryNotices
+}
+
+export function getUnseenDiscoveries(): number {
+  return unseenDiscoveries
+}
+
+/** The player opened the Map tab and saw what was found. */
+export function clearUnseenDiscoveries(): void {
+  if (unseenDiscoveries === 0) return
+  unseenDiscoveries = 0
+  saveStatus = { ...saveStatus }
+  emit()
+}
+
 /** A fight that has ended, kept so its log and final state can be read after the panel moves on. */
 export type FinishedFight = { fight: number; encounterId: string; combat: CombatState }
 
@@ -358,7 +379,13 @@ export function advanceExpedition(count: number): void {
   }
   const moved = expedition.history.length !== fights || expedition.phase !== phase || expedition.outcome !== 'ongoing'
   if (!moved) return
+  const discoveredBefore = saveStatus.save.account.discoveries
   saveStatus = { ...saveStatus, save: recordProgress(saveStatus.save) }
+  const found = newlyDiscovered(discoveredBefore, saveStatus.save.account.discoveries)
+  if (found.length > 0) {
+    discoveryNotices = [...discoveryNotices, ...found]
+    unseenDiscoveries += found.length
+  }
   if (expedition.history.length !== fights || expedition.outcome !== 'ongoing') {
     commitSave(saveStatus.save, expedition.outcome === 'ongoing' ? 'encounter end' : 'expedition end', false)
   }
@@ -409,6 +436,7 @@ export function startExpeditionFromUi(routeId: string): string | null {
   pushedAt = null
   lastRouteId = routeId
   finishedFights = []
+  discoveryNotices = []
   debugLog('[ui]', 'expedition start', { routeId, seed })
   commitSave(begun.save, 'expedition start')
   expeditionLoop.resetClock()
