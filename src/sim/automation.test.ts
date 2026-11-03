@@ -304,6 +304,34 @@ describe('priority conditions and target priorities', () => {
     effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
   })
 
+  it('reads the target stance and whether its telegraph can be interrupted', () => {
+    const defs = defsFor([ready, follow])
+    const rows: PriorityRow[] = [
+      { skillId: ready.id, conditions: [{ kind: 'stance', stance: 'assault', operator: 'present' }] },
+      { skillId: follow.id, conditions: [{ kind: 'interruptible', operator: 'present' }] },
+    ]
+    const assault = openPriority(defs, { equipped: [ready.id, follow.id], rows }, (combat) => {
+      enemyAt(combat, 0).stance = 'assault'
+    })
+    expect(heroAction(assault)).toMatchObject({ skillId: ready.id })
+
+    const guard = openPriority(defs, { equipped: [ready.id, follow.id], rows }, (combat) => {
+      enemyAt(combat, 0).stance = 'guard'
+    })
+    expect(skipReasons(guard)[0]).toBe('assault stance is absent')
+    expect(heroAction(guard)).toMatchObject({ action: 'basicAttack' })
+
+    const open = openPriority(defs, { equipped: [ready.id, follow.id], rows }, (combat) => {
+      enemyAt(combat, 0).telegraph = { tag: 'roots', resolvesAtMs: combat.hero.nextReadyMs + 1500, interruptMaxHpFraction: 0.1 }
+    })
+    expect(heroAction(open)).toMatchObject({ skillId: follow.id })
+
+    const closed = openPriority(defs, { equipped: [ready.id, follow.id], rows }, (combat) => {
+      enemyAt(combat, 0).telegraph = { tag: 'roots', resolvesAtMs: combat.hero.nextReadyMs + 1500 }
+    })
+    expect(skipReasons(closed)).toContain('interruptible telegraph is absent')
+  })
+
   it('ORs one skill through a later row with a different condition', () => {
     const defs = defsFor([ready])
     const state = openPriority(

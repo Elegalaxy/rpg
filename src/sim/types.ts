@@ -459,6 +459,10 @@ export type AutomationCondition =
   | { kind: 'enemyType'; operator: 'equal' | 'notEqual'; value: string }
   | { kind: 'rank'; operator: CompareOperator; value: number }
   | { kind: 'mark'; operator: PresenceOperator }
+  /** The target is in this stance. Only enemies with the stance trait have one. */
+  | { kind: 'stance'; stance: 'guard' | 'assault'; operator: PresenceOperator }
+  /** The target has a visible telegraph that enough damage cancels. */
+  | { kind: 'interruptible'; operator: PresenceOperator }
   | { kind: 'bossPhase'; operator: CompareOperator; value: number }
   | { kind: 'telegraph'; tag?: string; operator: ConditionOperator; value?: number }
 

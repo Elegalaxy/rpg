@@ -187,6 +187,25 @@ function parseCondition(value: unknown, label: string): AutomationCondition | st
     return { kind, operator }
   }
 
+  if (kind === 'stance') {
+    const extra = unexpectedKey(record, ['kind', 'stance', 'operator'])
+    if (extra !== null) return `${label} has unknown field '${extra}'`
+    if (record.stance !== 'guard' && record.stance !== 'assault') {
+      return `${label} stance must be guard or assault, received ${describeValue(record.stance)}`
+    }
+    const operator = readPresence(record.operator)
+    if (operator === null) return `${label} operator is invalid, received ${describeValue(record.operator)}`
+    return { kind, stance: record.stance, operator }
+  }
+
+  if (kind === 'interruptible') {
+    const extra = unexpectedKey(record, ['kind', 'operator'])
+    if (extra !== null) return `${label} has unknown field '${extra}'`
+    const operator = readPresence(record.operator)
+    if (operator === null) return `${label} operator is invalid, received ${describeValue(record.operator)}`
+    return { kind, operator }
+  }
+
   if (kind === 'barrier' || kind === 'telegraph') {
     const allowed = kind === 'telegraph' ? ['kind', 'tag', 'operator', 'value'] : ['kind', 'operator', 'value']
     const extra = unexpectedKey(record, allowed)
@@ -589,6 +608,8 @@ function conditionNeedsTarget(condition: AutomationCondition): boolean {
     case 'rank':
     case 'mark':
     case 'bossPhase':
+    case 'stance':
+    case 'interruptible':
     case 'telegraph':
       return true
     default: {
@@ -668,6 +689,15 @@ function conditionFailure(
     case 'bossPhase':
       if (enemy === null) return 'no target'
       return numericFailure('boss phase', enemy.bossPhase, condition.operator, condition.value)
+    case 'stance':
+      if (enemy === null) return 'no target'
+      return presenceFailure(`${condition.stance} stance`, enemy.stance === condition.stance, condition.operator)
+    case 'interruptible': {
+      if (enemy === null) return 'no target'
+      const telegraph = visibleTelegraph(enemy, undefined)
+      const open = telegraph !== null && telegraph.interruptMaxHpFraction !== undefined
+      return presenceFailure('interruptible telegraph', open, condition.operator)
+    }
     case 'telegraph': {
       if (enemy === null) return 'no target'
       const telegraph = visibleTelegraph(enemy, condition.tag)

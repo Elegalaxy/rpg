@@ -33,6 +33,9 @@ export type ConditionType =
   | 'telegraph'
   | 'telegraphWithin'
   | 'mark'
+  | 'targetAssault'
+  | 'targetGuard'
+  | 'interruptible'
   | 'specialAmmo'
 
 export type ConditionKind = {
@@ -72,6 +75,9 @@ export const CONDITION_KINDS: readonly ConditionKind[] = [
   { type: 'telegraph', label: 'Enemy telegraph', operators: PRESENCE, numeric: false },
   { type: 'telegraphWithin', label: 'Telegraph resolves within (seconds)', operators: ['atMost'], numeric: true },
   { type: 'mark', label: 'Target is marked', operators: PRESENCE, numeric: false, classes: ['assassin'] },
+  { type: 'targetAssault', label: 'Target is in Assault stance', operators: PRESENCE, numeric: false },
+  { type: 'targetGuard', label: 'Target is in Guard stance', operators: PRESENCE, numeric: false },
+  { type: 'interruptible', label: 'Telegraph can be interrupted', operators: PRESENCE, numeric: false },
   { type: 'specialAmmo', label: 'Special arrows', operators: COMPARE, numeric: true, classes: ['ranger'] },
 ]
 
@@ -179,6 +185,12 @@ export function buildCondition(draft: ConditionDraft): AutomationCondition | str
       return { kind: 'telegraph', operator: presence }
     case 'mark':
       return { kind: 'mark', operator: presence }
+    case 'targetAssault':
+      return { kind: 'stance', stance: 'assault', operator: presence }
+    case 'targetGuard':
+      return { kind: 'stance', stance: 'guard', operator: presence }
+    case 'interruptible':
+      return { kind: 'interruptible', operator: presence }
     default:
       return {
         kind: 'status',
@@ -208,6 +220,10 @@ export function describeCondition(condition: AutomationCondition, classId: HeroC
       return `Hero barrier ${op(condition.operator)}`
     case 'mark':
       return `Target mark ${op(condition.operator)}`
+    case 'stance':
+      return `Target ${condition.stance === 'assault' ? 'Assault' : 'Guard'} stance ${op(condition.operator)}`
+    case 'interruptible':
+      return `Telegraph can be interrupted ${op(condition.operator)}`
     case 'telegraph':
       return condition.value === undefined
         ? `Enemy telegraph ${op(condition.operator)}`
@@ -258,6 +274,10 @@ export function draftsFromRows(rows: readonly PriorityRow[]): RowDraft[] {
               : []
         case 'mark':
           return [base('mark', condition.operator)]
+        case 'stance':
+          return [base(condition.stance === 'assault' ? 'targetAssault' : 'targetGuard', condition.operator)]
+        case 'interruptible':
+          return [base('interruptible', condition.operator)]
         case 'status':
           if (condition.measure === 'presence') {
             return [{ ...base(condition.who === 'hero' ? 'heroStatus' : 'targetStatus', condition.operator), statusId: condition.statusId }]

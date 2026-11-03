@@ -52,6 +52,9 @@ describe('condition drafts', () => {
       [{ ...newCondition('barrier'), operator: 'absent' }, { kind: 'barrier', operator: 'absent' }],
       [{ ...newCondition('telegraph'), operator: 'present' }, { kind: 'telegraph', operator: 'present' }],
       [{ ...newCondition('mark'), operator: 'absent' }, { kind: 'mark', operator: 'absent' }],
+      [{ ...newCondition('targetAssault'), operator: 'present' }, { kind: 'stance', stance: 'assault', operator: 'present' }],
+      [{ ...newCondition('targetGuard'), operator: 'absent' }, { kind: 'stance', stance: 'guard', operator: 'absent' }],
+      [{ ...newCondition('interruptible'), operator: 'present' }, { kind: 'interruptible', operator: 'present' }],
       [
         { ...newCondition('targetStatus'), statusId: 'poison', operator: 'absent' },
         { kind: 'status', who: 'target', statusId: 'poison', measure: 'presence', operator: 'absent' },
@@ -86,6 +89,8 @@ describe('condition drafts', () => {
   it('describes saved conditions in plain words', () => {
     expect(describeCondition({ kind: 'classResource', operator: 'atLeast', value: 3 }, 'assassin')).toBe('Advantage is at least 3')
     expect(describeCondition({ kind: 'balance', meter: 'wrath', operator: 'atLeast', value: 25 }, 'cleric')).toBe('Wrath is at least 25')
+    expect(describeCondition({ kind: 'stance', stance: 'assault', operator: 'present' }, 'warrior')).toBe('Target Assault stance is present')
+    expect(describeCondition({ kind: 'interruptible', operator: 'present' }, 'warrior')).toBe('Telegraph can be interrupted is present')
   })
 })
 
