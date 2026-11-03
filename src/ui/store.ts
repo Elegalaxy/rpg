@@ -28,7 +28,6 @@ import { createCombat, stepCombat } from '../sim/combat.ts'
 import type { CombatState } from '../sim/types.ts'
 
 import { debugLog } from './debug.ts'
-import { STEP_MS } from '../sim/constants.ts'
 import { createGameLoop } from './loop.ts'
 
 export const PLAYBACK_SPEEDS = [1, 2, 4] as const
@@ -549,10 +548,13 @@ export function clearUnseenCrafts(): void {
   emit()
 }
 
-/** Let town time pass for the crafting queue. The clock calls this each frame while no expedition runs. */
-export function advanceTown(count: number): void {
-  if (!anyCrafting(saveStatus.save)) return
-  const result = advanceCrafting(saveStatus.save, count * STEP_MS)
+/**
+ * Let real time pass for every hero's crafting queue. Crafting runs on the wall clock, not on the
+ * combat viewer's speed or pause, so a paused viewer or a tab in the background does not hold it up.
+ */
+export function advanceCraftingBy(elapsedMs: number): void {
+  if (!anyCrafting(saveStatus.save) || !(elapsedMs > 0)) return
+  const result = advanceCrafting(saveStatus.save, elapsedMs)
   saveStatus = { ...saveStatus, save: result.save }
   if (result.finished.length > 0) {
     craftNotices = [...craftNotices, ...result.finished.map((notice) => notice.text)].slice(-5)
@@ -561,23 +563,32 @@ export function advanceTown(count: number): void {
   }
 }
 
-const townLoop = createGameLoop({
-  getSpeed: () => snapshot.speed,
-  isPaused: () => snapshot.paused,
-  applySteps: advanceTown,
-  notify: () => {
-    if (!anyCrafting(saveStatus.save) && craftNotices.length === 0) return
+const CRAFT_TICK_MS = 500
+let lastCraftTickAt = 0
+
+function tickCrafting(): void {
+  const now = Date.now()
+  const elapsed = now - lastCraftTickAt
+  lastCraftTickAt = now
+  const crafting = anyCrafting(saveStatus.save)
+  advanceCraftingBy(elapsed)
+  if (crafting || craftNotices.length > 0) {
     saveStatus = { ...saveStatus }
     emit()
-  },
-  details: () => ({ scenarioId: 'town', seed: 0, speed: snapshot.speed, paused: snapshot.paused }),
-})
+  }
+}
 
-/** Start the town clock. Returns the cleanup. */
+/** Start the crafting clock. It ticks twice a second and again when the tab comes back, counting the real time that passed. */
 export function startTownLoop(): () => void {
-  townLoop.start()
+  lastCraftTickAt = Date.now()
+  const timer = setInterval(tickCrafting, CRAFT_TICK_MS)
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') tickCrafting()
+  }
+  document.addEventListener('visibilitychange', onVisible)
   return () => {
-    townLoop.stop()
+    clearInterval(timer)
+    document.removeEventListener('visibilitychange', onVisible)
   }
 }
 

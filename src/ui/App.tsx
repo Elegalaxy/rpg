@@ -287,6 +287,9 @@ function App() {
   const purse = purseOf(saved.save)
   const finishedContracts = purse.contracts.filter((entry) => isComplete(entry, contractFor(purse, entry.contractId))).length
   const unseenCrafts = getUnseenCrafts()
+  const chosenHero = selectedHero(saved.save)
+  const attributePoints = chosenHero?.progress.unspentAttributePoints ?? 0
+  const skillPoints = chosenHero === null ? 0 : chosenHero.progress.unspentSkillPoints + chosenHero.progress.legacySkillPoints
   const inGearShop = tab === 'town' && PLACE_LIST.some((place) => place.id === townPart && place.gear !== undefined)
 
   useEffect(() => {
@@ -342,6 +345,7 @@ function App() {
                   <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
                     {entry.label}
                     {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts} what="things waiting in town" /> : null}
+                    {entry.id === 'heroes' ? <Badge count={attributePoints + skillPoints} what="unspent points" /> : null}
                   </button>
                 ))}
               </nav>
@@ -349,7 +353,15 @@ function App() {
             <main className="content">
               {tab === 'heroes' ? (
                 <>
-                  <SubTabs tabs={HERO_PARTS} current={heroPart} onPick={setHeroPart} />
+                  <SubTabs
+                    tabs={HERO_PARTS}
+                    current={heroPart}
+                    onPick={setHeroPart}
+                    badges={{
+                      overview: { count: attributePoints, what: 'unspent attribute points' },
+                      skills: { count: skillPoints, what: 'unspent skill points' },
+                    }}
+                  />
                   {heroPart === 'overview' ? <Attributes /> : null}
                   {heroPart === 'skills' ? <SkillWeb /> : null}
                   {heroPart === 'combat' ? (
