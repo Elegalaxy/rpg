@@ -15,7 +15,7 @@ export const READINESS_RESOURCE_ID = 'readiness'
 export const READINESS_MAXIMUM = 100
 export const READINESS_SCOPE = 'expedition' as const
 /** Successful basic attacks. Weapon-normalized, then Spirit. Misses gain nothing. */
-export const READINESS_BASIC_BASE = 10
+export const READINESS_BASIC_BASE = 20
 /** Harness default when the encounter setup does not supply a start. Travel gain is later. */
 export const READINESS_HARNESS_START = 100
 /** Travel and other time outside combat. Spirit applies. Readiness does not regen in combat. */
@@ -47,7 +47,7 @@ export const SNARE_TRAP_ID = 'snare-trap'
 
 /** Aimed Shot's coefficient at 80 or more Readiness, checked before the cost is paid. */
 export const AIMED_SHOT_READINESS = 80
-export const AIMED_SHOT_COEFFICIENT = 2.6
+export const AIMED_SHOT_COEFFICIENT = 3.38
 export const STEADY_HANDS_READINESS = 75
 export const STEADY_HANDS_FLOOR = 0.1
 export const STEADY_HANDS_CRIT = 0.1

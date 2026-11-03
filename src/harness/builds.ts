@@ -3,7 +3,7 @@ import { classWebs } from '../content/webs/index.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
 import { deriveSeed } from '../sim/rng.ts'
-import type { CombatSetup } from '../sim/types.ts'
+import type { CombatSetup, PriorityRow } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 
@@ -16,7 +16,7 @@ import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
  */
 export const BUILD_ORDER: { readonly [classId in HeroClass]: readonly string[] } = {
   warrior: ['Driving Blow', 'Rising Heat', 'Sundering Blow', 'Weapon Discipline', 'Shield Brace', 'Second Wind', 'Cleave', 'Defiance', 'Bloodletting'],
-  assassin: ['Shadow Cut', 'Venom Edge', 'Mark for Death', 'Potent Toxins', 'Exploit Weakness', 'Execute', 'Relentless', 'Smoke Step', 'Elusive Footwork'],
+  assassin: ['Shadow Cut', 'Smoke Step', 'Elusive Footwork', 'Venom Edge', 'Potent Toxins', 'Mark for Death', 'Exploit Weakness', 'Execute', 'Relentless'],
   ranger: ['Aimed Shot', 'Steady Hands', 'Piercing Arrow', 'Patient Shot', 'Snare Trap', 'Reinforced Snare', "Hunter's Mark", 'Trail Sense', 'Flame Arrow'],
   mage: ['Fireball', 'Frost Lance', 'Arcane Bolt', 'Mana Ward', 'Arcane Recovery', 'Efficient Channeling', 'Chain Lightning', 'Elemental Affinity', 'Spell Memory'],
   cleric: ['Smite', 'Vowkeeper', 'Mend', 'Penance', 'Ward', 'Steadfast Spirit', 'Judgment', 'Righteous Force', 'Consecration'],
@@ -32,10 +32,36 @@ export function builtNodeIds(classId: HeroClass, points: number): string[] {
   })
 }
 
+/**
+ * A rule a built hero adds once a node unlocks its skill. The reference loadouts only use the four
+ * starting skills, so a hero who has taken the node would also equip and use the new skill.
+ */
+const UNLOCKED_ROWS: { readonly [classId in HeroClass]?: { readonly [skillId: string]: PriorityRow } } = {
+  assassin: { 'smoke-step': { skillId: 'smoke-step', conditions: [{ kind: 'telegraph', operator: 'present' }] } },
+}
+
 /** A reference scenario with the class's build of `points` nodes allocated. Zero points is the floor build. */
 export function builtSetup(scenarioId: string, classId: HeroClass, points: number): CombatSetup {
   const setup = setupForScenario(scenarioId)
-  return { ...setup, hero: { ...setup.hero, allocatedNodeIds: builtNodeIds(classId, points) } }
+  const web = classWebs[classId]
+  const rows: PriorityRow[] = []
+  const skills: string[] = []
+  for (const id of builtNodeIds(classId, points)) {
+    const skillId = web.nodes.find((node) => node.id === id)?.unlocksSkillId ?? null
+    const row = skillId === null ? undefined : UNLOCKED_ROWS[classId]?.[skillId]
+    if (skillId === null || row === undefined || (setup.hero.equippedSkillIds ?? []).includes(skillId)) continue
+    rows.push(row)
+    skills.push(skillId)
+  }
+  return {
+    ...setup,
+    hero: {
+      ...setup.hero,
+      allocatedNodeIds: builtNodeIds(classId, points),
+      equippedSkillIds: [...(setup.hero.equippedSkillIds ?? []), ...skills],
+      priorityRows: [...rows, ...(setup.hero.priorityRows ?? [])],
+    },
+  }
 }
 
 export const BUILT_ENEMIES = ['deserter', 'rootmaw', 'echo-knight', 'warden'] as const

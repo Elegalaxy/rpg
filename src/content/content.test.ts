@@ -228,7 +228,7 @@ describe('content integrity', () => {
       cost: 40,
       cooldownSeconds: 5,
       actionTimeCoefficient: 1.2,
-      effects: [{ kind: 'damage', school: 'physical', coefficient: 2.34 }],
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 3.04 }],
     })
     expect(skills.volley).toMatchObject({
       cost: 30,
@@ -248,7 +248,7 @@ describe('content integrity', () => {
       cost: 20,
       cooldownSeconds: 5,
       actionTimeCoefficient: 1,
-      effects: [{ kind: 'damage', school: 'physical', coefficient: 1.69, armorPenetrationBonus: 0.3 }],
+      effects: [{ kind: 'damage', school: 'physical', coefficient: 2.2, armorPenetrationBonus: 0.3 }],
     })
     expect(skills.smite).toMatchObject({
       cost: 0,

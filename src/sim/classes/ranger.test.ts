@@ -204,7 +204,7 @@ describe('ranger readiness', () => {
     expect(suppliedAssassin.hero.classResourceId).toBe('advantage')
   })
 
-  it('normalizes a successful bow basic attack to 11 Readiness before Spirit, and a miss gains nothing', () => {
+  it('normalizes a successful bow basic attack to 22 Readiness before Spirit, and a miss gains nothing', () => {
     const defs = defsFor([])
     const state = createCombat(rangerSetup(), defs, 1)
     const factor = spiritResourceFactor(10)
@@ -217,12 +217,12 @@ describe('ranger readiness', () => {
     const gain = resources(state, 'basicAttack')[0]
     console.log('[ranger] basic readiness', { baseActionSeconds: state.hero.baseActionSeconds, base, gain, factor })
     expect(state.hero.baseActionSeconds).toBeCloseTo(2.2, 10)
-    expect(base).toBeCloseTo(11, 10)
+    expect(base).toBeCloseTo(22, 10)
     expect(gain).toMatchObject({ type: 'resource', reason: 'basicAttack' })
     if (gain?.type !== 'resource') return
-    expect(gain.base).toBeCloseTo(11, 10)
+    expect(gain.base).toBeCloseTo(22, 10)
     expect(gain.multiplier).toBeCloseTo(factor, 10)
-    expect(gain.generated).toBeCloseTo(11 * factor, 10)
+    expect(gain.generated).toBeCloseTo(22 * factor, 10)
     expect(state.hero.specialAmmo).toBe(QUIVER_CAPACITY)
   })
 

@@ -638,7 +638,7 @@ describe('echo-knight', () => {
     })
     expect(state.hero.equippedSkillIds).toEqual([])
     expect(state.outcome).toBe('defeat')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 70_080 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 75_360 })
     expect(state.enemies.some((enemy) => enemy.defId === 'oathbound-echo' && enemy.summon && enemy.xp === 0)).toBe(
       true,
     )
@@ -771,20 +771,21 @@ const referenceRows: { [classId in HeroClass]: readonly PriorityRow[] } = {
   ],
   assassin: [
     { skillId: 'mark-for-death', conditions: [{ kind: 'mark', operator: 'absent' }] },
-    { skillId: 'execute', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 4 }] },
-    { skillId: 'execute', conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }] },
+    { skillId: 'execute', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 4 }], targetPriority: 'lowestArmor' },
+    { skillId: 'execute', conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }], targetPriority: 'lowestArmor' },
     {
       skillId: 'venom-edge',
       conditions: [
         { kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 4 },
       ],
+      targetPriority: 'lowestArmor',
     },
-    { skillId: 'shadow-cut' },
+    { skillId: 'shadow-cut', targetPriority: 'lowestArmor' },
   ],
   ranger: [
     { skillId: 'fade-back', conditions: [{ kind: 'telegraph', operator: 'present' }] },
-    { skillId: 'aimed-shot', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 40 }] },
-    { skillId: 'piercing-arrow' },
+    { skillId: 'aimed-shot', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 40 }], targetPriority: 'lowestArmor' },
+    { skillId: 'piercing-arrow', targetPriority: 'lowestArmor' },
   ],
   mage: [
     { skillId: 'mana-ward', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 50 }] },

@@ -146,7 +146,7 @@ const piercingArrow = {
   actionTimeCoefficient: 1,
   tags: ['physical', 'attack'],
   target: 'single',
-  effects: [{ kind: 'damage', school: 'physical', coefficient: 1.69, armorPenetrationBonus: 0.3 }],
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 2.2, armorPenetrationBonus: 0.3 }],
 } satisfies SkillDef
 
 const flameArrow = {
@@ -208,7 +208,7 @@ const aimedShot = {
   actionTimeCoefficient: 1.2,
   tags: ['physical', 'attack'],
   target: 'single',
-  effects: [{ kind: 'damage', school: 'physical', coefficient: 2.34 }],
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 3.04 }],
 } satisfies SkillDef
 
 const fadeBack = {

@@ -318,18 +318,21 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
       {
         skillId: 'execute',
         conditions: [{ kind: 'classResource', operator: 'atLeast', value: 4 }],
+        targetPriority: 'lowestArmor',
       },
       {
         skillId: 'execute',
         conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }],
+        targetPriority: 'lowestArmor',
       },
       {
         skillId: 'venom-edge',
         conditions: [
           { kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 4 },
         ],
+        targetPriority: 'lowestArmor',
       },
-      { skillId: 'shadow-cut' },
+      { skillId: 'shadow-cut', targetPriority: 'lowestArmor' },
     ],
   },
   ranger: {
@@ -345,8 +348,9 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
       {
         skillId: 'aimed-shot',
         conditions: [{ kind: 'classResource', operator: 'atLeast', value: 40 }],
+        targetPriority: 'lowestArmor',
       },
-      { skillId: 'piercing-arrow' },
+      { skillId: 'piercing-arrow', targetPriority: 'lowestArmor' },
     ],
   },
   mage: {
