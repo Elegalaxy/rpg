@@ -215,11 +215,14 @@ const fadeBack = {
   id: 'fade-back',
   name: 'Fade Back',
   cost: 0,
-  cooldownSeconds: 8,
+  cooldownSeconds: 16,
   actionTimeCoefficient: 0.5,
   tags: ['defense'],
   target: 'single',
-  effects: [{ kind: 'evasion', amount: 30 }],
+  effects: [
+    { kind: 'evasion', amount: 30 },
+    { kind: 'skillDodge', durationSeconds: 3 },
+  ],
 } satisfies SkillDef
 
 const volley = {

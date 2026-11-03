@@ -3,6 +3,8 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - Fade Back dodge (2026-11-03, GAME_DESIGN Ranger skill 7): readies a 3 s dodge of the next enemy skill with a damage effect (no damage, no statuses); cooldown 16 s. `skillDodge` effect and log event in `src/sim/types.ts`, `skills.ts`, `combat.ts` (`spendSkillDodge`), `log.ts`, `src/ui/log/categories.ts`; content in `src/content/skills.ts`; test `src/content/fade-back.test.ts`. Ranger built matrix: Rootmaw 70/83/83%, Echo Knight 13/27/27%. 682 tests.
+  - Early-rules check: early fights stay easy by choice (user); only Fade Back was fixed.
   - Supplies (2026-11-03, recorded in GAME_DESIGN §9 Inventory): Healing Draught (30% max HP, 15 gold), Antidote (clears Poison and Bleed, 10 gold), Smoke Bomb (+15 escape points, 20 gold).
     - Sim: supply skills (`supply: true`) in `src/content/skills.ts`; `resolveSupply` in `src/sim/combat.ts`; `none left` skip in `automation.ts`; `cleanse` effect in `skills.ts`/`types.ts`; packing, after-fight sync, and Smoke Bomb in `src/sim/expedition.ts`; `suppliesLeft` in the action log line.
     - Content: `src/content/supplies.ts` (`SUPPLIES`, `RULE_SUPPLY_IDS`, `DEFAULT_SUPPLY_ROWS`, `startingRules`).
@@ -17,5 +19,5 @@
   - Reference loadouts and the harness carry no supplies, so matrix numbers are unchanged.
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
-  - Known leftovers: rules matter late; Cleric floor build loses both elites; existing heroes do not get the supply rules or Fade Back automatically.
-- **Exact Next Step:** Ask the user which follow-up is next: make rules matter early (give an early enemy a telegraph, numbers need approval), Cleric floor damage, or giving existing heroes the supply rules and Fade Back.
+  - Known leftovers: rules matter late (kept on purpose); Cleric floor build loses both elites; existing heroes do not get the supply rules or Fade Back automatically.
+- **Exact Next Step:** Ask the user which follow-up is next: Cleric floor damage, or giving existing heroes the supply rules and Fade Back.

@@ -1132,7 +1132,7 @@ These are a first broad roster for mechanical review. Names and effects are not 
 4. Snare Trap: costs 25 Readiness; arm one trap that triggers on the target's next action with a 75% base Stun chance; 8-second cooldown; 1.0× action time. Only one Ranger trap can be armed at a time.
 5. Piercing Arrow: costs 20 Readiness; deals 220% Physical Power (130% until 2026-11-03); adds 30 percentage points of Armor penetration, subject to the total penetration cap; 5-second cooldown; 1.0× action time.
 6. Flame Arrow: costs 20 Readiness and one special arrow; deals magical damage equal to 100% Physical Power; applies one Burn intensity whose tick deals 10% of snapshotted Physical Power; 6-second cooldown; 1.0× action time.
-7. Fade Back: no Readiness cost; gain +30 Evasion until the next Ranger action; 8-second cooldown; 0.5× action time. Added 2026-11-03 so a Ranger can answer a telegraph; the Ranger's arrows were raised 30% in the same change. Measured at seed 1, 30 runs: a level-20 Ranger beats the Rootmaw 73% at 0 nodes and 87% at 9 nodes (33% and 60% before). The Echo Knight still beats it (0%).
+7. Fade Back: no Readiness cost; gain +30 Evasion until the next Ranger action, and ready a dodge: the next enemy skill with a damage effect that would hit the Ranger within 3 seconds deals no damage and applies none of its statuses, then the dodge is spent; 16-second cooldown; 0.5× action time. The dodge was added and the cooldown raised from 8 seconds on 2026-11-03, because skills never roll to hit, so Evasion alone could not answer a telegraph. Measured at seed 1, 40 runs, nodes 0/6/9: Rootmaw at level 14 15/45/45% to 75/85/85%, Echo Knight at level 16 0/0/0% to 18/33/33%, Echo Knight at level 20 50% to 100%. Added 2026-11-03 so a Ranger can answer a telegraph; the Ranger's arrows were raised 30% in the same change. Measured at seed 1, 30 runs: a level-20 Ranger beats the Rootmaw 73% at 0 nodes and 87% at 9 nodes (33% and 60% before). The Echo Knight still beats it (0%).
 
 #### Mage
 
@@ -1656,6 +1656,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-03: Fade Back also dodges the next enemy skill hit within 3 seconds, and its cooldown rises from 8 to 16 seconds.
 - 2026-11-03: Decided the first-playable supplies: Healing Draught (30% HP, 15 gold), Antidote (clears Poison and Bleed, 10 gold), and Smoke Bomb (+15 escape points, 20 gold). Rules use the first two. Each hero buys and keeps its own.
 - 2026-11-01: Decided the first-playable reincarnation rules: Legacy currency, one-time bonuses, three purchases, mastery as +2% ordinary XP per completed life, and the heirloom's scaling.
 - 2026-10-31: Decided how expeditions award hero XP, and the six first-playable contracts with their tracking rules and rewards.

@@ -1254,6 +1254,29 @@ function summonEnemy(
   onEnemySpawn(state, summoned)
 }
 
+/** A readied dodge takes the first enemy skill with a damage effect that reaches the hero in time. */
+function spendSkillDodge(state: CombatState, actor: CombatActor, skill: EnemySkillDef, timeMs: number): boolean {
+  const hero = state.hero
+  if (hero.skillDodgeUntilMs === null || !hero.alive) return false
+  if (hero.skillDodgeUntilMs < timeMs) {
+    hero.skillDodgeUntilMs = null
+    return false
+  }
+  if (!skill.effects.some((effect) => effect.kind === 'damage')) return false
+  hero.skillDodgeUntilMs = null
+  state.log.push({
+    type: 'skillDodge',
+    timeMs,
+    actorId: hero.id,
+    actorName: hero.name,
+    sourceId: actor.id,
+    sourceName: actor.name,
+    skillId: skill.id,
+    skillName: skill.name,
+  })
+  return true
+}
+
 /** Authored skills do not roll to hit. They crit only when the skill sets canCrit. */
 function applyEnemySkill(
   state: CombatState,
@@ -1266,8 +1289,10 @@ function applyEnemySkill(
   const view = enemySkillView(skill)
   const hpDamageDealt: { [targetId: string]: number } = {}
   const ally = skill.allyTarget === undefined ? null : selectAlly(state.enemies, actor, skill.allyTarget, timeMs)
+  const dodged = spendSkillDodge(state, actor, skill, timeMs)
   for (const effect of skill.effects) {
     if (state.outcome !== 'ongoing') break
+    if (dodged && (effect.kind === 'damage' || effect.kind === 'applyStatus')) continue
     if (effect.kind === 'damage') {
       const target = state.hero
       if (!target.alive) continue
@@ -2383,6 +2408,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     expeditionMomentum: readWholeCount(hero.expeditionMomentum, 'expedition momentum', 0),
     carriedSupplyCount: readWholeCount(hero.carriedSupplyCount, 'carried supplies', 0),
     supplies: readSupplyList(hero.supplies),
+    skillDodgeUntilMs: null,
     suppliedArrowCount: readOptionalCount(hero.specialArrowCount, 'special arrow count'),
     suppliedTrapperCooldown: readOptionalCount(hero.trapperCooldown, 'trapper cooldown'),
     suppliedMageCharges: readOptionalJson(hero.mageCharges, 'mage charges'),

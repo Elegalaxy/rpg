@@ -81,6 +81,7 @@ export const SKILL_EFFECT_KINDS = [
   'summon',
   'defenseBonus',
   'cleanse',
+  'skillDodge',
 ] as const
 
 /** Logged when a preventFatal health loss would leave 0 HP or less. */
@@ -459,6 +460,10 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     if (value.multiplier === 1) throw new Error(`skill '${skillId}' defense bonus must change Armor and Resistance`)
     assertPositive(value.durationSeconds, `skill '${skillId}' defense bonus duration`)
     return { kind, multiplier: value.multiplier, durationSeconds: value.durationSeconds }
+  }
+  if (kind === 'skillDodge') {
+    assertPositive(value.durationSeconds, `skill '${skillId}' dodge duration`)
+    return { kind, durationSeconds: value.durationSeconds }
   }
   if (kind === 'cleanse') {
     const ids = value.statusIds
@@ -978,6 +983,10 @@ export function applySkillEffects(
         value: amount,
         until: 'nextAction',
       })
+      continue
+    }
+    if (effect.kind === 'skillDodge') {
+      hero.skillDodgeUntilMs = scheduledMs + roundSecondsToMs(effect.durationSeconds, `${skill.id} dodge`)
       continue
     }
     if (effect.kind === 'incomingDamage') {

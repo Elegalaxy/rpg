@@ -84,6 +84,7 @@ const EVENT_CATEGORIES = {
   encounterEnd: ['defeatCause'],
   escape: ['retreat'],
   race: [],
+  skillDodge: ['statuses'],
 } as const satisfies Record<LogEvent['type'], readonly LogCategory[]>
 
 /** The colour group of a row: its first category, or `other` for telegraphs, stances, summons, and similar. */

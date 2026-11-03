@@ -1027,6 +1027,19 @@ export type LogEvent =
   | EncounterEndEvent
   | EscapeEvent
   | RaceEvent
+  | SkillDodgeEvent
+
+/** The hero's readied dodge took an enemy skill: no damage and no statuses from it. */
+export type SkillDodgeEvent = {
+  type: 'skillDodge'
+  timeMs: number
+  actorId: string
+  actorName: string
+  sourceId: string
+  sourceName: string
+  skillId: string
+  skillName: string
+}
 
 export type RaceEvent = {
   type: 'race'
@@ -1208,6 +1221,15 @@ export type ApplyStatusEffect = {
   durationSeconds?: number
 }
 
+/**
+ * Ready a dodge on the hero: the next enemy skill with a damage effect that would hit the hero
+ * within this window deals no damage and applies no statuses. One skill spends it.
+ */
+export type SkillDodgeEffect = {
+  kind: 'skillDodge'
+  durationSeconds: number
+}
+
 /** Remove every stack of each listed status from the user. Only supplies use it. */
 export type CleanseEffect = {
   kind: 'cleanse'
@@ -1235,6 +1257,7 @@ export type SkillEffect =
   | SummonEffect
   | DefenseBonusEffect
   | CleanseEffect
+  | SkillDodgeEffect
 
 export type SkillRequirement = {
   mainHand?: WeaponKind
@@ -1349,6 +1372,8 @@ export type CombatHero = CombatActor & {
   carriedSupplyCount: number
   /** Supply ids still carried, one entry per item. A used supply is removed. */
   supplies: string[]
+  /** A readied skill dodge lasts through this time. Null when none is ready. */
+  skillDodgeUntilMs: number | null
   /** Special arrows already fired this expedition. Null when the setup omits the counter. */
   suppliedArrowCount: number | null
   /** Prepared-spell charges carried in as JSON `{skillId: charges}`. Null fills them to their maximum. */
