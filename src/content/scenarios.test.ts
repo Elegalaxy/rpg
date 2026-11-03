@@ -638,7 +638,7 @@ describe('echo-knight', () => {
     })
     expect(state.hero.equippedSkillIds).toEqual([])
     expect(state.outcome).toBe('defeat')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 74_060 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 70_080 })
     expect(state.enemies.some((enemy) => enemy.defId === 'oathbound-echo' && enemy.summon && enemy.xp === 0)).toBe(
       true,
     )

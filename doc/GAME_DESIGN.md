@@ -658,7 +658,7 @@ Oathbound Echo:
 Echo Knight:
 
 - Level 16 elite based on the Tank archetype and normal elite multipliers.
-- Stats: approximately 1,920 HP, 25 Power, 69 Armor/Resistance, 26 Accuracy, 17 Evasion, 2.64-second base action time, and 25 Consistency.
+- Stats: 3,200 HP, 28 Power (approximately 1,920 HP and 25 Power until 2026-11-03: at 1,920 every level-20 Warrior, Mage, Cleric, and Assassin build won about 100%, so the elite did not test skill), 69 Armor/Resistance, 26 Accuracy, 17 Evasion, 2.64-second base action time, and 25 Consistency.
 - Alternates stances every 10 seconds.
 - Guard stance grants +30% Armor and Resistance.
 - Assault stance grants +25% Power and reduces Armor and Resistance by 40%. It was 20% until 2026-11-03; the deeper cut makes Assault a real burst window (the "Target is in Assault stance" rule condition) while the Knight hits harder. (Proposed as +15% damage taken; a defense cut gives the same window without a new damage-taken mechanic on enemies.)

@@ -452,7 +452,7 @@ export const echoKnight: EnemyDef = {
   elite: true,
   school: 'physical',
   filler: { school: 'physical' },
-  overrides: { consistency: 25 },
+  overrides: { maxHp: 3200, power: 28, consistency: 25 },
   traitIds: [STANCE_TRAIT, HP_SUMMON_TRAIT],
   skills: [fracturedCharge, summonOathboundEcho],
 }

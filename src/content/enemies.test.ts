@@ -1238,7 +1238,7 @@ describe('Echo Knight', () => {
       level: 16,
       archetype: 'tank',
       elite: true,
-      overrides: { consistency: 25 },
+      overrides: { maxHp: 3200, power: 28, consistency: 25 },
     })
     const guard = state.log.find((event) => event.type === 'stance')
     console.log('[enemy] echo knight stats', {
@@ -1251,8 +1251,8 @@ describe('Echo Knight', () => {
       guard,
     })
     expect(stats).toMatchObject({
-      maxHp: 1920,
-      power: 25,
+      maxHp: 3200,
+      power: 28,
       armor: 69,
       resistance: 69,
       accuracy: 26,
@@ -1261,16 +1261,16 @@ describe('Echo Knight', () => {
     })
     expect(stats.actionTime).toBeCloseTo(2.64, 8)
     expect(knight.level).toBe(16)
-    expect(knight.maxHp).toBe(1920)
+    expect(knight.maxHp).toBe(3200)
     expect(knight.accuracy).toBe(26)
     expect(knight.evasion).toBe(17)
     expect(knight.actionTimeMs).toBe(2640)
     expect(knight.consistency).toBe(25)
-    expect(knight.stanceBasePower).toBe(25)
+    expect(knight.stanceBasePower).toBe(28)
     expect(knight.stanceBaseArmor).toBe(69)
     expect(knight.stanceBaseResistance).toBe(69)
     expect(knight.stance).toBe('guard')
-    expect(knight.power).toBeCloseTo(25, 8)
+    expect(knight.power).toBeCloseTo(28, 8)
     expect(knight.armor).toBeCloseTo(69 * 1.3, 8)
     expect(knight.resistance).toBeCloseTo(69 * 1.3, 8)
     expect(guard).toMatchObject({ timeMs: 0, stance: 'guard' })

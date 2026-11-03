@@ -38,8 +38,8 @@ describe('rule quality changes the result against an elite', () => {
     expect(after - before).toBeGreaterThanOrEqual(0.15)
   }, 240_000)
 
-  it('careless rules can lose a fight the reference rules win', () => {
-    const naive = builtSetup('ref-mage-echo-knight', 'mage', 0)
+  it('careless rules can lose a fight a nine-node Mage wins with the reference rules', () => {
+    const naive = builtSetup('ref-mage-echo-knight', 'mage', 9)
     const careless: PriorityRow[] = [
       { skillId: 'mana-ward', conditions: [{ kind: 'telegraph', tag: 'fractured-charge', operator: 'atMost', value: 1500 }] },
       { skillId: 'fireball', conditions: [{ kind: 'status', who: 'target', statusId: 'burn', measure: 'presence', operator: 'absent' }] },
