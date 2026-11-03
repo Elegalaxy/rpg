@@ -1,3 +1,4 @@
+import { Help } from '../Help.tsx'
 import { Row } from '../Row.tsx'
 import { purseOf } from '../../persist/save.ts'
 import { useState } from 'react'
@@ -21,8 +22,10 @@ export function Contracts() {
   return (
     <>
       <p>
-        Active: <strong data-testid="active-count">{active.length}</strong> of {MAX_ACTIVE_CONTRACTS}. Won fights count when an expedition ends, even after a
-        defeat. New work is posted each time you come back to town.
+        Active: <strong data-testid="active-count">{active.length}</strong> of {MAX_ACTIVE_CONTRACTS}.
+        <Help label="About contracts">
+          Won fights count when an expedition ends, even after a defeat. New work is posted each time you come back to town.
+        </Help>
       </p>
       <ul className="rows">
         {board.length === 0 ? <p>Nothing is posted. Select a hero to see their board.</p> : null}

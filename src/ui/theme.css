@@ -841,3 +841,49 @@ li.row:has(.chooser) {
   line-height: 1.4;
   text-align: center;
 }
+
+/* ---- Help: a small "?" with a tooltip, for rules that do not belong in the screen text ---- */
+
+.help {
+  position: relative;
+  display: inline-block;
+  margin-left: var(--s2);
+  vertical-align: middle;
+}
+
+button.help-mark {
+  min-height: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.help-tip {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--s1));
+  left: 0;
+  display: none;
+  width: max-content;
+  max-width: min(22rem, 80vw);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+}
+
+.help:hover .help-tip,
+.help:focus-within .help-tip {
+  display: block;
+}

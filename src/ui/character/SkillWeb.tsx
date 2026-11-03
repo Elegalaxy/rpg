@@ -1,3 +1,4 @@
+import { Help } from '../Help.tsx'
 import { useState } from 'react'
 
 import { skills } from '../../content/skills.ts'
@@ -78,8 +79,8 @@ export function SkillWeb() {
     <section aria-label="Skill web">
       <h2>Skill web — {hero.name}</h2>
       <p>
-        Skill points: <strong data-testid="skill-points">{points}</strong>. Class clusters are blue; the racial branch is
-        teal.
+        Skill points: <strong data-testid="skill-points">{points}</strong>.
+        <Help label="About the colours">Class clusters are blue; the racial branch is teal.</Help>
       </p>
       <p data-testid="web-intro">{classWebIntro[hero.classId]}</p>
       <ul aria-label="Clusters" data-testid="cluster-intros">

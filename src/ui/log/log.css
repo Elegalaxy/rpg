@@ -100,12 +100,6 @@
   outline-offset: 2px;
 }
 
-.log-hint {
-  margin: var(--s2) 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
 .log-meta {
   display: flex;
   gap: var(--s3);

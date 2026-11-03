@@ -1,3 +1,4 @@
+import { Help } from '../Help.tsx'
 import { useState } from 'react'
 import { purseOf } from '../../persist/save.ts'
 
@@ -93,15 +94,17 @@ export function Legacy() {
         </li>
       </ul>
 
-      <h3>Reincarnate</h3>
+      <h3>
+        Reincarnate
+        <Help label="What reincarnating resets">
+          Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and this hero's contracts. Mastery, purchases,
+          Legacy, discoveries, recipes, crafting, and this hero's gold, materials, and archive stay. Your worn gear goes to the archive.
+        </Help>
+      </h3>
       {block !== null ? (
         <p data-testid="reincarnation-block">{block}</p>
       ) : (
         <div>
-          <p>
-            Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and this hero's contracts. Mastery, purchases,
-            Legacy, discoveries, recipes, crafting, and this hero's gold, materials, and archive stay. Your worn gear goes to the archive.
-          </p>
           <p data-testid="legacy-preview">
             You would gain {preview.total} Legacy: {preview.fromLevel} from level and XP
             {preview.bonuses.map((bonus) => `, ${bonus.amount} for ${bonus.text.toLowerCase()}`).join('')}.

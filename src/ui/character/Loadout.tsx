@@ -1,3 +1,4 @@
+import { Help } from '../Help.tsx'
 import { useState } from 'react'
 
 import { skillName } from '../../persist/loadout.ts'
@@ -27,7 +28,8 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
     <section aria-label="Loadout">
       <h2>Loadout — {hero.name}</h2>
       <p>
-        Choose 1 to 4 skills. Selected: <strong data-testid="loadout-count">{chosen.length}</strong> of 4.
+        Selected: <strong data-testid="loadout-count">{chosen.length}</strong> of 4.
+        <Help label="About the loadout">Choose 1 to 4 skills.</Help>
       </p>
       <ul>
         {hero.progress.learnedSkillIds.map((skillId) => (

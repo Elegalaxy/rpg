@@ -11,6 +11,7 @@ import { purseOf, type SaveData } from '../../persist/save.ts'
 import { repairAllCost } from '../../persist/town.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
+import { Help } from '../Help.tsx'
 import { Row } from '../Row.tsx'
 import {
   buyItemFromUi,
@@ -55,7 +56,8 @@ function PurseLine({ save }: { save: SaveData }) {
     <>
       <p>
         {hero === null ? '' : `${hero.name}'s `}gold: <strong data-testid="gold">{purseOf(save).gold}</strong>. Debt:{' '}
-        <strong data-testid="debt">{purseOf(save).debt}</strong>. Gold, materials, and items belong to each hero; recipes and the map are shared.
+        <strong data-testid="debt">{purseOf(save).debt}</strong>.
+        <Help label="About your purse">Gold, materials, and items belong to each hero. Recipes and the map are shared by all your heroes.</Help>
         {import.meta.env.DEV ? (
           <>
             {' '}
@@ -277,7 +279,10 @@ function Enchanter() {
   const forSale = recipesForSale(save)
   return (
     <>
-      {forSale.length === 0 ? <p>You know every recipe.</p> : <p>A recipe lets every hero craft gear with that modifier at the matching shop.</p>}
+      <p>
+        {forSale.length === 0 ? 'You know every recipe.' : 'Recipes for sale'}
+        <Help label="About recipes">A recipe lets every hero craft gear with that modifier at the matching shop.</Help>
+      </p>
       <ul className="rows">
         {forSale.map((entry) => {
           const modifier = ITEM_MODIFIERS[entry.modifierId]
@@ -321,7 +326,8 @@ function Bank() {
       ) : (
         <div className="controls">
           <p>
-            You owe {debt} gold from rescue fees. Debt blocks nothing; pay it when you can.
+            You owe {debt} gold from rescue fees.
+            <Help label="About debt">Debt blocks nothing. Pay it when you can.</Help>
           </p>
           <label>
             Pay{' '}

@@ -1,3 +1,4 @@
+import { Help } from '../Help.tsx'
 import { useState } from 'react'
 
 import { ATTRIBUTE_KEYS, selectedHero, type AttributeKey, type AttributePlan } from '../../persist/character.ts'
@@ -52,7 +53,8 @@ export function Attributes() {
     <section aria-label="Attributes">
       <h2>Attributes — {hero.name}</h2>
       <p>
-        Unspent points: <strong data-testid="attribute-points">{left}</strong> of {unspent}. Points are not refunded.
+        Unspent points: <strong data-testid="attribute-points">{left}</strong> of {unspent}.
+        <Help label="About spending points">Points are not refunded.</Help>
         {import.meta.env.DEV ? (
           <>
             {' '}

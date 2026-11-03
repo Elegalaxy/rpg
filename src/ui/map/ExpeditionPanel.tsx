@@ -19,6 +19,7 @@ import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
+import { Help } from '../Help.tsx'
 import { Row } from '../Row.tsx'
 import { FightView } from '../combat/FightView.tsx'
 import {
@@ -94,7 +95,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
               ))}
             </select>
           </label>{' '}
-          <small>Locked for the whole expedition.</small>
+          <Help label="About vows">Your vow is locked for the whole expedition.</Help>
         </div>
       ) : null}
       {canPickCurse(hero) ? (
@@ -137,8 +138,8 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             size={5}
             onChange={(event) => patch({ carryGold: event.target.value })}
           />
-        </label>{' '}
-        <small>The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</small>
+        </label>
+        <Help label="About carried gold">The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</Help>
       </div>
       {hero.echoRank > 0 ? (
         <div className="controls">
@@ -152,9 +153,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
               onChange={(event) => patch({ fightRank: event.target.value })}
             />
           </label>{' '}
-          <small>
-            0 to {hero.echoRank}. Each rank multiplies the boss HP, Power, Armor, and Resistance by 1.12. A victory unlocks the next rank.
-          </small>
+          <Help label="About Echo ranks">
+            Choose 0 to {hero.echoRank}. Each rank multiplies the boss HP, Power, Armor, and Resistance by 1.12. A victory unlocks the next rank.
+          </Help>
         </div>
       ) : null}
       <fieldset className="supply-pack">
@@ -309,8 +310,10 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
       {waiting ? (
         <div role="group" aria-label="Push on or return">
           <p>
-            The fight is over. Pushing on adds momentum and loot but risks everything you carry. Returning secures what you
-            carry and clears momentum.
+            The fight is over.
+            <Help label="Push on or return">
+              Pushing on adds momentum and loot but risks everything you carry. Returning secures what you carry and clears momentum.
+            </Help>
           </p>
           <button type="button" onClick={pushOnFromUi}>
             Push on

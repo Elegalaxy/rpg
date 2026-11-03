@@ -91,7 +91,6 @@ export function LogPanel({ log }: { log: readonly LogEvent[] }) {
           </label>
         ))}
       </fieldset>
-      <p className="log-hint">{category === null ? LOG_ALL_HINT : LOG_CATEGORY_HINTS[category]}</p>
       <div className="log-meta">
         <p className="log-count">{count}</p>
         {hidden > 0 || showAll ? (

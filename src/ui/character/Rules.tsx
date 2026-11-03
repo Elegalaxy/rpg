@@ -20,6 +20,7 @@ import {
 } from '../../persist/loadout.ts'
 import type { SavedHero } from '../../persist/save.ts'
 import { TARGET_PRIORITIES, type TargetPriority } from '../../sim/types.ts'
+import { Help } from '../Help.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
 function RulesForm({ hero }: { hero: SavedHero }) {
@@ -66,8 +67,10 @@ function RulesForm({ hero }: { hero: SavedHero }) {
     <section aria-label="Priority rules">
       <h2>Priority rules — {hero.name}</h2>
       <p>
-        The hero tries rule 1 first, then the next, and uses the first skill whose conditions pass. Rules: {rows.length} of{' '}
-        {MAX_PRIORITY_ROWS}. {RESOURCE_NAMES[hero.classId]} is this class resource.
+        Rules: {rows.length} of {MAX_PRIORITY_ROWS}.
+        <Help label="How rules work">
+          The hero tries rule 1 first, then the next, and uses the first skill whose conditions pass. {RESOURCE_NAMES[hero.classId]} is this class resource.
+        </Help>
       </p>
       <ol>
         {rows.map((row, index) => (

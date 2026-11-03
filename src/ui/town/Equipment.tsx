@@ -1,3 +1,4 @@
+import { Help } from '../Help.tsx'
 import { useState } from 'react'
 import { purseOf } from '../../persist/save.ts'
 
@@ -173,7 +174,14 @@ export function Equipment() {
           {gaps.length > 0 ? <p role="alert">Cannot fight yet. Missing: {gaps.map((gap) => SLOT_LABELS[gap as EquipmentSlotId] ?? gap).join(', ')}.</p> : null}
           {error !== null ? <p role="alert">{error}</p> : null}
           <h3>In the archive</h3>
-          {purseOf(save).archive.length === 0 ? <p>The archive is empty.</p> : <p>Pick a slot above to equip one of these.</p>}
+          {purseOf(save).archive.length === 0 ? (
+            <p>The archive is empty.</p>
+          ) : (
+            <p>
+              Your spare gear
+              <Help label="About the archive">Pick a slot above to equip one of these.</Help>
+            </p>
+          )}
           <ul className="rows" aria-label="Archive">
             {purseOf(save).archive.map((item) => (
               <Row key={item.id}>{describeItem(item)}</Row>
@@ -195,7 +203,12 @@ export function Equipment() {
               })}
             </tbody>
           </table>
-          {stats === null ? <p className="row-note">Stats show once every slot is filled.</p> : null}
+          {stats === null ? (
+            <p className="row-note">
+              Stats pending
+              <Help label="About stats">Stats show once every slot is filled.</Help>
+            </p>
+          ) : null}
         </aside>
       </div>
     </section>
