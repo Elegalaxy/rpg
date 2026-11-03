@@ -2,6 +2,7 @@ import { itemBase, starterEquipment } from '../content/items.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { contracts as contractTable } from '../content/contracts.ts'
 import { supplyTable } from '../content/supplies.ts'
+import { applyHeroUpdates } from './heroUpdates.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
@@ -136,6 +137,8 @@ export type SavedHero = {
   carryGold: number
   /** Supply ids to pack into the slots, in slot order, at most four. A run takes what the stash has. */
   packedSupplies: string[]
+  /** One-time content updates this hero already has (see `heroUpdates.ts`). */
+  updates: string[]
   /** The highest Fractured Warden Echo rank this hero can fight. Each victory unlocks the next. Personal to the hero. */
   echoRank: number
   /** The Echo rank to fight on the next run to the Fracture Gate. At most `echoRank`. */
@@ -340,6 +343,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.specialAmmo, `${label} special arrows`)
   whole(value.carryGold, `${label} carried gold`)
   stringList(value.packedSupplies, `${label} packed supplies`)
+  stringList(value.updates, `${label} updates`)
   check(value.packedSupplies.length <= SUPPLY_SLOT_COUNT, `${label} packs more than ${SUPPLY_SLOT_COUNT} supplies`)
   for (const id of value.packedSupplies) check(supplyTable[id] !== undefined, `${label} packs unknown supply ${id}`)
   whole(value.craftXp, `${label} crafting experience`)
@@ -442,6 +446,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
     if (hero.carryGold === undefined) hero.carryGold = DEFAULT_CARRY_GOLD
     if (hero.packedSupplies === undefined) hero.packedSupplies = []
+    if (hero.updates === undefined) hero.updates = []
     if (hero.craftXp === undefined) hero.craftXp = 0
     if (hero.legacy === undefined) hero.legacy = 0
     if (hero.lives === undefined) hero.lives = 0
@@ -471,7 +476,7 @@ export function parseSave(text: string): ParseResult {
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : String(error) }
   }
-  return { ok: true, data: parsed }
+  return { ok: true, data: applyHeroUpdates(parsed) }
 }
 
 /**

@@ -3,6 +3,7 @@ import { classWebs } from '../content/webs/index.ts'
 import { racialStartingAttributes } from '../content/heroes.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { startingRules } from '../content/supplies.ts'
+import { HERO_UPDATES } from './heroUpdates.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createProgress, HERO_RACES, type HeroRace } from '../sim/progression.ts'
 
@@ -83,6 +84,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     specialAmmo: loadout.specialAmmo ?? 0,
     carryGold: DEFAULT_CARRY_GOLD,
     packedSupplies: [],
+    updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,
     lives: 0,

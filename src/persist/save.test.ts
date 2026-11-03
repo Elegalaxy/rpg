@@ -6,6 +6,7 @@ import { gameDefs, referenceLoadoutFor } from '../content/scenarios.ts'
 import { createExpedition, SPLINTERED_ROAD_ID, stepExpedition, type ExpeditionBlueprint } from '../sim/expedition.ts'
 import { createProgress } from '../sim/progression.ts'
 import type { GameDefs } from '../sim/types.ts'
+import { HERO_UPDATES } from './heroUpdates.ts'
 
 import {
   CORRUPT_KEY_PREFIX,
@@ -60,6 +61,7 @@ function withHero(): SaveData {
     specialAmmo: 0,
     carryGold: 25,
     packedSupplies: [],
+    updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,
     lives: 0,

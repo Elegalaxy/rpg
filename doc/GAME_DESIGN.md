@@ -1414,7 +1414,7 @@ First-playable supplies, decided 2026-11-03:
 - Before a run the player picks what goes in each of the 4 slots. The run takes the picked items out of the stash. A pick the stash cannot cover leaves that slot empty.
 - Healing Draught and Antidote are used by priority rules. A rule can name a supply instead of a skill. The row is usable only while a slot holds that supply, and otherwise skips with `none left`. Using one is a hero action at 0.5× action time with no cost and no cooldown. It needs no target, is not a skill for class or race effects, and is not part of the four-skill loadout.
 - An Antidote with no Poison or Bleed on the hero still uses the action and the item, so its rule should say when.
-- New heroes start with the two default rules at the top of their rules. Existing heroes add them in the Rules editor.
+- New heroes start with the two default rules at the top of their rules. A hero made before supplies gets them once when the save loads, unless a rule already names a supply; one the player removes later does not come back.
 - Crafted supplies, more supply kinds, a supply shortcut during a fight, and Deserter supply pressure are later work.
 - Kept after measurement, 2026-11-03: two Draughts lift the floor Assassin against the level-16 Echo Knight from 7% to 97% wins, and four let every class win. Buying supplies is the intended way past an elite early, paid for in gold.
 - Loot capacity is 20. Each Splintered Road enemy drops 4 of its own material: a Fracture Shardling drops a shard, a Starved Wolf drops a hide, and a Deserter drops a scrap.
@@ -1656,6 +1656,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-03: Heroes made before supplies and Fade Back are updated once on load: the two supply rules, and for a Ranger, Fade Back learned and swapped in for a starting-kit Volley.
 - 2026-11-03: Fade Back also dodges the next enemy skill hit within 3 seconds, and its cooldown rises from 8 to 16 seconds.
 - 2026-11-03: Decided the first-playable supplies: Healing Draught (30% HP, 15 gold), Antidote (clears Poison and Bleed, 10 gold), and Smoke Bomb (+15 escape points, 20 gold). Rules use the first two. Each hero buys and keeps its own.
 - 2026-11-01: Decided the first-playable reincarnation rules: Legacy currency, one-time bonuses, three purchases, mastery as +2% ordinary XP per completed life, and the heirloom's scaling.
