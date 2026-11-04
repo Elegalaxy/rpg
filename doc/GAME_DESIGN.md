@@ -1683,6 +1683,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-04: The Roster tab gets a Save file panel: export a backup file, load one, or start over, each with a confirmation where it deletes data.
 - 2026-11-04: Decided and built offline catch-up: an 8-hour cap, standing orders (push on at 50% HP, repeat a cleared route until a defeat), deterministic replays, a return summary, and half loot and gold from fights won while away.
 - 2026-11-04: Upgrades always succeed and cost 3 materials plus `item level × 3` gold. A discovered location is announced on the expedition outcome and badges the Map tab.
 - 2026-11-04: The contract board is rolled per hero: 4 offers of Bounties, Patrols, and Elite contracts with random targets, counts, and an 80-130% reward roll.

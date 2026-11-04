@@ -14,6 +14,7 @@ import { Attributes } from './character/Attributes.tsx'
 import { CreateHero } from './character/CreateHero.tsx'
 import { Loadout } from './character/Loadout.tsx'
 import { Roster } from './character/Roster.tsx'
+import { SavePanel } from './character/SavePanel.tsx'
 import { Rules } from './character/Rules.tsx'
 import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
@@ -391,6 +392,7 @@ function App() {
                 <>
                   <Roster />
                   <CreateHero />
+                  <SavePanel />
                 </>
               ) : null}
               {tab === 'town' ? (

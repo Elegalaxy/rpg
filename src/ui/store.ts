@@ -21,6 +21,8 @@ import {
   clearSave,
   loadSave,
   newSave,
+  parseSave,
+  serializeSave,
   writeSave,
   type SaveData,
   type StorageLike,
@@ -246,6 +248,30 @@ export function startNewGame(): void {
   saveLogger('new game')
   saveStatus = { ...saveStatus, save: newSave(), loadError: null, backupKey: null, writeError: null, bytes: null }
   commitSave(saveStatus.save, 'new game')
+}
+
+/** The whole game as text, for a backup file. */
+export function exportSaveText(): string {
+  return serializeSave(saveStatus.save)
+}
+
+/**
+ * Replace the game with a backup. A file that does not read as a valid save is refused and nothing
+ * changes. Returns the reason, or null when the game was replaced.
+ */
+export function importSaveFromText(text: string): string | null {
+  const parsed = parseSave(text)
+  if (!parsed.ok) return `That file is not a usable save: ${parsed.reason}.`
+  pushedAt = null
+  finishedFights = []
+  discoveryNotices = []
+  awayView = { phase: 'idle', progress: 0, summary: null }
+  saveStatus = { ...saveStatus, loadError: null, backupKey: null }
+  commitSave(parsed.data, 'save imported')
+  const running = saveStatus.save.expedition
+  expeditionLoop.resetClock()
+  if (running !== null && running.outcome === 'ongoing' && !snapshot.paused) expeditionLoop.start()
+  return null
 }
 
 const defs = gameDefs()
