@@ -1504,6 +1504,21 @@ First-playable reincarnation numbers, decided 2026-11-01:
 
 Offline progress is part of the full vision but is deferred from the first combat-focused playable version unless needed for basic loop validation.
 
+Offline catch-up, decided 2026-11-04 (user approved; not built yet):
+
+- Time passes for heroes whenever the game is not running: the page is closed or the tab is hidden. On return the game replays that time. A hidden tab uses the same catch-up, so a background tab no longer freezes an expedition.
+- At most 8 hours are replayed. Time beyond that is lost.
+- Every hero's crafting queue counts down. The one running expedition, which is always the selected hero's, continues. Other heroes rest.
+- Standing orders replace the push-on-or-return choice while away. They are set in the expedition preparation:
+  - Push on while hero HP is at least 50% of maximum and the loot bag has room; otherwise walk home. The retreat threshold still applies in fights.
+  - Repeat the route after arriving home, only on a route the hero has cleared (every node of it in the hero's cleared nodes), and only until a defeat. Each repeat repacks the hero's chosen supplies from the stash until it runs out, and carries gold as the preparation says.
+  - Defaults: push on at 50%, repeat on. The player can turn repeat off.
+- Replays use seeds kept in the save, so reloading during or after a catch-up gives the same result. The save records a last-seen time whenever it saves and when the page closes. A clock that went backwards counts as no time.
+- A defeat while away uses the normal defeat rules (unsecured loot lost, rescue fee, durability), then offline running stops.
+- On return the player sees a summary: time away (capped), runs, fights won, retreats, any defeat, gold, materials, XP and level-ups, crafts finished, contract progress, and places discovered. Only the last fight keeps its full log.
+- The replay runs in chunks with a progress bar so the page does not freeze. Measured 2026-11-04: the headless sim plays a 4-fight Road run 53 times a second in Node, about 6,600 times real time, so 8 hours is about 5 seconds there.
+- Later: faster simulation speeds for mastered zones, offline progress for heroes that are not selected, and notifications while the page is closed.
+
 ## 12. Presentation
 
 - Browser-local application first.
@@ -1665,6 +1680,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-04: Decided offline catch-up: an 8-hour cap, standing orders (push on at 50% HP, repeat a cleared route until a defeat), seeded replays, and a return summary. Not built yet.
 - 2026-11-04: Upgrades always succeed and cost 3 materials plus `item level × 3` gold. A discovered location is announced on the expedition outcome and badges the Map tab.
 - 2026-11-04: The contract board is rolled per hero: 4 offers of Bounties, Patrols, and Elite contracts with random targets, counts, and an 80-130% reward roll.
 - 2026-11-04: Greyhaven is split into eight places; each gear shop deals in one kind of item.

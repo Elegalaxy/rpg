@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - 2026-11-04: Offline catch-up designed and approved (GAME_DESIGN §11; plan Step 12.1, `todo`). No code yet.
   - User beat the Warden with a Warrior and Healing Draughts (2026-11-04). The reference matrix is a floor build (0% except Mage 30% with 4 Draughts). Ask for the hero's level, points, gear, and Draught count before changing any Warden number.
   - Upgrades always succeed, 3 materials + item level × 3 gold (`crafting.ts`, GAME_DESIGN crafting). Discovered places are announced on the run panels and badge the Map tab (`store.ts`, `world.ts` `newlyDiscovered`). 703 tests.
   - Log filter is global across fights (`src/ui/log/filterStore.ts`). Both open questions (upgrade value, discovery notice) were decided and built.
@@ -31,4 +32,4 @@
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
   - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** Round 3 is recorded and its notes are fixed. Untested by the user: Fade Back in play and Cleric Zeal. Ask for the next notes, or suggest verifying Step 11.2.
+- **Exact Next Step:** Step 12.1 Offline catch-up is designed and approved (GAME_DESIGN §11), status `todo`. The user said not to start coding yet: wait for their go-ahead.

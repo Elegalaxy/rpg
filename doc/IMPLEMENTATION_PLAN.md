@@ -935,6 +935,23 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-04: Round-3 fixes. Supply packing is now a backpack of 4 slots with a row per supply and a minus/plus stepper (capped by the stash and the slots, with an Empty button; `packedCounts`, `stepPacked`, `clampToStash` in `src/persist/preparation.ts`); the old four pickers are gone. The selected fight tab fills with its outcome colour (the green text clashed with the purple selected state). Gear swap previews colour each changed stat green with an up arrow when better and red with a down arrow when worse; a lower Base action time counts as better (`changeIsBetter`). Badges: a count pill on the Town tab and on Contract Board for finished contracts waiting to be collected, and on Town and the three gear shops for crafts finished since a gear shop was last opened (`getUnseenCrafts`, in memory only, so a reload clears it). The Contract Board no longer draws a box inside its section. Wording pass (user): rule and background text moved into `?` tooltips (`src/ui/Help.tsx`, shown on hover or keyboard focus) on the purse line, Enchanter, Bank, Contract Board, Rules, Skill web colours, Loadout, Attributes, Equipment archive and stats, Legacy reincarnation, preparation (carried gold, vow, Echo rank), and the push-on choice; the always-visible log filter hint line was dropped (the filters keep their hover titles). Real warnings ("This cannot be undone" confirmations, locked-equipment and closed-town notices) stay as text. Upgrade rework (user approved the proposal; recorded in GAME_DESIGN first): an upgrade always succeeds and costs 3 materials plus `item level × 3` gold (`upgradeGold`, `UPGRADE_MATERIAL_COST` in `src/persist/crafting.ts`), keeping the item's modifier, quality, and durability; the failure chance is gone, and upgrade rows show only the cost. Discovery notice: a place discovered during a run is listed as `Discovered: …` on the running panel and the outcome (`newlyDiscovered`, `getDiscoveryNotices` in `src/ui/store.ts`), and the Map tab shows a badge until it is opened; both are in memory only. 703 tests. The log filter is now shared by every fight log (`src/ui/log/filterStore.ts`), so changing fights keeps the chosen filter. Warden result (user): beat the Fractured Warden with a Warrior using Healing Draughts, so the boss is reachable in real play (details to follow). For comparison, the reference matrix (9 built nodes, level 20, rank 0, 20 runs) still gives 0% for Warrior, Assassin, Ranger, and Cleric with 0, 2, or 4 Draughts and 30% for the Mage with 4; those builds have no gear modifiers and are a floor, so a real hero with crafted gear, more levels, or Legacy points does better than the matrix. Unspent attribute and skill points now show a badge on the Hero tab, Attributes, and Skills. Crafting looked stuck (user): the craft clock ran on the animation-frame loop, shared with the combat viewer's pause and speed, so a paused viewer or a background tab froze it. It now runs on the wall clock (`advanceCraftingBy`, a 500 ms timer plus a catch-up when the tab becomes visible, in `src/ui/store.ts`); checked in the browser pane that had shown it frozen. Log filters (user): "Damage & healing" is now Damage and Healing, and a new Items used filter shows supplies used. A supply use is its own `supplyUse` log event (it replaced the action event with `suppliesLeft`), also logged when a Smoke Bomb is spent on an escape roll. Checked in the browser: stepper counts, badges on a forced finished contract and gone after Collect, green/red lines with a slower weapon marked worse. 700 tests, typecheck and lint pass. New tests: `src/content/supplies.test.ts`, `src/persist/supplies.test.ts`, expedition supply tests. 679 tests, typecheck and lint pass.
 ---
 
+### Step 12.1: Offline catch-up
+- Status: `todo`
+- Depends on: 11.2
+- Design: GAME_DESIGN §11, "Offline catch-up", decided 2026-11-04.
+- Files (expected): `src/persist/save.ts` (last-seen time, standing orders, offline seed counter), `src/persist/preparation.ts` (standing orders in the draft), a new `src/persist/offline.ts` (pure catch-up: given a save and elapsed time, return the new save and a summary), `src/sim/expedition.ts` only if a hook is missing, `src/ui/store.ts` (run the catch-up on load and when the tab becomes visible, in chunks), `src/ui/map/ExpeditionPanel.tsx` (orders in the preparation), a new "While you were away" panel.
+- Change: replay up to 8 hours of absence. Crafting for every hero, and the running expedition with the standing orders (push on at or above 50% HP while the bag has room, else walk home; repeat a cleared route until a defeat, repacking supplies). Seeded so a reload gives the same result. Show a summary on return.
+- Acceptance criteria:
+  - The pure catch-up gives the same save for the same input, and the same result whether it runs in one call or in many chunks.
+  - Replaying N minutes in one go matches stepping the same N minutes live.
+  - 8 hours never replays more than 8 hours; a clock that went backwards replays nothing.
+  - A defeat while away stops further runs and applies the normal defeat costs.
+  - Repeat only starts on a route the hero has cleared, and stops when supplies or gold cannot cover the preparation.
+  - The page stays responsive during a long catch-up (progress bar moves).
+- Verification: unit tests for `offline.ts`; browser check by closing the tab mid-run, reopening, and reading the summary.
+- Progress:
+  - 2026-11-04: Design approved by the user; coding not started at the user's request.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
@@ -952,7 +969,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 
 ## 9. Deferred (not in this plan)
 
-- Offline progression and catch-up, zone proving, mastery-gated speed controls (§11)
+- Mastery-gated speed controls and offline progress for heroes that are not selected (§11). Offline catch-up itself is Step 12.1.
 - Running the simulation in a Web Worker (only if the main thread stutters)
 - Desktop packaging (Tauri or Electron), IndexedDB, cloud saves, save migrations
 - The event and event-policy system, route events, lore quests (§6, §14)
