@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - User beat the Warden with a Warrior and Healing Draughts (2026-11-04). The reference matrix is a floor build (0% except Mage 30% with 4 Draughts). Ask for the hero's level, points, gear, and Draught count before changing any Warden number.
   - Upgrades always succeed, 3 materials + item level × 3 gold (`crafting.ts`, GAME_DESIGN crafting). Discovered places are announced on the run panels and badge the Map tab (`store.ts`, `world.ts` `newlyDiscovered`). 703 tests.
   - Log filter is global across fights (`src/ui/log/filterStore.ts`). Both open questions (upgrade value, discovery notice) were decided and built.
   - Unspent-point badges (Hero, Attributes, Skills tabs); crafting clock moved to the wall clock (`advanceCraftingBy`, `startTownLoop` in `src/ui/store.ts`) because the old frame loop froze with the combat viewer's pause and in background tabs. 701 tests.
