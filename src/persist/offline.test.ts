@@ -7,6 +7,7 @@ import { stepExpedition } from '../sim/expedition.ts'
 import { CRAFT_MS, queueCraft } from './crafting.ts'
 import {
   OFFLINE_CAP_MS,
+  OFFLINE_LOOT_RATE,
   OFFLINE_MIN_MS,
   advanceOffline,
   createOffline,
@@ -107,13 +108,37 @@ describe('an expedition while away', () => {
     expect(parseSave(serializeSave(whole.save)).ok).toBe(true)
   })
 
-  it('matches stepping the same time live, before the first hold', () => {
+  it('matches stepping the same time live, apart from the loot rate', () => {
     const save = running()
     const live = structuredClone(save)
     const steps = 2_500
     for (let step = 0; step < steps; step += 1) stepExpedition(live.expedition!, defs)
     const away = runOffline(save, steps * STEP_MS, true)
-    expect(away.save.expedition).toEqual(live.expedition)
+    // Only the loot differs: a fight may end in this window, and the offline rate halves its drop.
+    const awayRun = { ...away.save.expedition!, carriedGold: live.expedition!.carriedGold, unsecured: live.expedition!.unsecured }
+    expect(awayRun).toEqual(live.expedition)
+  })
+
+  it('brings home half the loot and gold of a fight won while away, rounded half up', () => {
+    const save = running()
+    const live = structuredClone(save)
+    const startGold = live.expedition!.carriedGold
+    let steps = 0
+    while (live.expedition!.history.length === 0) {
+      stepExpedition(live.expedition!, defs)
+      steps += 1
+    }
+    const liveGold = live.expedition!.carriedGold - startGold
+    const liveLoot = Object.fromEntries(live.expedition!.unsecured.map((stack) => [stack.materialId, stack.quantity]))
+    expect(liveGold).toBeGreaterThan(1)
+    expect(Object.values(liveLoot).reduce((sum, n) => sum + n, 0)).toBeGreaterThan(1)
+
+    const away = runOffline(save, steps * STEP_MS, true).save.expedition!
+    expect(away.history).toHaveLength(1)
+    expect(away.carriedGold - startGold).toBe(Math.floor(liveGold * OFFLINE_LOOT_RATE + 0.5))
+    const awayLoot = Object.fromEntries(away.unsecured.map((stack) => [stack.materialId, stack.quantity]))
+    for (const [id, amount] of Object.entries(liveLoot)) expect(awayLoot[id]).toBe(Math.floor(amount * OFFLINE_LOOT_RATE + 0.5))
+    expect(away.xpEarned).toBe(live.expedition!.xpEarned)
   })
 
   it('runs the cleared route again and again while the orders say repeat', () => {
@@ -122,7 +147,8 @@ describe('an expedition while away', () => {
     expect(away.summary.fightsWon).toBeGreaterThan(away.summary.runs)
     expect(away.summary.defeated).toBe(false)
     expect(away.summary.xp).toBeGreaterThan(0)
-    expect(away.summary.gold + Object.values(away.summary.materials).reduce((sum, n) => sum + n, 0)).toBeGreaterThan(0)
+    expect(away.summary.gold).toBeGreaterThan(0)
+    expect(Object.values(away.summary.materials).reduce((sum, n) => sum + n, 0)).toBeGreaterThan(0)
     expect(away.save.heroes[0]!.clearedNodeIds).toContain('splintered-road')
   })
 

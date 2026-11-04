@@ -16,6 +16,8 @@ import { beginExpedition, newlyDiscovered, recordProgress, settleExpedition, sho
 export const OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
 /** Less time away than this is not worth a catch-up. */
 export const OFFLINE_MIN_MS = 5_000
+/** Loot and gold from a fight won while away, as a share of a live fight's (GAME_DESIGN §11). */
+export const OFFLINE_LOOT_RATE = 0.5
 /** Less time than this is applied quietly, with no "while you were away" summary (a reload, a short tab switch). */
 export const OFFLINE_SUMMARY_MIN_MS = 30_000
 
@@ -54,6 +56,8 @@ export type OfflineState = {
   /** The fight count the run was pushed on from, as the live screen keeps it. */
   pushedAt: number | null
   crafting: boolean
+  /** Gold and loot the run held when the last fight ended, so a won fight's gain can be told apart and reduced. */
+  baseline: { gold: number; unsecured: { [materialId: string]: number } }
   summary: OfflineSummary
   /** Before-values for the summary, taken from the starting save. */
   start: { level: number; gold: number; materials: { [materialId: string]: number }; discoveries: string[]; contractsDone: number }
@@ -65,6 +69,11 @@ const defs = gameDefs()
 function contractsDone(save: SaveData): number {
   const purse = purseOf(save)
   return purse.contracts.filter((entry) => isComplete(entry, contractFor(purse, entry.contractId))).length
+}
+
+/** Gold the hero has safe: in the purse, or deposited while a run is out. Carried gold is still at risk. */
+function safeGold(save: SaveData): number {
+  return purseOf(save).gold + (save.expedition?.depositedGold ?? 0)
 }
 
 function heroLevel(save: SaveData): number {
@@ -91,10 +100,11 @@ export function createOffline(save: SaveData, awayMs: number, crafting: boolean)
     stepsLeft: Math.floor(ms / STEP_MS),
     pushedAt: null,
     crafting,
+    baseline: baselineOf(copy),
     stopped: null,
     start: {
       level: heroLevel(copy),
-      gold: purse.gold,
+      gold: safeGold(copy),
       materials: { ...purse.materials },
       discoveries: [...copy.account.discoveries],
       contractsDone: contractsDone(copy),
@@ -121,6 +131,35 @@ export function createOffline(save: SaveData, awayMs: number, crafting: boolean)
 
 export function offlineDone(state: OfflineState): boolean {
   return state.stepsLeft <= 0
+}
+
+function roundHalfUp(value: number): number {
+  return Math.floor(value + 0.5)
+}
+
+function baselineOf(save: SaveData): OfflineState['baseline'] {
+  const expedition = save.expedition
+  const unsecured: { [materialId: string]: number } = {}
+  for (const stack of expedition?.unsecured ?? []) unsecured[stack.materialId] = stack.quantity
+  return { gold: expedition?.carriedGold ?? 0, unsecured }
+}
+
+/**
+ * A fight just ended. Reduce what it dropped to the offline rate, then take a new baseline. The drop is
+ * what the run holds now minus what it held after the last fight.
+ */
+function applyLootRate(state: OfflineState): void {
+  const expedition = state.save.expedition
+  if (expedition === null) return
+  const gold = expedition.carriedGold - state.baseline.gold
+  if (gold > 0) expedition.carriedGold = state.baseline.gold + roundHalfUp(gold * OFFLINE_LOOT_RATE)
+  expedition.unsecured = expedition.unsecured.flatMap((stack) => {
+    const before = state.baseline.unsecured[stack.materialId] ?? 0
+    const gain = stack.quantity - before
+    const quantity = gain > 0 ? before + roundHalfUp(gain * OFFLINE_LOOT_RATE) : stack.quantity
+    return quantity > 0 ? [{ ...stack, quantity }] : []
+  })
+  state.baseline = baselineOf(state.save)
 }
 
 function lootCount(stacks: readonly { quantity: number }[]): number {
@@ -179,6 +218,7 @@ function afterReturn(state: OfflineState): boolean {
   }
   state.save = begun.save
   state.pushedAt = null
+  state.baseline = baselineOf(state.save)
   return true
 }
 
@@ -228,7 +268,10 @@ export function advanceOffline(state: OfflineState, maxSteps: number): void {
     }
     stepExpedition(expedition, defs)
     used += 1
-    if (expedition.history.length !== seen) seen = countNewFights(state, seen)
+    if (expedition.history.length !== seen) {
+      applyLootRate(state)
+      seen = countNewFights(state, seen)
+    }
   }
   state.stepsLeft -= budget
 }
@@ -250,7 +293,7 @@ export function finishOffline(state: OfflineState): { save: SaveData; summary: O
     ...state.summary,
     runs: state.summary.runs + (lost && !state.summary.defeated ? 1 : 0),
     defeated: state.summary.defeated || lost,
-    gold: Math.max(0, purse.gold - before.gold),
+    gold: Math.max(0, safeGold(save) - before.gold),
     materials,
     levelsGained: Math.max(0, heroLevel(save) - before.level),
     contractsFinished: Math.max(0, contractsDone(save) - before.contractsDone),
