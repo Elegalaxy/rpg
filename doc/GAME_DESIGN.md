@@ -1517,6 +1517,8 @@ Offline catch-up, decided 2026-11-04 (user approved; not built yet):
 - A defeat while away uses the normal defeat rules (unsecured loot lost, rescue fee, durability), then offline running stops.
 - On return the player sees a summary: time away (capped), runs, fights won, retreats, any defeat, gold, materials, XP and level-ups, crafts finished, contract progress, and places discovered. Only the last fight keeps its full log.
 - The replay runs in chunks with a progress bar so the page does not freeze. Measured 2026-11-04: the headless sim plays a 4-fight Road run 53 times a second in Node, about 6,600 times real time, so 8 hours is about 5 seconds there.
+- Built 2026-11-04. Details settled while building: the game stamps the save every 10 seconds and when the tab hides or the page closes, so a reload replays at most a few seconds. A catch-up under 5 seconds does nothing, and under 30 seconds it is applied without a summary. While a tab is hidden the live expedition clock is off (the catch-up counts that time on return); the craft clock keeps counting real time in either case. Repeating needs every node of the route in the hero's cleared nodes and the packed supplies in the stash. A run left at `returned` or `defeat` is not settled for the player.
+- Measured 2026-11-04 (headless, level 40 Warrior on the Splintered Road, 8 hours): 338 runs and 1,017 fights in 2.2 seconds. A strong hero returns thousands of materials from a long absence, so the offline rate of loot and gold is an open balance question.
 - Later: faster simulation speeds for mastered zones, offline progress for heroes that are not selected, and notifications while the page is closed.
 
 ## 12. Presentation
@@ -1680,7 +1682,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
-- 2026-11-04: Decided offline catch-up: an 8-hour cap, standing orders (push on at 50% HP, repeat a cleared route until a defeat), seeded replays, and a return summary. Not built yet.
+- 2026-11-04: Decided and built offline catch-up: an 8-hour cap, standing orders (push on at 50% HP, repeat a cleared route until a defeat), deterministic replays, and a return summary.
 - 2026-11-04: Upgrades always succeed and cost 3 materials plus `item level × 3` gold. A discovered location is announced on the expedition outcome and badges the Map tab.
 - 2026-11-04: The contract board is rolled per hero: 4 offers of Bounties, Patrols, and Elite contracts with random targets, counts, and an 80-130% reward roll.
 - 2026-11-04: Greyhaven is split into eight places; each gear shop deals in one kind of item.

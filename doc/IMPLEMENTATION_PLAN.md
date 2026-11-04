@@ -936,7 +936,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 ---
 
 ### Step 12.1: Offline catch-up
-- Status: `todo`
+- Status: `done`
 - Depends on: 11.2
 - Design: GAME_DESIGN §11, "Offline catch-up", decided 2026-11-04.
 - Files (expected): `src/persist/save.ts` (last-seen time, standing orders, offline seed counter), `src/persist/preparation.ts` (standing orders in the draft), a new `src/persist/offline.ts` (pure catch-up: given a save and elapsed time, return the new save and a summary), `src/sim/expedition.ts` only if a hook is missing, `src/ui/store.ts` (run the catch-up on load and when the tab becomes visible, in chunks), `src/ui/map/ExpeditionPanel.tsx` (orders in the preparation), a new "While you were away" panel.
@@ -950,7 +950,8 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - The page stays responsive during a long catch-up (progress bar moves).
 - Verification: unit tests for `offline.ts`; browser check by closing the tab mid-run, reopening, and reading the summary.
 - Progress:
-  - 2026-11-04: Design approved by the user; coding not started at the user's request.
+  - 2026-11-04: Design approved by the user; coding waited for the go-ahead.
+  - 2026-11-04: Built. `src/persist/offline.ts` is pure: `createOffline`, `advanceOffline` (chunk-safe), `finishOffline`, `runOffline`; it applies the standing orders at each hold between fights, settles a safe return and starts the next run on a cleared route with the packed supplies, stops at a defeat, and leaves a finished run for the player to close. New seeds come from `deriveSeed(expedition.seed, 7919)`, so a replay needs no stored counter. Save: `lastSeenAt` on the save, `pushOnHpPercent` and `repeatRoute` on each hero (defaults 50 and true for old saves). Store: `commitSave` stamps the time; a 10 s heartbeat, tab hide, and page hide stamp it; load and tab return start a chunked catch-up (`startOfflineWatch`, `getAwayView`, `dismissAway` in `src/ui/store.ts`); the live expedition clock is off while the tab is hidden. UI: standing orders in the preparation, and `src/ui/AwayPanel.tsx` (progress bar, then a "While you were away" summary shown for 30 s or more). Tests in `src/persist/offline.test.ts`: same result in one call or uneven chunks, same as live stepping before the first hold, repeat on and off, uncleared route, missing supplies, push-on percent, defeat, input not changed, cap and backwards clock, crafting for every hero. Measured: 8 hours in 2.2 s headless. Checked in the browser by faking a 3-hour absence on a running Road run: 127 runs, 382 fights, crafts and discoveries reported, the summary closed with Continue and did not return. 715 tests, typecheck and lint pass. Open: a strong hero returns thousands of materials from 8 hours, which needs a balance decision. Not user-verified yet.
 
 ## 8. Risks, and what would reveal them early
 

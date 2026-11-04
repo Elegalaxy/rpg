@@ -22,7 +22,7 @@ function hero(save: SaveData) {
 
 describe('preparation', () => {
   it('starts from the usual defaults, per class', () => {
-    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''] })
+    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true })
     expect(draftFor(hero(heroSave('cleric'))).vow).toBe('zeal')
     expect(draftFor(hero(heroSave('ranger'))).specialAmmo).toBe('6')
   })
@@ -96,5 +96,23 @@ describe('preparation', () => {
     const undead = { ...hero(heroSave('warrior', 'undead')), curse: 'soul-debt' }
     expect(blueprintForHero(undead, 'splintered-road').hero.curse).toBe('soul-debt')
     expect(blueprintForHero(undead, 'splintered-road').hero.race).toBe('undead')
+  })
+})
+
+describe('standing orders for time away', () => {
+  it('starts at push on at 50% with repeat on, and checks the percent', () => {
+    const warrior = hero(heroSave('warrior'))
+    const base = draftFor(warrior)
+    expect(base).toMatchObject({ pushOnPercent: '50', repeatRoute: true })
+    expect(checkPreparation(warrior, { ...base, pushOnPercent: '75', repeatRoute: false })).toMatchObject({
+      ok: true,
+      hero: { pushOnHpPercent: 75, repeatRoute: false },
+    })
+    for (const bad of ['0', '101', '', 'abc', '12.5']) {
+      expect(checkPreparation(warrior, { ...base, pushOnPercent: bad }), bad).toMatchObject({
+        ok: false,
+        errors: [expect.stringMatching(/Push on while HP is at least/)],
+      })
+    }
   })
 })

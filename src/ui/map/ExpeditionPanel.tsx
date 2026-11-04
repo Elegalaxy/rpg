@@ -142,6 +142,27 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </label>
         <Help label="About carried gold">The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</Help>
       </div>
+      <div className="controls">
+        <label>
+          While away, push on while HP is at least (%){' '}
+          <input
+            aria-label="Push on percent"
+            value={draft.pushOnPercent}
+            inputMode="numeric"
+            size={4}
+            onChange={(event) => patch({ pushOnPercent: event.target.value })}
+          />
+        </label>{' '}
+        <label>
+          <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
+          Run a cleared route again
+        </label>
+        <Help label="About time away">
+          When the game is closed or the tab is hidden, your run carries on for up to 8 hours. After each fight your hero pushes on if HP is at least this
+          percent and the bag has room, otherwise walks home. With the box ticked, a cleared route is run again, using your packed supplies, until you are
+          defeated, the supplies run out, or time runs out. Your retreat setting still applies in fights.
+        </Help>
+      </div>
       {hero.echoRank > 0 ? (
         <div className="controls">
           <label>

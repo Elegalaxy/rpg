@@ -20,10 +20,16 @@ export type PreparationDraft = {
   fightRank: string
   /** One supply id per slot, or an empty string for an empty slot. Always `SUPPLY_SLOT_COUNT` long. */
   supplies: string[]
+  /** Standing order while away: push on while HP is at least this whole percent of maximum. */
+  pushOnPercent: string
+  /** Standing order while away: run a cleared route again after a safe return. */
+  repeatRoute: boolean
 }
 
 export const RETREAT_MIN_PERCENT = 5
 export const RETREAT_MAX_PERCENT = 90
+export const PUSH_ON_MIN_PERCENT = 1
+export const PUSH_ON_MAX_PERCENT = 100
 
 export function draftFor(hero: SavedHero): PreparationDraft {
   return {
@@ -34,6 +40,8 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     carryGold: String(hero.carryGold),
     fightRank: String(hero.fightRank),
     supplies: Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => hero.packedSupplies[index] ?? ''),
+    pushOnPercent: String(hero.pushOnHpPercent),
+    repeatRoute: hero.repeatRoute,
   }
 }
 
@@ -156,11 +164,19 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   } else {
     fightRank = rank
   }
+  let pushOnHpPercent = hero.pushOnHpPercent
+  const pushText = draft.pushOnPercent.trim()
+  const push = Number(pushText)
+  if (pushText.length === 0 || !Number.isInteger(push) || push < PUSH_ON_MIN_PERCENT || push > PUSH_ON_MAX_PERCENT) {
+    errors.push(`Push on while HP is at least must be a whole percent from ${PUSH_ON_MIN_PERCENT} to ${PUSH_ON_MAX_PERCENT}.`)
+  } else {
+    pushOnHpPercent = push
+  }
   const packedSupplies = draft.supplies.filter((id) => id !== '')
   if (draft.supplies.length > SUPPLY_SLOT_COUNT) errors.push(`Pack at most ${SUPPLY_SLOT_COUNT} supplies.`)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold, fightRank, packedSupplies } }
+  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold, fightRank, packedSupplies, pushOnHpPercent, repeatRoute: draft.repeatRoute } }
 }
 
 /** Save a hero's preparation. It cannot change while that hero is out on an expedition. */

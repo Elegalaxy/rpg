@@ -61,6 +61,8 @@ function withHero(): SaveData {
     specialAmmo: 0,
     carryGold: 25,
     packedSupplies: [],
+    pushOnHpPercent: 50,
+    repeatRoute: true,
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,
@@ -260,5 +262,23 @@ describe('world record in the save', () => {
     const all = reachMilestone(reachMilestone(first, 'first-reincarnation'), 'first-warden-defeat')
     expect(all.slots).toBe(MAX_SLOTS)
     expect(parseSave(serializeSave({ ...newSave(), account: all })).ok).toBe(true)
+  })
+})
+
+describe('last seen time and standing orders in the save', () => {
+  it('fills them for a save from before offline play, and rejects bad values', () => {
+    const raw = JSON.parse(serializeSave(withHero())) as { lastSeenAt?: unknown; heroes: Record<string, unknown>[] }
+    delete raw.lastSeenAt
+    delete raw.heroes[0]!.pushOnHpPercent
+    delete raw.heroes[0]!.repeatRoute
+    const parsed = parseSave(JSON.stringify(raw))
+    if (!parsed.ok) throw new Error(parsed.reason)
+    expect(parsed.data.lastSeenAt).toBeNull()
+    expect(parsed.data.heroes[0]).toMatchObject({ pushOnHpPercent: 50, repeatRoute: true })
+    raw.lastSeenAt = -4
+    expect(parseSave(JSON.stringify(raw)).ok).toBe(false)
+    raw.lastSeenAt = 1_700_000_000_000
+    raw.heroes[0]!.pushOnHpPercent = 0
+    expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: expect.stringMatching(/push-on percent/) })
   })
 })

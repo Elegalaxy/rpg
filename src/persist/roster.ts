@@ -8,7 +8,7 @@ import { HERO_UPDATES } from './heroUpdates.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createProgress, HERO_RACES, type HeroRace } from '../sim/progression.ts'
 
-import { EMPTY_PURCHASES, DEFAULT_CARRY_GOLD, DEFAULT_RETREAT, MAX_SLOTS, emptyPurse, type SaveData, type SavedHero } from './save.ts'
+import { EMPTY_PURCHASES, DEFAULT_CARRY_GOLD, DEFAULT_PUSH_ON_PERCENT, DEFAULT_RETREAT, MAX_SLOTS, emptyPurse, type SaveData, type SavedHero } from './save.ts'
 
 export const NAME_MIN = 1
 export const NAME_MAX = 24
@@ -85,6 +85,8 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     specialAmmo: loadout.specialAmmo ?? 0,
     carryGold: DEFAULT_CARRY_GOLD,
     packedSupplies: [],
+    pushOnHpPercent: DEFAULT_PUSH_ON_PERCENT,
+    repeatRoute: true,
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,

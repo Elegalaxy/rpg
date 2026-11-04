@@ -17,6 +17,8 @@ export const STARTING_SLOTS = 2
 export const MAX_SLOTS = 5
 /** The usual gold to carry: the rescue fee. */
 export const DEFAULT_CARRY_GOLD = 25
+/** Standing orders for time away: push on while HP is at least this percent. */
+export const DEFAULT_PUSH_ON_PERCENT = 50
 /** The usual retreat threshold: 40% of maximum HP. */
 export const DEFAULT_RETREAT = 0.4
 /** A new game knows the town and the road out of it. */
@@ -162,6 +164,10 @@ export type SavedHero = {
   carryGold: number
   /** Supply ids to pack into the slots, in slot order, at most four. A run takes what the stash has. */
   packedSupplies: string[]
+  /** Standing order while away: push on to the next fight while HP is at least this whole percent of maximum, else walk home. */
+  pushOnHpPercent: number
+  /** Standing order while away: after a safe return, run the same route again if the hero has cleared it. */
+  repeatRoute: boolean
   /** One-time content updates this hero already has (see `heroUpdates.ts`). */
   updates: string[]
   /** The highest Fractured Warden Echo rank this hero can fight. Each victory unlocks the next. Personal to the hero. */
@@ -194,6 +200,8 @@ export type SaveData = {
   selectedHeroId: string | null
   /** The road run in progress. Null in town. */
   expedition: ExpeditionState | null
+  /** Wall-clock time (ms since 1970) the game last saw the player. Offline catch-up counts from here. Null before the first save. */
+  lastSeenAt: number | null
 }
 
 export type SaveLogger = (message: string, details?: unknown) => void
@@ -233,6 +241,7 @@ export function newSave(): SaveData {
     heroes: [],
     selectedHeroId: null,
     expedition: null,
+    lastSeenAt: null,
   }
 }
 
@@ -372,6 +381,9 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   )
   whole(value.specialAmmo, `${label} special arrows`)
   whole(value.carryGold, `${label} carried gold`)
+  whole(value.pushOnHpPercent, `${label} push-on percent`)
+  check((value.pushOnHpPercent as number) >= 1 && (value.pushOnHpPercent as number) <= 100, `${label} push-on percent must be from 1 to 100`)
+  check(typeof value.repeatRoute === 'boolean', `${label} repeat route must be true or false`)
   stringList(value.packedSupplies, `${label} packed supplies`)
   stringList(value.updates, `${label} updates`)
   check(value.packedSupplies.length <= SUPPLY_SLOT_COUNT, `${label} packs more than ${SUPPLY_SLOT_COUNT} supplies`)
@@ -420,6 +432,7 @@ export function assertSaveData(value: unknown): asserts value is SaveData {
     value.selectedHeroId === null || (typeof value.selectedHeroId === 'string' && ids.includes(value.selectedHeroId)),
     `selected hero ${describeValue(value.selectedHeroId)} is not in the roster`,
   )
+  check(value.lastSeenAt === null || (typeof value.lastSeenAt === 'number' && Number.isFinite(value.lastSeenAt) && value.lastSeenAt >= 0), 'last seen time must be a number or null')
   if (value.expedition !== null) {
     check(isRecord(value.expedition), 'expedition must be an object or null')
     assertExpedition(value.expedition as unknown as ExpeditionState)
@@ -465,6 +478,7 @@ function splitAccountPurse(parsed: Record<string, unknown>): void {
 /** Saves from before the world record existed get empty lists. Nothing else is guessed. */
 function fillWorldFields(parsed: unknown): void {
   if (!isRecord(parsed)) return
+  if (parsed.lastSeenAt === undefined) parsed.lastSeenAt = null
   if (isRecord(parsed.account) && parsed.account.milestones === undefined) parsed.account.milestones = []
   splitAccountPurse(parsed)
   if (!Array.isArray(parsed.heroes)) return
@@ -476,6 +490,8 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.specialAmmo === undefined) hero.specialAmmo = 0
     if (hero.carryGold === undefined) hero.carryGold = DEFAULT_CARRY_GOLD
     if (hero.packedSupplies === undefined) hero.packedSupplies = []
+    if (hero.pushOnHpPercent === undefined) hero.pushOnHpPercent = DEFAULT_PUSH_ON_PERCENT
+    if (hero.repeatRoute === undefined) hero.repeatRoute = true
     if (hero.updates === undefined) hero.updates = []
     if (hero.craftXp === undefined) hero.craftXp = 0
     if (hero.legacy === undefined) hero.legacy = 0

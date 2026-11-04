@@ -14,6 +14,7 @@ import { savePreparation, type PreparationDraft } from '../persist/preparation.t
 import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
 import { returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
+import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceOffline, createOffline, finishOffline, offlineDone, type OfflineState, type OfflineSummary } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
 import { createHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
@@ -136,7 +137,8 @@ export function useSaveStatus(): SaveStatus {
  * Replace the account's save and write it. Hero creation, allocations, and town actions call this.
  * The combat loop passes `notify` false because it notifies once per frame itself.
  */
-export function commitSave(next: SaveData, reason: string, notify = true): void {
+export function commitSave(saved: SaveData, reason: string, notify = true): void {
+  const next: SaveData = { ...saved, lastSeenAt: Date.now() }
   const storage = browserStorage()
   if (storage === null) {
     saveStatus = { ...saveStatus, save: next }
@@ -360,6 +362,8 @@ export function getFinishedFights(): readonly FinishedFight[] {
 
 /** Advance the running expedition by this many simulation steps. The clock calls this each frame. */
 export function advanceExpedition(count: number): void {
+  // While the tab is hidden the clock does not run; the catch-up counts that time when it returns.
+  if (catchingUp || (typeof document !== 'undefined' && document.hidden)) return
   const expedition = saveStatus.save.expedition
   if (expedition === null || expedition.outcome !== 'ongoing') return
   const fights = expedition.history.length
@@ -595,6 +599,7 @@ const CRAFT_TICK_MS = 500
 let lastCraftTickAt = 0
 
 function tickCrafting(): void {
+  if (catchingUp) return
   const now = Date.now()
   const elapsed = now - lastCraftTickAt
   lastCraftTickAt = now
@@ -617,6 +622,125 @@ export function startTownLoop(): () => void {
   return () => {
     clearInterval(timer)
     document.removeEventListener('visibilitychange', onVisible)
+  }
+}
+
+// ---- Offline catch-up (GAME_DESIGN §11) ----
+
+export type AwayView = {
+  phase: 'idle' | 'running' | 'summary'
+  /** 0 to 1 while a catch-up runs. */
+  progress: number
+  summary: OfflineSummary | null
+}
+
+let awayView: AwayView = { phase: 'idle', progress: 0, summary: null }
+let catchingUp = false
+let offlineState: OfflineState | null = null
+let offlineTotalSteps = 1
+/** When the tab was last hidden. Null while it is visible. */
+let hiddenAt: number | null = null
+
+export function getAwayView(): AwayView {
+  return awayView
+}
+
+/** The player read the summary. */
+export function dismissAway(): void {
+  awayView = { phase: 'idle', progress: 0, summary: null }
+  saveStatus = { ...saveStatus }
+  emit()
+}
+
+function finishCatchUp(): void {
+  const state = offlineState
+  if (state === null) return
+  const { save, summary } = finishOffline(state)
+  offlineState = null
+  catchingUp = false
+  pushedAt = state.pushedAt
+  saveStatus = { ...saveStatus, save }
+  commitSave(save, 'offline catch-up', false)
+  if (summary.discovered.length > 0) {
+    discoveryNotices = [...discoveryNotices, ...summary.discovered]
+    unseenDiscoveries += summary.discovered.length
+  }
+  unseenCrafts += summary.crafts.length
+  lastCraftTickAt = Date.now()
+  awayView = summary.replayedMs >= OFFLINE_SUMMARY_MIN_MS ? { phase: 'summary', progress: 1, summary } : { phase: 'idle', progress: 0, summary: null }
+  const running = saveStatus.save.expedition
+  if (running !== null && running.outcome === 'ongoing') {
+    expeditionLoop.resetClock()
+    if (!snapshot.paused) expeditionLoop.start()
+  }
+  saveStatus = { ...saveStatus }
+  emit()
+}
+
+function runCatchUpChunk(): void {
+  const state = offlineState
+  if (state === null) return
+  const started = performance.now()
+  do {
+    advanceOffline(state, 4000)
+  } while (!offlineDone(state) && performance.now() - started < 12)
+  if (offlineDone(state)) {
+    finishCatchUp()
+    return
+  }
+  awayView = { phase: 'running', progress: 1 - state.stepsLeft / offlineTotalSteps, summary: null }
+  saveStatus = { ...saveStatus }
+  emit()
+  setTimeout(runCatchUpChunk, 0)
+}
+
+/** Replay time away in small chunks so the page stays responsive. `crafting` is false when the craft clock already counted it. */
+function beginCatchUp(awayMs: number, crafting: boolean): void {
+  if (catchingUp || saveStatus.save.heroes.length === 0 || !(awayMs >= OFFLINE_MIN_MS)) return
+  const state = createOffline(saveStatus.save, awayMs, crafting)
+  if (state.stepsLeft <= 0) return
+  catchingUp = true
+  offlineState = state
+  offlineTotalSteps = state.stepsLeft
+  debugLog('[ui]', 'offline catch-up', { awayMs, steps: state.stepsLeft })
+  awayView = { phase: 'running', progress: 0, summary: null }
+  saveStatus = { ...saveStatus }
+  emit()
+  setTimeout(runCatchUpChunk, 0)
+}
+
+const HEARTBEAT_MS = 10_000
+
+/**
+ * Watch for time away. On start it replays the time since the game last saw the player. While the
+ * game runs it stamps the save every few seconds and when the tab hides, and replays the hidden time
+ * when the tab returns. Returns the cleanup.
+ */
+export function startOfflineWatch(): () => void {
+  const last = saveStatus.save.lastSeenAt
+  if (last !== null) beginCatchUp(Date.now() - last, true)
+  const stamp = () => {
+    if (!catchingUp && saveStatus.save.heroes.length > 0) commitSave(saveStatus.save, 'seen', false)
+  }
+  const onVisibility = () => {
+    if (document.hidden) {
+      hiddenAt = Date.now()
+      stamp()
+    } else if (hiddenAt !== null) {
+      const away = Date.now() - hiddenAt
+      hiddenAt = null
+      beginCatchUp(away, false)
+    }
+  }
+  const timer = setInterval(() => {
+    if (!document.hidden) stamp()
+  }, HEARTBEAT_MS)
+  document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('pagehide', stamp)
+  return () => {
+    clearInterval(timer)
+    document.removeEventListener('visibilitychange', onVisibility)
+    window.removeEventListener('pagehide', stamp)
   }
 }
 

@@ -18,6 +18,7 @@ import { Rules } from './character/Rules.tsx'
 import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
 import { Legacy } from './character/Legacy.tsx'
+import { AwayPanel } from './AwayPanel.tsx'
 import { PLACES, Town, type PlaceId } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { PALETTES, applyPalette, applyTheme, storedPalette, storedTheme, type PaletteChoice, type ThemeChoice } from './theme.ts'
@@ -34,6 +35,7 @@ import {
   setSeedText,
   setSpeed,
   startCombatLoop,
+  startOfflineWatch,
   startTownLoop,
   startExpeditionLoop,
   startNewGame,
@@ -308,10 +310,12 @@ function App() {
     const stopCombat = startCombatLoop()
     const stopExpedition = startExpeditionLoop()
     const stopTown = startTownLoop()
+    const stopWatch = startOfflineWatch()
     return () => {
       stopCombat()
       stopExpedition()
       stopTown()
+      stopWatch()
     }
   }, [])
 
@@ -359,6 +363,7 @@ function App() {
               </nav>
             </aside>
             <main className="content">
+              <AwayPanel />
               {tab === 'heroes' ? (
                 <>
                   <SubTabs
