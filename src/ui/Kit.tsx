@@ -13,19 +13,30 @@ export function Pill({ kind, children, title, testId }: { kind: PillKind; childr
   )
 }
 
+export type TagKind = 'gold' | 'mat' | 'good' | 'bad' | 'info' | 'plain'
+
+/** Coloured text with no border or fill. Use it for prices, lists, and inline status; keep Pill for counts and short statuses. */
+export function Tag({ kind, children, title, testId }: { kind: TagKind; children: ReactNode; title?: string; testId?: string }) {
+  return (
+    <span className={`tag tag-${kind}`} title={title} data-testid={testId}>
+      {children}
+    </span>
+  )
+}
+
 export type Cost = { kind: 'gold' | 'mat'; amount: number; label?: string; prefix?: string }
 
 /** A cost as a pill: "15 gold" in amber, or "3 hide" in slate. */
 export function CostPill({ cost }: { cost: Cost }) {
   return cost.kind === 'gold' ? (
-    <Pill kind="gold" title="Gold">
+    <Tag kind="gold" title="Gold">
       {cost.prefix}
       {cost.amount} gold
-    </Pill>
+    </Tag>
   ) : (
-    <Pill kind="mat" title="Materials">
+    <Tag kind="mat" title="Materials">
       {cost.amount} {cost.label}
-    </Pill>
+    </Tag>
   )
 }
 

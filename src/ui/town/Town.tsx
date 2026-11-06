@@ -12,7 +12,7 @@ import { repairAllCost } from '../../persist/town.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { Help } from '../Help.tsx'
-import { CostPill, Kpi, KpiRow, Pill, ShopRow } from '../Kit.tsx'
+import { CostPill, Kpi, KpiRow, Pill, ShopRow, Tag } from '../Kit.tsx'
 import {
   buyItemFromUi,
   buyRecipeFromUi,
@@ -185,7 +185,7 @@ function GearShop({ place }: { place: PlaceDef }) {
       </ul>
       {repairAllPrice > 0 ? (
         <button type="button" className="btn-good" disabled={closed || gold < repairAllPrice} onClick={() => run(repairAllFromUi(mine), 'Repaired everything worn of this kind.')}>
-          Repair everything worn here <Pill kind="gold">{repairAllPrice} gold</Pill>
+          Repair everything worn here <Tag kind="gold">{repairAllPrice} gold</Tag>
         </button>
       ) : null}
       {messages}
@@ -260,9 +260,9 @@ function PotionShop() {
                 <div className="supply-option">
                   <span className="supply-option-title">Brew from materials</span>
                   <span className="supply-option-cost">
-                    <Pill kind={missingMaterial > 0 ? 'bad' : 'mat'} title={`You have ${haveMaterial}`}>
+                    <Tag kind={missingMaterial > 0 ? 'bad' : 'mat'} title={`You have ${haveMaterial}`}>
                       {supply.brew.quantity} {supply.brew.materialId} <small>(have {haveMaterial})</small>
-                    </Pill>
+                    </Tag>
                     +
                     <CostPill cost={{ kind: 'gold', amount: supply.brew.gold }} />
                   </span>
@@ -355,7 +355,7 @@ function Enchanter() {
               name={modifier.name}
               effect={`${modifier.text} · ${appliesToText(modifier)}`}
               costs={[[{ kind: 'gold', amount: recipePrice(entry.modifierId) }]]}
-              note={<Pill kind="info">Level {modifier.minLevel}</Pill>}
+              note={<Tag kind="info">Needs level {modifier.minLevel}</Tag>}
               actions={
                 <button
                   type="button"

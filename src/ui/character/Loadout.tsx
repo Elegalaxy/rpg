@@ -1,5 +1,5 @@
 import { Help } from '../Help.tsx'
-import { Pill } from '../Kit.tsx'
+import { Tag } from '../Kit.tsx'
 import { useState } from 'react'
 
 import { skillName } from '../../persist/loadout.ts'
@@ -35,7 +35,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
       </p>
       {unequipped > 0 ? (
         <p role="status" data-testid="loadout-unequipped">
-          <Pill kind="info">{unequipped} learned, not equipped</Pill> Learned skills are only used in fights once they are in your loadout.
+          <strong>{unequipped} learned, not equipped.</strong> Learned skills are only used in fights once they are in your loadout.
         </p>
       ) : null}
       <ul>
@@ -46,8 +46,8 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
             <li key={skillId}>
               <label>
                 <input type="checkbox" checked={picked} onChange={() => toggle(skillId)} /> {skillName(skillId)}{' '}
-                {equipped ? <Pill kind="good">In loadout</Pill> : <Pill kind="info">Not equipped</Pill>}
-                {picked !== equipped ? <Pill kind="info">{picked ? 'Will equip on save' : 'Will remove on save'}</Pill> : null}
+                {equipped ? <Tag kind="good">In loadout</Tag> : <Tag kind="plain">Not equipped</Tag>}
+                {picked !== equipped ? <Tag kind="info">{picked ? 'Will equip on save' : 'Will remove on save'}</Tag> : null}
               </label>
             </li>
           )

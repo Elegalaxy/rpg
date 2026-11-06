@@ -1,5 +1,5 @@
 import { Help } from '../Help.tsx'
-import { Pill } from '../Kit.tsx'
+import { Tag } from '../Kit.tsx'
 import { purseOf } from '../../persist/save.ts'
 import { useState } from 'react'
 
@@ -46,7 +46,7 @@ export function Contracts() {
                     <span data-testid={`progress-${def.id}`}>
                       Progress {entry.progress} of {def.count}
                     </span>
-                    {done ? <Pill kind="good">Done</Pill> : null}
+                    {done ? <Tag kind="good">Done</Tag> : null}
                   </span>
                 ) : null}
               </div>

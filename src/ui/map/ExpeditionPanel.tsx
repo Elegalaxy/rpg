@@ -20,7 +20,7 @@ import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } 
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Help } from '../Help.tsx'
-import { DurabilityGrid, Kpi, KpiRow, Pill } from '../Kit.tsx'
+import { DurabilityGrid, Kpi, KpiRow, Tag } from '../Kit.tsx'
 import { Row } from '../Row.tsx'
 import { FightView } from '../combat/FightView.tsx'
 import {
@@ -310,9 +310,9 @@ function lootPills(stacks: readonly { materialId: string; quantity: number }[], 
   return (
     <>
       {stacks.map((stack) => (
-        <Pill key={stack.materialId} kind="mat">
+        <Tag key={stack.materialId} kind="mat">
           {stack.quantity} {stack.materialId}
-        </Pill>
+        </Tag>
       ))}
     </>
   )
@@ -326,9 +326,9 @@ function DiscoveredLine() {
       <small className="pill-label">Discovered</small>
       <span className="pill-row">
         {found.map((name) => (
-          <Pill key={name} kind="good">
+          <Tag key={name} kind="good">
             {name}
-          </Pill>
+          </Tag>
         ))}
       </span>
     </div>
@@ -368,14 +368,14 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
           <span className="pill-row">
             {held.length === 0 ? <span className="muted-inline">none left</span> : null}
             {held.map((name, index) => (
-              <Pill key={`${index}-${name}`} kind="owned">
+              <Tag key={`${index}-${name}`} kind="plain">
                 {name}
-              </Pill>
+              </Tag>
             ))}
             {expedition.consumedSupplyIds.map((id, index) => (
-              <Pill key={`used-${index}`} kind="bad" title="Used up">
+              <Tag key={`used-${index}`} kind="bad" title="Used up">
                 {supplyName(id)} used
-              </Pill>
+              </Tag>
             ))}
           </span>
         </div>
@@ -458,9 +458,9 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
           <span className="pill-row">
             {lootPills(stats.secured, 'nothing')}
             {stats.overflow > 0 ? (
-              <Pill kind="bad" title="Did not fit in the bag">
+              <Tag kind="bad" title="Did not fit in the bag">
                 {stats.overflow} lost
-              </Pill>
+              </Tag>
             ) : null}
           </span>
         </div>

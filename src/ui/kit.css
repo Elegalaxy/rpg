@@ -499,6 +499,8 @@ li.contract-row {
 
 dl.route-facts {
   display: grid;
+  align-items: baseline;
+  line-height: 1.5;
   grid-template-columns: max-content 1fr;
   gap: var(--s2) var(--s4, var(--s3));
   margin: var(--s3) 0;
@@ -522,4 +524,41 @@ dl.route-facts dd {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* ---- Tags: coloured text for prices, lists, and inline status ---- */
+
+.tag {
+  font-variant-numeric: tabular-nums;
+}
+
+.tag-gold {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.tag-mat {
+  color: var(--fg);
+}
+
+.tag-good {
+  color: var(--good);
+}
+
+.tag-bad {
+  color: var(--danger);
+}
+
+.tag-info {
+  color: var(--accent);
+}
+
+.tag-plain {
+  color: var(--muted);
+}
+
+.pill-row .tag + .tag::before {
+  content: '·';
+  margin-right: var(--s2);
+  color: var(--muted);
 }
