@@ -958,7 +958,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-04: Cleanup pass. Dev buttons: all eight sit behind `import.meta.env.DEV`, and a production build (`npm run build`) contains no "Dev: " text. Old saves: `src/persist/legacySaves.test.ts` loads a save in the very first shape (account-level wealth and contract, no later hero fields, no `lastSeenAt`), and checks it is valid, gains every default, moves the wealth and contract to the hero, posts a full contract board, and round-trips. New Save file panel on the Roster tab (`src/ui/character/SavePanel.tsx`; `exportSaveText` and `importSaveFromText` in `src/ui/store.ts`): export a backup, load one (a file that is not a valid save is refused and nothing changes), and start over, with confirmations. Checked in the browser (the start-over dialog opens and cancels; the offline catch-up also ran on reload). The file picker itself is covered by a unit test, not by hand. 720 tests, typecheck and lint pass.
 
 ### Step 12.2: Batch C
-- Status: `in-progress`
+- Status: `done`
 - Depends on: 12.1
 - Design: GAME_DESIGN §8, "Batch C: loot safety, bag, rules, modifiers", decided 2026-11-07.
 - Parts: (1) starting-skill node bonuses; (2) bigger bag, safe pouch, bag-full order; later parts follow the design section.

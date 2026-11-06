@@ -1,7 +1,7 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-07)
-- **Current Goal:** Batch C (plan Step 12.2) is built and pushed; waiting for the user's browser check of the new UI. Then Warden tuning and the remaining roadmap.
+- **Current Goal:** Batch C (Step 12.2) is built, pushed and browser-checked. Next: Warden tuning, skill facts showing node bonuses, remaining roadmap.
 - **Recent Changes & Files Touched (Batch C, commits c4f6ca7, cc6d59d, f567b94, 9e51c38, d2d652a; 798 tests):**
   - Part 1: the 13 starting-skill nodes each add a bonus (`src/sim/classes/starterNodes.ts`, `heroSkill` used in `automation.ts`/`combat.ts`; Shield Brace/Mark for Death/Execute in `warrior.ts`/`assassin.ts`; node text regenerated). Matrix 40 runs: Warrior Echo Knight 70 to 100% at 6 nodes, Assassin Echo Knight 8 to 28%, Ranger Echo Knight 33 to 30% (probably noise, one seed), Mage/Cleric unchanged, Warden still 0%.
   - Part 2: bag capacity 20, +2 at levels 10/20/30, +3 per worn Hauler's (max 2), +4 Deep Pockets (15 Legacy), max 36 (`src/persist/bag.ts`, `lootCapacity` in `expedition.ts`). Safe pouch: 5 most valuable carried units survive defeat (`safePouch`, `savedByPouch`). `SavedHero.bagFullOrder` 'home'|'ask' (full = under 4 room), used in `offline.ts`; stop reason `bagFull`. No courier by user decision.
@@ -15,7 +15,7 @@
   - Skill facts in Loadout and node preview (`skillInfo.ts`) still show base skill numbers, not node bonuses.
   - "Skill is ready" ignores resource cost and target availability.
   - Reference loadouts carry no supplies, so matrix numbers are unchanged by supplies.
-- **Not verified in a browser:** Rules tab (new conditions, Duplicate), supply Queue buttons, Escape now, safe pouch tags, bag capacity display, bag-full setting, Deep Pockets row, equipment cap note. Also still unchecked by the user: offline, away route, Save panel, Wear button, Going in with.
+- **Checked in the browser (2026-11-07):** Rules tab (Duplicate 7 to 8, summary, new condition options), Legacy Deep Pockets row, Equipment Critical damage and Bag room rows, running panel (bag 0/20, Safe pouch line), supply Queue and Escape now (log "on request"). Not checked: safe pouch on a real defeat, bag-full setting in play, Hauler's gear, Sturdy/Vicious in a fight. Still unchecked by the user: offline, away route, Save panel, Wear button, Going in with.
 - **Exact Next Step:** (1) Ask the user to try the Batch C UI (list above). (2) Mark Step 12.2 `done` in `doc/IMPLEMENTATION_PLAN.md` after their check. (3) Optionally run more matrix seeds for the Ranger Echo Knight dip. (4) Warden tuning needs the user's hero level, points, gear and Draught count.
 - **Ideas not in the plan yet (discussed, not decided):**
   - UI conventions under GAME_DESIGN §12; convert Equipment, Craft, Rules and Hero tabs to `Kit.tsx`.
