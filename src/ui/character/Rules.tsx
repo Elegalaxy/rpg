@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 import { selectedHero } from '../../persist/character.ts'
 import {
-  COMPARE_LABELS,
   CONDITION_KINDS,
   MAX_PRIORITY_ROWS,
   RESOURCE_NAMES,
@@ -11,8 +10,10 @@ import {
   draftsFromRows,
   kindsFor,
   newCondition,
+  operatorLabel,
   ruleSkillIds,
   skillName,
+  summarizeRule,
   validateRules,
   type ConditionDraft,
   type ConditionType,
@@ -22,6 +23,10 @@ import type { SavedHero } from '../../persist/save.ts'
 import { TARGET_PRIORITIES, type TargetPriority } from '../../sim/types.ts'
 import { Help } from '../Help.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
+
+function copyRow(row: RowDraft): RowDraft {
+  return { ...row, conditions: row.conditions.map((condition) => ({ ...condition })), kept: [...(row.kept ?? [])] }
+}
 
 function RulesForm({ hero }: { hero: SavedHero }) {
   const [rows, setRows] = useState<RowDraft[]>(() => draftsFromRows(hero.priorityRows))
@@ -116,9 +121,21 @@ function RulesForm({ hero }: { hero: SavedHero }) {
             >
               ↓
             </button>{' '}
+            <button
+              type="button"
+              aria-label={`Duplicate rule ${index + 1}`}
+              disabled={rows.length >= MAX_PRIORITY_ROWS}
+              title={rows.length >= MAX_PRIORITY_ROWS ? `A hero can have at most ${MAX_PRIORITY_ROWS} rules.` : undefined}
+              onClick={() => update([...rows.slice(0, index + 1), copyRow(row), ...rows.slice(index + 1)])}
+            >
+              Duplicate
+            </button>{' '}
             <button type="button" aria-label={`Remove rule ${index + 1}`} onClick={() => update(rows.filter((_, at) => at !== index))}>
               Remove
             </button>
+            <p className="rule-summary" aria-label={`Rule ${index + 1} summary`}>
+              {summarizeRule(row, hero.classId)}
+            </p>
             <ul>
               {row.conditions.map((condition, conditionIndex) => {
                 const kind = CONDITION_KINDS.find((entry) => entry.type === condition.type)
@@ -148,6 +165,20 @@ function RulesForm({ hero }: { hero: SavedHero }) {
                         ))}
                       </select>
                     ) : null}{' '}
+                    {condition.type === 'skillReady' ? (
+                      <select
+                        aria-label={`Rule ${index + 1} condition ${conditionIndex + 1} skill`}
+                        value={condition.skillId ?? ''}
+                        onChange={(event) => patchCondition(index, conditionIndex, { skillId: event.target.value })}
+                      >
+                        <option value="">Pick a skill</option>
+                        {skillIds.map((id) => (
+                          <option key={id} value={id}>
+                            {skillName(id)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : null}{' '}
                     <select
                       aria-label={`Rule ${index + 1} condition ${conditionIndex + 1} comparison`}
                       value={condition.operator}
@@ -155,7 +186,7 @@ function RulesForm({ hero }: { hero: SavedHero }) {
                     >
                       {(kind?.operators ?? []).map((operator) => (
                         <option key={operator} value={operator}>
-                          {COMPARE_LABELS[operator]}
+                          {operatorLabel(condition.type, operator)}
                         </option>
                       ))}
                     </select>{' '}

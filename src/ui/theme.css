@@ -900,3 +900,10 @@ button.help-mark {
 .help:focus-within .help-tip {
   display: block;
 }
+
+/* A rule's plain-language sentence, under its controls */
+.rule-summary {
+  margin: var(--s2) 0;
+  color: var(--muted);
+  font-size: 0.9em;
+}

@@ -39,6 +39,14 @@ export type ConditionType =
   | 'targetGuard'
   | 'interruptible'
   | 'specialAmmo'
+  | 'heroHpPoints'
+  | 'targetHpPoints'
+  | 'heroMissingHp'
+  | 'targetMissingHp'
+  | 'skillReady'
+  | 'fightTime'
+  | 'rank'
+  | 'bossPhase'
 
 export type ConditionKind = {
   type: ConditionType
@@ -82,7 +90,21 @@ export const CONDITION_KINDS: readonly ConditionKind[] = [
   { type: 'targetGuard', label: 'Target is in Guard stance', operators: PRESENCE, numeric: false },
   { type: 'interruptible', label: 'Telegraph can be interrupted', operators: PRESENCE, numeric: false },
   { type: 'specialAmmo', label: 'Special arrows', operators: COMPARE, numeric: true, classes: ['ranger'] },
+  { type: 'heroHpPoints', label: 'Hero HP (points)', operators: COMPARE, numeric: true },
+  { type: 'targetHpPoints', label: 'Target HP (points)', operators: COMPARE, numeric: true },
+  { type: 'heroMissingHp', label: 'Hero missing HP (points)', operators: COMPARE, numeric: true },
+  { type: 'targetMissingHp', label: 'Target missing HP (points)', operators: COMPARE, numeric: true },
+  { type: 'skillReady', label: 'Skill is ready', operators: PRESENCE, numeric: false },
+  { type: 'fightTime', label: 'Fight time (seconds)', operators: COMPARE, numeric: true },
+  { type: 'rank', label: 'Target echo rank', operators: COMPARE, numeric: true },
+  { type: 'bossPhase', label: 'Target boss phase', operators: COMPARE, numeric: true },
 ]
+
+/** Operator text for one condition type. A skill-ready check reads "is ready", not "is present". */
+export function operatorLabel(type: ConditionType, operator: string): string {
+  if (type === 'skillReady') return operator === 'present' ? 'is ready' : 'is not ready'
+  return COMPARE_LABELS[operator] ?? operator
+}
 
 export const RESOURCE_NAMES: { [classId in HeroClass]: string } = {
   warrior: 'Fury',
@@ -109,6 +131,8 @@ export type ConditionDraft = {
   operator: string
   value: string
   statusId: string
+  /** The skill a "skill is ready" condition checks. */
+  skillId?: string
 }
 
 export type RowDraft = {
@@ -174,6 +198,20 @@ export function buildCondition(draft: ConditionDraft): AutomationCondition | str
         return { kind: 'enemyCount', operator: compare, value: amount }
       case 'telegraphWithin':
         return { kind: 'telegraph', operator: 'atMost', value: Math.round(amount * 1000) }
+      case 'heroHpPoints':
+        return { kind: 'hpPoints', who: 'hero', measure: 'current', operator: compare, value: amount }
+      case 'targetHpPoints':
+        return { kind: 'hpPoints', who: 'target', measure: 'current', operator: compare, value: amount }
+      case 'heroMissingHp':
+        return { kind: 'hpPoints', who: 'hero', measure: 'missing', operator: compare, value: amount }
+      case 'targetMissingHp':
+        return { kind: 'hpPoints', who: 'target', measure: 'missing', operator: compare, value: amount }
+      case 'fightTime':
+        return { kind: 'fightTime', operator: compare, value: Math.round(amount * 1000) }
+      case 'rank':
+        return { kind: 'rank', operator: compare, value: amount }
+      case 'bossPhase':
+        return { kind: 'bossPhase', operator: compare, value: amount }
       case 'targetStacks':
         return { kind: 'status', who: 'target', statusId: draft.statusId, measure: 'stacks', operator: compare, value: amount }
       case 'heroStacks':
@@ -184,6 +222,9 @@ export function buildCondition(draft: ConditionDraft): AutomationCondition | str
   }
   const presence = operator as 'present' | 'absent'
   switch (draft.type) {
+    case 'skillReady':
+      if (draft.skillId === undefined || draft.skillId.length === 0) return `${kind.label}: pick a skill.`
+      return { kind: 'skillReady', skillId: draft.skillId, operator: presence }
     case 'barrier':
       return { kind: 'barrier', operator: presence }
     case 'telegraph':
@@ -237,15 +278,39 @@ export function describeCondition(condition: AutomationCondition, classId: HeroC
       return condition.measure === 'stacks'
         ? `${condition.who === 'hero' ? 'Hero' : 'Target'} ${condition.statusId} stacks ${op(condition.operator)} ${condition.value}`
         : `${condition.who === 'hero' ? 'Hero' : 'Target'} ${condition.statusId} ${op(condition.operator)}`
-    default:
-      return condition.kind
+    case 'hpPoints':
+      return `${condition.who === 'hero' ? 'Hero' : 'Target'} ${condition.measure === 'missing' ? 'missing HP' : 'HP'} ${op(condition.operator)} ${condition.value}`
+    case 'skillReady':
+      return `${skillName(condition.skillId)} ${condition.operator === 'present' ? 'is ready' : 'is not ready'}`
+    case 'fightTime':
+      return `Fight time ${op(condition.operator)} ${condition.value / 1000} s`
+    case 'rank':
+      return `Target echo rank ${op(condition.operator)} ${condition.value}`
+    case 'bossPhase':
+      return `Target boss phase ${op(condition.operator)} ${condition.value}`
+    case 'enemyType':
+      return `Enemy type ${condition.operator === 'equal' ? 'is' : 'is not'} ${condition.value}`
   }
+}
+
+/** One plain sentence for a rule, for showing under its row. Conditions with a problem are left out. */
+export function summarizeRule(draft: RowDraft, classId: HeroClass): string {
+  if (draft.skillId.length === 0) return 'Pick a skill for this rule.'
+  const parts: string[] = []
+  for (const conditionDraft of draft.conditions) {
+    const built = buildCondition(conditionDraft)
+    if (typeof built !== 'string') parts.push(describeCondition(built, classId))
+  }
+  for (const extra of draft.kept ?? []) parts.push(describeCondition(extra, classId))
+  const target = draft.targetPriority === '' ? '' : ` on ${TARGET_LABELS[draft.targetPriority].toLowerCase()}`
+  const when = parts.length === 0 ? ' every time it can' : ` when ${parts.join(' and ')}`
+  return `Use ${skillName(draft.skillId)}${target}${when}.`
 }
 
 function editable(condition: AutomationCondition): boolean {
   if (condition.kind === 'status') return condition.measure !== 'remaining'
   if (condition.kind === 'telegraph') return condition.value === undefined || condition.operator === 'atMost'
-  return condition.kind !== 'enemyType' && condition.kind !== 'rank' && condition.kind !== 'bossPhase'
+  return condition.kind !== 'enemyType'
 }
 
 /** Turn saved rows back into drafts, so the editor can show and change them. Unknown shapes are dropped. */
@@ -285,6 +350,21 @@ export function draftsFromRows(rows: readonly PriorityRow[]): RowDraft[] {
           return [base(condition.stance === 'assault' ? 'targetAssault' : 'targetGuard', condition.operator)]
         case 'interruptible':
           return [base('interruptible', condition.operator)]
+        case 'hpPoints': {
+          const type: ConditionType =
+            condition.who === 'hero'
+              ? condition.measure === 'missing' ? 'heroMissingHp' : 'heroHpPoints'
+              : condition.measure === 'missing' ? 'targetMissingHp' : 'targetHpPoints'
+          return [base(type, condition.operator, String(condition.value))]
+        }
+        case 'skillReady':
+          return [{ ...base('skillReady', condition.operator), skillId: condition.skillId }]
+        case 'fightTime':
+          return [base('fightTime', condition.operator, String(condition.value / 1000))]
+        case 'rank':
+          return [base('rank', condition.operator, String(condition.value))]
+        case 'bossPhase':
+          return [base('bossPhase', condition.operator, String(condition.value))]
         case 'status':
           if (condition.measure === 'presence') {
             return [{ ...base(condition.who === 'hero' ? 'heroStatus' : 'targetStatus', condition.operator), statusId: condition.statusId }]
@@ -343,7 +423,9 @@ export function validateRules(hero: SavedHero, drafts: readonly RowDraft[]): Rul
     draft.conditions.forEach((conditionDraft, conditionIndex) => {
       const built = buildCondition(conditionDraft)
       if (typeof built === 'string') errors.push(`${label}, condition ${conditionIndex + 1}: ${built}`)
-      else conditions.push(built)
+      else if (built.kind === 'skillReady' && !available.includes(built.skillId)) {
+        errors.push(`${label}, condition ${conditionIndex + 1}: ${skillName(built.skillId)} is not in the equipped skills.`)
+      } else conditions.push(built)
     })
     if (draft.targetPriority !== '' && !(TARGET_PRIORITIES as readonly string[]).includes(draft.targetPriority)) {
       errors.push(`${label}: unknown target priority.`)

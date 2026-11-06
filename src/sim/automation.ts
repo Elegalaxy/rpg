@@ -145,6 +145,43 @@ function parseCondition(value: unknown, label: string): AutomationCondition | st
     return { kind, who: record.who, operator, value: amount }
   }
 
+  if (kind === 'hpPoints') {
+    const extra = unexpectedKey(record, ['kind', 'who', 'measure', 'operator', 'value'])
+    if (extra !== null) return `${label} has unknown field '${extra}'`
+    if (record.who !== 'hero' && record.who !== 'target') {
+      return `${label} who must be hero or target, received ${describeValue(record.who)}`
+    }
+    if (record.measure !== 'current' && record.measure !== 'missing') {
+      return `${label} measure must be current or missing, received ${describeValue(record.measure)}`
+    }
+    const operator = readCompare(record.operator)
+    if (operator === null) return `${label} operator is invalid, received ${describeValue(record.operator)}`
+    const amount = parseNumber(record.value, `${label} value`)
+    if (typeof amount === 'string') return amount
+    if (amount < 0) return `${label} value cannot be negative`
+    return { kind, who: record.who, measure: record.measure, operator, value: amount }
+  }
+
+  if (kind === 'skillReady') {
+    const extra = unexpectedKey(record, ['kind', 'skillId', 'operator'])
+    if (extra !== null) return `${label} has unknown field '${extra}'`
+    if (typeof record.skillId !== 'string' || record.skillId.length === 0) return `${label} is missing a skill id`
+    const operator = readPresence(record.operator)
+    if (operator === null) return `${label} operator is invalid, received ${describeValue(record.operator)}`
+    return { kind, skillId: record.skillId, operator }
+  }
+
+  if (kind === 'fightTime') {
+    const extra = unexpectedKey(record, ['kind', 'operator', 'value'])
+    if (extra !== null) return `${label} has unknown field '${extra}'`
+    const operator = readCompare(record.operator)
+    if (operator === null) return `${label} operator is invalid, received ${describeValue(record.operator)}`
+    const amount = parseNumber(record.value, `${label} value`)
+    if (typeof amount === 'string') return amount
+    if (amount < 0) return `${label} value cannot be negative`
+    return { kind, operator, value: amount }
+  }
+
   if (kind === 'classResource' || kind === 'specialAmmo' || kind === 'enemyCount' || kind === 'rank' || kind === 'bossPhase') {
     const extra = unexpectedKey(record, ['kind', 'operator', 'value'])
     if (extra !== null) return `${label} has unknown field '${extra}'`
@@ -601,8 +638,12 @@ function statusFailure(
 function conditionNeedsTarget(condition: AutomationCondition): boolean {
   switch (condition.kind) {
     case 'hpPercent':
+    case 'hpPoints':
     case 'status':
       return condition.who === 'target'
+    case 'skillReady':
+    case 'fightTime':
+      return false
     case 'classResource':
     case 'balance':
     case 'barrier':
@@ -642,6 +683,7 @@ function visibleTelegraph(enemy: CombatActor, tag: string | undefined): ActorTel
 
 function conditionFailure(
   state: CombatState,
+  defs: GameDefs,
   hero: CombatHero,
   enemy: CombatActor | null,
   condition: AutomationCondition,
@@ -654,6 +696,28 @@ function conditionFailure(
       const label = condition.who === 'hero' ? 'hero HP%' : 'target HP%'
       return numericFailure(label, hpPercent(actor), condition.operator, condition.value)
     }
+    case 'hpPoints': {
+      const actor = condition.who === 'hero' ? hero : enemy
+      if (actor === null) return 'no target'
+      const who = condition.who === 'hero' ? 'hero' : 'target'
+      if (condition.measure === 'missing') {
+        return numericFailure(`${who} missing HP`, Math.max(0, actor.maxHp - actor.hp), condition.operator, condition.value)
+      }
+      return numericFailure(`${who} HP`, actor.hp, condition.operator, condition.value)
+    }
+    case 'skillReady': {
+      const def = defs.skills[condition.skillId]
+      let ready = false
+      if (def !== undefined) {
+        ready =
+          def.supply === true
+            ? hero.supplies.includes(def.id)
+            : skillEquipped(hero, def.id) && skillOffCooldown(hero, def, timeMs)
+      }
+      return presenceFailure(`skill ${condition.skillId} ready`, ready, condition.operator)
+    }
+    case 'fightTime':
+      return numericFailure('fight time', timeMs, condition.operator, condition.value, 'ms')
     case 'classResource':
       return numericFailure('class resource', hero.classResource, condition.operator, condition.value)
     case 'balance': {
@@ -729,6 +793,7 @@ function conditionFailure(
 
 function conditionsFailure(
   state: CombatState,
+  defs: GameDefs,
   hero: CombatHero,
   enemy: CombatActor | null,
   row: PriorityRow,
@@ -736,7 +801,7 @@ function conditionsFailure(
 ): string | null {
   const conditions = row.conditions ?? []
   for (const condition of conditions) {
-    const reason = conditionFailure(state, hero, enemy, condition, timeMs)
+    const reason = conditionFailure(state, defs, hero, enemy, condition, timeMs)
     if (reason !== null) return reason
   }
   return null
@@ -944,7 +1009,7 @@ export function chooseHeroAction(
       }
       focus = picked.enemy
     }
-    const failed = conditionsFailure(state, hero, focus, row, timeMs)
+    const failed = conditionsFailure(state, defs, hero, focus, row, timeMs)
     if (failed !== null) {
       events.push(priorityEvent(hero, timeMs, index, skill, 'skip', failed))
       continue

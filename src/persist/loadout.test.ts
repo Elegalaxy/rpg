@@ -18,6 +18,8 @@ import {
   ruleSkillIds,
   saveLoadout,
   saveRules,
+  skillName,
+  summarizeRule,
   validateRules,
   type RowDraft,
 } from './loadout.ts'
@@ -253,5 +255,85 @@ describe('conditions the editor cannot change', () => {
     expect(result).toEqual({ ok: true, rows })
     const editedFirst = validateRules(hero(save), [{ ...drafts[0]!, conditions: [] }])
     expect(editedFirst).toEqual({ ok: true, rows: [{ skillId: 'execute', conditions: kept }] })
+  })
+})
+
+describe('Batch C rule conditions', () => {
+  it('builds the new kinds into the sim shape', () => {
+    const cases: [ReturnType<typeof newCondition>, object][] = [
+      [{ ...newCondition('heroHpPoints'), operator: 'atMost', value: '80' }, { kind: 'hpPoints', who: 'hero', measure: 'current', operator: 'atMost', value: 80 }],
+      [{ ...newCondition('targetHpPoints'), operator: 'atLeast', value: '500' }, { kind: 'hpPoints', who: 'target', measure: 'current', operator: 'atLeast', value: 500 }],
+      [{ ...newCondition('heroMissingHp'), operator: 'atLeast', value: '30' }, { kind: 'hpPoints', who: 'hero', measure: 'missing', operator: 'atLeast', value: 30 }],
+      [{ ...newCondition('targetMissingHp'), operator: 'atMost', value: '5' }, { kind: 'hpPoints', who: 'target', measure: 'missing', operator: 'atMost', value: 5 }],
+      [{ ...newCondition('fightTime'), operator: 'atLeast', value: '2.5' }, { kind: 'fightTime', operator: 'atLeast', value: 2500 }],
+      [{ ...newCondition('rank'), operator: 'equal', value: '1' }, { kind: 'rank', operator: 'equal', value: 1 }],
+      [{ ...newCondition('bossPhase'), operator: 'atLeast', value: '2' }, { kind: 'bossPhase', operator: 'atLeast', value: 2 }],
+      [{ ...newCondition('skillReady'), skillId: 'strike', operator: 'absent' }, { kind: 'skillReady', skillId: 'strike', operator: 'absent' }],
+    ]
+    for (const [input, expected] of cases) expect(buildCondition(input)).toEqual(expected)
+    expect(buildCondition(newCondition('skillReady'))).toBe('Skill is ready: pick a skill.')
+    expect(buildCondition({ ...newCondition('heroMissingHp'), value: '-1' })).toBe('Hero missing HP (points) cannot be negative.')
+  })
+
+  it('round-trips each new kind through drafts and keeps it editable', () => {
+    const rows = [
+      {
+        skillId: 'strike',
+        conditions: [
+          { kind: 'hpPoints', who: 'target', measure: 'missing', operator: 'atLeast', value: 40 },
+          { kind: 'skillReady', skillId: 'strike', operator: 'present' },
+          { kind: 'fightTime', operator: 'atMost', value: 4000 },
+          { kind: 'rank', operator: 'atLeast', value: 1 },
+          { kind: 'bossPhase', operator: 'equal', value: 2 },
+        ],
+      },
+    ] as const
+    const drafts = draftsFromRows(rows as never)
+    expect(drafts[0]?.kept).toEqual([])
+    expect(drafts[0]?.conditions.map((c) => c.type)).toEqual(['targetMissingHp', 'skillReady', 'fightTime', 'rank', 'bossPhase'])
+    expect(drafts[0]?.conditions[2]?.value).toBe('4')
+    const rebuilt = drafts[0]!.conditions.map((c) => buildCondition(c))
+    expect(rebuilt).toEqual(rows[0].conditions)
+  })
+
+  it('validates a skill-ready condition against the equipped skills', () => {
+    const save = heroSave('warrior')
+    const h = hero(save)
+    const [first] = ruleSkillIds(h)
+    const ok = validateRules(h, [draft(first!, { conditions: [{ ...newCondition('skillReady'), skillId: first!, operator: 'present' }] })])
+    expect(ok.ok).toBe(true)
+    const bad = validateRules(h, [draft(first!, { conditions: [{ ...newCondition('skillReady'), skillId: 'fireball', operator: 'present' }] })])
+    expect(bad.ok).toBe(false)
+    const unset = validateRules(h, [draft(first!, { conditions: [newCondition('skillReady')] })])
+    expect(unset.ok).toBe(false)
+  })
+
+  it('writes a plain sentence for a rule', () => {
+    const save = heroSave('warrior')
+    const [first] = ruleSkillIds(hero(save))
+    const name = skillName(first!)
+    expect(summarizeRule(draft(first!), 'warrior')).toBe(`Use ${name} every time it can.`)
+    expect(summarizeRule(draft(''), 'warrior')).toBe('Pick a skill for this rule.')
+    const text = summarizeRule(
+      draft(first!, {
+        targetPriority: 'lowestHpPercent',
+        conditions: [
+          { ...newCondition('heroMissingHp'), operator: 'atLeast', value: '30' },
+          { ...newCondition('fightTime'), operator: 'atMost', value: '10' },
+        ],
+      }),
+      'warrior',
+    )
+    expect(text).toBe(`Use ${name} on lowest hp % when Hero missing HP is at least 30 and Fight time is at most 10 s.`)
+  })
+
+  it('keeps old saved rules valid and accepts 12 rules but not 13', () => {
+    const save = heroSave('warrior')
+    const h = hero(save)
+    const [first] = ruleSkillIds(h)
+    const rows = Array.from({ length: MAX_PRIORITY_ROWS }, () => draft(first!))
+    expect(validateRules(h, rows).ok).toBe(true)
+    expect(validateRules(h, [...rows, draft(first!)]).ok).toBe(false)
+    expect(validateRules(h, draftsFromRows(h.priorityRows)).ok).toBe(true)
   })
 })

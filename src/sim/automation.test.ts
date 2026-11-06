@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { chooseHeroAction, queueManualAction, setPriorityRules, skipReason } from './automation.ts'
+import { chooseHeroAction, parsePriorityRules, queueManualAction, setPriorityRules, skipReason } from './automation.ts'
 import { createCombat, stepCombat } from './combat.ts'
 import { formatEvent } from './log.ts'
 import { nextFloat } from './rng.ts'
@@ -1488,5 +1488,121 @@ describe('manual skill queue', () => {
     })
     expect(heroAction(state)).toMatchObject({ action: 'skill', skillId: follow.id })
     expect(state.queuedSkillId).toBeNull()
+  })
+})
+
+describe('point, readiness and time conditions', () => {
+  const ready = makeSkill({
+    id: 'ready',
+    name: 'Ready Cut',
+    effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+  })
+  const follow = makeSkill({
+    id: 'follow',
+    name: 'Follow Cut',
+    cooldownSeconds: 30,
+    effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }],
+  })
+  const defs = defsFor([ready, follow])
+
+  function chosen(conditions: AutomationCondition[], prepare?: (state: CombatState) => void): string | null {
+    const state = createCombat(
+      warriorSetup({ equipped: [ready.id, follow.id], rows: [{ skillId: ready.id, conditions }] }),
+      defs,
+      1,
+    )
+    if (prepare !== undefined) prepare(state)
+    const choice = chooseHeroAction(state, defs, state.hero, state.hero.nextReadyMs)
+    return choice.kind === 'skill' ? choice.skill.id : null
+  }
+
+  it('compares hero HP in points', () => {
+    const condition: AutomationCondition = { kind: 'hpPoints', who: 'hero', measure: 'current', operator: 'atMost', value: 100 }
+    expect(chosen([condition])).toBeNull()
+    expect(chosen([condition], (state) => (state.hero.hp = 100))).toBe(ready.id)
+    expect(chosen([condition], (state) => (state.hero.hp = 101))).toBeNull()
+  })
+
+  it('compares target HP in points', () => {
+    const condition: AutomationCondition = { kind: 'hpPoints', who: 'target', measure: 'current', operator: 'atLeast', value: 500_000 }
+    expect(chosen([condition])).toBe(ready.id)
+    expect(chosen([condition], (state) => (enemyAt(state, 0).hp = 499_999))).toBeNull()
+  })
+
+  it('compares missing HP for the hero and the target', () => {
+    const hero: AutomationCondition = { kind: 'hpPoints', who: 'hero', measure: 'missing', operator: 'atLeast', value: 50 }
+    expect(chosen([hero])).toBeNull()
+    expect(chosen([hero], (state) => (state.hero.hp = state.hero.maxHp - 50))).toBe(ready.id)
+    const target: AutomationCondition = { kind: 'hpPoints', who: 'target', measure: 'missing', operator: 'atLeast', value: 1000 }
+    expect(chosen([target])).toBeNull()
+    expect(chosen([target], (state) => (enemyAt(state, 0).hp = enemyAt(state, 0).maxHp - 1000))).toBe(ready.id)
+  })
+
+  it('checks that another skill is ready', () => {
+    const present: AutomationCondition = { kind: 'skillReady', skillId: follow.id, operator: 'present' }
+    const absent: AutomationCondition = { kind: 'skillReady', skillId: follow.id, operator: 'absent' }
+    expect(chosen([present])).toBe(ready.id)
+    expect(chosen([absent])).toBeNull()
+    const onCooldown = (state: CombatState) => {
+      state.hero.cooldowns[follow.id] = state.hero.nextReadyMs + 10_000
+    }
+    expect(chosen([present], onCooldown)).toBeNull()
+    expect(chosen([absent], onCooldown)).toBe(ready.id)
+    const missing: AutomationCondition = { kind: 'skillReady', skillId: 'nothing', operator: 'present' }
+    expect(chosen([missing])).toBeNull()
+  })
+
+  it('checks a carried supply as ready', () => {
+    const potion = makeSkill({ id: 'potion', name: 'Potion', supply: true, effects: [{ kind: 'heal', maxHpFraction: 0.3, healingCoefficient: 0 }] })
+    const withPotion = { ...defs, skills: { ...defs.skills, [potion.id]: potion } }
+    const state = createCombat(
+      warriorSetup({ equipped: [ready.id], rows: [{ skillId: ready.id, conditions: [{ kind: 'skillReady', skillId: potion.id, operator: 'present' }] }] }),
+      withPotion,
+      1,
+    )
+    expect(chooseHeroAction(state, withPotion, state.hero, 0).kind).toBe('basicAttack')
+    state.hero.supplies = [potion.id]
+    expect(chooseHeroAction(state, withPotion, state.hero, 0).kind).toBe('skill')
+  })
+
+  it('compares fight time in milliseconds', () => {
+    const late: AutomationCondition = { kind: 'fightTime', operator: 'atLeast', value: 5000 }
+    const state = createCombat(warriorSetup({ equipped: [ready.id], rows: [{ skillId: ready.id, conditions: [late] }] }), defs, 1)
+    expect(chooseHeroAction(state, defs, state.hero, 4990).kind).toBe('basicAttack')
+    expect(chooseHeroAction(state, defs, state.hero, 5000).kind).toBe('skill')
+  })
+
+  it('reads enemy rank and boss phase', () => {
+    const rank: AutomationCondition = { kind: 'rank', operator: 'atLeast', value: 2 }
+    expect(chosen([rank])).toBeNull()
+    expect(chosen([rank], (state) => (enemyAt(state, 0).rank = 2))).toBe(ready.id)
+    const phase: AutomationCondition = { kind: 'bossPhase', operator: 'equal', value: 2 }
+    expect(chosen([phase], (state) => (enemyAt(state, 0).bossPhase = 2))).toBe(ready.id)
+  })
+
+  it('parses the new kinds and refuses bad ones', () => {
+    const good = parsePriorityRules(
+      {
+        rows: [
+          {
+            skillId: ready.id,
+            conditions: [
+              { kind: 'hpPoints', who: 'hero', measure: 'missing', operator: 'atLeast', value: 10 },
+              { kind: 'skillReady', skillId: follow.id, operator: 'present' },
+              { kind: 'fightTime', operator: 'atMost', value: 3000 },
+            ],
+          },
+        ],
+      },
+      defs,
+    )
+    expect(good.ok).toBe(true)
+    const bad = (condition: unknown) => parsePriorityRules({ rows: [{ skillId: ready.id, conditions: [condition] }] }, defs)
+    expect(bad({ kind: 'hpPoints', who: 'hero', measure: 'half', operator: 'atLeast', value: 1 }).ok).toBe(false)
+    expect(bad({ kind: 'hpPoints', who: 'hero', measure: 'current', operator: 'atLeast', value: -1 }).ok).toBe(false)
+    expect(bad({ kind: 'skillReady', skillId: '', operator: 'present' }).ok).toBe(false)
+    expect(bad({ kind: 'skillReady', skillId: follow.id, operator: 'atLeast' }).ok).toBe(false)
+    expect(bad({ kind: 'fightTime', operator: 'present', value: 1 }).ok).toBe(false)
+    expect(bad({ kind: 'fightTime', operator: 'atLeast' }).ok).toBe(false)
   })
 })

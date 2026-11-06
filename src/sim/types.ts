@@ -467,6 +467,12 @@ export type AutomationCondition =
   | { kind: 'interruptible'; operator: PresenceOperator }
   | { kind: 'bossPhase'; operator: CompareOperator; value: number }
   | { kind: 'telegraph'; tag?: string; operator: ConditionOperator; value?: number }
+  /** HP in points: the actor's current HP, or the HP it is missing (max minus current). */
+  | { kind: 'hpPoints'; who: 'hero' | 'target'; measure: 'current' | 'missing'; operator: CompareOperator; value: number }
+  /** The named skill is equipped (or a supply is carried) and off cooldown. Present means ready. */
+  | { kind: 'skillReady'; skillId: string; operator: PresenceOperator }
+  /** Time since the fight began, in milliseconds. */
+  | { kind: 'fightTime'; operator: CompareOperator; value: number }
 
 export type PriorityDecision = 'skip' | 'use' | 'fallback'
 
