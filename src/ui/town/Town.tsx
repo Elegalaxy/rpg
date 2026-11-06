@@ -307,6 +307,7 @@ function Enchanter() {
   const { run, messages } = useMessages()
   const closed = save.expedition !== null
   const forSale = recipesForSale(save)
+  const heroLevel = selectedHero(save)?.progress.level ?? 1
   return (
     <>
       <p>
@@ -328,7 +329,8 @@ function Enchanter() {
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={closed || purseOf(save).gold < recipePrice(entry.modifierId)}
+                  disabled={closed || purseOf(save).gold < recipePrice(entry.modifierId) || heroLevel < modifier.minLevel}
+                  title={heroLevel < modifier.minLevel ? `Needs hero level ${modifier.minLevel}` : undefined}
                   aria-label={`Learn ${modifier.name} recipe`}
                   onClick={() => run(buyRecipeFromUi(entry.modifierId), `Learned the ${modifier.name} recipe.`)}
                 >

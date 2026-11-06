@@ -326,7 +326,8 @@ describe('worn items and recipes', () => {
 
   it('sells the unknown recipes for 25 gold per required level, once', () => {
     const base = levelled()
-    const save = { ...updatePurse(base, { gold: 300 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] } }
+    const grown = { ...base, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 12 } })) }
+    const save = { ...updatePurse(grown, { gold: 300 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] } }
     expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['mending', 'nimble', 'piercing', 'quick'])
     expect(recipePrice('nimble')).toBe(75)
     expect(recipePrice('quick')).toBe(225)
@@ -337,5 +338,11 @@ describe('worn items and recipes', () => {
     const poor = updatePurse(save, { gold: 10 })
     expect(buyRecipe(poor, 'quick')).toEqual({ ok: false, reason: `The Quick recipe costs 225 gold. You have 10.` })
     expect(buyRecipe(save, 'bogus')).toEqual({ ok: false, reason: 'Unknown recipe.' })
+  })
+
+  it('refuses a recipe the selected hero is too low level to learn', () => {
+    const base = levelled()
+    const low = { ...updatePurse(base, { gold: 1000 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] }, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 6 } })) }
+    expect(buyRecipe(low, 'quick')).toEqual({ ok: false, reason: 'The Quick recipe needs level 9. This hero is level 6.' })
   })
 })

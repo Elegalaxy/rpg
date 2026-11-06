@@ -41,6 +41,8 @@ export type OfflineSummary = {
   materials: { [materialId: string]: number }
   /** What every hero's crafts finished, as the notices say. */
   crafts: string[]
+  /** The base item of each finished craft, in the same order as `crafts`, so the shops can badge themselves. */
+  craftBaseIds: string[]
   contractsFinished: number
   discovered: string[]
   /** Why running stopped. A reason the player may need to act on. */
@@ -121,6 +123,7 @@ export function createOffline(save: SaveData, awayMs: number, crafting: boolean)
       gold: 0,
       materials: {},
       crafts: [],
+      craftBaseIds: [],
       contractsFinished: 0,
       discovered: [],
       stopped: null,
@@ -243,7 +246,10 @@ export function advanceOffline(state: OfflineState, maxSteps: number): void {
   if (state.crafting) {
     const crafted = advanceCrafting(state.save, budget * STEP_MS)
     state.save = crafted.save
-    for (const notice of crafted.finished) state.summary.crafts.push(notice.text)
+    for (const notice of crafted.finished) {
+      state.summary.crafts.push(notice.text)
+      state.summary.craftBaseIds.push(notice.baseId)
+    }
   }
   let used = 0
   let seen = state.save.expedition?.history.length ?? 0

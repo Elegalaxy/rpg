@@ -1,4 +1,5 @@
 import { Help } from '../Help.tsx'
+import { Pill } from '../Kit.tsx'
 import { useState } from 'react'
 
 import { skillName } from '../../persist/loadout.ts'
@@ -24,6 +25,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
   }
 
   const tooMany = chosen.length > 4
+  const unequipped = hero.progress.learnedSkillIds.filter((id) => !hero.progress.loadout.includes(id)).length
   return (
     <section aria-label="Loadout">
       <h2>Loadout — {hero.name}</h2>
@@ -31,15 +33,25 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
         Selected: <strong data-testid="loadout-count">{chosen.length}</strong> of 4.
         <Help label="About the loadout">Choose 1 to 4 skills.</Help>
       </p>
+      {unequipped > 0 ? (
+        <p role="status" data-testid="loadout-unequipped">
+          <Pill kind="info">{unequipped} learned, not equipped</Pill> Learned skills are only used in fights once they are in your loadout.
+        </p>
+      ) : null}
       <ul>
-        {hero.progress.learnedSkillIds.map((skillId) => (
-          <li key={skillId}>
-            <label>
-              <input type="checkbox" checked={chosen.includes(skillId)} onChange={() => toggle(skillId)} />{' '}
-              {skillName(skillId)}
-            </label>
-          </li>
-        ))}
+        {hero.progress.learnedSkillIds.map((skillId) => {
+          const equipped = hero.progress.loadout.includes(skillId)
+          const picked = chosen.includes(skillId)
+          return (
+            <li key={skillId}>
+              <label>
+                <input type="checkbox" checked={picked} onChange={() => toggle(skillId)} /> {skillName(skillId)}{' '}
+                {equipped ? <Pill kind="good">In loadout</Pill> : <Pill kind="info">Not equipped</Pill>}
+                {picked !== equipped ? <Pill kind="info">{picked ? 'Will equip on save' : 'Will remove on save'}</Pill> : null}
+              </label>
+            </li>
+          )
+        })}
       </ul>
       {tooMany ? <p role="alert">Pick at most 4 skills.</p> : null}
       <button type="button" disabled={chosen.length < 1 || tooMany} onClick={save}>

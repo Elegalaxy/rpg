@@ -26,6 +26,7 @@ import { FightView } from '../combat/FightView.tsx'
 import {
   pushOnFromUi,
   returnFromUi,
+  setAutoEscapeFromUi,
   savePreparationFromUi,
   settleExpeditionFromUi,
   settleAndRepeatFromUi,
@@ -380,6 +381,20 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         </div>
         <DiscoveredLine />
       </div>
+      {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
+        <p>
+          <button
+            type="button"
+            aria-pressed={expedition.autoEscapeOff !== true}
+            onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}
+          >
+            Auto-escape: {expedition.autoEscapeOff === true ? 'Off' : 'On'}
+          </button>
+          <Help label="About auto-escape">
+            When on, the hero tries to escape once HP falls to your retreat setting. Switch it off to fight on; it also stops a pending retry.
+          </Help>
+        </p>
+      ) : null}
       {waiting ? (
         <div role="group" aria-label="Push on or return">
           <p>

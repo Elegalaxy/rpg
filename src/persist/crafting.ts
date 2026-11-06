@@ -2,6 +2,7 @@ import { itemBase } from '../content/items.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
+import { selectedHero } from './character.ts'
 import { wearerOf } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import { purseOf, updatePurse, withPurse, type CraftJob, type Purse, type SaveData, type SavedHero } from './save.ts'
@@ -154,6 +155,10 @@ export function buyRecipe(save: SaveData, modifierId: string): RosterResult {
   if (modifier === undefined) return { ok: false, reason: 'Unknown recipe.' }
   if (save.account.recipes.includes(modifierId)) return { ok: false, reason: `You already know the ${modifier.name} recipe.` }
   if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero to pay for the recipe.' }
+  const hero = selectedHero(save)
+  if (hero !== null && hero.progress.level < modifier.minLevel) {
+    return { ok: false, reason: `The ${modifier.name} recipe needs level ${modifier.minLevel}. This hero is level ${hero.progress.level}.` }
+  }
   const price = recipePrice(modifierId)
   const gold = purseOf(save).gold
   if (gold < price) return { ok: false, reason: `The ${modifier.name} recipe costs ${price} gold. You have ${gold}.` }
@@ -211,7 +216,7 @@ export function queueUpgrade(save: SaveData, heroId: string, itemId: string, mat
   }
 }
 
-export type CraftNotice = { jobId: string; text: string }
+export type CraftNotice = { jobId: string; text: string; baseId: string }
 
 /** End a job: the item goes to the hero who queued it, who also gains crafting experience. */
 function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: CraftNotice } {
@@ -233,7 +238,7 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
     const name = itemBase(job.baseId)?.name ?? job.baseId
     return {
       save: { ...save, heroes: keep(item) },
-      notice: { jobId: job.id, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
+      notice: { jobId: job.id, baseId: job.baseId, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
   const returned: ItemInstance = { ...job.item, itemLevel: job.item.itemLevel + 1 }
@@ -249,6 +254,7 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
     save: { ...save, heroes: worn },
     notice: {
       jobId: job.id,
+      baseId: job.item.baseId,
       text: `${name} was upgraded to item level ${returned.itemLevel}.`,
     },
   }

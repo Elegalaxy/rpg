@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - 2026-11-07 playtest batch A: recipe purchase needs the hero's level (`buyRecipe`, Enchanter button); finished-craft badges per shop (`CraftNotice.baseId`, `unseenCrafts` list in `store.ts`, `OfflineSummary.craftBaseIds`); supplies used in a lost fight are no longer returned (`applyDefeat`); Auto-escape On/Off button on the running panel (`autoEscapeOff`, `setAutoEscapeFromUi`); Loadout shows learned-but-not-equipped skills. 733 tests.
   - 2026-11-06: UI refactor to scannable components: `src/ui/Kit.tsx` + `kit.css` (Pill, CostPill, ShopRow, Kpi/KpiRow, DurabilityGrid), shop rows, Map route/run/outcome cards, sidebar stat grid and Next callout (`App.tsx`, `ExpeditionPanel.tsx`, `MapView.tsx`, `Town.tsx`, `Contracts.tsx`, `outcomeStats` in `world.ts`). Mend's cleanse kept by the user. 732 tests.
   - 2026-11-06: Mend cleanses one Poison/Bleed; Ward Charm supply + `ward-charm-rule` hero update; brewing at the Potion Shop (`brewSupply`); Deserter supply theft (`stealSupply`, `supplyTheft` event). Cleric now wins the Rootmaw 100% from 3 nodes: possibly too strong, ask the user. 728 tests.
   - Cleanup (2026-11-04): Dev buttons verified dev-only in a production build; `legacySaves.test.ts` for the oldest save shape; Save file panel (export, load, start over) on the Roster tab. 720 tests.
@@ -37,7 +38,7 @@
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
   - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** Mend's cleanse was kept and the UI refactor is done. Ask the user to try offline and the Save file panel, then pick from the ideas below.
+- **Exact Next Step:** Playtest feedback batch B (UI clarity: expedition panel, Potion Shop, materials beside gold, upgrade material comparison, skill/attribute info, AFK explanation, live used-item display) then batch C (secure loot, bag size, retreat-when-full rule, HP-value rule targets, queued item use, modifier variety; design in GAME_DESIGN first). Offline and Save panel still await the user's check.
 - **Ideas not in the plan yet (discussed, not decided):**
   - UI conventions to write under GAME_DESIGN §12: explanations in `?` tooltips, four-part shop rows with pills (amber gold, slate materials), stat cards over bullet lists, badges for unspent points and finished jobs.
   - Convert the remaining screens to `Kit.tsx` components: Equipment, Craft, Rules, and the Hero tabs.

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
+import { dealsIn, type PlaceDef } from '../content/places.ts'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../persist/equipment.ts'
@@ -498,6 +499,15 @@ export function returnFromUi(): string | null {
   return null
 }
 
+/** Switch the run's auto-escape off or back on. Takes effect on the next escape check, mid-fight included. */
+export function setAutoEscapeFromUi(on: boolean): void {
+  const expedition = saveStatus.save.expedition
+  if (expedition === null || expedition.outcome !== 'ongoing') return
+  expedition.autoEscapeOff = !on
+  debugLog('[ui]', 'auto-escape', { on })
+  commitSave(saveStatus.save, 'auto-escape toggled')
+}
+
 /** Save the preparation for the selected hero. Returns the messages for a refused draft. */
 export function savePreparationFromUi(draft: PreparationDraft): string[] {
   const hero = selectedHero(saveStatus.save)
@@ -596,16 +606,18 @@ export function getCraftNotices(): readonly string[] {
 }
 
 /** Crafts finished since the player last opened a gear shop. In memory only, so a reload clears it. */
-let unseenCrafts = 0
+let unseenCrafts: string[] = []
 
-export function getUnseenCrafts(): number {
+/** The base item of every craft finished and not yet seen. */
+export function getUnseenCrafts(): readonly string[] {
   return unseenCrafts
 }
 
-/** The player opened a gear shop and saw the finished crafts. */
-export function clearUnseenCrafts(): void {
-  if (unseenCrafts === 0) return
-  unseenCrafts = 0
+/** The player opened a gear shop and saw the crafts that shop handles; other shops keep their badges. */
+export function clearUnseenCrafts(place: PlaceDef): void {
+  const remaining = unseenCrafts.filter((baseId) => !dealsIn(place, baseId))
+  if (remaining.length === unseenCrafts.length) return
+  unseenCrafts = remaining
   saveStatus = { ...saveStatus }
   emit()
 }
@@ -620,7 +632,7 @@ export function advanceCraftingBy(elapsedMs: number): void {
   saveStatus = { ...saveStatus, save: result.save }
   if (result.finished.length > 0) {
     craftNotices = [...craftNotices, ...result.finished.map((notice) => notice.text)].slice(-5)
-    unseenCrafts += result.finished.length
+    unseenCrafts = [...unseenCrafts, ...result.finished.map((notice) => notice.baseId)]
     commitSave(saveStatus.save, 'craft finished', false)
   }
 }
@@ -695,7 +707,7 @@ function finishCatchUp(): void {
     discoveryNotices = [...discoveryNotices, ...summary.discovered]
     unseenDiscoveries += summary.discovered.length
   }
-  unseenCrafts += summary.crafts.length
+  unseenCrafts = [...unseenCrafts, ...summary.craftBaseIds]
   lastCraftTickAt = Date.now()
   awayView = summary.replayedMs >= OFFLINE_SUMMARY_MIN_MS ? { phase: 'summary', progress: 1, summary } : { phase: 'idle', progress: 0, summary: null }
   const running = saveStatus.save.expedition

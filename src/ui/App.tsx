@@ -6,7 +6,7 @@ import { statLines, statsFor } from '../persist/equipment.ts'
 import { nextHint, type Tab } from '../persist/guidance.ts'
 import { contractFor, purseOf, type SaveData } from '../persist/save.ts'
 import { isComplete } from '../persist/contracts.ts'
-import { PLACES as PLACE_LIST } from '../content/places.ts'
+import { PLACES as PLACE_LIST, dealsIn, type PlaceDef } from '../content/places.ts'
 import { scenarios } from '../content/scenarios.ts'
 import type { CombatState } from '../sim/types.ts'
 
@@ -298,11 +298,13 @@ function App() {
   const chosenHero = selectedHero(saved.save)
   const attributePoints = chosenHero?.progress.unspentAttributePoints ?? 0
   const skillPoints = chosenHero === null ? 0 : chosenHero.progress.unspentSkillPoints + chosenHero.progress.legacySkillPoints
-  const inGearShop = tab === 'town' && PLACE_LIST.some((place) => place.id === townPart && place.gear !== undefined)
+  const openShop = tab === 'town' ? PLACE_LIST.find((place) => place.id === townPart && place.gear !== undefined) : undefined
+  const craftsAt = (place: PlaceDef) => unseenCrafts.filter((baseId) => dealsIn(place, baseId)).length
 
   useEffect(() => {
-    if (inGearShop && unseenCrafts > 0) clearUnseenCrafts()
-  }, [inGearShop, unseenCrafts])
+    if (openShop !== undefined && craftsAt(openShop) > 0) clearUnseenCrafts(openShop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openShop, unseenCrafts])
 
   useEffect(() => {
     if (tab === 'map' && unseenDiscoveries > 0) clearUnseenDiscoveries()
@@ -358,7 +360,7 @@ function App() {
                 {TABS.map((entry) => (
                   <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
                     {entry.label}
-                    {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts} what="things waiting in town" /> : null}
+                    {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts.length} what="things waiting in town" /> : null}
                     {entry.id === 'map' ? <Badge count={unseenDiscoveries} what="new places discovered" /> : null}
                     {entry.id === 'heroes' ? <Badge count={attributePoints + skillPoints} what="unspent points" /> : null}
                   </button>
@@ -406,7 +408,7 @@ function App() {
                     badges={{
                       'contract-board': { count: finishedContracts, what: 'finished contracts to collect' },
                       ...Object.fromEntries(
-                        PLACE_LIST.filter((place) => place.gear !== undefined).map((place) => [place.id, { count: unseenCrafts, what: 'finished crafts' }]),
+                        PLACE_LIST.filter((place) => place.gear !== undefined).map((place) => [place.id, { count: craftsAt(place), what: 'finished crafts' }]),
                       ),
                     }}
                   />

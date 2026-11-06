@@ -250,6 +250,8 @@ export type ExpeditionState = {
    * Rising above the threshold does not clear it.
    */
   escapeRetryMs: number | null
+  /** The player switched auto-escape off for this run. Absent or false means the thresholds apply. */
+  autoEscapeOff?: boolean
   /** Every escape attempt on this road. The fight log is cleared when combat ends. */
   escapeLog: EscapeEvent[]
 }
@@ -1066,6 +1068,8 @@ function defeatedByBoss(combat: CombatState): boolean {
  */
 function applyDefeat(state: ExpeditionState, combat: CombatState): void {
   state.outcome = 'defeat'
+  // Supplies the hero used in the lost fight are gone; settling returns only what is still packed.
+  syncSupplies(state, combat.hero.supplies)
   state.unsecured = []
   loseDurability(state)
   payRescueFee(state)
@@ -1219,6 +1223,7 @@ function retreatFromCombat(state: ExpeditionState): void {
 function tryEscape(state: ExpeditionState): boolean {
   const combat = state.combat
   if (combat === null || combat.outcome !== 'ongoing') return false
+  if (state.autoEscapeOff === true) return false
   const hero = combat.hero
   const threshold = metThreshold(state, hero.hp, hero.maxHp)
   if (threshold === null) return false

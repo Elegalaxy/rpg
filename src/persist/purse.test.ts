@@ -50,7 +50,8 @@ describe('each hero keeps its own purse', () => {
   })
 
   it('shares a recipe bought by one hero, paid from that hero\'s gold only', () => {
-    const save = updatePurse(twoHeroes(), { gold: 100 }, 'hero-1')
+    const base = updatePurse(twoHeroes(), { gold: 100 }, 'hero-1')
+    const save = { ...base, heroes: base.heroes.map((h) => (h.id === 'hero-1' ? { ...h, progress: { ...h.progress, level: 3 } } : h)) }
     const learned = ok(buyRecipe(ok(selectHero(save, 'hero-1')), 'nimble'))
     expect(learned.account.recipes).toContain('nimble')
     expect(purseOf(learned, 'hero-1').gold).toBe(25)
