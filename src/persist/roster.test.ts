@@ -8,6 +8,7 @@ import { HERO_RACES } from '../sim/progression.ts'
 import {
   NAME_MAX,
   createHero,
+  deleteHero,
   freeSlots,
   nameProblem,
   selectHero,
@@ -123,5 +124,26 @@ describe('hero creation', () => {
     expect(selectHero(running, 'hero-2').ok).toBe(true)
     const created = createHero(unlockAllSlots(running), { name: 'Three', race: 'undead', classId: 'cleric' })
     expect(created.ok && created.save.selectedHeroId).toBe('hero-2')
+  })
+})
+
+describe('hero deletion', () => {
+  const two = () => must(createHero(must(createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })), { name: 'Brin', race: 'elf', classId: 'mage' }))
+
+  it('removes the hero, frees the slot, and moves the selection to a hero that is left', () => {
+    const save = must(selectHero(two(), 'hero-1'))
+    const after = must(deleteHero(save, 'hero-1'))
+    expect(after.heroes.map((hero) => hero.id)).toEqual(['hero-2'])
+    expect(after.selectedHeroId).toBe('hero-2')
+    expect(freeSlots(after)).toBe(freeSlots(save) + 1)
+    expect(must(deleteHero(after, 'hero-2')).selectedHeroId).toBeNull()
+  })
+
+  it('keeps the selection when another hero goes, and refuses unknown heroes and running expeditions', () => {
+    const save = must(selectHero(two(), 'hero-1'))
+    expect(must(deleteHero(save, 'hero-2')).selectedHeroId).toBe('hero-1')
+    expect(deleteHero(save, 'nobody')).toEqual({ ok: false, reason: 'That hero is not on the roster.' })
+    const running = { ...save, expedition: {} as NonNullable<SaveData['expedition']> }
+    expect(deleteHero(running, 'hero-2')).toEqual({ ok: false, reason: 'Finish the expedition before deleting a hero.' })
   })
 })

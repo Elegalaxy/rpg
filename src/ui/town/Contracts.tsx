@@ -1,5 +1,5 @@
 import { Help } from '../Help.tsx'
-import { Pill, ShopRow } from '../Kit.tsx'
+import { Pill } from '../Kit.tsx'
 import { purseOf } from '../../persist/save.ts'
 import { useState } from 'react'
 
@@ -28,32 +28,38 @@ export function Contracts() {
         </Help>
       </p>
       {board.length === 0 ? <p>Nothing is posted. Select a hero to see their board.</p> : null}
-      <ul className="shop-rows">
+      <ul className="contract-rows">
         {board.map((def) => {
           const entry = active.find((item) => item.contractId === def.id)
           const done = entry !== undefined && entry.progress >= def.count
+          const shown = entry === undefined ? 0 : Math.min(entry.progress, def.count)
           return (
-            <ShopRow
-              key={def.id}
-              testId={`contract-${def.id}`}
-              name={def.name}
-              effect={def.description}
-              costs={[[{ kind: 'gold', amount: def.reward.gold, prefix: '+' }]]}
-              pills={
-                <>
-                  <Pill kind="mat">
-                    {def.reward.materialQuantity} {def.reward.materialId}
-                  </Pill>
-                  <Pill kind="info">{def.reward.xp} XP</Pill>
-                  {entry !== undefined ? (
-                    <Pill kind={done ? 'good' : 'owned'} testId={`progress-${def.id}`}>
+            <li key={def.id} className={`contract-row${done ? ' contract-done' : ''}`} data-testid={`contract-${def.id}`}>
+              <div className="contract-main">
+                <strong>{def.name}</strong>
+                <span className="contract-desc">{def.description}</span>
+                {entry !== undefined ? (
+                  <span className="contract-progress">
+                    <span className="progress-bar" aria-hidden="true">
+                      <span style={{ width: `${Math.round((shown / def.count) * 100)}%` }} />
+                    </span>
+                    <span data-testid={`progress-${def.id}`}>
                       Progress {entry.progress} of {def.count}
-                    </Pill>
-                  ) : null}
-                </>
-              }
-              actions={
-                entry === undefined ? (
+                    </span>
+                    {done ? <Pill kind="good">Done</Pill> : null}
+                  </span>
+                ) : null}
+              </div>
+              <div className="contract-reward">
+                <span className="contract-reward-title">Reward</span>
+                <span className="contract-reward-gold">+{def.reward.gold} gold</span>
+                <span>
+                  {def.reward.materialQuantity} {def.reward.materialId}
+                </span>
+                <span>{def.reward.xp} XP</span>
+              </div>
+              <div className="shop-actions">
+                {entry === undefined ? (
                   <button
                     type="button"
                     className="btn-primary"
@@ -71,9 +77,9 @@ export function Contracts() {
                   <button type="button" className="btn-danger" disabled={closed} aria-label={`Abandon ${def.name}`} onClick={() => run(abandonContractFromUi(def.id), `Abandoned ${def.name}.`)}>
                     Abandon
                   </button>
-                )
-              }
-            />
+                )}
+              </div>
+            </li>
           )
         })}
       </ul>

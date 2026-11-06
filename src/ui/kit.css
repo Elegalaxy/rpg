@@ -168,6 +168,19 @@ li.shop-row {
   color: var(--warn);
 }
 
+.kpi-gold .kpi-value {
+  color: var(--gold);
+}
+
+.kpi-compact {
+  padding: var(--s1) var(--s3);
+}
+
+.kpi-compact .kpi-value {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---- Durability: a 4-wide grid of small bars ---- */
 
 ul.durability-grid {
@@ -314,4 +327,199 @@ p.muted {
   content: '→';
   margin-right: var(--s2);
   color: var(--muted);
+}
+
+
+/* ---- Purse: gold, debt, and materials side by side ---- */
+
+.purse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+
+.purse-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+/* ---- Supply cards: one potion, with Buy and Brew as two clearly separate options ---- */
+
+ul.supply-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: 0;
+  list-style: none;
+}
+
+li.supply-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.supply-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s1) var(--s3);
+}
+
+.supply-effect {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.supply-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--s2);
+}
+
+.supply-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.supply-option-title {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.supply-option-cost {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+}
+
+.supply-option-note {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+/* ---- Contract rows: what it is, what it pays, then the button ---- */
+
+ul.contract-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: 0;
+  list-style: none;
+}
+
+li.contract-row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) minmax(11rem, 1.2fr) auto;
+  align-items: center;
+  gap: var(--s2) var(--s4, var(--s3));
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.contract-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.contract-desc {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.contract-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 0.85rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.contract-done .progress-bar > span {
+  background: var(--good);
+}
+
+.contract-reward {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.contract-reward-title {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.contract-reward-gold {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  li.contract-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Route facts: plain labelled lines instead of a wall of badges ---- */
+
+dl.route-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--s2) var(--s4, var(--s3));
+  margin: var(--s3) 0;
+}
+
+dl.route-facts dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+dl.route-facts dd {
+  margin: 0;
+}
+
+.fact-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }

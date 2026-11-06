@@ -5,11 +5,12 @@ import { Row } from '../Row.tsx'
 import { MAX_SLOTS } from '../../persist/save.ts'
 import { xpToNextLevel } from '../../sim/stats.ts'
 import { freeSlots } from '../../persist/roster.ts'
-import { chooseHero, devUnlockAllSlots, useSaveStatus } from '../store.ts'
+import { chooseHero, deleteHeroFromUi, devUnlockAllSlots, useSaveStatus } from '../store.ts'
 
 export function Roster() {
   const { save } = useSaveStatus()
   const [error, setError] = useState<string | null>(null)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
   return (
     <section aria-label="Roster">
       <h2>Roster</h2>
@@ -32,12 +33,43 @@ export function Roster() {
             <Row
               key={hero.id}
               actions={
-                selected ? (
-                  <em>Selected</em>
+                confirmingId === hero.id ? (
+                  <>
+                    <span role="alert">Delete {hero.name} for good?</span>
+                    <button
+                      type="button"
+                      className="btn-danger"
+                      onClick={() => {
+                        setError(deleteHeroFromUi(hero.id))
+                        setConfirmingId(null)
+                      }}
+                    >
+                      Confirm delete
+                    </button>
+                    <button type="button" onClick={() => setConfirmingId(null)}>
+                      Cancel
+                    </button>
+                  </>
                 ) : (
-                  <button type="button" className="btn-primary" onClick={() => setError(chooseHero(hero.id))}>
-                    Select
-                  </button>
+                  <>
+                    {selected ? (
+                      <em>Selected</em>
+                    ) : (
+                      <button type="button" className="btn-primary" onClick={() => setError(chooseHero(hero.id))}>
+                        Select
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-danger"
+                      disabled={save.expedition !== null}
+                      title={save.expedition !== null ? 'Finish the expedition first' : undefined}
+                      aria-label={`Delete ${hero.name}`}
+                      onClick={() => setConfirmingId(hero.id)}
+                    >
+                      Delete
+                    </button>
+                  </>
                 )
               }
             >

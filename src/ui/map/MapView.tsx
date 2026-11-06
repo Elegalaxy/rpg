@@ -11,7 +11,7 @@ import {
 } from '../../persist/world.ts'
 import { legs, nodes, routes } from '../../content/world.ts'
 import { getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
-import { Kpi, KpiRow, Pill } from '../Kit.tsx'
+import { Kpi, KpiRow } from '../Kit.tsx'
 
 import './map.css'
 
@@ -110,36 +110,29 @@ export function MapView() {
           <Kpi label="Fights" value={info.fights} />
           <Kpi label="One way" value={`${info.travelSeconds} s`} />
         </KpiRow>
-        <ol className="path-crumbs" aria-label="Path">
-          {info.nodeNames.map((name) => (
-            <li key={name}>
-              <Pill kind="info">{name}</Pill>
-            </li>
-          ))}
-        </ol>
-        <div className="pill-lines">
-          <div className="pill-line">
-            <small className="pill-label">Enemies</small>
-            <span className="pill-row">
+        <dl className="route-facts">
+          <dt>Path</dt>
+          <dd>{info.nodeNames.join(' → ')}</dd>
+          <dt>Enemies</dt>
+          <dd>
+            <ul className="fact-list">
               {info.enemyNames.map((name) => (
-                <Pill key={name} kind="bad">
-                  {name}
-                </Pill>
+                <li key={name}>{name}</li>
               ))}
-              {info.bossHidden ? <Pill kind="owned">Boss unseen until arrival</Pill> : null}
-            </span>
-          </div>
-          <div className="pill-line">
-            <small className="pill-label">Resources</small>
-            <span className="pill-row">
+              {info.bossHidden ? <li className="muted-inline">Boss unseen until arrival</li> : null}
+            </ul>
+          </dd>
+          <dt>Resources</dt>
+          <dd>
+            <ul className="fact-list">
               {info.resources.map((resource) => (
-                <Pill key={resource.name} kind="mat" title={resource.name}>
-                  {resource.name} · {resource.quantity} {resource.materialId}
-                </Pill>
+                <li key={resource.name}>
+                  {resource.name} <span className="muted-inline">· {resource.quantity} {resource.materialId}</span>
+                </li>
               ))}
-            </span>
-          </div>
-        </div>
+            </ul>
+          </dd>
+        </dl>
         {expedition === null ? (
           <>
             <button

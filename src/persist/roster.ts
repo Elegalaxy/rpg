@@ -117,6 +117,19 @@ export function selectHero(save: SaveData, heroId: string): RosterResult {
   return { ok: true, save: { ...save, selectedHeroId: heroId } }
 }
 
+/**
+ * Remove a hero for good, with their purse, gear, and crafting queue. Recipes, the map, and slots belong to the
+ * account and stay. Refused while an expedition runs. If the selected hero goes, the first one left is selected.
+ */
+export function deleteHero(save: SaveData, heroId: string): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  if (save.expedition !== null) return { ok: false, reason: 'Finish the expedition before deleting a hero.' }
+  const heroes = save.heroes.filter((entry) => entry.id !== heroId)
+  const selectedHeroId = save.selectedHeroId === heroId ? (heroes[0]?.id ?? null) : save.selectedHeroId
+  return { ok: true, save: { ...save, heroes, selectedHeroId } }
+}
+
 /** Development builds only: open every slot so the 20 pairs can be checked by hand. */
 export function unlockAllSlots(save: SaveData): SaveData {
   return { ...save, account: { ...save.account, slots: MAX_SLOTS } }

@@ -12,7 +12,7 @@ import { repairAllCost } from '../../persist/town.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { Help } from '../Help.tsx'
-import { Pill, ShopRow } from '../Kit.tsx'
+import { CostPill, Kpi, KpiRow, Pill, ShopRow } from '../Kit.tsx'
 import {
   buyItemFromUi,
   buyRecipeFromUi,
@@ -50,29 +50,35 @@ function useMessages(): { run: (problem: string | null, done: string) => void; m
   }
 }
 
-/** The hero's purse line, shown on every place. */
+/** The hero's purse, shown on every place: gold, debt, and each material side by side. */
 function PurseLine({ save }: { save: SaveData }) {
   const hero = selectedHero(save)
+  const purse = purseOf(save)
   return (
-    <>
-      <p>
-        {hero === null ? '' : `${hero.name}'s `}gold: <strong data-testid="gold">{purseOf(save).gold}</strong>. Debt:{' '}
-        <strong data-testid="debt">{purseOf(save).debt}</strong>.
+    <div className="purse">
+      <div className="purse-head">
+        <strong>{hero === null ? 'Purse' : `${hero.name}'s purse`}</strong>
         <Help label="About your purse">Gold, materials, and items belong to each hero. Recipes and the map are shared by all your heroes.</Help>
         {import.meta.env.DEV ? (
           <>
-            {' '}
             <button type="button" onClick={() => devTownTools('gold')}>
               Dev: +500 gold
-            </button>{' '}
+            </button>
             <button type="button" onClick={() => devTownTools('wear')}>
               Dev: wear gear down
             </button>
           </>
         ) : null}
-      </p>
+      </div>
+      <KpiRow label="Purse">
+        <Kpi compact tone="gold" label="Gold" value={<span data-testid="gold">{purse.gold}</span>} />
+        <Kpi compact tone={purse.debt > 0 ? 'bad' : undefined} label="Debt" value={<span data-testid="debt">{purse.debt}</span>} />
+        {Object.keys(MATERIAL_SELL_PRICE).map((id) => (
+          <Kpi compact key={id} label={id} value={purse.materials[id] ?? 0} />
+        ))}
+      </KpiRow>
       {save.expedition !== null ? <p>Greyhaven is closed while an expedition is running.</p> : null}
-    </>
+    </div>
   )
 }
 
@@ -194,72 +200,97 @@ function PotionShop() {
   const hero = selectedHero(save)
   const { run, messages } = useMessages()
   const closed = save.expedition !== null
-  const gold = purseOf(save).gold
+  const purse = purseOf(save)
+  const gold = purse.gold
   return (
     <>
       <p>
         "Pack up to {SUPPLY_SLOT_COUNT} before you set out. Whatever you don't use, you bring home."
       </p>
-      <ul className="shop-rows">
+      <ul className="supply-cards">
         {SUPPLIES.map((supply) => {
-          const owned = purseOf(save).supplies[supply.id] ?? 0
+          const owned = purse.supplies[supply.id] ?? 0
+          const haveMaterial = purse.materials[supply.brew.materialId] ?? 0
+          const missingMaterial = Math.max(0, supply.brew.quantity - haveMaterial)
+          const missingBrewGold = Math.max(0, supply.brew.gold - gold)
+          const brewShort =
+            missingMaterial > 0
+              ? `Need ${missingMaterial} more ${supply.brew.materialId}`
+              : missingBrewGold > 0
+                ? `Need ${missingBrewGold} more gold`
+                : null
+          const buyShort = gold < supply.price ? `Need ${supply.price - gold} more gold` : null
           return (
-            <ShopRow
-              key={supply.id}
-              name={supply.name}
-              owned={owned}
-              ownedTestId={`stash-${supply.id}`}
-              effect={supply.effect}
-              costs={[
-                [{ kind: 'gold', amount: supply.price }],
-                [
-                  { kind: 'mat', amount: supply.brew.quantity, label: supply.brew.materialId },
-                  { kind: 'gold', amount: supply.brew.gold },
-                ],
-              ]}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={closed || hero === null || gold < supply.price}
-                    aria-label={`Buy 1 ${supply.name}`}
-                    onClick={() => run(buySupplyFromUi(supply.id, 1), `Bought 1 ${supply.name}.`)}
-                  >
-                    Buy 1
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={closed || hero === null || gold < supply.price * SUPPLY_SLOT_COUNT}
-                    aria-label={`Buy ${SUPPLY_SLOT_COUNT} ${supply.name}`}
-                    onClick={() => run(buySupplyFromUi(supply.id, SUPPLY_SLOT_COUNT), `Bought ${SUPPLY_SLOT_COUNT} ${supply.name}s.`)}
-                  >
-                    Buy {SUPPLY_SLOT_COUNT}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-good"
-                    disabled={
-                      closed ||
-                      hero === null ||
-                      gold < supply.brew.gold ||
-                      (purseOf(save).materials[supply.brew.materialId] ?? 0) < supply.brew.quantity
-                    }
-                    aria-label={`Brew 1 ${supply.name}`}
-                    onClick={() => run(brewSupplyFromUi(supply.id, 1), `Brewed 1 ${supply.name}.`)}
-                  >
-                    Brew 1
-                  </button>
-                </>
-              }
-            />
+            <ShopCardRow key={supply.id}>
+              <div className="supply-head">
+                <strong>{supply.name}</strong>
+                <Pill kind="owned" title="You own this many">
+                  ×<span data-testid={`stash-${supply.id}`}>{owned}</span> owned
+                </Pill>
+                <span className="supply-effect">{supply.effect}</span>
+              </div>
+              <div className="supply-options">
+                <div className="supply-option">
+                  <span className="supply-option-title">Buy with gold</span>
+                  <span className="supply-option-cost">
+                    <CostPill cost={{ kind: 'gold', amount: supply.price }} /> each
+                  </span>
+                  <span className="button-row">
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={closed || hero === null || gold < supply.price}
+                      aria-label={`Buy 1 ${supply.name}`}
+                      onClick={() => run(buySupplyFromUi(supply.id, 1), `Bought 1 ${supply.name}.`)}
+                    >
+                      Buy 1
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={closed || hero === null || gold < supply.price * SUPPLY_SLOT_COUNT}
+                      aria-label={`Buy ${SUPPLY_SLOT_COUNT} ${supply.name}`}
+                      onClick={() => run(buySupplyFromUi(supply.id, SUPPLY_SLOT_COUNT), `Bought ${SUPPLY_SLOT_COUNT} ${supply.name}s.`)}
+                    >
+                      Buy {SUPPLY_SLOT_COUNT} <small>({supply.price * SUPPLY_SLOT_COUNT} gold)</small>
+                    </button>
+                  </span>
+                  {buyShort !== null ? <small className="supply-option-note">{buyShort}</small> : null}
+                </div>
+                <div className="supply-option">
+                  <span className="supply-option-title">Brew from materials</span>
+                  <span className="supply-option-cost">
+                    <Pill kind={missingMaterial > 0 ? 'bad' : 'mat'} title={`You have ${haveMaterial}`}>
+                      {supply.brew.quantity} {supply.brew.materialId} <small>(have {haveMaterial})</small>
+                    </Pill>
+                    +
+                    <CostPill cost={{ kind: 'gold', amount: supply.brew.gold }} />
+                  </span>
+                  <span className="button-row">
+                    <button
+                      type="button"
+                      className="btn-good"
+                      disabled={closed || hero === null || brewShort !== null}
+                      aria-label={`Brew 1 ${supply.name}`}
+                      onClick={() => run(brewSupplyFromUi(supply.id, 1), `Brewed 1 ${supply.name}.`)}
+                    >
+                      Brew 1
+                    </button>
+                  </span>
+                  {brewShort !== null ? <small className="supply-option-note">{brewShort}</small> : null}
+                </div>
+              </div>
+            </ShopCardRow>
           )
         })}
       </ul>
       {messages}
     </>
   )
+}
+
+function ShopCardRow({ children }: { children: ReactNode }) {
+  return <li className="supply-card">{children}</li>
 }
 
 function TradingPost() {

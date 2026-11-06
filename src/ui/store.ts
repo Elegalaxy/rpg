@@ -17,7 +17,7 @@ import { returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceOffline, createOffline, finishOffline, offlineDone, type OfflineState, type OfflineSummary } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
-import { createHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
+import { createHero, deleteHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
   clearSave,
   loadSave,
@@ -169,6 +169,14 @@ export function chooseHero(heroId: string): string | null {
   const result = selectHero(saveStatus.save, heroId)
   if (!result.ok) return result.reason
   commitSave(result.save, 'hero selected')
+  return null
+}
+
+/** Delete a hero for good. Returns the refusal message, or null. */
+export function deleteHeroFromUi(heroId: string): string | null {
+  const result = deleteHero(saveStatus.save, heroId)
+  if (!result.ok) return result.reason
+  commitSave(result.save, 'hero deleted')
   return null
 }
 
