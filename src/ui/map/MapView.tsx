@@ -11,6 +11,7 @@ import {
 } from '../../persist/world.ts'
 import { legs, nodes, routes } from '../../content/world.ts'
 import { getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
+import { Kpi, KpiRow, Pill } from '../Kit.tsx'
 
 import './map.css'
 
@@ -104,20 +105,41 @@ export function MapView() {
       </fieldset>
       <div aria-label="Route info">
         <h3>{info.route.name}</h3>
-        <ul>
-          <li>Path: {info.nodeNames.join(' → ')}</li>
-          <li>
-            Level band: {info.levels === null ? 'none' : `${info.levels.min} to ${info.levels.max}`}. Fights: {info.fights}. One way:{' '}
-            {info.travelSeconds} seconds.
-          </li>
-          <li>
-            Enemies: {info.enemyNames.join(', ')}
-            {info.bossHidden ? ', and a boss you will only see on arrival' : ''}
-          </li>
-          <li>
-            Resources: {info.resources.map((resource) => `${resource.name} (${resource.quantity} ${resource.materialId})`).join(', ')}
-          </li>
-        </ul>
+        <KpiRow label="Route numbers">
+          <Kpi label="Level band" value={info.levels === null ? '—' : `${info.levels.min}–${info.levels.max}`} />
+          <Kpi label="Fights" value={info.fights} />
+          <Kpi label="One way" value={`${info.travelSeconds} s`} />
+        </KpiRow>
+        <ol className="path-crumbs" aria-label="Path">
+          {info.nodeNames.map((name) => (
+            <li key={name}>
+              <Pill kind="info">{name}</Pill>
+            </li>
+          ))}
+        </ol>
+        <div className="pill-lines">
+          <div className="pill-line">
+            <small className="pill-label">Enemies</small>
+            <span className="pill-row">
+              {info.enemyNames.map((name) => (
+                <Pill key={name} kind="bad">
+                  {name}
+                </Pill>
+              ))}
+              {info.bossHidden ? <Pill kind="owned">Boss unseen until arrival</Pill> : null}
+            </span>
+          </div>
+          <div className="pill-line">
+            <small className="pill-label">Resources</small>
+            <span className="pill-row">
+              {info.resources.map((resource) => (
+                <Pill key={resource.name} kind="mat" title={resource.name}>
+                  {resource.name} · {resource.quantity} {resource.materialId}
+                </Pill>
+              ))}
+            </span>
+          </div>
+        </div>
         {expedition === null ? (
           <>
             <button

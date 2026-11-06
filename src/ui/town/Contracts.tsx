@@ -1,5 +1,5 @@
 import { Help } from '../Help.tsx'
-import { Row } from '../Row.tsx'
+import { Pill, ShopRow } from '../Kit.tsx'
 import { purseOf } from '../../persist/save.ts'
 import { useState } from 'react'
 
@@ -27,15 +27,31 @@ export function Contracts() {
           Won fights count when an expedition ends, even after a defeat. New work is posted each time you come back to town.
         </Help>
       </p>
-      <ul className="rows">
-        {board.length === 0 ? <p>Nothing is posted. Select a hero to see their board.</p> : null}
+      {board.length === 0 ? <p>Nothing is posted. Select a hero to see their board.</p> : null}
+      <ul className="shop-rows">
         {board.map((def) => {
           const entry = active.find((item) => item.contractId === def.id)
           const done = entry !== undefined && entry.progress >= def.count
           return (
-            <Row
+            <ShopRow
               key={def.id}
               testId={`contract-${def.id}`}
+              name={def.name}
+              effect={def.description}
+              costs={[[{ kind: 'gold', amount: def.reward.gold, prefix: '+' }]]}
+              pills={
+                <>
+                  <Pill kind="mat">
+                    {def.reward.materialQuantity} {def.reward.materialId}
+                  </Pill>
+                  <Pill kind="info">{def.reward.xp} XP</Pill>
+                  {entry !== undefined ? (
+                    <Pill kind={done ? 'good' : 'owned'} testId={`progress-${def.id}`}>
+                      Progress {entry.progress} of {def.count}
+                    </Pill>
+                  ) : null}
+                </>
+              }
               actions={
                 entry === undefined ? (
                   <button
@@ -57,17 +73,7 @@ export function Contracts() {
                   </button>
                 )
               }
-            >
-              <strong>{def.name}</strong> — {def.description}
-              <span className="row-note">
-                Reward: {def.reward.xp} XP, {def.reward.gold} gold, {def.reward.materialQuantity} {def.reward.materialId}.{' '}
-                {entry !== undefined ? (
-                  <span data-testid={`progress-${def.id}`}>
-                    Progress {entry.progress} of {def.count}.
-                  </span>
-                ) : null}
-              </span>
-            </Row>
+            />
           )
         })}
       </ul>

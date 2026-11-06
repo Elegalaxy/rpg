@@ -84,7 +84,8 @@ describe('the expedition panel', () => {
     expect(markup).toContain('Push on')
     expect(markup).toContain('Return to town')
     expect(markup).toContain('Momentum')
-    expect(markup).toContain('Unsecured loot')
+    expect(markup).toContain('Carrying')
+    expect(markup).toContain('Loot bag')
 
     advanceExpedition(500)
     expect(expedition().travelMs).toBe(0)

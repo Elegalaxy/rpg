@@ -214,12 +214,14 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
             ))}
         </ul>
       ) : null}
-      <p data-testid="next-hint">
-        Next: {hint.text}{' '}
-        <button type="button" onClick={() => onGo(hint.tab)}>
+      <div className="callout" data-testid="next-hint">
+        <span>
+          <strong>Next:</strong> {hint.text}
+        </span>
+        <button type="button" className="btn-primary" onClick={() => onGo(hint.tab)}>
           Go
         </button>
-      </p>
+      </div>
     </header>
   )
 }

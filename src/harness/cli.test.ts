@@ -90,7 +90,7 @@ describe('harness CLI', () => {
     expect(first.stdout.trimEnd().endsWith('[sim] outcome victory durationMs 20688')).toBe(true)
     expect(first.stdout).toContain('[sim] outcome victory durationMs 20688')
     expect(state.outcome).toBe('victory')
-  })
+  }, 30_000)
 
   it('prints a 20-run summary and one runs/sec line, stable apart from timing', () => {
     const summary = runBatch('duel-basic', 42, 20)

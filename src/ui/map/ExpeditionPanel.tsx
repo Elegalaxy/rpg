@@ -14,12 +14,13 @@ import {
   type PreparationDraft,
 } from '../../persist/preparation.ts'
 import type { SavedHero } from '../../persist/save.ts'
-import { outcomeSummary } from '../../persist/world.ts'
+import { outcomeStats } from '../../persist/world.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Help } from '../Help.tsx'
+import { DurabilityGrid, Kpi, KpiRow, Pill } from '../Kit.tsx'
 import { Row } from '../Row.tsx'
 import { FightView } from '../combat/FightView.tsx'
 import {
@@ -292,13 +293,45 @@ function encounterLabel(id: string): string {
   return id.replace(/-/g, ' ')
 }
 
-function lootLine(stacks: readonly { materialId: string; quantity: number }[]): string {
-  return stacks.length === 0 ? 'none' : stacks.map((stack) => `${stack.quantity} ${stack.materialId}`).join(', ')
+const SLOT_LABELS: { [slot: string]: string } = {
+  mainHand: 'Main Hand',
+  offHand: 'Off Hand',
+  head: 'Head',
+  chest: 'Chest',
+  hands: 'Hands',
+  feet: 'Feet',
+  accessory0: 'Accessory 1',
+  accessory1: 'Accessory 2',
 }
 
-function slotLine(expedition: ExpeditionState): string {
-  const held = expedition.supplySlots.flatMap((slot) => (slot === null ? [] : [supplyName(slot.id)]))
-  return held.length === 0 ? 'none left' : held.join(', ')
+function lootPills(stacks: readonly { materialId: string; quantity: number }[], empty: string) {
+  if (stacks.length === 0) return <span className="muted-inline">{empty}</span>
+  return (
+    <>
+      {stacks.map((stack) => (
+        <Pill key={stack.materialId} kind="mat">
+          {stack.quantity} {stack.materialId}
+        </Pill>
+      ))}
+    </>
+  )
+}
+
+function DiscoveredLine() {
+  const found = getDiscoveryNotices()
+  if (found.length === 0) return null
+  return (
+    <div className="pill-line" data-testid="discovered">
+      <small className="pill-label">Discovered</small>
+      <span className="pill-row">
+        {found.map((name) => (
+          <Pill key={name} kind="good">
+            {name}
+          </Pill>
+        ))}
+      </span>
+    </div>
+  )
 }
 
 function Running({ expedition }: { expedition: ExpeditionState }) {
@@ -306,30 +339,47 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
   const waiting = expeditionWaiting()
   const carried = expedition.unsecured.reduce((sum, stack) => sum + stack.quantity, 0)
   const resource = expedition.hero
+  const hpFraction = resource.maxHp > 0 ? resource.hp / resource.maxHp : 0
+  const held = expedition.supplySlots.flatMap((slot) => (slot === null ? [] : [supplyName(slot.id)]))
   return (
     <section aria-label="Expedition">
       <h3>Expedition</h3>
-      <ul>
-        <li>
-          HP {Math.round(resource.hp)} / {Math.round(resource.maxHp)}.{' '}
-          {resource.classResourceId.length > 0
-            ? `${resource.classResourceId} ${Math.round(resource.classResource)} / ${resource.classResourceMax}.`
-            : ''}
-        </li>
-        <li data-testid="momentum">
-          Momentum {expedition.momentum} of {MOMENTUM_CAP}
-        </li>
-        <li data-testid="unsecured">
-          Unsecured loot ({carried} of {LOOT_CAPACITY}): {lootLine(expedition.unsecured)}. Lost if you are defeated or retreat.
-        </li>
-        <li>Secured loot: {lootLine(expedition.secured)}.</li>
-        <li data-testid="supplies">
-          Supplies: {slotLine(expedition)}.
-          {expedition.consumedSupplyIds.length > 0 ? ` Used: ${expedition.consumedSupplyIds.map(supplyName).join(', ')}.` : ''}
-        </li>
-        <li>Fights finished: {expedition.history.length}.</li>
-        {getDiscoveryNotices().length > 0 ? <li data-testid="discovered">Discovered: {getDiscoveryNotices().join(', ')}.</li> : null}
-      </ul>
+      <KpiRow label="Run status">
+        <Kpi label="HP" value={`${Math.round(resource.hp)}/${Math.round(resource.maxHp)}`} tone={hpFraction < 0.4 ? 'bad' : hpFraction < 0.7 ? 'warn' : 'good'} />
+        {resource.classResourceId.length > 0 ? (
+          <Kpi label={resource.classResourceId} value={`${Math.round(resource.classResource)}/${resource.classResourceMax}`} />
+        ) : null}
+        <Kpi label="Momentum" value={`${expedition.momentum}/${MOMENTUM_CAP}`} testId="momentum" />
+        <Kpi label="Fights won" value={expedition.history.filter((entry) => entry.outcome === 'victory').length} />
+        <Kpi label="Loot bag" value={`${carried}/${LOOT_CAPACITY}`} testId="loot-bag" />
+      </KpiRow>
+      <div className="pill-lines">
+        <div className="pill-line" data-testid="unsecured" title="Lost if you are defeated or retreat">
+          <small className="pill-label">Carrying</small>
+          <span className="pill-row">{lootPills(expedition.unsecured, 'nothing yet')}</span>
+        </div>
+        <div className="pill-line">
+          <small className="pill-label">Secured</small>
+          <span className="pill-row">{lootPills(expedition.secured, 'nothing yet')}</span>
+        </div>
+        <div className="pill-line" data-testid="supplies">
+          <small className="pill-label">Supplies</small>
+          <span className="pill-row">
+            {held.length === 0 ? <span className="muted-inline">none left</span> : null}
+            {held.map((name, index) => (
+              <Pill key={`${index}-${name}`} kind="owned">
+                {name}
+              </Pill>
+            ))}
+            {expedition.consumedSupplyIds.map((id, index) => (
+              <Pill key={`used-${index}`} kind="bad" title="Used up">
+                {supplyName(id)} used
+              </Pill>
+            ))}
+          </span>
+        </div>
+        <DiscoveredLine />
+      </div>
       {waiting ? (
         <div role="group" aria-label="Push on or return">
           <p>
@@ -360,23 +410,74 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
 }
 
 function Ended({ expedition }: { expedition: ExpeditionState }) {
-  const summary = outcomeSummary(expedition)
+  const stats = outcomeStats(expedition)
   const [error, setError] = useState<string | null>(null)
+  const defeated = expedition.outcome === 'defeat'
+  const lootTotal = stats.secured.reduce((sum, stack) => sum + stack.quantity, 0)
+  const notes: string[] = []
+  for (const rank of stats.bossRanks) notes.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
+  if (stats.retreatedIn !== null) notes.push(`You retreated in fight ${stats.retreatedIn}. That fight gave no loot or momentum.`)
+  if (defeated) notes.push(stats.defeatedIn === null ? 'You were defeated.' : `You were defeated in fight ${stats.defeatedIn}. Unsecured loot was destroyed.`)
+  if (stats.bossLoss) notes.push('A boss defeated you this life. You can now reincarnate.')
   return (
     <section aria-label="Expedition outcome">
-      <h3 data-testid="expedition-ended">{summary.title}</h3>
-      <ul>
-        {summary.lines.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-        {getDiscoveryNotices().length > 0 ? <li data-testid="discovered">Discovered: {getDiscoveryNotices().join(', ')}.</li> : null}
-      </ul>
-      <button type="button" onClick={settleExpeditionFromUi}>
-        Return to town
-      </button>{' '}
-      <button type="button" onClick={() => setError(settleAndRepeatFromUi())}>
-        Return and run this route again
-      </button>
+      <h3 data-testid="expedition-ended">{stats.title}</h3>
+      <KpiRow label="Outcome">
+        <Kpi label="Fights won" value={stats.fightsWon} />
+        <Kpi label="XP earned" value={stats.xp} tone={stats.xp > 0 ? 'good' : undefined} />
+        {defeated ? (
+          <>
+            <Kpi label="Rescue fee" value={`${stats.rescueFee} g`} tone="bad" note={`${stats.carriedGold} g left · debt ${stats.debt}`} />
+            <Kpi label="Recovery" value={`${stats.recoveryMinutes} min`} tone="warn" />
+          </>
+        ) : (
+          <>
+            <Kpi label="Gold home" value={`${stats.carriedGold} g`} tone="good" />
+            <Kpi label="Loot secured" value={lootTotal} />
+          </>
+        )}
+      </KpiRow>
+      <div className="pill-lines">
+        <div className="pill-line">
+          <small className="pill-label">{defeated ? 'Kept' : 'Secured'}</small>
+          <span className="pill-row">
+            {lootPills(stats.secured, 'nothing')}
+            {stats.overflow > 0 ? (
+              <Pill kind="bad" title="Did not fit in the bag">
+                {stats.overflow} lost
+              </Pill>
+            ) : null}
+          </span>
+        </div>
+        <DiscoveredLine />
+      </div>
+      {defeated ? (
+        <>
+          <h4>Gear after the fall</h4>
+          <DurabilityGrid
+            label="Gear wear"
+            pieces={stats.gear.map((piece) => ({
+              label: SLOT_LABELS[piece.slot] ?? piece.slot,
+              durability: piece.durability,
+              max: piece.maxDurability,
+              disabled: piece.disabled,
+            }))}
+          />
+        </>
+      ) : null}
+      {notes.map((note) => (
+        <p key={note} className="muted">
+          {note}
+        </p>
+      ))}
+      <div className="button-row">
+        <button type="button" className="btn-primary" onClick={settleExpeditionFromUi}>
+          Return to town
+        </button>
+        <button type="button" onClick={() => setError(settleAndRepeatFromUi())}>
+          Return and run this route again
+        </button>
+      </div>
       {error !== null ? <p role="alert">{error}</p> : null}
     </section>
   )

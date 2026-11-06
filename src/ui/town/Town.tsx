@@ -12,7 +12,7 @@ import { repairAllCost } from '../../persist/town.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { Help } from '../Help.tsx'
-import { Row } from '../Row.tsx'
+import { Pill, ShopRow } from '../Kit.tsx'
 import {
   buyItemFromUi,
   buyRecipeFromUi,
@@ -92,12 +92,15 @@ function GearShop({ place }: { place: PlaceDef }) {
   return (
     <>
       <h3>Buy</h3>
-      <ul className="rows">
+      <ul className="shop-rows">
         {shopStock(hero.progress.level, wearerOf(hero))
           .filter((entry) => dealsIn(place, entry.baseId))
           .map((entry) => (
-            <Row
+            <ShopRow
               key={entry.baseId}
+              name={entry.name}
+              effect={`Item level ${entry.itemLevel} · Quality 100%`}
+              costs={[[{ kind: 'gold', amount: entry.price }]]}
               actions={
                 <button
                   type="button"
@@ -109,18 +112,20 @@ function GearShop({ place }: { place: PlaceDef }) {
                   Buy
                 </button>
               }
-            >
-              {entry.name}, item level {entry.itemLevel}, quality 100% — {entry.price} gold
-            </Row>
+            />
           ))}
       </ul>
 
       <h3>Sell</h3>
       {worn.length + archived.length === 0 ? <p>You have nothing of this kind to sell.</p> : null}
-      <ul className="rows">
+      <ul className="shop-rows">
         {worn.map((item) => (
-          <Row
+          <ShopRow
             key={item.id}
+            name={itemName(item)}
+            owned={1}
+            effect={`Worn · Item level ${item.itemLevel}`}
+            costs={[[{ kind: 'gold', amount: itemSellPrice(item), prefix: '+' }]]}
             actions={
               <button
                 type="button"
@@ -132,30 +137,32 @@ function GearShop({ place }: { place: PlaceDef }) {
                 Sell
               </button>
             }
-          >
-            Worn: {itemName(item)}, item level {item.itemLevel} — sells for {itemSellPrice(item)} gold
-          </Row>
+          />
         ))}
         {archived.map((item) => (
-          <Row
+          <ShopRow
             key={item.id}
+            name={itemName(item)}
+            effect={`Archive · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
+            costs={[[{ kind: 'gold', amount: itemSellPrice(item), prefix: '+' }]]}
             actions={
               <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}.`)}>
                 Sell
               </button>
             }
-          >
-            {itemName(item)}, item level {item.itemLevel}, quality {Math.round(item.quality * 100)}% — sells for {itemSellPrice(item)} gold
-          </Row>
+          />
         ))}
       </ul>
 
       <h3>Repair</h3>
       {damaged.length === 0 ? <p>Nothing of this kind is damaged.</p> : null}
-      <ul className="rows">
+      <ul className="shop-rows">
         {damaged.map((item) => (
-          <Row
+          <ShopRow
             key={item.id}
+            name={itemName(item)}
+            effect={item.durability === 0 ? `Broken · ${item.durability}/${item.maxDurability}` : `Durability ${item.durability}/${item.maxDurability}`}
+            costs={[[{ kind: 'gold', amount: repairCost(item) }]]}
             actions={
               <button
                 type="button"
@@ -167,15 +174,12 @@ function GearShop({ place }: { place: PlaceDef }) {
                 Repair
               </button>
             }
-          >
-            {itemName(item)} {item.durability}/{item.maxDurability}
-            {item.durability === 0 ? ' (disabled)' : ''} — {repairCost(item)} gold
-          </Row>
+          />
         ))}
       </ul>
       {repairAllPrice > 0 ? (
         <button type="button" className="btn-good" disabled={closed || gold < repairAllPrice} onClick={() => run(repairAllFromUi(mine), 'Repaired everything worn of this kind.')}>
-          Repair everything worn here ({repairAllPrice} gold)
+          Repair everything worn here <Pill kind="gold">{repairAllPrice} gold</Pill>
         </button>
       ) : null}
       {messages}
@@ -196,12 +200,23 @@ function PotionShop() {
       <p>
         "Pack up to {SUPPLY_SLOT_COUNT} before you set out. Whatever you don't use, you bring home."
       </p>
-      <ul className="rows">
+      <ul className="shop-rows">
         {SUPPLIES.map((supply) => {
           const owned = purseOf(save).supplies[supply.id] ?? 0
           return (
-            <Row
+            <ShopRow
               key={supply.id}
+              name={supply.name}
+              owned={owned}
+              ownedTestId={`stash-${supply.id}`}
+              effect={supply.effect}
+              costs={[
+                [{ kind: 'gold', amount: supply.price }],
+                [
+                  { kind: 'mat', amount: supply.brew.quantity, label: supply.brew.materialId },
+                  { kind: 'gold', amount: supply.brew.gold },
+                ],
+              ]}
               actions={
                 <>
                   <button
@@ -238,10 +253,7 @@ function PotionShop() {
                   </button>
                 </>
               }
-            >
-              <strong>{supply.name}</strong> — {supply.effect} Buy for {supply.price} gold, or brew from {supply.brew.quantity} {supply.brew.materialId} and{' '}
-              {supply.brew.gold} gold. You have <span data-testid={`stash-${supply.id}`}>{owned}</span>.
-            </Row>
+            />
           )
         })}
       </ul>
@@ -258,10 +270,14 @@ function TradingPost() {
   return (
     <>
       {materials.length === 0 ? <p>You have no materials.</p> : null}
-      <ul className="rows">
+      <ul className="shop-rows">
         {materials.map(([id, quantity]) => (
-          <Row
+          <ShopRow
             key={id}
+            name={id.charAt(0).toUpperCase() + id.slice(1)}
+            owned={quantity}
+            effect="Crafting material"
+            costs={[[{ kind: 'gold', amount: MATERIAL_SELL_PRICE[id] ?? 0, prefix: '+' }]]}
             actions={
               <>
                 <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell 1 ${id}`} onClick={() => run(sellMaterialFromUi(id, 1), `Sold 1 ${id}.`)}>
@@ -278,9 +294,7 @@ function TradingPost() {
                 </button>
               </>
             }
-          >
-            {quantity} {id} ({MATERIAL_SELL_PRICE[id] ?? 0} gold each)
-          </Row>
+          />
         ))}
       </ul>
       {messages}
@@ -299,13 +313,17 @@ function Enchanter() {
         {forSale.length === 0 ? 'You know every recipe.' : 'Recipes for sale'}
         <Help label="About recipes">A recipe lets every hero craft gear with that modifier at the matching shop.</Help>
       </p>
-      <ul className="rows">
+      <ul className="shop-rows">
         {forSale.map((entry) => {
           const modifier = ITEM_MODIFIERS[entry.modifierId]
           if (modifier === undefined) return null
           return (
-            <Row
+            <ShopRow
               key={entry.modifierId}
+              name={modifier.name}
+              effect={`${modifier.text} · ${appliesToText(modifier)}`}
+              costs={[[{ kind: 'gold', amount: recipePrice(entry.modifierId) }]]}
+              note={<Pill kind="info">Level {modifier.minLevel}</Pill>}
               actions={
                 <button
                   type="button"
@@ -317,10 +335,7 @@ function Enchanter() {
                   Learn
                 </button>
               }
-            >
-              <strong>{modifier.name}</strong> — {modifier.text}, on {appliesToText(modifier)}. Needs hero level {modifier.minLevel}.{' '}
-              {recipePrice(entry.modifierId)} gold
-            </Row>
+            />
           )
         })}
       </ul>

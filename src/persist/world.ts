@@ -352,6 +352,52 @@ function lootText(stacks: readonly { materialId: string; quantity: number }[]): 
   return stacks.length === 0 ? 'none' : stacks.map((stack) => `${stack.quantity} ${stack.materialId}`).join(', ')
 }
 
+/** One equipped piece's wear, as the outcome card shows it. */
+export type GearWear = { slot: string; durability: number; maxDurability: number; disabled: boolean }
+
+/** The numbers of a finished expedition, for the outcome card. The same facts as `outcomeSummary`, kept as data. */
+export type OutcomeStats = {
+  title: string
+  fightsWon: number
+  xp: number
+  /** The fight a retreat happened in, counted from 1, or null. */
+  retreatedIn: number | null
+  /** The fight that was lost, counted from 1, or null. */
+  defeatedIn: number | null
+  /** Gold the hero is carrying at the end: it comes home after a safe return, and is what is left after the rescue fee after a defeat. */
+  carriedGold: number
+  rescueFee: number
+  debt: number
+  recoveryMinutes: number
+  secured: { materialId: string; quantity: number }[]
+  overflow: number
+  /** Every equipped piece. Wear only changes after a defeat. */
+  gear: GearWear[]
+  bossRanks: number[]
+  bossLoss: boolean
+}
+
+export function outcomeStats(expedition: ExpeditionState): OutcomeStats {
+  const retreated = expedition.history.find((entry) => entry.outcome === 'retreat')
+  const lost = expedition.history.find((entry) => entry.outcome === 'defeat')
+  return {
+    title: outcomeSummary(expedition).title,
+    fightsWon: expedition.history.filter((entry) => entry.outcome === 'victory').length,
+    xp: expedition.xpEarned ?? 0,
+    retreatedIn: retreated === undefined ? null : retreated.index + 1,
+    defeatedIn: lost === undefined ? null : lost.index + 1,
+    carriedGold: expedition.carriedGold,
+    rescueFee: rescueFee(expedition),
+    debt: expedition.debt,
+    recoveryMinutes: Math.round(expedition.recoveryMs / 60_000),
+    secured: expedition.secured.map((stack) => ({ ...stack })),
+    overflow: expedition.overflow,
+    gear: expedition.equipment.map((entry) => ({ slot: entry.slot, durability: entry.durability, maxDurability: entry.maxDurability, disabled: entry.disabled })),
+    bossRanks: bossVictoryRanks(expedition),
+    bossLoss: expedition.bossLossThisLife,
+  }
+}
+
 /** What a finished expedition cost and gained, taken only from its state. */
 export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
   const victories = expedition.history.filter((entry) => entry.outcome === 'victory').length

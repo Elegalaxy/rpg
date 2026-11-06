@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './ui/App.tsx'
 import { applyPalette, applyTheme, storedPalette, storedTheme } from './ui/theme.ts'
 import './ui/theme.css'
+import './ui/kit.css'
 
 applyTheme(storedTheme())
 applyPalette(storedPalette())

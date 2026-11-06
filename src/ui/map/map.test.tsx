@@ -11,7 +11,8 @@ describe('world map without a hero', () => {
     }
     expect(html).toContain('aria-label="Withered Grove, locked. Not discovered yet."')
     expect(html).toContain('aria-label="Splintered Road, discovered"')
-    expect(html).toContain('Level band: 1 to 6')
+    expect(html).toContain('Level band')
+    expect(html).toContain('1–6')
     expect(html).toContain('Select a hero first.')
     expect(html).not.toContain('hero-marker')
   })

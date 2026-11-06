@@ -1156,7 +1156,7 @@ Elemental-charge and prepared-casting keystones modify how this base kit is paid
 #### Cleric
 
 1. Smite: no Faith cost; deals 100% Magical Power; 3-second cooldown; 1.0× action time.
-2. Mend: costs 25 Faith; heals 120% Healing Power; 5-second cooldown; 1.0× action time. Since 2026-11-04 it also removes one Poison or Bleed from the hero, every stack of it, Bleed first. Measured the same day (built Cleric, 40 runs, 0/3/6/9 nodes): Rootmaw 3/100/100/100% (was 0/0/93/93%), Echo Knight 90/100/100/100% (was 87/100/100/100%).
+2. Mend: costs 25 Faith; heals 120% Healing Power; 5-second cooldown; 1.0× action time. Since 2026-11-04 it also removes one Poison or Bleed from the hero, every stack of it, Bleed first. Measured the same day (built Cleric, 40 runs, 0/3/6/9 nodes): Rootmaw 3/100/100/100% (was 0/0/93/93%), Echo Knight 90/100/100/100% (was 87/100/100/100%). The user kept it as is (2026-11-06): the Cleric's answer to Poison and Bleed is part of its identity.
 3. Ward: costs 30 Faith; creates a pre-mitigation barrier equal to 150% Healing Power for up to 8 seconds; 10-second cooldown; 0.75× action time.
 4. Consecration: costs 40 Faith; creates one 8-second field that ticks every 2 seconds for 35% Magical Power damage and 25% Healing Power recovery; 15-second cooldown; 1.2× action time. Recasting replaces and refreshes the existing field.
 5. Judgment: costs 50 Faith; deals 200% Magical Power; 10-second cooldown; 1.2× action time.

@@ -1,0 +1,317 @@
+/* Scannable building blocks (see Kit.tsx): pills, shop rows, stat cards, durability bars, callouts. */
+
+/* ---- Pills: gold is amber, materials are slate ---- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+  padding: 0 0.6em;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.pill-gold {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 45%, transparent);
+}
+
+.pill-mat {
+  color: var(--fg);
+  background: color-mix(in srgb, #64748b 24%, transparent);
+  border-color: color-mix(in srgb, #64748b 50%, transparent);
+}
+
+.pill-owned {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.pill-good {
+  color: var(--good);
+  background: color-mix(in srgb, var(--good) 14%, transparent);
+  border-color: color-mix(in srgb, var(--good) 45%, transparent);
+}
+
+.pill-bad {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+.pill-info {
+  color: var(--info);
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  border-color: color-mix(in srgb, var(--info) 45%, transparent);
+}
+
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+}
+
+/* ---- Shop rows: [name + owned] [effect] [costs] [buttons] ---- */
+
+ul.shop-rows {
+  padding: 0;
+  list-style: none;
+}
+
+li.shop-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1.1fr) minmax(8rem, 1.4fr) minmax(9.5rem, 1.2fr) auto;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.shop-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+}
+
+.shop-effect {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.shop-costs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s1);
+}
+
+.cost-group {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.cost-or {
+  color: var(--muted);
+}
+
+.shop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+@media (max-width: 720px) {
+  li.shop-row {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* ---- Stat cards: a big number over a small muted label ---- */
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: var(--s2);
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.kpi-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.kpi-note {
+  color: var(--muted);
+}
+
+.kpi-good .kpi-value {
+  color: var(--good);
+}
+
+.kpi-bad .kpi-value {
+  color: var(--danger);
+}
+
+.kpi-warn .kpi-value {
+  color: var(--warn);
+}
+
+/* ---- Durability: a 4-wide grid of small bars ---- */
+
+ul.durability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li.durability {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: var(--s1) var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  font-size: 0.8rem;
+}
+
+.durability-name {
+  font-weight: 600;
+}
+
+.durability-bar {
+  display: block;
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.durability-bar span {
+  display: block;
+  height: 100%;
+  background: var(--good);
+}
+
+.durability-warn .durability-bar span {
+  background: var(--warn);
+}
+
+.durability-bad .durability-bar span {
+  background: var(--danger);
+}
+
+.durability-value {
+  color: var(--muted);
+}
+
+.durability-bad .durability-value {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  ul.durability-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---- Callout: a highlighted line that points at the next thing to do ---- */
+
+.callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2) var(--s3);
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 0.9rem;
+}
+
+.callout strong {
+  color: var(--accent);
+}
+
+p.muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---- Labelled pill lines and button rows ---- */
+
+.pill-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.pill-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s3);
+}
+
+.pill-label {
+  min-width: 5.5rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+}
+
+.muted-inline {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+/* ---- Route info: a breadcrumb path ---- */
+
+.path-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.path-crumbs li + li::before {
+  content: '→';
+  margin-right: var(--s2);
+  color: var(--muted);
+}

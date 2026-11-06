@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - 2026-11-06: UI refactor to scannable components: `src/ui/Kit.tsx` + `kit.css` (Pill, CostPill, ShopRow, Kpi/KpiRow, DurabilityGrid), shop rows, Map route/run/outcome cards, sidebar stat grid and Next callout (`App.tsx`, `ExpeditionPanel.tsx`, `MapView.tsx`, `Town.tsx`, `Contracts.tsx`, `outcomeStats` in `world.ts`). Mend's cleanse kept by the user. 732 tests.
   - 2026-11-06: Mend cleanses one Poison/Bleed; Ward Charm supply + `ward-charm-rule` hero update; brewing at the Potion Shop (`brewSupply`); Deserter supply theft (`stealSupply`, `supplyTheft` event). Cleric now wins the Rootmaw 100% from 3 nodes: possibly too strong, ask the user. 728 tests.
   - Cleanup (2026-11-04): Dev buttons verified dev-only in a production build; `legacySaves.test.ts` for the oldest save shape; Save file panel (export, load, start over) on the Roster tab. 720 tests.
   - Offline loot and gold halved per fight won while away (`OFFLINE_LOOT_RATE`, `applyLootRate` in `src/persist/offline.ts`; GAME_DESIGN §11). 716 tests.
