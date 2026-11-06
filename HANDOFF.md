@@ -37,4 +37,11 @@
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
   - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** Ask the user whether Mend's cleanse is too strong for the Cleric (Rootmaw 100% from 3 nodes), and to try offline and the Save file panel. Then: mid-game pressure, Warden tuning (needs the user's hero details), or more content.
+- **Exact Next Step:** Mend's cleanse was kept and the UI refactor is done. Ask the user to try offline and the Save file panel, then pick from the ideas below.
+- **Ideas not in the plan yet (discussed, not decided):**
+  - UI conventions to write under GAME_DESIGN §12: explanations in `?` tooltips, four-part shop rows with pills (amber gold, slate materials), stat cards over bullet lists, badges for unspent points and finished jobs.
+  - Convert the remaining screens to `Kit.tsx` components: Equipment, Craft, Rules, and the Hero tabs.
+  - Mend alternatives if the Cleric proves too strong: a 10 s cleanse cooldown, or cleanse only above 50 Faith.
+  - Offline extras: a cap on offline runs, offline play for heroes that are not selected, notifications while the page is closed, faster speeds in mastered zones.
+  - Roadmap: mid-game pressure (a telegraphed heavy attack on a regular monster, build-specific contracts), Warden tuning (needs the user's hero level, gear, Draught count), more zones and gear, presentation (pixel art).
+  - Possible later supplies: crafted supplies, a Chill or Stun cleanse, a supply shortcut during a fight.
