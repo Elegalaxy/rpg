@@ -1,4 +1,5 @@
 import { itemBase, itemName } from '../../content/items.ts'
+import { countNames } from '../town/groupItems.ts'
 import { supplyName } from '../../content/supplies.ts'
 import { skillName } from '../../persist/loadout.ts'
 import type { SavedHero } from '../../persist/save.ts'
@@ -55,7 +56,7 @@ export function goingInLines(hero: SavedHero): Line[] {
     },
     {
       label: 'Supplies',
-      text: packed.length === 0 ? 'Nothing packed' : packed.map(supplyName).join(', '),
+      text: packed.length === 0 ? 'Nothing packed' : countNames(packed.map(supplyName)).map(([name, count]) => (count > 1 ? `${name} ×${count}` : name)).join(', '),
       warn: packed.length === 0 ? 'Packing a Healing Draught or two makes elites much easier.' : undefined,
     },
     {

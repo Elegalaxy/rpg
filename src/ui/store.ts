@@ -8,7 +8,7 @@ import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarn
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
-import { brewSupply, buyAndWear, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
+import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
@@ -573,16 +573,6 @@ export function buyItemFromUi(baseId: string): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   return applyTown(buyItem(saveStatus.save, hero.id, baseId), 'bought item')
-}
-
-/** Buy a shop item and wear it. `worn` is false when it could not be put on and waits in the archive. */
-export function buyAndWearFromUi(baseId: string): { error: string | null; worn: boolean } {
-  const hero = selectedHero(saveStatus.save)
-  if (hero === null) return { error: 'Select a hero first.', worn: false }
-  const result = buyAndWear(saveStatus.save, hero.id, baseId)
-  if (!result.ok) return { error: result.reason, worn: false }
-  commitSave(result.save, 'bought and wore item')
-  return { error: null, worn: result.worn }
 }
 
 export function brewSupplyFromUi(supplyId: string, quantity = 1): string | null {

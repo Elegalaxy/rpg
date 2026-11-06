@@ -7,6 +7,7 @@ import { selectedHero } from '../../persist/character.ts'
 import { changeIsBetter, previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
 import { EQUIPMENT_SLOT_IDS, gearGaps, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
+import { groupItems } from './groupItems.ts'
 import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
 
 const SLOT_LABELS: { [slot in EquipmentSlotId]: string } = {
@@ -121,7 +122,7 @@ export function Equipment() {
                         <p>Nothing in the archive fits this slot.</p>
                       ) : (
                         <ul className="rows" aria-label={`Items for ${SLOT_LABELS[slot]}`}>
-                          {choices.map((choice) => {
+                          {groupItems(choices).map(({ item: choice, count }) => {
                             const preview = previewEquip(save, hero.id, choice.id, slot)
                             return (
                               <Row
@@ -143,6 +144,7 @@ export function Equipment() {
                                 }
                               >
                                 {describeItem(choice)}
+                                {count > 1 ? <strong> ×{count}</strong> : null}
                                 {preview.block !== null ? (
                                   <small className="row-note" data-testid="equip-block">
                                     {preview.block}

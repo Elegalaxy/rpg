@@ -3,6 +3,7 @@ import { purseOf } from '../../persist/save.ts'
 
 import { itemBases, itemName } from '../../content/items.ts'
 import { Row } from '../Row.tsx'
+import { groupItems } from './groupItems.ts'
 import { selectedHero } from '../../persist/character.ts'
 import {
   CRAFT_MATERIAL_COST,
@@ -38,6 +39,13 @@ const SLOT_NAMES: { [slot in EquipmentSlotId]: string } = {
 
 function percent(value: number): string {
   return `${Math.round(value * 1000) / 10}%`
+}
+
+/** Identical archive items collapse into one upgrade row with a count. Worn items stay on their own rows. */
+function groupUpgradable(entries: { item: ItemInstance; worn: string | null }[]): { item: ItemInstance; worn: string | null; count: number }[] {
+  const worn = entries.filter((entry) => entry.worn !== null).map((entry) => ({ ...entry, count: 1 }))
+  const kept = groupItems(entries.filter((entry) => entry.worn === null).map((entry) => entry.item)).map(({ item, count }) => ({ item, worn: null, count }))
+  return [...worn, ...kept]
 }
 
 /** Crafting and upgrades. A gear shop passes `accepts` so only its own kind of item shows. The queue is the hero's whole queue. */
@@ -192,7 +200,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
       </label>
       {upgradable.length === 0 ? <p>Nothing of this kind to upgrade.</p> : null}
       <ul className="rows">
-        {upgradable.map(({ item, worn }) => {
+        {groupUpgradable(upgradable).map(({ item, worn, count }) => {
           const block = upgradeCheck(save, hero, item, upgradeMaterial)
           return (
             <Row
@@ -204,7 +212,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
               }
             >
               {worn === null ? '' : `Worn (${worn}): `}
-              {itemName(item)}, item level {item.itemLevel} → {item.itemLevel + 1}, quality {percent(item.quality)} → {percent(upgradedQuality(item.quality, upgradeMaterial))} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
+              {itemName(item)}{count > 1 ? ` ×${count}` : ''}, item level {item.itemLevel} → {item.itemLevel + 1}, quality {percent(item.quality)} → {percent(upgradedQuality(item.quality, upgradeMaterial))} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
               {block !== null ? <small className="row-note">{block}</small> : null}
             </Row>
           )

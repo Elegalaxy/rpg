@@ -10,12 +10,12 @@ import { purseOf, type SaveData } from '../../persist/save.ts'
 import { previewEquip, wearerOf } from '../../persist/equipment.ts'
 import { previewBuy, repairAllCost } from '../../persist/town.ts'
 import { GearChanges } from './GearChanges.tsx'
+import { groupItems } from './groupItems.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { Help } from '../Help.tsx'
 import { CostPill, Kpi, KpiRow, Pill, ShopRow, Tag } from '../Kit.tsx'
 import {
-  buyAndWearFromUi,
   buyItemFromUi,
   equipFromUi,
   buyRecipeFromUi,
@@ -112,30 +112,15 @@ function GearShop({ place }: { place: PlaceDef }) {
               note={<GearChanges preview={previewBuy(save, hero.id, entry.baseId)} empty="No stat change from what you wear." />}
               costs={[[{ kind: 'gold', amount: entry.price }]]}
               actions={
-                <>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={closed || gold < entry.price}
-                    aria-label={`Buy ${entry.baseId}`}
-                    onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}. It is in your archive.`)}
-                  >
-                    Buy
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-good"
-                    disabled={closed || gold < entry.price}
-                    aria-label={`Buy and wear ${entry.baseId}`}
-                    title="Buy it and put it on. The piece it replaces goes to your archive, ready to sell."
-                    onClick={() => {
-                      const result = buyAndWearFromUi(entry.baseId)
-                      run(result.error, result.worn ? `Bought ${entry.name} and put it on. Your old piece is in the archive below, ready to sell.` : `Bought ${entry.name}. It could not be worn right now, so it is in your archive.`)
-                    }}
-                  >
-                    Buy and wear
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={closed || gold < entry.price}
+                  aria-label={`Buy ${entry.baseId}`}
+                  onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}. Wear it from the list below.`)}
+                >
+                  Buy
+                </button>
               }
             />
           ))}
@@ -164,10 +149,11 @@ function GearShop({ place }: { place: PlaceDef }) {
             }
           />
         ))}
-        {archived.map((item) => (
+        {groupItems(archived).map(({ item, count }) => (
           <ShopRow
             key={item.id}
             name={itemName(item)}
+            owned={count > 1 ? count : undefined}
             effect={`Archive · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
             note={<GearChanges preview={previewEquip(save, hero.id, item.id)} empty="No stat change from what you wear." />}
             costs={[[{ kind: 'gold', amount: itemSellPrice(item), prefix: '+' }]]}
@@ -188,10 +174,11 @@ function GearShop({ place }: { place: PlaceDef }) {
       <h3>Repair</h3>
       {damaged.length === 0 ? <p>Nothing of this kind is damaged.</p> : null}
       <ul className="shop-rows">
-        {damaged.map((item) => (
+        {groupItems(damaged).map(({ item, count }) => (
           <ShopRow
             key={item.id}
             name={itemName(item)}
+            owned={count > 1 ? count : undefined}
             effect={item.durability === 0 ? `Broken · ${item.durability}/${item.maxDurability}` : `Durability ${item.durability}/${item.maxDurability}`}
             costs={[[{ kind: 'gold', amount: repairCost(item) }]]}
             actions={

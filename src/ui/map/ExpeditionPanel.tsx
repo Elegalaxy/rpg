@@ -15,6 +15,7 @@ import {
 } from '../../persist/preparation.ts'
 import type { SavedHero } from '../../persist/save.ts'
 import { routes } from '../../content/world.ts'
+import { countNames } from '../town/groupItems.ts'
 import { outcomeStats } from '../../persist/world.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
@@ -448,14 +449,16 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
           <small className="pill-label">Supplies</small>
           <span className="pill-row">
             {held.length === 0 ? <span className="muted-inline">none left</span> : null}
-            {held.map((name, index) => (
-              <Tag key={`${index}-${name}`} kind="plain">
+            {countNames(held).map(([name, count]) => (
+              <Tag key={name} kind="plain">
                 {name}
+                {count > 1 ? ` ×${count}` : ''}
               </Tag>
             ))}
-            {usedIds.map((id, index) => (
-              <Tag key={`used-${index}`} kind="bad" title="Used up">
-                {supplyName(id)} used
+            {countNames(usedIds.map(supplyName)).map(([name, count]) => (
+              <Tag key={`used-${name}`} kind="bad" title="Used up">
+                {name}
+                {count > 1 ? ` ×${count}` : ''} used
               </Tag>
             ))}
           </span>
