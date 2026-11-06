@@ -1,48 +1,24 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-07)
-- **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
-- **Recent Changes & Files Touched:**
-  - 2026-11-08 UX flow batch: shop Buy rows show a stat compare (`previewBuy` in `town.ts`) and archive rows in a shop get Wear plus compare (`GearChanges.tsx`; no Buy-and-wear, user chose Wear only); identical items show once with ×N (`groupItems.ts`: shop sell/repair, upgrade, Hero gear chooser, supplies lines); Map has a "Going in with" summary above Start expedition (`GoingIn.tsx`, `goingInLines.ts`, Edit links via `onGo` in `App.tsx`). 743 tests.
-  - 2026-11-07 round 5: upgrade material now adds quality (scrap +0, hide +1, shard +2 points, cap 110%; `upgradedQuality`, GAME_DESIGN crafting); away route option (`SavedHero.awayRouteId`, `startAwayRun` in `offline.ts`, dropdown in the away box, GAME_DESIGN §11); skill web node preview shows skill facts even for known skills; stat rows flattened (fewer cards, `kpi` CSS). 739 tests.
-  - 2026-11-07 batch B (UI clarity): materials comparison table + upgrade note (upgrade material never affects the result; `Craft.tsx`); live supplies bar in fights (`SuppliesBar` in `FightView.tsx`, live supplies in the Running panel); status callout first in the expedition panel; skill facts (`src/ui/skillInfo.ts`) in Loadout and node preview; attribute effects column; "While you are away" box with plain-language plan. 735 tests.
-  - 2026-11-07 UI pass 2: purse bar with gold, debt and materials (`PurseLine`, `Kpi compact`); Potion Shop as supply cards with separate Buy and Brew options and shortfall notes; contract rows with a reward column and progress bar; route facts as plain lines (`MapView.tsx`); Delete hero with confirm (`deleteHero` in `roster.ts`, Roster tab). Then de-badged: `Tag` (coloured text) in `Kit.tsx` for prices, loot, lists and inline status; `Pill` kept only for owned counts. Convention: badges for counts/short statuses only. 735 tests.
-  - 2026-11-07 playtest batch A: recipe purchase needs the hero's level (`buyRecipe`, Enchanter button); finished-craft badges per shop (`CraftNotice.baseId`, `unseenCrafts` list in `store.ts`, `OfflineSummary.craftBaseIds`); supplies used in a lost fight are no longer returned (`applyDefeat`); Auto-escape On/Off button on the running panel (`autoEscapeOff`, `setAutoEscapeFromUi`); Loadout shows learned-but-not-equipped skills. 733 tests.
-  - 2026-11-06: UI refactor to scannable components: `src/ui/Kit.tsx` + `kit.css` (Pill, CostPill, ShopRow, Kpi/KpiRow, DurabilityGrid), shop rows, Map route/run/outcome cards, sidebar stat grid and Next callout (`App.tsx`, `ExpeditionPanel.tsx`, `MapView.tsx`, `Town.tsx`, `Contracts.tsx`, `outcomeStats` in `world.ts`). Mend's cleanse kept by the user. 732 tests.
-  - Step 12.1 offline catch-up built (GAME_DESIGN §11): `src/persist/offline.ts` (pure, chunk-safe), `lastSeenAt` and hero standing orders in the save, `startOfflineWatch`/`AwayPanel` in the UI, orders in the preparation. 715 tests. Awaiting the user's check.
-  - 2026-11-04: Offline catch-up designed and approved (GAME_DESIGN §11; plan Step 12.1, `todo`). No code yet.
-  - User beat the Warden with a Warrior and Healing Draughts (2026-11-04). The reference matrix is a floor build (0% except Mage 30% with 4 Draughts). Ask for the hero's level, points, gear, and Draught count before changing any Warden number.
-  - Log filter is global across fights (`src/ui/log/filterStore.ts`). Both open questions (upgrade value, discovery notice) were decided and built.
-  - Unspent-point badges (Hero, Attributes, Skills tabs); crafting clock moved to the wall clock (`advanceCraftingBy`, `startTownLoop` in `src/ui/store.ts`) because the old frame loop froze with the combat viewer's pause and in background tabs. 701 tests.
-  - Log filters: Damage, Healing, and Items used (`src/ui/log/categories.ts`, new `supplyUse` event in `src/sim/types.ts`/`combat.ts`/`expedition.ts`/`log.ts`). 701 tests.
-  - Wording pass: explanatory text moved into `?` tooltips (`src/ui/Help.tsx`, `.help` styles in theme.css) across Town, Map, Hero tab, and Legacy. The user is separately testing the Fractured Warden. 701 tests.
-  - Round-3 playtest fixes (2026-11-04): backpack steppers for supplies (`preparation.ts`, `ExpeditionPanel.tsx`), fight tab colours (`combat.css`), green/red gear comparison (`changeIsBetter`, `Equipment.tsx`), finished-contract and finished-craft badges (`App.tsx`, `store.ts`). 700 tests.
-  - 2026-11-04: Rolled contract board per hero (`src/content/contracts.ts` roll, `src/persist/contracts.ts` board fill/refresh, `Purse.board`/`boardRolls`, `contractFor`, hero update `contract-board`); Bank (was Moneylender); crafting no longer nested. 696 tests.
-  - 2026-11-04: Combat viewer fix (App.tsx); crafting advances for every hero, in town or away (`crafting.ts`); Greyhaven split into 8 places (`src/content/places.ts`, `src/ui/town/Town.tsx`, `Craft` `accepts` filter, filtered `repairAll`). 690 tests.
-  - Vow of Zeal 5 to 7 Faith (`ZEAL_BASE` in `src/sim/classes/cleric.ts`, GAME_DESIGN Cleric: Faith). Built Cleric: Rootmaw 0/93/93%, Echo Knight 87/100/100% (0/6/9 nodes).
-  - One-time hero updates (`src/persist/heroUpdates.ts`, applied in `parseSave`; `SavedHero.updates`): old heroes get the supply rules once; old Rangers learn Fade Back and swap it in for a starting-kit Volley. Test `src/persist/heroUpdates.test.ts`. 687 tests.
-  - Fade Back dodge (2026-11-03, GAME_DESIGN Ranger skill 7): readies a 3 s dodge of the next enemy skill with a damage effect (no damage, no statuses); cooldown 16 s. `skillDodge` effect and log event in `src/sim/types.ts`, `skills.ts`, `combat.ts` (`spendSkillDodge`), `log.ts`, `src/ui/log/categories.ts`; content in `src/content/skills.ts`; test `src/content/fade-back.test.ts`. Ranger built matrix: Rootmaw 70/83/83%, Echo Knight 13/27/27%. 682 tests.
-  - Early-rules check: early fights stay easy by choice (user); only Fade Back was fixed.
-  - Supplies (2026-11-03, recorded in GAME_DESIGN §9 Inventory): Healing Draught (30% max HP, 15 gold), Antidote (clears Poison and Bleed, 10 gold), Smoke Bomb (+15 escape points, 20 gold).
-    - Sim: supply skills (`supply: true`) in `src/content/skills.ts`; `resolveSupply` in `src/sim/combat.ts`; `none left` skip in `automation.ts`; `cleanse` effect in `skills.ts`/`types.ts`; packing, after-fight sync, and Smoke Bomb in `src/sim/expedition.ts`; `suppliesLeft` in the action log line.
-    - Content: `src/content/supplies.ts` (`SUPPLIES`, `RULE_SUPPLY_IDS`, `DEFAULT_SUPPLY_ROWS`, `startingRules`).
-    - Persist: `Purse.supplies` stash, `SavedHero.packedSupplies`, `buySupply` (town.ts), `packFromStash` + slot draft (preparation.ts), begin/settle in world.ts, default rows in roster.ts and reincarnation.ts, `heroStacks` condition and supply rule ids in loadout.ts.
-    - UI: Town shop rows, preparation slot pickers, running-panel supply line, Rules status picker.
-    - Tests: `src/content/supplies.test.ts`, `src/persist/supplies.test.ts`, expedition supply tests.
-  - Earlier today: per-hero wealth (55495fa), log panel redesign (525dedb), balance pass (95caa79).
-  - 679 tests, typecheck and lint clean. Checked in the browser on an existing save.
+- **Current Goal:** Batch C (plan Step 12.2) is built and pushed; waiting for the user's browser check of the new UI. Then Warden tuning and the remaining roadmap.
+- **Recent Changes & Files Touched (Batch C, commits c4f6ca7, cc6d59d, f567b94, 9e51c38, d2d652a; 798 tests):**
+  - Part 1: the 13 starting-skill nodes each add a bonus (`src/sim/classes/starterNodes.ts`, `heroSkill` used in `automation.ts`/`combat.ts`; Shield Brace/Mark for Death/Execute in `warrior.ts`/`assassin.ts`; node text regenerated). Matrix 40 runs: Warrior Echo Knight 70 to 100% at 6 nodes, Assassin Echo Knight 8 to 28%, Ranger Echo Knight 33 to 30% (probably noise, one seed), Mage/Cleric unchanged, Warden still 0%.
+  - Part 2: bag capacity 20, +2 at levels 10/20/30, +3 per worn Hauler's (max 2), +4 Deep Pockets (15 Legacy), max 36 (`src/persist/bag.ts`, `lootCapacity` in `expedition.ts`). Safe pouch: 5 most valuable carried units survive defeat (`safePouch`, `savedByPouch`). `SavedHero.bagFullOrder` 'home'|'ask' (full = under 4 room), used in `offline.ts`; stop reason `bagFull`. No courier by user decision.
+  - Part 3: rule conditions `hpPoints` (hero/target, current/missing), `skillReady`, `fightTime`, rank and boss phase editable; summary line and Duplicate in `Rules.tsx`; `validateRules` in `loadout.ts`.
+  - Part 4: queue carried supplies in fights (`SuppliesBar`), Escape now (`requestEscapeNow`, `escapeNow` flag, `escapeNowFromUi`).
+  - Part 5: modifiers Vicious, Sturdy, Hauler's (`src/sim/economy.ts`); `MODIFIER_STACK_CAP = 2`; Equipment shows Critical damage, Bag room and a cap note.
+  - Earlier: UX flow batch (shop compare, Wear button, Going in with, ×N grouping), away route, offline, Save panel.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - No shared vault between heroes. Supplies are per hero too.
-  - Reference loadouts and the harness carry no supplies, so matrix numbers are unchanged.
-  - One commit per finished part, pushed to `origin/main`. No force-push.
-  - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
-  - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** (1) Ask the user to try Buy and wear, the Going in with summary, away route, offline, and the Save panel. (2) Batch C with the planner (Opus): skill-web fix (user chose real bonuses for the 13 pure-unlock nodes of starting skills: Warrior Sundering Blow/Shield Brace/Second Wind, Assassin Venom Edge/Mark for Death/Execute, Ranger Piercing Arrow/Snare Trap, Mage Fireball/Frost Lance/Mana Ward, Cleric Ward/Judgment; numbers in GAME_DESIGN first), secure loot, bigger loot bag, retreat-when-full rule, HP-value rule targets, queued item use, modifier variety. Offline, away route and Save panel still await the user's check.
+  - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
+  - Skill facts in Loadout and node preview (`skillInfo.ts`) still show base skill numbers, not node bonuses.
+  - "Skill is ready" ignores resource cost and target availability.
+  - Reference loadouts carry no supplies, so matrix numbers are unchanged by supplies.
+- **Not verified in a browser:** Rules tab (new conditions, Duplicate), supply Queue buttons, Escape now, safe pouch tags, bag capacity display, bag-full setting, Deep Pockets row, equipment cap note. Also still unchecked by the user: offline, away route, Save panel, Wear button, Going in with.
+- **Exact Next Step:** (1) Ask the user to try the Batch C UI (list above). (2) Mark Step 12.2 `done` in `doc/IMPLEMENTATION_PLAN.md` after their check. (3) Optionally run more matrix seeds for the Ranger Echo Knight dip. (4) Warden tuning needs the user's hero level, points, gear and Draught count.
 - **Ideas not in the plan yet (discussed, not decided):**
-  - UI conventions to write under GAME_DESIGN §12: explanations in `?` tooltips, four-part shop rows with pills (amber gold, slate materials), stat cards over bullet lists, badges for unspent points and finished jobs.
-  - Convert the remaining screens to `Kit.tsx` components: Equipment, Craft, Rules, and the Hero tabs.
-  - Mend alternatives if the Cleric proves too strong: a 10 s cleanse cooldown, or cleanse only above 50 Faith.
-  - Offline extras: a cap on offline runs, offline play for heroes that are not selected, notifications while the page is closed, faster speeds in mastered zones.
-  - Roadmap: mid-game pressure (a telegraphed heavy attack on a regular monster, build-specific contracts), Warden tuning (needs the user's hero level, gear, Draught count), more zones and gear, presentation (pixel art).
-  - Possible later supplies: crafted supplies, a Chill or Stun cleanse, a supply shortcut during a fight.
+  - UI conventions under GAME_DESIGN §12; convert Equipment, Craft, Rules and Hero tabs to `Kit.tsx`.
+  - Mend alternatives if the Cleric proves too strong. Offline extras (run cap, other heroes, notifications, faster mastered zones).
+  - Roadmap: mid-game pressure (telegraphed heavy attacks, build contracts), Warden tuning, more zones and gear, pixel art.
+  - Possible later supplies: crafted supplies, a Chill or Stun cleanse.
