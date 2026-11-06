@@ -240,7 +240,8 @@ function assertEnemySkill(value: unknown, enemyId: string): EnemySkillDef {
       kind !== 'chanceGate' &&
       kind !== 'timedEvasion' &&
       kind !== 'summon' &&
-      kind !== 'defenseBonus'
+      kind !== 'defenseBonus' &&
+      kind !== 'stealSupply'
     ) {
       throw new Error(`enemy skill '${id}' cannot use effect '${describeValue(kind)}'`)
     }

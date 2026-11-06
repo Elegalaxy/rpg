@@ -11,18 +11,43 @@ export type SupplyDef = {
   effect: string
   /** True when a priority rule uses it. False when the expedition uses it by itself. */
   ruleUsed: boolean
+  /** Brewing one at the Potion Shop from the hero's own materials (decided 2026-11-04). */
+  brew: { materialId: string; quantity: number; gold: number }
 }
 
 /** The first-playable supplies (GAME_DESIGN §9 Inventory, decided 2026-11-03), in shop order. */
 export const SUPPLIES: readonly SupplyDef[] = [
-  { id: 'healing-draught', name: 'Healing Draught', price: 15, effect: 'Restores 30% of maximum HP.', ruleUsed: true },
-  { id: 'antidote', name: 'Antidote', price: 10, effect: 'Removes all Poison and Bleed from the hero.', ruleUsed: true },
+  {
+    id: 'healing-draught',
+    name: 'Healing Draught',
+    price: 15,
+    effect: 'Restores 30% of maximum HP.',
+    ruleUsed: true,
+    brew: { materialId: 'hide', quantity: 3, gold: 5 },
+  },
+  {
+    id: 'antidote',
+    name: 'Antidote',
+    price: 10,
+    effect: 'Removes all Poison and Bleed from the hero.',
+    ruleUsed: true,
+    brew: { materialId: 'shard', quantity: 2, gold: 3 },
+  },
   {
     id: SMOKE_BOMB_ID,
     name: 'Smoke Bomb',
     price: 20,
     effect: '+15 points on the next escape roll, then used up.',
     ruleUsed: false,
+    brew: { materialId: 'scrap', quantity: 3, gold: 8 },
+  },
+  {
+    id: 'ward-charm',
+    name: 'Ward Charm',
+    price: 20,
+    effect: 'A barrier of 20% of maximum HP for 8 seconds.',
+    ruleUsed: true,
+    brew: { materialId: 'shard', quantity: 3, gold: 8 },
   },
 ]
 
@@ -35,6 +60,9 @@ export function supplyName(id: string): string {
 /** Supplies a priority rule can name. */
 export const RULE_SUPPLY_IDS: readonly string[] = SUPPLIES.filter((supply) => supply.ruleUsed).map((supply) => supply.id)
 
+/** The Ward Charm's default rule: raise the barrier when an enemy telegraphs. */
+export const WARD_CHARM_ROW: PriorityRow = { skillId: 'ward-charm', conditions: [{ kind: 'telegraph', operator: 'present' }] }
+
 /** The supply rules a new hero starts with, above the class rules. Without a supply in the slots they skip. */
 export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [
   { skillId: 'healing-draught', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 40 }] },
@@ -42,6 +70,7 @@ export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [
     skillId: 'antidote',
     conditions: [{ kind: 'status', who: 'hero', statusId: 'poison', measure: 'stacks', operator: 'atLeast', value: 3 }],
   },
+  WARD_CHARM_ROW,
 ]
 
 /** A hero's starting rules: the supply rules, then the class rules. */

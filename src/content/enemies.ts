@@ -87,6 +87,7 @@ const rustedCut: EnemySkillDef = {
   effects: [
     { kind: 'damage', school: 'physical', coefficient: 0.9 },
     { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.75, coefficient: 0.1, power: 'physical' },
+    { kind: 'stealSupply', chance: 0.2 },
   ],
 }
 

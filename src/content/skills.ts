@@ -327,7 +327,10 @@ const mend = {
   actionTimeCoefficient: 1,
   tags: ['heal'],
   target: 'single',
-  effects: [{ kind: 'heal', maxHpFraction: 0, healingCoefficient: 1.2 }],
+  effects: [
+    { kind: 'heal', maxHpFraction: 0, healingCoefficient: 1.2 },
+    { kind: 'cleanse', statusIds: ['bleed', 'poison'], limit: 1 },
+  ],
 } satisfies SkillDef
 
 const ward = {
@@ -514,6 +517,18 @@ const healingDraught = {
   effects: [{ kind: 'heal', maxHpFraction: 0.3, healingCoefficient: 0 }],
 } satisfies SkillDef
 
+const wardCharm = {
+  id: 'ward-charm',
+  name: 'Ward Charm',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 0.5,
+  tags: ['supply'],
+  target: 'single',
+  supply: true,
+  effects: [{ kind: 'barrier', source: 'anchorMaxHp', coefficient: 0.2, durationSeconds: 8 }],
+} satisfies SkillDef
+
 const antidote = {
   id: 'antidote',
   name: 'Antidote',
@@ -568,4 +583,5 @@ export const skills: { [id: string]: SkillDef } = {
   [sanctuaryReleaseStrike.id]: sanctuaryReleaseStrike,
   [healingDraught.id]: healingDraught,
   [antidote.id]: antidote,
+  [wardCharm.id]: wardCharm,
 }

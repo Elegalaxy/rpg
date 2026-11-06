@@ -595,6 +595,7 @@ Deserter:
 - Rusted Cut deals 90% Physical Power and has a 75% base chance to apply Bleed. Each applied stack ticks for 10% of snapshotted Physical Power. Cooldown: 5 seconds.
 - Guard grants 30% incoming-damage reduction until the Deserter's next action. Cooldown: 7 seconds. Action time: 0.75×.
 - Predictable offensive/defensive alternation teaches status cleansing and timing around mitigation.
+- Supply pressure, decided 2026-11-04: when Rusted Cut hits a hero who carries supplies, there is a 20% chance the Deserter snatches the last supply in the hero's backpack, at most once per Deserter per fight. Winning the fight returns it; a retreat or defeat loses it. A hero with no supplies is never rolled for, so fights without supplies are unchanged.
 
 Splintered Road encounter order, chosen 2026-10-24:
 
@@ -1155,7 +1156,7 @@ Elemental-charge and prepared-casting keystones modify how this base kit is paid
 #### Cleric
 
 1. Smite: no Faith cost; deals 100% Magical Power; 3-second cooldown; 1.0× action time.
-2. Mend: costs 25 Faith; heals 120% Healing Power; 5-second cooldown; 1.0× action time.
+2. Mend: costs 25 Faith; heals 120% Healing Power; 5-second cooldown; 1.0× action time. Since 2026-11-04 it also removes one Poison or Bleed from the hero, every stack of it, Bleed first. Measured the same day (built Cleric, 40 runs, 0/3/6/9 nodes): Rootmaw 3/100/100/100% (was 0/0/93/93%), Echo Knight 90/100/100/100% (was 87/100/100/100%).
 3. Ward: costs 30 Faith; creates a pre-mitigation barrier equal to 150% Healing Power for up to 8 seconds; 10-second cooldown; 0.75× action time.
 4. Consecration: costs 40 Faith; creates one 8-second field that ticks every 2 seconds for 35% Magical Power damage and 25% Healing Power recovery; 15-second cooldown; 1.2× action time. Recasting replaces and refreshes the existing field.
 5. Judgment: costs 50 Faith; deals 200% Magical Power; 10-second cooldown; 1.2× action time.
@@ -1418,13 +1419,17 @@ First-playable supplies, decided 2026-11-03:
 | Healing Draught | Restores 30% of maximum HP. No roll, no Healing Power, no healing-received change. | 15 gold | Hero HP at most 40% |
 | Antidote | Removes every Poison and Bleed stack from the hero. | 10 gold | Hero Poison at least 3 stacks |
 | Smoke Bomb | +15 percentage points on the next escape roll, then used up, whether the roll succeeds or fails. | 20 gold | None: it is used by the escape roll |
+| Ward Charm (added 2026-11-04) | A barrier of 20% of maximum HP for 8 seconds. | 20 gold | When an enemy telegraph is present |
 
 - Supplies are bought in Greyhaven with the hero's own gold and kept in the hero's stash. They are not shared between heroes.
 - Before a run the player picks what goes in each of the 4 slots. The run takes the picked items out of the stash. A pick the stash cannot cover leaves that slot empty.
 - Healing Draught and Antidote are used by priority rules. A rule can name a supply instead of a skill. The row is usable only while a slot holds that supply, and otherwise skips with `none left`. Using one is a hero action at 0.5× action time with no cost and no cooldown. It needs no target, is not a skill for class or race effects, and is not part of the four-skill loadout.
 - An Antidote with no Poison or Bleed on the hero still uses the action and the item, so its rule should say when.
 - New heroes start with the two default rules at the top of their rules. A hero made before supplies gets them once when the save loads, unless a rule already names a supply; one the player removes later does not come back.
-- Crafted supplies, more supply kinds, a supply shortcut during a fight, and Deserter supply pressure are later work.
+- Added 2026-11-04 (user approved):
+  - Ward Charm: a barrier of 20% of maximum HP for 8 seconds, used by a rule at the same 0.5× action time. 20 gold. Default rule for a new hero: when an enemy telegraph is present. Existing heroes get the rule once, unless a rule already names it.
+  - Brewing at the Potion Shop: any supply can be made at once from the hero's own materials instead of bought: Healing Draught 3 hide + 5 gold, Antidote 2 shard + 3 gold, Smoke Bomb 3 scrap + 8 gold, Ward Charm 3 shard + 8 gold. No queue and no time.
+- A supply shortcut during a fight, more supply kinds, and Chill or Stun cleanses are later work.
 - Kept after measurement, 2026-11-03: two Draughts lift the floor Assassin against the level-16 Echo Knight from 7% to 97% wins, and four let every class win. Buying supplies is the intended way past an elite early, paid for in gold.
 - Loot capacity is 20. Each Splintered Road enemy drops 4 of its own material: a Fracture Shardling drops a shard, a Starved Wolf drops a hide, and a Deserter drops a scrap.
 - The drop uses the momentum already held when the fight is won. The victory then adds its stack. Quantity is `4 × (1 + 5% × stacks)`, rounded half-up. Three stacks turn 4 into 5. One stack does not change a drop of 4, because 4.2 rounds to 4.
@@ -1683,6 +1688,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-04: Mend cleanses one Poison or Bleed; the Ward Charm supply; brewing supplies from materials; Deserters can snatch a supply.
 - 2026-11-04: The Roster tab gets a Save file panel: export a backup file, load one, or start over, each with a confirmation where it deletes data.
 - 2026-11-04: Decided and built offline catch-up: an 8-hour cap, standing orders (push on at 50% HP, repeat a cleared route until a defeat), deterministic replays, a return summary, and half loot and gold from fights won while away.
 - 2026-11-04: Upgrades always succeed and cost 3 materials plus `item level × 3` gold. A discovered location is announced on the expedition outcome and badges the Map tab.

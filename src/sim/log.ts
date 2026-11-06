@@ -360,6 +360,10 @@ export function formatEvent(event: LogEvent): string {
       return `At ${seconds(event.timeMs)}s, encounter ended: ${event.outcome}.`
     case 'race':
       return `At ${seconds(event.timeMs)}s, ${event.text}`
+    case 'supplyTheft':
+      return event.returned
+        ? `At ${seconds(event.timeMs)}s, ${event.actorName} gets the ${event.supplyName} back.`
+        : `At ${seconds(event.timeMs)}s, ${event.thiefName} snatches ${event.actorName}'s ${event.supplyName}.`
     case 'supplyUse':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} uses a ${event.supplyName} (${event.left} left).${event.nextReadyMs === null ? '' : ` Next ready at ${seconds(event.nextReadyMs)}s.`}`
     case 'skillDodge':

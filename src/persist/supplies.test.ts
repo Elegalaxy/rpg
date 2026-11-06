@@ -7,7 +7,7 @@ import { buildCondition, draftsFromRows, describeCondition } from './loadout.ts'
 import { checkPreparation, draftFor, packFromStash, packedCounts, clampToStash, savePreparation, stepPacked } from './preparation.ts'
 import { createHero, selectHero } from './roster.ts'
 import { newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
-import { buySupply } from './town.ts'
+import { brewSupply, buySupply } from './town.ts'
 import { beginExpedition, settleExpedition } from './world.ts'
 
 function ok(result: { ok: true; save: SaveData } | { ok: false; reason: string }): SaveData {
@@ -74,9 +74,9 @@ describe('packing supplies', () => {
 })
 
 describe('supply rules', () => {
-  it('gives a new hero the two supply rules on top', () => {
+  it('gives a new hero the supply rules on top', () => {
     const hero = heroSave().heroes[0]!
-    expect(hero.priorityRows.slice(0, 2)).toEqual(DEFAULT_SUPPLY_ROWS)
+    expect(hero.priorityRows.slice(0, DEFAULT_SUPPLY_ROWS.length)).toEqual(DEFAULT_SUPPLY_ROWS)
     expect(hero.packedSupplies).toEqual([])
     expect(purseOf(heroSave()).supplies).toEqual({})
   })
@@ -126,5 +126,26 @@ describe('packing with steppers', () => {
     expect(stepPacked(['antidote', '', '', ''], 'antidote', 1, 1)).toEqual(['antidote', '', '', ''])
     const full = ['healing-draught', 'healing-draught', 'healing-draught', 'healing-draught']
     expect(stepPacked(full, 'antidote', 1, 5)).toEqual(full)
+  })
+})
+
+describe('brewing supplies', () => {
+  it('turns a hero\'s own materials and a little gold into supplies, at once', () => {
+    const stocked = updatePurse(heroSave(), { gold: 30, materials: { hide: 7, shard: 5, scrap: 3 } })
+    const draught = ok(brewSupply(stocked, 'healing-draught', 2))
+    expect(purseOf(draught)).toMatchObject({ gold: 20, materials: { hide: 1, shard: 5, scrap: 3 }, supplies: { 'healing-draught': 2 } })
+    const charm = ok(brewSupply(draught, 'ward-charm'))
+    expect(purseOf(charm)).toMatchObject({ gold: 12, materials: { hide: 1, shard: 2, scrap: 3 }, supplies: { 'healing-draught': 2, 'ward-charm': 1 } })
+    const bomb = ok(brewSupply(charm, SMOKE_BOMB_ID))
+    expect(purseOf(bomb).materials).toEqual({ hide: 1, shard: 2 })
+    expect(parseSave(serializeSave(bomb)).ok).toBe(true)
+  })
+
+  it('refuses without the materials or the gold, and for something it cannot brew', () => {
+    const poor = updatePurse(heroSave(), { gold: 1, materials: { hide: 3 } })
+    expect(brewSupply(poor, 'healing-draught')).toEqual({ ok: false, reason: 'That costs 5 gold. You have 1.' })
+    expect(brewSupply(updatePurse(poor, { gold: 50 }), 'antidote')).toEqual({ ok: false, reason: 'That needs 2 shard. You have 0.' })
+    expect(brewSupply(poor, 'elixir')).toEqual({ ok: false, reason: 'The Potion Shop cannot brew that.' })
+    expect(brewSupply(poor, 'antidote', 0)).toEqual({ ok: false, reason: 'Brew at least 1.' })
   })
 })

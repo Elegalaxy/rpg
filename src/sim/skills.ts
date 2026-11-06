@@ -36,7 +36,7 @@ import {
   raisedFloor,
 } from './races/adjustments.ts'
 import { centeredRoll, nextFloat } from './rng.ts'
-import { exposedDefense, pushActorTiming, tryApplyStatus } from './statuses.ts'
+import { cleanseListed, exposedDefense, pushActorTiming, tryApplyStatus } from './statuses.ts'
 import type {
   ActionDelayEvent,
   ApplyStatusEffect,
@@ -82,6 +82,7 @@ export const SKILL_EFFECT_KINDS = [
   'defenseBonus',
   'cleanse',
   'skillDodge',
+  'stealSupply',
 ] as const
 
 /** Logged when a preventFatal health loss would leave 0 HP or less. */
@@ -461,6 +462,13 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     assertPositive(value.durationSeconds, `skill '${skillId}' defense bonus duration`)
     return { kind, multiplier: value.multiplier, durationSeconds: value.durationSeconds }
   }
+  if (kind === 'stealSupply') {
+    assertFiniteNumber(value.chance, `skill '${skillId}' steal chance`)
+    if (value.chance <= 0 || value.chance > 1) {
+      throw new Error(`skill '${skillId}' steal chance must be greater than 0 and at most 1, received ${describeValue(value.chance)}`)
+    }
+    return { kind, chance: value.chance }
+  }
   if (kind === 'skillDodge') {
     assertPositive(value.durationSeconds, `skill '${skillId}' dodge duration`)
     return { kind, durationSeconds: value.durationSeconds }
@@ -473,7 +481,11 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
         throw new Error(`skill '${skillId}' cleanse status id must be a non-empty string, received ${describeValue(id)}`)
       }
     }
-    return { kind, statusIds: [...(ids as string[])] }
+    if (value.limit !== undefined && (typeof value.limit !== 'number' || !Number.isInteger(value.limit) || value.limit < 1)) {
+      throw new Error(`skill '${skillId}' cleanse limit must be a whole number of at least 1, received ${describeValue(value.limit)}`)
+    }
+    const cleanse = { kind, statusIds: [...(ids as string[])] } as const
+    return value.limit === undefined ? cleanse : { ...cleanse, limit: value.limit }
   }
   throw new Error(`skill '${skillId}' has unknown effect kind '${kind}'`)
 }
@@ -537,9 +549,8 @@ export function assertSkillDef(value: unknown): asserts value is SkillDef {
     throw new Error(`skill '${id}' supply must be true or omitted, received ${describeValue(value.supply)}`)
   }
   for (const effect of value.effects as { kind: string }[]) {
-    if (effect.kind === 'cleanse' && value.supply !== true) throw new Error(`skill '${id}' cleanse is only for supplies`)
-    if (value.supply === true && effect.kind !== 'heal' && effect.kind !== 'cleanse') {
-      throw new Error(`supply '${id}' can only heal or cleanse, received '${effect.kind}'`)
+    if (value.supply === true && effect.kind !== 'heal' && effect.kind !== 'cleanse' && effect.kind !== 'barrier') {
+      throw new Error(`supply '${id}' can only heal, cleanse, or ward, received '${effect.kind}'`)
     }
   }
 }
@@ -1194,12 +1205,14 @@ export function applySkillEffects(
       effect.kind === 'chanceGate' ||
       effect.kind === 'timedEvasion' ||
       effect.kind === 'summon' ||
-      effect.kind === 'defenseBonus'
+      effect.kind === 'defenseBonus' ||
+      effect.kind === 'stealSupply'
     ) {
       throw new Error(`skill '${skill.id}' effect '${effect.kind}' is resolved by enemy actions`)
     }
     if (effect.kind === 'cleanse') {
-      throw new Error(`skill '${skill.id}' effect 'cleanse' is resolved by supply use`)
+      cleanseListed(state, hero, scheduledMs, effect.statusIds, effect.limit)
+      continue
     }
     if (effect.kind === 'loseHp') {
       const loss = hero.maxHp * effect.maxHpFraction

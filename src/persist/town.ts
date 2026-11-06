@@ -96,6 +96,27 @@ export function buySupply(save: SaveData, supplyId: string, quantity = 1): Roste
   return { ok: true, save: updatePurse(save, { gold: purse.gold - price, supplies }) }
 }
 
+/** Brew supplies at the Potion Shop from the selected hero's materials and a little gold. Instant. */
+export function brewSupply(save: SaveData, supplyId: string, quantity = 1): RosterResult {
+  const shut = closed(save)
+  if (shut !== null) return { ok: false, reason: shut }
+  const supply = supplyTable[supplyId]
+  if (supply === undefined) return { ok: false, reason: 'The Potion Shop cannot brew that.' }
+  if (!Number.isInteger(quantity) || quantity < 1) return { ok: false, reason: 'Brew at least 1.' }
+  if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero first.' }
+  const purse = purseOf(save)
+  const { materialId, quantity: per, gold: price } = supply.brew
+  const needed = per * quantity
+  const owned = purse.materials[materialId] ?? 0
+  if (owned < needed) return { ok: false, reason: `That needs ${needed} ${materialId}. You have ${owned}.` }
+  if (purse.gold < price * quantity) return { ok: false, reason: `That costs ${price * quantity} gold. You have ${purse.gold}.` }
+  const materials = { ...purse.materials }
+  if (owned === needed) delete materials[materialId]
+  else materials[materialId] = owned - needed
+  const supplies = { ...purse.supplies, [supplyId]: (purse.supplies[supplyId] ?? 0) + quantity }
+  return { ok: true, save: updatePurse(save, { gold: purse.gold - price * quantity, materials, supplies }) }
+}
+
 /** An item the selected hero wears or keeps in its archive. */
 function itemById(save: SaveData, itemId: string): ItemInstance | null {
   const hero = selectedHero(save)

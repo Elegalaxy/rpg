@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_SUPPLY_ROWS } from '../content/supplies.ts'
+import { DEFAULT_SUPPLY_ROWS, WARD_CHARM_ROW } from '../content/supplies.ts'
 import { classWebs } from '../content/webs/index.ts'
 import type { PriorityRow } from '../sim/types.ts'
 
@@ -55,7 +55,7 @@ describe('one-time hero updates', () => {
 
   it('leaves a hero that already names a supply alone, and fits the 12-rule limit', () => {
     const own: PriorityRow[] = [{ skillId: 'antidote' }, { skillId: 'driving-blow' }]
-    expect(loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: own })).heroes[0]!.priorityRows).toEqual(own)
+    expect(loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: own })).heroes[0]!.priorityRows).toEqual([own[0], WARD_CHARM_ROW, own[1]])
     const eleven = Array.from({ length: 11 }, () => ({ skillId: 'driving-blow' }))
     const rows = loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: eleven })).heroes[0]!.priorityRows
     expect(rows.map((row) => row.skillId)).toEqual(['healing-draught', ...eleven.map((row) => row.skillId)])
@@ -65,8 +65,8 @@ describe('one-time hero updates', () => {
     const hero = loadOld(fresh('ranger'), (entry) => oldRanger(entry)).heroes[0]!
     expect(hero.progress.learnedSkillIds).toEqual(['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap', 'fade-back'])
     expect(hero.progress.loadout).toEqual(['aimed-shot', 'piercing-arrow', 'fade-back', 'snare-trap'])
-    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['healing-draught', 'antidote', 'fade-back', 'snare-trap', 'aimed-shot', 'piercing-arrow'])
-    expect(hero.priorityRows[2]).toEqual({ skillId: 'fade-back', conditions: [{ kind: 'telegraph', operator: 'present' }] })
+    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['healing-draught', 'antidote', 'ward-charm', 'fade-back', 'snare-trap', 'aimed-shot', 'piercing-arrow'])
+    expect(hero.priorityRows[3]).toEqual({ skillId: 'fade-back', conditions: [{ kind: 'telegraph', operator: 'present' }] })
   })
 
   it('only teaches Fade Back to a Ranger whose Volley came from the node', () => {
@@ -74,7 +74,7 @@ describe('one-time hero updates', () => {
     const hero = loadOld(fresh('ranger'), (entry) => oldRanger(entry, [volleyNode])).heroes[0]!
     expect(hero.progress.learnedSkillIds).toContain('fade-back')
     expect(hero.progress.loadout).toEqual(['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'])
-    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['healing-draught', 'antidote', 'snare-trap', 'volley', 'aimed-shot', 'piercing-arrow'])
+    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['healing-draught', 'antidote', 'ward-charm', 'snare-trap', 'volley', 'aimed-shot', 'piercing-arrow'])
   })
 
   it('changes nothing for a new hero', () => {

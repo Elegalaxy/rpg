@@ -62,7 +62,7 @@ import {
 import {
   applicationChance,
   assertStatusBook,
-  cleanseStatus,
+  cleanseListed,
   chillSlowFraction,
   collectStatusTicks,
   emptyStatuses,
@@ -275,7 +275,10 @@ function endEncounter(
   state.outcome = outcome
   classModule(state.hero.classId)?.encounterEnd?.(state, timeMs)
   raceModule(state.hero.race)?.encounterEnd?.(state, timeMs)
-  if (outcome === 'victory') logEncounterXp(state, timeMs)
+  if (outcome === 'victory') {
+    logEncounterXp(state, timeMs)
+    returnStolenSupplies(state, timeMs)
+  }
   state.log.push({ type: 'encounterEnd', timeMs, outcome })
 }
 
@@ -1277,6 +1280,55 @@ function spendSkillDodge(state: CombatState, actor: CombatActor, skill: EnemySki
   return true
 }
 
+/** A hit that steals: with the chance, take the last carried supply, once per enemy per fight. No roll is spent when nothing can be taken. */
+function stealSupply(state: CombatState, thief: CombatActor, chance: number, timeMs: number): void {
+  const hero = state.hero
+  if (thief.stoleSupply === true || !hero.alive || hero.supplies.length === 0) return
+  if (nextFloat(state.rng) >= chance) return
+  const supplyId = hero.supplies.pop()
+  if (supplyId === undefined) return
+  hero.stolenSupplies.push(supplyId)
+  thief.stoleSupply = true
+  state.log.push({
+    type: 'supplyTheft',
+    timeMs,
+    actorId: hero.id,
+    actorName: hero.name,
+    thiefId: thief.id,
+    thiefName: thief.name,
+    supplyId,
+    supplyName: titleOfSupply(supplyId),
+    returned: false,
+  })
+}
+
+function titleOfSupply(supplyId: string): string {
+  return supplyId
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+/** The win gives back what was taken. A retreat or defeat does not. */
+function returnStolenSupplies(state: CombatState, timeMs: number): void {
+  const hero = state.hero
+  for (const supplyId of hero.stolenSupplies) {
+    hero.supplies.push(supplyId)
+    state.log.push({
+      type: 'supplyTheft',
+      timeMs,
+      actorId: hero.id,
+      actorName: hero.name,
+      thiefId: hero.id,
+      thiefName: hero.name,
+      supplyId,
+      supplyName: titleOfSupply(supplyId),
+      returned: true,
+    })
+  }
+  hero.stolenSupplies = []
+}
+
 /** Authored skills do not roll to hit. They crit only when the skill sets canCrit. */
 function applyEnemySkill(
   state: CombatState,
@@ -1292,7 +1344,11 @@ function applyEnemySkill(
   const dodged = spendSkillDodge(state, actor, skill, timeMs)
   for (const effect of skill.effects) {
     if (state.outcome !== 'ongoing') break
-    if (dodged && (effect.kind === 'damage' || effect.kind === 'applyStatus')) continue
+    if (dodged && (effect.kind === 'damage' || effect.kind === 'applyStatus' || effect.kind === 'stealSupply')) continue
+    if (effect.kind === 'stealSupply') {
+      stealSupply(state, actor, effect.chance, timeMs)
+      continue
+    }
     if (effect.kind === 'damage') {
       const target = state.hero
       if (!target.alive) continue
@@ -1844,7 +1900,16 @@ function resolveSupply(state: CombatState, skill: SkillDef, scheduled: number): 
       continue
     }
     if (effect.kind === 'cleanse') {
-      for (const statusId of effect.statusIds) cleanseStatus(state, hero, scheduled, statusId)
+      cleanseListed(state, hero, scheduled, effect.statusIds, effect.limit)
+      continue
+    }
+    if (effect.kind === 'barrier' && effect.source === 'anchorMaxHp') {
+      const amount = hero.maxHp * effect.coefficient
+      const expiresMs = scheduled + roundDurationMs(effect.durationSeconds, `${skill.id} barrier`)
+      const replaced = hero.barrier
+      hero.barrier = amount
+      hero.barrierExpiresMs = expiresMs
+      state.log.push({ type: 'barrier', timeMs: scheduled, actorId: hero.id, actorName: hero.name, sourceId: hero.id, sourceName: hero.name, amount, expiresMs, replaced })
       continue
     }
     throw new Error(`supply '${skill.id}' effect '${effect.kind}' cannot be used`)
@@ -2404,6 +2469,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     carriedSupplyCount: readWholeCount(hero.carriedSupplyCount, 'carried supplies', 0),
     supplies: readSupplyList(hero.supplies),
     skillDodgeUntilMs: null,
+    stolenSupplies: [],
     suppliedArrowCount: readOptionalCount(hero.specialArrowCount, 'special arrow count'),
     suppliedTrapperCooldown: readOptionalCount(hero.trapperCooldown, 'trapper cooldown'),
     suppliedMageCharges: readOptionalJson(hero.mageCharges, 'mage charges'),

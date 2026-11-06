@@ -1041,6 +1041,22 @@ function isCleansable(value: string): value is CleansableStatus {
   return false
 }
 
+/** Remove the listed statuses that are present, in order, up to `limit` of them. Returns how many were removed. */
+export function cleanseListed(
+  state: CombatState,
+  target: CombatActor,
+  timeMs: number,
+  statusIds: readonly string[],
+  limit: number = statusIds.length,
+): number {
+  let removed = 0
+  for (const statusId of statusIds) {
+    if (removed >= limit) break
+    if (cleanseStatus(state, target, timeMs, statusId) !== null) removed += 1
+  }
+  return removed
+}
+
 /**
  * Remove one negative status and every stack or intensity point on it.
  * With no id, remove the highest-priority status that is actually present.

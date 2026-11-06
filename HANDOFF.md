@@ -3,6 +3,7 @@
 - **Last Updated By:** Claude Code
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
+  - 2026-11-06: Mend cleanses one Poison/Bleed; Ward Charm supply + `ward-charm-rule` hero update; brewing at the Potion Shop (`brewSupply`); Deserter supply theft (`stealSupply`, `supplyTheft` event). Cleric now wins the Rootmaw 100% from 3 nodes: possibly too strong, ask the user. 728 tests.
   - Cleanup (2026-11-04): Dev buttons verified dev-only in a production build; `legacySaves.test.ts` for the oldest save shape; Save file panel (export, load, start over) on the Roster tab. 720 tests.
   - Offline loot and gold halved per fight won while away (`OFFLINE_LOOT_RATE`, `applyLootRate` in `src/persist/offline.ts`; GAME_DESIGN §11). 716 tests.
   - Step 12.1 offline catch-up built (GAME_DESIGN §11): `src/persist/offline.ts` (pure, chunk-safe), `lastSeenAt` and hero standing orders in the save, `startOfflineWatch`/`AwayPanel` in the UI, orders in the preparation. 715 tests. Awaiting the user's check.
@@ -35,4 +36,4 @@
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
   - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** Cleanup is done. Ask the user to try offline and the Save file panel, then pick: mid-game pressure, cleanse and more supplies, Warden tuning (needs the user's hero details), or more content.
+- **Exact Next Step:** Ask the user whether Mend's cleanse is too strong for the Cleric (Rootmaw 100% from 3 nodes), and to try offline and the Save file panel. Then: mid-game pressure, Warden tuning (needs the user's hero details), or more content.

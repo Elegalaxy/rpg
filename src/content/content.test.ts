@@ -260,7 +260,10 @@ describe('content integrity', () => {
       cost: 25,
       cooldownSeconds: 5,
       actionTimeCoefficient: 1,
-      effects: [{ kind: 'heal', maxHpFraction: 0, healingCoefficient: 1.2 }],
+      effects: [
+        { kind: 'heal', maxHpFraction: 0, healingCoefficient: 1.2 },
+        { kind: 'cleanse', statusIds: ['bleed', 'poison'], limit: 1 },
+      ],
     })
     expect(skills.ward).toMatchObject({
       cost: 30,

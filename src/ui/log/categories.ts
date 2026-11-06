@@ -92,6 +92,7 @@ const EVENT_CATEGORIES = {
   race: [],
   skillDodge: ['statuses'],
   supplyUse: ['items'],
+  supplyTheft: ['items'],
 } as const satisfies Record<LogEvent['type'], readonly LogCategory[]>
 
 /** The colour group of a row: its first category, or `other` for telegraphs, stances, summons, and similar. */

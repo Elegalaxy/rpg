@@ -145,6 +145,8 @@ export type StatusDef =
 export type CombatActor = {
   id: string
   name: string
+  /** Set once this enemy has stolen a supply. */
+  stoleSupply?: boolean
   side: 'hero' | 'enemy'
   slot: number
   level: number
@@ -1027,6 +1029,20 @@ export type LogEvent =
   | RaceEvent
   | SkillDodgeEvent
   | SupplyUseEvent
+  | SupplyTheftEvent
+
+/** An enemy snatched a carried supply, or the win gave it back. */
+export type SupplyTheftEvent = {
+  type: 'supplyTheft'
+  timeMs: number
+  actorId: string
+  actorName: string
+  thiefId: string
+  thiefName: string
+  supplyId: string
+  supplyName: string
+  returned: boolean
+}
 
 /** The hero used up a carried supply: a drink from a rule, or a Smoke Bomb on an escape roll. */
 export type SupplyUseEvent = {
@@ -1235,6 +1251,15 @@ export type ApplyStatusEffect = {
 }
 
 /**
+ * An enemy skill takes the last supply the hero carries, with this chance (0 to 1). It does nothing
+ * when the hero carries none or the enemy already took one this fight. A win returns it.
+ */
+export type StealSupplyEffect = {
+  kind: 'stealSupply'
+  chance: number
+}
+
+/**
  * Ready a dodge on the hero: the next enemy skill with a damage effect that would hit the hero
  * within this window deals no damage and applies no statuses. One skill spends it.
  */
@@ -1243,10 +1268,14 @@ export type SkillDodgeEffect = {
   durationSeconds: number
 }
 
-/** Remove every stack of each listed status from the user. Only supplies use it. */
+/**
+ * Remove every stack of the listed statuses from the user, in the listed order. `limit` stops after
+ * that many statuses were removed; omitted removes every listed one present.
+ */
 export type CleanseEffect = {
   kind: 'cleanse'
   statusIds: readonly string[]
+  limit?: number
 }
 
 /** Closed list. Add a kind only when a listed skill needs it. */
@@ -1271,6 +1300,7 @@ export type SkillEffect =
   | DefenseBonusEffect
   | CleanseEffect
   | SkillDodgeEffect
+  | StealSupplyEffect
 
 export type SkillRequirement = {
   mainHand?: WeaponKind
@@ -1387,6 +1417,8 @@ export type CombatHero = CombatActor & {
   supplies: string[]
   /** A readied skill dodge lasts through this time. Null when none is ready. */
   skillDodgeUntilMs: number | null
+  /** Supplies an enemy took this fight. A win returns them. */
+  stolenSupplies: string[]
   /** Special arrows already fired this expedition. Null when the setup omits the counter. */
   suppliedArrowCount: number | null
   /** Prepared-spell charges carried in as JSON `{skillId: charges}`. Null fills them to their maximum. */

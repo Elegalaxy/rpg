@@ -16,6 +16,7 @@ import { Row } from '../Row.tsx'
 import {
   buyItemFromUi,
   buyRecipeFromUi,
+  brewSupplyFromUi,
   buySupplyFromUi,
   devTownTools,
   payDebtFromUi,
@@ -221,10 +222,25 @@ function PotionShop() {
                   >
                     Buy {SUPPLY_SLOT_COUNT}
                   </button>
+                  <button
+                    type="button"
+                    className="btn-good"
+                    disabled={
+                      closed ||
+                      hero === null ||
+                      gold < supply.brew.gold ||
+                      (purseOf(save).materials[supply.brew.materialId] ?? 0) < supply.brew.quantity
+                    }
+                    aria-label={`Brew 1 ${supply.name}`}
+                    onClick={() => run(brewSupplyFromUi(supply.id, 1), `Brewed 1 ${supply.name}.`)}
+                  >
+                    Brew 1
+                  </button>
                 </>
               }
             >
-              <strong>{supply.name}</strong> — {supply.effect} {supply.price} gold. You have <span data-testid={`stash-${supply.id}`}>{owned}</span>.
+              <strong>{supply.name}</strong> — {supply.effect} Buy for {supply.price} gold, or brew from {supply.brew.quantity} {supply.brew.materialId} and{' '}
+              {supply.brew.gold} gold. You have <span data-testid={`stash-${supply.id}`}>{owned}</span>.
             </Row>
           )
         })}
