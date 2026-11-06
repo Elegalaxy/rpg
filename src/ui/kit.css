@@ -517,6 +517,10 @@ dl.route-facts dd {
   margin: 0;
 }
 
+.fact-list li {
+  margin: 0;
+}
+
 .fact-list {
   display: flex;
   flex-wrap: wrap;
