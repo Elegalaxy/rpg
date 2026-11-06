@@ -11,6 +11,7 @@ import type {
   SkillDef,
 } from '../types.ts'
 import { tryApplyStatus } from '../statuses.ts'
+import { SHIELD_BRACE_NODE_FURY_BASE } from './starterNodes.ts'
 import {
   BLEED_BASE_CHANCE,
   BLEED_POWER_COEFFICIENT,
@@ -26,6 +27,7 @@ import {
   NODE_BLOODLETTING,
   NODE_DRIVING_BLOW,
   NODE_HEAVY_FOLLOW_THROUGH,
+  NODE_SHIELD_BRACE,
   NODE_SHIELD_IMPACT,
   NODE_UNBROKEN,
   NODE_WEAPON_MASTER,
@@ -387,7 +389,8 @@ function damageTaken(state: CombatState, notice: DamageNotice): void {
     grantClassResource(state, notice.timeMs, base, 'hpLoss', FURY_HIT_GAIN_CAP)
   }
   if (notice.kind === 'hit' && hero.damageReduction > 0) {
-    grantClassResource(state, notice.timeMs, FURY_BRACE_HIT_BASE, 'shieldBrace')
+    const braceBase = hasNode(hero, NODE_SHIELD_BRACE) ? SHIELD_BRACE_NODE_FURY_BASE : FURY_BRACE_HIT_BASE
+    grantClassResource(state, notice.timeMs, braceBase, 'shieldBrace')
   }
   if (
     hasNode(hero, NODE_UNBROKEN) &&

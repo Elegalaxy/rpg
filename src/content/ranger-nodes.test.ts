@@ -324,7 +324,7 @@ describe('ranger nodes', () => {
     expect(aimed.state.hero.critChance).toBeCloseTo(plain.state.hero.critChance, 10)
   })
 
-  it('unlocks Piercing Arrow without changing its damage or armor penetration', () => {
+  it('unlocks Piercing Arrow (cost 15) without changing its damage or armor penetration', () => {
     expect(nodeId('Piercing Arrow')).toBe(NODE_PIERCING_ARROW)
     const fresh = createProgress('human', HUMAN)
     expect(fresh.learnedSkillIds).not.toContain(PIERCING_ARROW_ID)
@@ -344,7 +344,7 @@ describe('ranger nodes', () => {
     expect(hit.coefficient).toBe(plainHit.coefficient)
     expect(hit.coefficient).toBe(2.2)
     expect(hit.penetration).toBe(plainHit.penetration)
-    expect(fight.state.hero.classResource).toBe(plain.state.hero.classResource)
+    expect(fight.state.hero.classResource).toBe(plain.state.hero.classResource + 5)
   })
 
   it('gives the next aimed skill +20% damage after 4 quiet seconds and does not stack', () => {

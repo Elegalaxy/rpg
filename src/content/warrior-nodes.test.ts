@@ -593,6 +593,19 @@ describe('warrior nodes', () => {
     expect(authored('shield-brace').effects).toEqual([{ kind: 'damageReduction', fraction: 0.3 }])
   })
 
+  it('Shield Brace node: being struck during the brace generates 10 base Fury instead of 5', () => {
+    const gained = (nodes: readonly string[]): number => {
+      const { state } = open({ nodes, equipped: ['shield-brace'], rows: [{ skillId: 'shield-brace' }] })
+      state.hero.classResource = 0
+      state.hero.damageReduction = 0.3
+      warriorClass.damageTaken?.(state, { hpLost: 0, hpBefore: state.hero.hp, kind: 'hit', timeMs: 100, school: 'physical' })
+      return state.hero.classResource
+    }
+    const plain = gained([])
+    expect(plain).toBeGreaterThan(0)
+    expect(gained([NODE_SHIELD_BRACE])).toBeCloseTo(plain * 2, 6)
+  })
+
   it('unlocks Second Wind', () => {
     const fresh = createProgress('human', HUMAN)
     expect(fresh.learnedSkillIds).not.toContain('second-wind')

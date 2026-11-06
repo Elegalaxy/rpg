@@ -408,11 +408,11 @@ describe('cleric nodes', () => {
     expect(classSkillBlock(late.state.hero, strike, 9000)).toBe('no stored Sanctuary')
   })
 
-  it('Judgment: unlocks the high-cost skill without changing its damage', () => {
+  it('Judgment: unlocks the high-cost skill and raises its damage to 230%', () => {
     expectUnlock('Judgment', NODE_JUDGMENT, 'judgment')
     const { state, defs } = open({ nodes: [NODE_JUDGMENT] })
     cast(state, defs, 'judgment', 100)
-    expect(lastHit(state).coefficient).toBe(2)
+    expect(lastHit(state).coefficient).toBe(2.3)
     expect(lastHit(state).outgoingModifier).toBe(1)
   })
 

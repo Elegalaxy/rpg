@@ -215,11 +215,11 @@ describe('mage nodes', () => {
     expect(lastHeroHits(noded.state)[0]?.afterIncoming).toBe(lastHeroHits(plain.state)[0]?.afterIncoming)
   })
 
-  it('unlocks Frost Lance without changing its damage', () => {
+  it('unlocks Frost Lance and raises its damage to 130%', () => {
     expectUnlock('Frost Lance', NODE_FROST_LANCE, FROST)
     const noded = open({ nodes: [NODE_FROST_LANCE], equipped: [FROST] })
     cast(noded.state, noded.defs, FROST, 100)
-    expect(lastHeroHits(noded.state)[0]?.coefficient).toBe(1.1)
+    expect(lastHeroHits(noded.state)[0]?.coefficient).toBe(1.3)
     expect(noded.state.hero.classResource).toBeLessThan(100)
   })
 
@@ -462,12 +462,12 @@ describe('mage nodes', () => {
     expect(noded.state.hero.pendingCoefficient).toBeNull()
   })
 
-  it('Mana Ward: unlocks the defensive skill without changing its cost or barrier', () => {
+  it('Mana Ward: unlocks the defensive skill and raises its barrier to 125% Magical Power', () => {
     expectUnlock('Mana Ward', NODE_MANA_WARD, WARD)
     const { state, defs } = open({ nodes: [NODE_MANA_WARD], equipped: [WARD] })
     const power = state.hero.magicalPower
     cast(state, defs, WARD, 100)
-    expect(state.hero.barrier).toBeCloseTo(power, 6)
+    expect(state.hero.barrier).toBeCloseTo(power * 1.25, 6)
     expect(100 - state.hero.classResource).toBeGreaterThanOrEqual(30)
   })
 

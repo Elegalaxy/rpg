@@ -16,6 +16,7 @@ import {
 import { raceModule, readFerocityProgress, readRace, readStartingFocus } from './races/index.ts'
 import { grantClassResource, payClassResource } from './classes/resources.ts'
 import { resolvedAmmoCost } from './classes/ranger.ts'
+import { heroSkill } from './classes/starterNodes.ts'
 import { adjustedHealingReceived } from './classes/warriorAdjust.ts'
 import {
   BASIC_ATTACK_COEFFICIENT,
@@ -1956,8 +1957,9 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
       return
     }
     if (decision.kind === 'skill') {
-      const skill = defs.skills[decision.skillId]
-      if (skill === undefined) throw new Error(`fallback skill '${decision.skillId}' is not defined`)
+      const base = defs.skills[decision.skillId]
+      if (base === undefined) throw new Error(`fallback skill '${decision.skillId}' is not defined`)
+      const skill = heroSkill(hero, base)
       const aimed = skillActionTargets(state, hero, skill)
       if (aimed.targets.length === 0) {
         logWait(state, scheduled, 'no target')
@@ -2065,8 +2067,9 @@ function waitingCanAct(state: CombatState, defs: GameDefs, timeMs: number): bool
     const decision = decideFallback(state, defs, timeMs)
     if (decision.kind === 'wait') return false
     if (decision.kind === 'basicAttack') return true
-    const skill = defs.skills[decision.skillId]
-    if (skill === undefined) throw new Error(`fallback skill '${decision.skillId}' is not defined`)
+    const base = defs.skills[decision.skillId]
+    if (base === undefined) throw new Error(`fallback skill '${decision.skillId}' is not defined`)
+    const skill = heroSkill(hero, base)
     return skillActionTargets(state, hero, skill).targets.length > 0
   } finally {
     state.rng = saved

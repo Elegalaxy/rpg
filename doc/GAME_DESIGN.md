@@ -338,7 +338,7 @@ The MVP Warrior web has fifteen nodes: five per cluster. Connections follow the 
 
 #### Arms cluster
 
-1. Sundering Blow: unlock the Expose-applying active skill.
+1. Sundering Blow: unlock the Expose-applying active skill. Sundering Blow's cooldown falls from 6 to 5 seconds.
 2. Weapon Discipline: weapon skills cost 10% less Fury and have 10% shorter base cooldowns.
 3. Reckless Strike: unlock the high-risk two-handed active skill.
 4. Heavy Follow-Through: after an action with a time coefficient of at least 1.2×, the next weapon action is 25% faster, subject to the global action-time floor.
@@ -346,8 +346,8 @@ The MVP Warrior web has fifteen nodes: five per cluster. Connections follow the 
 
 #### Bulwark cluster
 
-1. Shield Brace: unlock the shield-based defensive active skill.
-2. Second Wind: unlock the Fury-spending recovery active skill.
+1. Shield Brace: unlock the shield-based defensive active skill. Being struck during Shield Brace generates 10 base Fury instead of 5.
+2. Second Wind: unlock the Fury-spending recovery active skill. Second Wind's cooldown falls from 15 to 12 seconds.
 3. Defiance: below 35% HP, increase Fury generation and healing received by 25%.
 4. Shield Impact: when Shield Brace reduces damage, the next Driving Blow or Sundering Blow used within 6 seconds gains a 75% base Stun chance.
 5. Unbroken, major keystone: halve the held-Fury damage bonus and gain up to 15% damage reduction at 100 Fury. Once per encounter, lethal damage taken at 75 or more Fury consumes all Fury and leaves the Warrior at 1 HP.
@@ -370,7 +370,7 @@ The MVP Assassin web has fifteen nodes: five per cluster. Connections follow the
 
 #### Venom cluster
 
-1. Venom Edge: unlock the Poison-applying active skill.
+1. Venom Edge: unlock the Poison-applying active skill. Its Poison tick deals 15% of snapshotted Physical Power instead of 12%.
 2. Potent Toxins: increase Poison's stack cap from 5 to 7, shared duration from 8 to 10 seconds, and Poison application Potency by 10.
 3. Fan of Knives: unlock the multi-target active skill.
 4. Toxic Opportunity: applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage.
@@ -378,9 +378,9 @@ The MVP Assassin web has fifteen nodes: five per cluster. Connections follow the
 
 #### Execution cluster
 
-1. Mark for Death: unlock the single-target Mark active skill.
+1. Mark for Death: unlock the single-target Mark active skill. Applying the Mark grants 1 Advantage.
 2. Exploit Weakness: direct damage against the Marked target gains +15%, and Mark exploitation stores 25% additional fractional Advantage progress.
-3. Execute: unlock the all-Advantage finisher.
+3. Execute: unlock the all-Advantage finisher. Execute's base damage is 120% instead of 100% before the Advantage and missing-health terms.
 4. Relentless: killing the Marked target resets Mark for Death's cooldown and leaves the Assassin with at least 2 Advantage after the killing action resolves, capped normally at 5.
 5. Death Sentence, major keystone: Mark persists until its target dies or is moved. Against ordinary enemies, Execute is fatal below 4% HP per consumed Advantage stack, up to 20%. Bosses cannot be executed; Execute instead gains +10% final damage per consumed stack against them.
 
@@ -395,13 +395,13 @@ The MVP Ranger web has fifteen nodes: five per cluster. Each node costs 1 skill 
 
 1. Aimed Shot: improve the starting skill to 338% Physical Power when used at 80 or more Readiness (200% until 2026-11-03, 260% until the second Ranger pass the same day).
 2. Steady Hands: at 75 or more Readiness, aimed skills gain +10 percentage points to their minimum damage roll and critical chance.
-3. Piercing Arrow: unlock the Armor-penetrating active skill.
+3. Piercing Arrow: unlock the Armor-penetrating active skill. Piercing Arrow costs 15 Readiness instead of 20.
 4. Patient Shot: after spending at least 4 seconds without using a Readiness-spending attack, the next aimed skill gains +20% damage. The effect is consumed on use and cannot stack.
 5. Deadeye, major keystone: at 100 Readiness, Aimed Shot or Piercing Arrow consumes all Readiness, rolls from 95%-100%, and gains +25 percentage points of critical chance.
 
 #### Traps cluster
 
-1. Snare Trap: unlock the active skill that spends an action placing a trap; it triggers on a later enemy action and attempts Stun.
+1. Snare Trap: unlock the active skill that spends an action placing a trap; it triggers on a later enemy action and attempts Stun. Snare Trap's cooldown falls from 8 to 6 seconds.
 2. Reinforced Snare: add 15 Status Potency to Snare Trap. If Stun is resisted, the trap still pushes the target's next action 0.75 seconds later.
 3. Flame Arrow: unlock the special-ammunition Fire active skill.
 4. Efficient Quiver: add 2 special-ammunition slots. Every third special arrow fired does not consume ammunition; the visible counter persists for the expedition.
@@ -424,8 +424,8 @@ The MVP Mage web has fifteen nodes: five per cluster. Connections follow the fir
 
 #### Elemental cluster
 
-1. Fireball: unlock the group Fire/Burn active skill.
-2. Frost Lance: unlock the single-target Frost/Chill active skill.
+1. Fireball: unlock the group Fire/Burn active skill. Fireball costs 25 Mana instead of 30.
+2. Frost Lance: unlock the single-target Frost/Chill active skill. Frost Lance deals 130% Magical Power instead of 110%.
 3. Chain Lightning: unlock the jumping Lightning disruption active skill.
 4. Elemental Affinity: Burn ticks gain +10% damage, Chill lasts 2 seconds longer, and Chain Lightning retains 85% rather than 75% damage per jump.
 5. Elemental Convergence, major keystone: cast Fire, Frost, and Lightning once each in one of six possible orders to create a distinct authored spell in a dedicated Convergence slot.
@@ -453,7 +453,7 @@ Initial invocation recipes:
 #### Arcane cluster
 
 1. Arcane Bolt: reduce Mana cost from 5 to 3 and increase damage from 90% to 100% Magical Power.
-2. Mana Ward: unlock the Mana-spending defensive active skill.
+2. Mana Ward: unlock the Mana-spending defensive active skill. Its barrier is 125% Magical Power instead of 100%.
 3. Arcane Recovery: increase restoration from 30 to 40 base Mana and reduce base cooldown from 10 to 8 seconds.
 4. Efficient Channeling: reduce Mana costs by 10% and increase passive Mana regeneration by 20%.
 5. Overcast, major keystone: when Mana is insufficient, each missing Mana costs 0.25% maximum HP. The spell gains +1% damage per missing Mana, capped at +30%. Overcast is ineligible if its health cost would be fatal.
@@ -484,14 +484,14 @@ The MVP Cleric web has fifteen nodes: five per cluster. Connections follow the f
 #### Sanctuary cluster
 
 1. Mend: increase healing from 120% to 140% Healing Power.
-2. Ward: unlock the Faith-spending absorption active skill.
+2. Ward: unlock the Faith-spending absorption active skill. Ward's barrier lasts up to 10 seconds instead of 8.
 3. Consecration: unlock the temporary damage-and-recovery field.
 4. Safeguard: each 5% of maximum HP effectively healed or prevented by a Cleric skill refunds 1 Faith, capped at 5 Faith per action or tick. Overhealing grants nothing.
 5. Living Sanctuary, major keystone: while Consecration is active, store 30% of effective healing and barrier damage absorbed, capped at 50% of maximum HP. When the field ends, create a temporary Sanctuary Release skill for 8 seconds. A priority rule may release the stored value as direct healing or magical damage; release consumes a 1.0× action and the stored value.
 
 #### Judgment cluster
 
-1. Judgment: unlock the high-cost magical damage active skill.
+1. Judgment: unlock the high-cost magical damage active skill. Judgment deals 230% Magical Power instead of 200%.
 2. Righteous Force: Faith-spending offensive skills gain +15% damage and +10 percentage points of magical penetration.
 3. Reciprocal Purpose: alternating between offensive and defensive Cleric skills reduces the second skill's Faith cost by 20%.
 4. Final Mercy: an effective Mend or Ward empowers the next Smite or Judgment by 25%; killing an enemy empowers the next Mend or Ward by 25%. Each side stores at most one charge.
@@ -1238,6 +1238,38 @@ First-playable defeat, decided 2026-10-24:
 - A slot that holds an item still holds it after defeat, and items already consumed stay consumed. Unused supplies go back to the hero's stash when the run is settled, after a return or a defeat.
 - The rescue fee is 25 gold, paid from gold the hero is carrying. Unpaid gold is added to debt. Debt is only stored. Deposited gold is not spent. Soul Debt's extra 50% is a racial node, not this base fee.
 - The hero must wait 5 minutes before the next expedition. The wait is stored on the defeat. It does not tick inside the lost expedition.
+
+### Batch C: loot safety, bag, rules, modifiers (decided 2026-11-07)
+
+Safe pouch (replaces the "send loot home" idea; there is no courier):
+
+- The pouch is not extra space. It marks the most valuable part of what the hero already carries as protected. Protected room is 5.
+- Value order: rarer material first, then larger quantity. It re-sorts after every fight, so the player does nothing and offline runs work the same way.
+- On defeat, the protected part is kept and goes to secured materials with the rest of the run settlement. Only the unprotected part is destroyed. Retreat and safe return keep everything, as before.
+- The bag tooltip says what is lost: "Lost if you are defeated, except the safe pouch" (it used to wrongly say a retreat loses loot).
+
+Bigger bag:
+
+- Capacity is 20, +2 at hero level 10, 20 and 30, +3 with a Hauler's modifier on worn gear, +4 with the Legacy purchase Deep Pockets (15 Legacy). Maximum 36.
+
+When the bag is nearly full:
+
+- "Full" means fewer than 4 free room. Hero setting `bagFullOrder`: `home` (walk home, default) or `ask` (hold and wait for the player). No courier option.
+
+Rule conditions (new): hero HP in points, target HP in points, missing HP, skill is ready, fight time. Enemy rank and boss phase are shown in the picker. AND/OR groups are unchanged. Each rule gets a plain-language summary and a Duplicate button.
+
+Fight controls: carried supplies can be queued for the next action in a fight. An Escape now button starts an escape attempt at once (a packed Smoke Bomb still adds its +15 points).
+
+Modifiers (new, one modifier per item stays): Vicious (+10 crit damage, level 3, 75 gold, weapons and accessories), Sturdy (+4% max HP, level 6, 150 gold, armor), Hauler's (+3 bag room, level 4, 100 gold, chest armor and accessories). The same modifier counts at most twice across equipped gear (`MODIFIER_STACK_CAP = 2`).
+
+Starting-skill node bonuses (each node keeps its unlock and gains one small bonus):
+
+- Warrior: Sundering Blow cooldown 6 to 5 s. Shield Brace Fury on hit 5 to 10. Second Wind cooldown 15 to 12 s.
+- Assassin: Venom Edge poison tick 12% to 15%. Mark for Death grants 1 Advantage when applied. Execute base damage 100% to 120%.
+- Ranger: Piercing Arrow cost 20 to 15. Snare Trap cooldown 8 to 6 s.
+- Mage: Fireball cost 30 to 25. Frost Lance damage 110% to 130%. Mana Ward barrier 100% to 125%.
+- Cleric: Ward duration 8 to 10 s. Judgment damage 200% to 230%.
+- Check with `npm run sim -- --matrix built --seed 1 --runs 40` before and after; report the change per class.
 - `bossLossThisLife` is set only when a non-summon enemy in that fight is a boss. Splintered Road enemies are not bosses.
 
 ## 9. Towns, Crafting, and Economy

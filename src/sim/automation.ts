@@ -1,5 +1,6 @@
 import { syncCleric } from './classes/cleric.ts'
 import { MISSING_SPECIAL_ARROW_REASON, resolvedAmmoCost } from './classes/ranger.ts'
+import { heroSkill } from './classes/starterNodes.ts'
 import { nextFloat } from './rng.ts'
 import {
   activeBarrier,
@@ -864,7 +865,8 @@ export function evaluateManualAction(
 ): ManualResolution {
   const skillId = state.queuedSkillId
   if (typeof skillId !== 'string' || skillId.length === 0) return { kind: 'none' }
-  const skill = defs.skills[skillId]
+  const base = defs.skills[skillId]
+  const skill = base === undefined ? undefined : heroSkill(hero, base)
   if (skill === undefined) {
     return {
       kind: 'cancel',
@@ -919,10 +921,11 @@ export function chooseHeroAction(
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index]
     if (row === undefined) continue
-    const skill = defs.skills[row.skillId]
-    if (skill === undefined) {
+    const base = defs.skills[row.skillId]
+    if (base === undefined) {
       throw new Error(`priority row ${index + 1} references unknown skill '${row.skillId}'`)
     }
+    const skill = heroSkill(hero, base)
     const reason = skipReason(state, hero, skill, timeMs)
     if (reason !== null) {
       events.push(priorityEvent(hero, timeMs, index, skill, 'skip', reason))

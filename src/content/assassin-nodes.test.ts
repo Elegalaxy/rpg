@@ -621,6 +621,30 @@ describe('assassin nodes', () => {
     expect(enemy.statuses.mark).toBeNull()
   })
 
+  it('Mark for Death node grants 1 Advantage when the Mark is applied, and only with the node', () => {
+    const results: number[] = []
+    for (const nodes of [[], [nodeId('Mark for Death')]]) {
+      const fight = open({ nodes, equipped: ['mark-for-death'], rows: [{ skillId: 'mark-for-death' }] })
+      useSkill(fight.state, fight.defs, 'mark-for-death')
+      expect(fight.state.enemies[0]?.statuses.mark).not.toBeNull()
+      results.push(fight.state.hero.classResource)
+    }
+    expect(results).toEqual([0, 1])
+  })
+
+  it('Execute without its node keeps the 100% base coefficient', () => {
+    const fight = open({ equipped: ['execute'], rows: [{ skillId: 'execute' }], enemies: [dummy({ maxHp: 10_000_000, armor: 0, evasion: 0, actionTime: 60, power: 1 })] })
+    const target = fight.state.enemies[0]
+    if (target === undefined) throw new Error('missing enemy')
+    fight.state.hero.classResource = 1
+    fight.state.hero.critChance = 0
+    useSkill(fight.state, fight.defs, 'execute')
+    const action = skillActions(fight.state, 'execute')[0]
+    if (action?.type !== 'action') throw new Error('missing execute')
+    const hit = damagesAt(fight.state, action.timeMs)[0]
+    expect(hit).toMatchObject({ type: 'damage', coefficient: executeCoefficient(1, 0) })
+  })
+
   it('adds 15% direct damage against the Marked target and 25% more Mark progress', () => {
     const fight = open({
       nodes: [NODE_EXPLOIT_WEAKNESS],
@@ -666,7 +690,7 @@ describe('assassin nodes', () => {
     expect(basic.state.hero.classResource).toBe(0)
   })
 
-  it('unlocks Execute without making it fatal', () => {
+  it('unlocks Execute (base damage 120%) without making it fatal', () => {
     const fresh = createProgress('human', HUMAN)
     expect(fresh.learnedSkillIds).not.toContain('execute')
     const progress = learned(['Mark for Death', 'Exploit Weakness', 'Execute'])
@@ -690,7 +714,7 @@ describe('assassin nodes', () => {
     const action = skillActions(fight.state, 'execute')[0]
     if (action?.type !== 'action') throw new Error('missing execute')
     const hit = damagesAt(fight.state, action.timeMs)[0]
-    const expected = executeCoefficient(1, (target.maxHp - 300_000) / target.maxHp)
+    const expected = executeCoefficient(1, (target.maxHp - 300_000) / target.maxHp, 1.2)
     expect(hit).toMatchObject({ type: 'damage', coefficient: expected })
     expect(target.alive).toBe(true)
     expect(target.hp).toBeGreaterThan(0)

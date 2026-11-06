@@ -18,6 +18,12 @@ import type {
   StatusSnapshot,
 } from '../types.ts'
 import { defineClassResource, spiritResourceFactor } from './resources.ts'
+import {
+  EXECUTE_NODE_BASE,
+  MARK_FOR_DEATH_NODE_ADVANTAGE,
+  NODE_EXECUTE,
+  NODE_MARK_FOR_DEATH,
+} from './starterNodes.ts'
 
 export const ADVANTAGE_RESOURCE_ID = 'advantage'
 export const ADVANTAGE_MAXIMUM = 5
@@ -82,8 +88,8 @@ const STATE_POISON = 'poisonCounts'
 const STATE_ELUSIVE = 'elusiveAction'
 
 /** `(1 + 0.4 × stacks) × (1 + 0.5 × missing-health fraction)`. That product is the hit coefficient. */
-export function executeCoefficient(stacks: number, missingHealthFraction: number): number {
-  return (1 + EXECUTE_STACK_BONUS * stacks) * (1 + EXECUTE_MISSING_HEALTH_BONUS * missingHealthFraction)
+export function executeCoefficient(stacks: number, missingHealthFraction: number, base = 1): number {
+  return (base + EXECUTE_STACK_BONUS * stacks) * (1 + EXECUTE_MISSING_HEALTH_BONUS * missingHealthFraction)
 }
 
 function actorById(state: CombatState, id: string): CombatActor | null {
@@ -640,7 +646,11 @@ function actionChosen(state: CombatState, action: ClassAction, timeMs: number): 
   const stacks = hero.classResource
   const fraction = hero.resourceFraction
   const missing = missingHealthFraction(target)
-  hero.pendingCoefficient = executeCoefficient(stacks, missing)
+  hero.pendingCoefficient = executeCoefficient(
+    stacks,
+    missing,
+    hasNode(hero, NODE_EXECUTE) ? EXECUTE_NODE_BASE : 1,
+  )
   hero.classResource = 0
   logAdvantage(state, timeMs, 'execute', stacks, 1, -stacks, stacks, 0, fraction, fraction)
   if (!hasNode(hero, NODE_DEATH_SENTENCE)) {
@@ -675,6 +685,7 @@ function actionResolved(state: CombatState, action: ClassAction, timeMs: number)
     if (action.skill.tags.includes(MARK_EXPLOIT_TAG) && marked.length > 0) exploited = true
   }
   for (const target of refreshTargets) refreshMarkedTarget(state, target, timeMs)
+  markForDeathBonus(state, action, timeMs)
   const poisoned = poisonAppliedToMarked(state)
   if (crit || exploited || poisoned) {
     const reason = crit && exploited ? 'criticalAndMark' : crit ? 'critical' : exploited ? 'mark' : 'poison'
@@ -682,6 +693,21 @@ function actionResolved(state: CombatState, action: ClassAction, timeMs: number)
     grantAdvantage(state, timeMs, reason, progress)
   }
   finishAction(state, action, timeMs)
+}
+
+/** The Mark for Death node: applying the Mark also grants one whole Advantage stack. */
+function markForDeathBonus(state: CombatState, action: ClassAction, timeMs: number): void {
+  const hero = state.hero
+  if (action.kind !== 'skill' || action.skill.id !== MARK_FOR_DEATH_ID) return
+  if (!hasNode(hero, NODE_MARK_FOR_DEATH) || action.targetId === undefined) return
+  const target = actorById(state, action.targetId)
+  if (target === null || target.statuses.mark === null) return
+  const before = hero.classResource
+  const after = Math.min(ADVANTAGE_MAXIMUM, before + MARK_FOR_DEATH_NODE_ADVANTAGE)
+  if (after === before) return
+  const fraction = hero.resourceFraction
+  hero.classResource = after
+  logAdvantage(state, timeMs, 'markForDeath', MARK_FOR_DEATH_NODE_ADVANTAGE, 1, after - before, before, after, fraction, fraction)
 }
 
 function damageTaken(state: CombatState, notice: DamageNotice): void {
