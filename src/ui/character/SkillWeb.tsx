@@ -154,6 +154,13 @@ export function SkillWeb() {
             <p data-testid="node-description" style={{ whiteSpace: 'pre-line' }}>
               {nodeDescription(chosen.node.id)}
             </p>
+            {chosen.node.unlocksSkillId !== null && skillFacts(chosen.node.unlocksSkillId) !== null ? (
+              <p className="skill-facts" data-testid="node-skill-facts">
+                {skillFacts(chosen.node.unlocksSkillId)?.stats.join(' · ')}
+                <br />
+                {skillFacts(chosen.node.unlocksSkillId)?.effects.join('. ')}
+              </p>
+            ) : null}
             <ul>
               <li>Cluster: {chosen.node.cluster}</li>
               <li>Cost: 1 skill point</li>
@@ -163,15 +170,9 @@ export function SkillWeb() {
                   ? 'nothing (starts this line)'
                   : (views.find((view) => view.node.id === chosen.node.requires)?.node.name ?? chosen.node.requires)}
               </li>
-              {chosen.preview.unlocksSkillId !== null ? (
+              {chosen.node.unlocksSkillId !== null ? (
                 <li>
-                  Unlocks skill: {skills[chosen.preview.unlocksSkillId]?.name ?? chosen.preview.unlocksSkillId}
-                  {skillFacts(chosen.preview.unlocksSkillId) !== null ? (
-                    <small className="skill-facts">
-                      <br />
-                      {skillFacts(chosen.preview.unlocksSkillId)?.stats.join(' · ')}
-                    </small>
-                  ) : null}
+                  {chosen.preview.unlocksSkillId === null ? 'Skill (already known)' : 'Unlocks skill'}: {skills[chosen.node.unlocksSkillId]?.name ?? chosen.node.unlocksSkillId}
                 </li>
               ) : null}
               {chosen.node.keystone ? (

@@ -63,6 +63,7 @@ function withHero(): SaveData {
     packedSupplies: [],
     pushOnHpPercent: 50,
     repeatRoute: true,
+    awayRouteId: null,
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,

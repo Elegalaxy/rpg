@@ -168,6 +168,8 @@ export type SavedHero = {
   pushOnHpPercent: number
   /** Standing order while away: after a safe return, run the same route again if the hero has cleared it. */
   repeatRoute: boolean
+  /** Route to start on its own when the hero has no run as the player leaves. Null never starts one. */
+  awayRouteId: string | null
   /** One-time content updates this hero already has (see `heroUpdates.ts`). */
   updates: string[]
   /** The highest Fractured Warden Echo rank this hero can fight. Each victory unlocks the next. Personal to the hero. */
@@ -384,6 +386,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.pushOnHpPercent, `${label} push-on percent`)
   check((value.pushOnHpPercent as number) >= 1 && (value.pushOnHpPercent as number) <= 100, `${label} push-on percent must be from 1 to 100`)
   check(typeof value.repeatRoute === 'boolean', `${label} repeat route must be true or false`)
+  check(value.awayRouteId === null || typeof value.awayRouteId === 'string', `${label} away route must be a route id or null`)
   stringList(value.packedSupplies, `${label} packed supplies`)
   stringList(value.updates, `${label} updates`)
   check(value.packedSupplies.length <= SUPPLY_SLOT_COUNT, `${label} packs more than ${SUPPLY_SLOT_COUNT} supplies`)
@@ -492,6 +495,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.packedSupplies === undefined) hero.packedSupplies = []
     if (hero.pushOnHpPercent === undefined) hero.pushOnHpPercent = DEFAULT_PUSH_ON_PERCENT
     if (hero.repeatRoute === undefined) hero.repeatRoute = true
+    if (hero.awayRouteId === undefined) hero.awayRouteId = null
     if (hero.updates === undefined) hero.updates = []
     if (hero.craftXp === undefined) hero.craftXp = 0
     if (hero.legacy === undefined) hero.legacy = 0

@@ -200,3 +200,28 @@ describe('an expedition while away', () => {
     expect(away.save.expedition?.outcome).toBe('defeat')
   })
 })
+
+describe('starting a run while away', () => {
+  const idle = () => withHero(strongHero(), { awayRouteId: 'splintered-road', clearedNodeIds: ['splintered-road'] })
+
+  it('starts the chosen route when the hero has no run, then follows the standing orders', () => {
+    const result = runOffline(idle(), 10 * MINUTE, true)
+    expect(result.summary.fightsWon).toBeGreaterThan(0)
+    expect(result.save.expedition).not.toBeNull()
+  })
+
+  it('does nothing without an away route, with an uncleared route, or while a run exists', () => {
+    expect(runOffline(withHero(idle(), { awayRouteId: null }), 10 * MINUTE, true).save.expedition).toBeNull()
+    const uncleared = runOffline(withHero(idle(), { clearedNodeIds: [] }), 10 * MINUTE, true)
+    expect(uncleared.save.expedition).toBeNull()
+    expect(uncleared.summary.stopped).toBe('uncleared')
+    const out = running(idle())
+    expect(createOffline(out, 10 * MINUTE, true).save.expedition?.seed).toBe(5)
+  })
+
+  it('stops when the packed supplies are not in the stash', () => {
+    const result = runOffline(withHero(idle(), { packedSupplies: ['healing-draught'] }), 10 * MINUTE, true)
+    expect(result.summary.stopped).toBe('supplies')
+    expect(result.save.expedition).toBeNull()
+  })
+})

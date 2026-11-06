@@ -10,11 +10,13 @@ import {
   MATERIAL_QUALITY,
   QUEUE_MAX,
   UPGRADE_MATERIAL_COST,
+  UPGRADE_QUALITY_POINTS,
   craftCheck,
   craftGold,
   proficiencyRank,
   qualityRange,
   upgradeGold,
+  upgradedQuality,
   upgradeCheck,
 } from '../../persist/crafting.ts'
 import { wearerOf } from '../../persist/equipment.ts'
@@ -176,15 +178,14 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
 
       <h4>Upgrade</h4>
       <p className="muted">
-        An upgrade always adds 1 item level and keeps the item's quality. The material you spend makes no difference to the result, so use whichever you
-        have most of.
+        An upgrade always adds 1 item level. The material adds quality too: scrap +0, hide +1, shard +2 percentage points, up to 110%.
       </p>
       <label>
         Material{' '}
         <select aria-label="Upgrade material" value={upgradeMaterial} onChange={(event) => setUpgradeMaterial(event.target.value)}>
           {MATERIALS.map((id) => (
             <option key={id} value={id}>
-              {id} (have {purseOf(save).materials[id] ?? 0})
+              {id}: +{UPGRADE_QUALITY_POINTS[id] ?? 0} quality (have {purseOf(save).materials[id] ?? 0})
             </option>
           ))}
         </select>
@@ -203,7 +204,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
               }
             >
               {worn === null ? '' : `Worn (${worn}): `}
-              {itemName(item)}, item level {item.itemLevel} → {item.itemLevel + 1} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
+              {itemName(item)}, item level {item.itemLevel} → {item.itemLevel + 1}, quality {percent(item.quality)} → {percent(upgradedQuality(item.quality, upgradeMaterial))} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
               {block !== null ? <small className="row-note">{block}</small> : null}
             </Row>
           )

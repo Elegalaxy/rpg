@@ -12,6 +12,16 @@ export const UPGRADE_MATERIAL_COST = 3
 export const CRAFT_MS = 30_000
 export const QUEUE_MAX = 3
 export const MAX_RANK = 10
+/** Percentage points of quality an upgrade adds, by the material spent (GAME_DESIGN crafting). */
+export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2 }
+/** An upgrade never lifts quality above the best a craft can roll. */
+export const UPGRADE_QUALITY_CAP = 1.1
+
+/** The quality an item has after an upgrade with this material. */
+export function upgradedQuality(quality: number, materialId: string): number {
+  const raised = quality + (UPGRADE_QUALITY_POINTS[materialId] ?? 0) / 100
+  return raised > UPGRADE_QUALITY_CAP ? Math.max(quality, UPGRADE_QUALITY_CAP) : raised
+}
 /** Seeds the crafting rolls. Each job adds its own index, so a saved game rolls the same way. */
 export const CRAFT_SEED = 0x5eed
 
@@ -241,7 +251,7 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       notice: { jobId: job.id, baseId: job.baseId, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
-  const returned: ItemInstance = { ...job.item, itemLevel: job.item.itemLevel + 1 }
+  const returned: ItemInstance = { ...job.item, itemLevel: job.item.itemLevel + 1, quality: upgradedQuality(job.item.quality, job.materialId) }
   const name = itemBase(job.item.baseId)?.name ?? job.item.baseId
   const owner = heroes.find((entry) => entry.id === job.heroId)
   const backInSlot = job.slot !== undefined && owner !== undefined && owner.equipment[job.slot] === null

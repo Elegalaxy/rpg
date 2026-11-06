@@ -630,3 +630,37 @@ ul.away-facts {
 ul.away-facts li {
   margin: 0;
 }
+
+/* ---- Flat stat rows: fewer boxes. Values and labels sit in one line, no card around each. ---- */
+
+.kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s4, 1.5rem);
+}
+
+.kpi {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s2);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.kpi-value {
+  font-size: 1.15rem;
+}
+
+.kpi-compact .kpi-value {
+  font-size: 1.15rem;
+}
+
+.kpi-label {
+  order: 2;
+}
+
+.kpi-note {
+  order: 3;
+}

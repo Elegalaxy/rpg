@@ -1,4 +1,5 @@
 import { supplyTable } from '../content/supplies.ts'
+import { routes } from '../content/world.ts'
 import { CLERIC_VOWS } from '../sim/classes/cleric.ts'
 import { SUPPLY_SLOT_COUNT } from '../sim/expedition.ts'
 import { EFFICIENT_QUIVER_CAPACITY, NODE_EFFICIENT_QUIVER, QUIVER_CAPACITY } from '../sim/classes/ranger.ts'
@@ -24,6 +25,8 @@ export type PreparationDraft = {
   pushOnPercent: string
   /** Standing order while away: run a cleared route again after a safe return. */
   repeatRoute: boolean
+  /** Route to start on its own when the player leaves with no run. An empty string never starts one. */
+  awayRouteId: string
 }
 
 export const RETREAT_MIN_PERCENT = 5
@@ -42,6 +45,7 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     supplies: Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => hero.packedSupplies[index] ?? ''),
     pushOnPercent: String(hero.pushOnHpPercent),
     repeatRoute: hero.repeatRoute,
+    awayRouteId: hero.awayRouteId ?? '',
   }
 }
 
@@ -175,8 +179,24 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   const packedSupplies = draft.supplies.filter((id) => id !== '')
   if (draft.supplies.length > SUPPLY_SLOT_COUNT) errors.push(`Pack at most ${SUPPLY_SLOT_COUNT} supplies.`)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
+  if (draft.awayRouteId !== '' && routes[draft.awayRouteId] === undefined) errors.push('Pick a route Greyhaven knows for away runs, or none.')
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, hero: { ...hero, retreatAtMost, vow, curse, specialAmmo, carryGold, fightRank, packedSupplies, pushOnHpPercent, repeatRoute: draft.repeatRoute } }
+  return {
+    ok: true,
+    hero: {
+      ...hero,
+      retreatAtMost,
+      vow,
+      curse,
+      specialAmmo,
+      carryGold,
+      fightRank,
+      packedSupplies,
+      pushOnHpPercent,
+      repeatRoute: draft.repeatRoute,
+      awayRouteId: draft.awayRouteId === '' ? null : draft.awayRouteId,
+    },
+  }
 }
 
 /** Save a hero's preparation. It cannot change while that hero is out on an expedition. */

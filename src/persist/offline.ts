@@ -89,6 +89,20 @@ export function replayMs(awayMs: number): number {
 }
 
 /**
+ * The player left with no run and chose an away route: start it first (GAME_DESIGN §11). It is refused, with the
+ * reason, when the hero has not cleared the route, the packed supplies are not in the stash, or the run cannot begin.
+ */
+function startAwayRun(save: SaveData): { save: SaveData; stopped: OfflineStop; note: string | null } {
+  const hero = selectedHero(save)
+  if (save.expedition !== null || hero === null || hero.awayRouteId === null) return { save, stopped: null, note: null }
+  if (!routeCleared(hero, hero.awayRouteId)) return { save, stopped: 'uncleared', note: null }
+  if (packFromStash(hero).missing.length > 0) return { save, stopped: 'supplies', note: null }
+  const begun = beginExpedition(save, hero.awayRouteId, deriveSeed(save.lastSeenAt ?? 1, 4242))
+  if (!begun.ok) return { save, stopped: 'blocked', note: begun.reason }
+  return { save: begun.save, stopped: null, note: null }
+}
+
+/**
  * Start a catch-up. The given save is copied, so nothing about it changes. Time is replayed in whole
  * simulation steps by `advanceOffline`. `crafting` is false when something else already counted the
  * crafting time, such as the wall-clock craft timer of a tab that was only hidden.
@@ -97,13 +111,14 @@ export function createOffline(save: SaveData, awayMs: number, crafting: boolean)
   const copy = structuredClone(save)
   const ms = replayMs(awayMs)
   const purse = purseOf(copy)
+  const away = startAwayRun(copy)
   return {
-    save: copy,
+    save: away.save,
     stepsLeft: Math.floor(ms / STEP_MS),
     pushedAt: null,
     crafting,
-    baseline: baselineOf(copy),
-    stopped: null,
+    baseline: baselineOf(away.save),
+    stopped: away.stopped,
     start: {
       level: heroLevel(copy),
       gold: safeGold(copy),
@@ -127,7 +142,7 @@ export function createOffline(save: SaveData, awayMs: number, crafting: boolean)
       contractsFinished: 0,
       discovered: [],
       stopped: null,
-      note: null,
+      note: away.note,
     },
   }
 }

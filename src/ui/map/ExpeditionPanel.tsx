@@ -14,6 +14,7 @@ import {
   type PreparationDraft,
 } from '../../persist/preparation.ts'
 import type { SavedHero } from '../../persist/save.ts'
+import { routes } from '../../content/world.ts'
 import { outcomeStats } from '../../persist/world.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
@@ -164,12 +165,33 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </div>
         <div className="controls">
           <label>
+            Start a run when I leave{' '}
+            <select aria-label="Away route" value={draft.awayRouteId} onChange={(event) => patch({ awayRouteId: event.target.value })}>
+              <option value="">Never (only continue a run I started)</option>
+              {Object.values(routes).map((route) => (
+                <option key={route.id} value={route.id}>
+                  {route.name}
+                  {route.nodeIds.every((id) => id === 'greyhaven' || hero.clearedNodeIds.includes(id)) ? '' : ' (not cleared yet)'}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Help label="About starting while away">
+            If you have no run when you close the page or hide the tab (for at least 5 seconds), the hero starts this route on its own, using the packed
+            supplies and carried gold below. The route must be one the hero has cleared.
+          </Help>
+        </div>
+        <div className="controls">
+          <label>
             <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
             Run a cleared route again
           </label>
         </div>
         <p data-testid="away-plan">
-          <strong>What will happen:</strong> after each fight the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
+          <strong>What will happen:</strong>{' '}
+          {draft.awayRouteId === ''
+            ? 'If you have no run when you leave, nothing starts. If a run is out, after each fight'
+            : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}. After each fight`}{' '} the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
           and the bag has room, otherwise walks home.{' '}
           {draft.repeatRoute
             ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'

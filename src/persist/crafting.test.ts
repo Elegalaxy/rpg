@@ -20,6 +20,7 @@ import {
   queueUpgrade,
   craftGold,
   upgradeGold,
+  upgradedQuality,
 } from './crafting.ts'
 import { equipFromArchive, statsFor } from './equipment.ts'
 import { blueprintForHero } from './expeditionSetup.ts'
@@ -344,5 +345,16 @@ describe('worn items and recipes', () => {
     const base = levelled()
     const low = { ...updatePurse(base, { gold: 1000 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] }, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 6 } })) }
     expect(buyRecipe(low, 'quick')).toEqual({ ok: false, reason: 'The Quick recipe needs level 9. This hero is level 6.' })
+  })
+})
+
+describe('upgrade quality', () => {
+  it('adds 0, 1, or 2 points by material and never passes 110%', () => {
+    expect(upgradedQuality(1, 'scrap')).toBe(1)
+    expect(upgradedQuality(1, 'hide')).toBeCloseTo(1.01)
+    expect(upgradedQuality(1, 'shard')).toBeCloseTo(1.02)
+    expect(upgradedQuality(1.09, 'shard')).toBe(1.1)
+    expect(upgradedQuality(1.1, 'shard')).toBe(1.1)
+    expect(upgradedQuality(0.95, 'unknown')).toBe(0.95)
   })
 })

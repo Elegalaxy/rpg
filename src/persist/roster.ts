@@ -87,6 +87,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     packedSupplies: [],
     pushOnHpPercent: DEFAULT_PUSH_ON_PERCENT,
     repeatRoute: true,
+    awayRouteId: null,
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,
