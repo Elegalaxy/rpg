@@ -144,27 +144,44 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </label>
         <Help label="About carried gold">The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</Help>
       </div>
-      <div className="controls">
-        <label>
-          While away, push on while HP is at least (%){' '}
-          <input
-            aria-label="Push on percent"
-            value={draft.pushOnPercent}
-            inputMode="numeric"
-            size={4}
-            onChange={(event) => patch({ pushOnPercent: event.target.value })}
-          />
-        </label>{' '}
-        <label>
-          <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
-          Run a cleared route again
-        </label>
-        <Help label="About time away">
-          When the game is closed or the tab is hidden, your run carries on for up to 8 hours. After each fight your hero pushes on if HP is at least this
-          percent and the bag has room, otherwise walks home. With the box ticked, a cleared route is run again, using your packed supplies, until you are
-          defeated, the supplies run out, or time runs out. Your retreat setting still applies in fights.
-        </Help>
-      </div>
+      <fieldset className="away-box">
+        <legend>While you are away</legend>
+        <p className="muted">
+          Your run keeps going when you close the page or hide the tab, for up to 8 hours. These two settings decide what the hero does between fights while
+          you are not watching.
+        </p>
+        <div className="controls">
+          <label>
+            Push on while HP is at least (%){' '}
+            <input
+              aria-label="Push on percent"
+              value={draft.pushOnPercent}
+              inputMode="numeric"
+              size={4}
+              onChange={(event) => patch({ pushOnPercent: event.target.value })}
+            />
+          </label>
+        </div>
+        <div className="controls">
+          <label>
+            <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
+            Run a cleared route again
+          </label>
+        </div>
+        <p data-testid="away-plan">
+          <strong>What will happen:</strong> after each fight the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
+          and the bag has room, otherwise walks home.{' '}
+          {draft.repeatRoute
+            ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'
+            : 'Back in town it stops and waits for you.'}
+        </p>
+        <ul className="away-facts">
+          <li>Your retreat setting still applies in every fight.</li>
+          <li>It stops for good on a defeat, when the packed supplies run out, or after 8 hours.</li>
+          <li>Fights won while away give half the loot and gold. XP, contracts and discoveries are not reduced.</li>
+          <li>Only the selected hero runs. Other heroes rest, but every hero keeps crafting.</li>
+        </ul>
+      </fieldset>
       {hero.echoRank > 0 ? (
         <div className="controls">
           <label>
@@ -341,10 +358,52 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
   const carried = expedition.unsecured.reduce((sum, stack) => sum + stack.quantity, 0)
   const resource = expedition.hero
   const hpFraction = resource.maxHp > 0 ? resource.hp / resource.maxHp : 0
-  const held = expedition.supplySlots.flatMap((slot) => (slot === null ? [] : [supplyName(slot.id)]))
+  // During a fight the carried supplies change at once; the run's own slots catch up when the fight ends.
+  const fight = expedition.combat
+  const held = fight !== null ? fight.hero.supplies.map(supplyName) : expedition.supplySlots.flatMap((slot) => (slot === null ? [] : [supplyName(slot.id)]))
+  const usedNow = fight === null ? [] : fight.log.flatMap((event) => (event.type === 'supplyUse' && event.actorId === fight.hero.id ? [event.supplyId] : []))
+  const usedIds = [...expedition.consumedSupplyIds, ...usedNow]
   return (
     <section aria-label="Expedition">
       <h3>Expedition</h3>
+      {waiting ? (
+        <div className="callout" role="group" aria-label="Push on or return">
+          <p>
+            The fight is over.
+            <Help label="Push on or return">
+              Pushing on adds momentum and loot but risks everything you carry. Returning secures what you carry and clears momentum.
+            </Help>
+          </p>
+          <button type="button" onClick={pushOnFromUi}>
+            Push on
+          </button>{' '}
+          <button type="button" onClick={() => setError(returnFromUi())}>
+            Return to town
+          </button>
+        </div>
+      ) : (
+        <p className="callout" data-testid="travel-status">
+          {expedition.phase === 'combat'
+            ? `Fight ${expedition.encounterIndex + 1} is under way.`
+            : expedition.returning
+              ? 'Walking back to Greyhaven.'
+              : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds (played ${TRAVEL_SPEEDUP}× faster).`}
+        </p>
+      )}
+      {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
+        <p>
+          <button
+            type="button"
+            aria-pressed={expedition.autoEscapeOff !== true}
+            onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}
+          >
+            Auto-escape: {expedition.autoEscapeOff === true ? 'Off' : 'On'}
+          </button>
+          <Help label="About auto-escape">
+            When on, the hero tries to escape once HP falls to your retreat setting. Switch it off to fight on; it also stops a pending retry.
+          </Help>
+        </p>
+      ) : null}
       <KpiRow label="Run status">
         <Kpi label="HP" value={`${Math.round(resource.hp)}/${Math.round(resource.maxHp)}`} tone={hpFraction < 0.4 ? 'bad' : hpFraction < 0.7 ? 'warn' : 'good'} />
         {resource.classResourceId.length > 0 ? (
@@ -372,7 +431,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
                 {name}
               </Tag>
             ))}
-            {expedition.consumedSupplyIds.map((id, index) => (
+            {usedIds.map((id, index) => (
               <Tag key={`used-${index}`} kind="bad" title="Used up">
                 {supplyName(id)} used
               </Tag>
@@ -381,44 +440,6 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         </div>
         <DiscoveredLine />
       </div>
-      {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
-        <p>
-          <button
-            type="button"
-            aria-pressed={expedition.autoEscapeOff !== true}
-            onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}
-          >
-            Auto-escape: {expedition.autoEscapeOff === true ? 'Off' : 'On'}
-          </button>
-          <Help label="About auto-escape">
-            When on, the hero tries to escape once HP falls to your retreat setting. Switch it off to fight on; it also stops a pending retry.
-          </Help>
-        </p>
-      ) : null}
-      {waiting ? (
-        <div role="group" aria-label="Push on or return">
-          <p>
-            The fight is over.
-            <Help label="Push on or return">
-              Pushing on adds momentum and loot but risks everything you carry. Returning secures what you carry and clears momentum.
-            </Help>
-          </p>
-          <button type="button" onClick={pushOnFromUi}>
-            Push on
-          </button>{' '}
-          <button type="button" onClick={() => setError(returnFromUi())}>
-            Return to town
-          </button>
-        </div>
-      ) : (
-        <p data-testid="travel-status">
-          {expedition.phase === 'combat'
-            ? `Fight ${expedition.encounterIndex + 1} is under way.`
-            : expedition.returning
-              ? 'Walking back to Greyhaven.'
-              : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds (played ${TRAVEL_SPEEDUP}× faster).`}
-        </p>
-      )}
       {error !== null ? <p role="alert">{error}</p> : null}
     </section>
   )

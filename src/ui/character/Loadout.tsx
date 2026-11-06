@@ -1,5 +1,6 @@
 import { Help } from '../Help.tsx'
 import { Tag } from '../Kit.tsx'
+import { skillFacts } from '../skillInfo.ts'
 import { useState } from 'react'
 
 import { skillName } from '../../persist/loadout.ts'
@@ -42,6 +43,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
         {hero.progress.learnedSkillIds.map((skillId) => {
           const equipped = hero.progress.loadout.includes(skillId)
           const picked = chosen.includes(skillId)
+          const facts = skillFacts(skillId)
           return (
             <li key={skillId}>
               <label>
@@ -49,6 +51,13 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
                 {equipped ? <Tag kind="good">In loadout</Tag> : <Tag kind="plain">Not equipped</Tag>}
                 {picked !== equipped ? <Tag kind="info">{picked ? 'Will equip on save' : 'Will remove on save'}</Tag> : null}
               </label>
+              {facts !== null ? (
+                <p className="skill-facts">
+                  {facts.stats.join(' · ')}
+                  <br />
+                  {facts.effects.join('. ')}
+                </p>
+              ) : null}
             </li>
           )
         })}

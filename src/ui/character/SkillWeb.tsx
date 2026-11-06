@@ -1,4 +1,5 @@
 import { Help } from '../Help.tsx'
+import { skillFacts } from '../skillInfo.ts'
 import { useState } from 'react'
 
 import { skills } from '../../content/skills.ts'
@@ -162,7 +163,17 @@ export function SkillWeb() {
                   ? 'nothing (starts this line)'
                   : (views.find((view) => view.node.id === chosen.node.requires)?.node.name ?? chosen.node.requires)}
               </li>
-              {chosen.preview.unlocksSkillId !== null ? <li>Unlocks skill: {skills[chosen.preview.unlocksSkillId]?.name ?? chosen.preview.unlocksSkillId}</li> : null}
+              {chosen.preview.unlocksSkillId !== null ? (
+                <li>
+                  Unlocks skill: {skills[chosen.preview.unlocksSkillId]?.name ?? chosen.preview.unlocksSkillId}
+                  {skillFacts(chosen.preview.unlocksSkillId) !== null ? (
+                    <small className="skill-facts">
+                      <br />
+                      {skillFacts(chosen.preview.unlocksSkillId)?.stats.join(' · ')}
+                    </small>
+                  ) : null}
+                </li>
+              ) : null}
               {chosen.node.keystone ? (
                 <li>
                   Closes the other keystones:{' '}

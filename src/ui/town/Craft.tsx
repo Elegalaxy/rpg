@@ -143,6 +143,28 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
           </select>
         </label>
       </div>
+      <table className="material-table" aria-label="Materials compared">
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Quality range</th>
+            <th>You have</th>
+          </tr>
+        </thead>
+        <tbody>
+          {MATERIALS.map((id) => {
+            const shown = qualityRange(id, rank)
+            const have = purseOf(save).materials[id] ?? 0
+            return (
+              <tr key={id} className={id === materialId ? 'material-chosen' : undefined}>
+                <td>{id}</td>
+                <td>{shown === null ? 'none' : `${percent(shown.low)} to ${percent(shown.high)}`}</td>
+                <td className={have < CRAFT_MATERIAL_COST ? 'tag-bad' : undefined}>{have}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
       <p data-testid="craft-summary">
         Quality range: {range === null ? 'none' : `${percent(range.low)} to ${percent(range.high)}`}. Cost: {CRAFT_MATERIAL_COST} {materialId} and{' '}
         {Number.isInteger(level) && level > 0 ? craftGold(level) : '?'} gold. Time: {CRAFT_MS / 1000} seconds.
@@ -153,12 +175,16 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
       {problem !== null ? <small data-testid="craft-block"> {problem}</small> : null}
 
       <h4>Upgrade</h4>
+      <p className="muted">
+        An upgrade always adds 1 item level and keeps the item's quality. The material you spend makes no difference to the result, so use whichever you
+        have most of.
+      </p>
       <label>
         Material{' '}
         <select aria-label="Upgrade material" value={upgradeMaterial} onChange={(event) => setUpgradeMaterial(event.target.value)}>
           {MATERIALS.map((id) => (
             <option key={id} value={id}>
-              {id}
+              {id} (have {purseOf(save).materials[id] ?? 0})
             </option>
           ))}
         </select>
@@ -177,7 +203,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
               }
             >
               {worn === null ? '' : `Worn (${worn}): `}
-              {itemName(item)}, item level {item.itemLevel} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
+              {itemName(item)}, item level {item.itemLevel} → {item.itemLevel + 1} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
               {block !== null ? <small className="row-note">{block}</small> : null}
             </Row>
           )

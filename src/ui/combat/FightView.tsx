@@ -1,3 +1,4 @@
+import { SUPPLIES } from '../../content/supplies.ts'
 import type { CombatState } from '../../sim/types.ts'
 import { LogPanel } from '../log/LogPanel.tsx'
 
@@ -14,6 +15,47 @@ function finishedAtMs(combat: CombatState): number {
 
 function titleCase(text: string): string {
   return text.replace(/-/g, ' ').replace(/^./, (first) => first.toUpperCase())
+}
+
+const JUST_USED_MS = 4000
+
+/** The hero's carried supplies for this fight, live: what is left, what has been used, and a flash when one was just used. */
+function SuppliesBar({ combat }: { combat: CombatState }) {
+  const { hero } = combat
+  const left: { [id: string]: number } = {}
+  for (const id of hero.supplies) left[id] = (left[id] ?? 0) + 1
+  const used: { [id: string]: number } = {}
+  const names: { [id: string]: string } = {}
+  let latest: { name: string; timeMs: number } | null = null
+  for (const event of combat.log) {
+    if (event.type !== 'supplyUse' || event.actorId !== hero.id) continue
+    used[event.supplyId] = (used[event.supplyId] ?? 0) + 1
+    names[event.supplyId] = event.supplyName
+    latest = { name: event.supplyName, timeMs: event.timeMs }
+  }
+  const ids = [...new Set([...Object.keys(left), ...Object.keys(used)])]
+  if (ids.length === 0) return null
+  const live = combat.outcome === 'ongoing'
+  const fresh = live && latest !== null && combat.timeMs - latest.timeMs < JUST_USED_MS
+  return (
+    <div className="fight-supplies" aria-label="Supplies this fight" data-testid="fight-supplies">
+      <span className="fight-supplies-title">Supplies</span>
+      <ul>
+        {ids.map((id) => (
+          <li key={id} className={(left[id] ?? 0) === 0 ? 'supply-empty' : undefined}>
+            {SUPPLIES.find((entry) => entry.id === id)?.name ?? names[id] ?? id}{' '}
+            <strong>×{left[id] ?? 0}</strong>
+            {(used[id] ?? 0) > 0 ? <span className="supply-used"> · used {used[id]}</span> : null}
+          </li>
+        ))}
+      </ul>
+      {fresh && latest !== null ? (
+        <p className="supply-flash" role="status">
+          Just used {latest.name} at {(latest.timeMs / 1000).toFixed(1)} s
+        </p>
+      ) : null}
+    </div>
+  )
 }
 
 /**
@@ -43,6 +85,7 @@ export function FightView({
       <div className="fight-body">
         <div className="fight-field" aria-label="Combat">
           <div className="fight-side fight-side--hero">
+            <div className="fight-hero-stack">
             <ActorCard
               actor={hero}
               spriteId={hero.id}
@@ -52,6 +95,8 @@ export function FightView({
               classResource={{ id: hero.classResourceId, current: hero.classResource, max: hero.classResourceMax }}
               manualQueue={live ? { state: combat, queueError } : undefined}
             />
+            <SuppliesBar combat={combat} />
+            </div>
           </div>
           <div className="fight-vs" aria-hidden="true">
             vs

@@ -12,6 +12,14 @@ const LABELS: Record<AttributeKey, string> = {
   spirit: 'Spirit',
 }
 
+const EFFECTS: Record<AttributeKey, string> = {
+  strength: 'Physical damage, armor penetration, critical damage',
+  vitality: 'Max health, health regeneration, healing received, physical status resistance',
+  agility: 'Attack speed, accuracy, evasion, critical chance, escape chance',
+  intellect: 'Magical damage, magical penetration, status potency, cooldown reduction',
+  spirit: 'Class resource generation, healing power, magical status resistance, a little XP',
+}
+
 export function Attributes() {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
@@ -93,6 +101,7 @@ export function Attributes() {
                     +
                   </button>
                 </td>
+                <td className="attribute-effect">{EFFECTS[key]}</td>
               </tr>
             )
           })}

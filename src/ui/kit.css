@@ -566,3 +566,67 @@ dl.route-facts dd {
   margin-right: var(--s2);
   color: var(--muted);
 }
+
+/* ---- Material comparison table ---- */
+
+table.material-table {
+  border-collapse: collapse;
+  margin: var(--s2) 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.material-table th,
+.material-table td {
+  padding: var(--s1) var(--s3);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.material-table th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.material-table td:last-child,
+.material-table th:last-child {
+  text-align: right;
+}
+
+.material-table .material-chosen td:first-child {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ---- Away box: what happens while the player is gone ---- */
+
+fieldset.away-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: var(--s3) 0;
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.away-box legend {
+  padding: 0 var(--s2);
+  font-weight: 700;
+}
+
+.away-box p {
+  margin: 0;
+}
+
+ul.away-facts {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+ul.away-facts li {
+  margin: 0;
+}

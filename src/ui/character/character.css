@@ -50,3 +50,14 @@
   stroke: #f0c040;
   stroke-width: 4;
 }
+
+.skill-facts {
+  margin: 0 0 var(--s2) 1.6rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.attribute-effect {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
