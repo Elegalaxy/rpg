@@ -8,6 +8,7 @@ import { legacyFromProgress, awardXp, xpFromEnemies, createProgress } from '../s
 import { stepExpedition } from '../sim/expedition.ts'
 
 import { selectedHero } from './character.ts'
+import { DEEP_POCKETS_COST } from './bag.ts'
 import { collectContract } from './contracts.ts'
 import { equipFromArchive } from './equipment.ts'
 import { startExpedition } from './expeditionSetup.ts'
@@ -266,6 +267,19 @@ describe('purchases', () => {
     expect(next.progress.attributes.strength).toBe(racialStartingAttributes.human.strength + 6)
     expect(next.progress.attributes.vitality).toBe(racialStartingAttributes.human.vitality + 4)
     expect(next.progress.attributes.agility).toBe(racialStartingAttributes.human.agility)
+  })
+
+  it('Deep Pockets costs 15 Legacy, can be bought once, and survives reincarnation', () => {
+    expect(DEEP_POCKETS_COST).toBe(15)
+    expect(hero(rich()).purchases.deepPockets).toBe(false)
+    const bought = ok(buyPurchase(rich(), 'hero-1', 'pockets'))
+    expect(hero(bought).legacy).toBe(200 - DEEP_POCKETS_COST)
+    expect(hero(bought).purchases.deepPockets).toBe(true)
+    expect(buyPurchase(bought, 'hero-1', 'pockets')).toEqual({ ok: false, reason: 'You already have Deep Pockets.' })
+    const poor = { ...heroSave(), heroes: heroSave().heroes.map((h) => ({ ...h, legacy: 14 })) }
+    expect(buyPurchase(poor, 'hero-1', 'pockets').ok).toBe(false)
+    const lost = { ...bought, heroes: bought.heroes.map((h) => ({ ...h, bossLossThisLife: true })) }
+    expect(hero(ok(reincarnate(lost, 'hero-1', null))).purchases.deepPockets).toBe(true)
   })
 
   it('Skill Point Seed costs 8, 12, then 16, and gives an unallocated point each life', () => {

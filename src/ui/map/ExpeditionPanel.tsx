@@ -18,7 +18,7 @@ import { routes } from '../../content/world.ts'
 import { countNames } from '../town/groupItems.ts'
 import { outcomeStats } from '../../persist/world.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
-import { LOOT_CAPACITY, MOMENTUM_CAP, SUPPLY_SLOT_COUNT, type ExpeditionState } from '../../sim/expedition.ts'
+import { MOMENTUM_CAP, SUPPLY_SLOT_COUNT, bagIsFull, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Help } from '../Help.tsx'
@@ -184,6 +184,19 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </div>
         <div className="controls">
           <label>
+            When the bag is nearly full{' '}
+            <select aria-label="Bag full order" value={draft.bagFullOrder} onChange={(event) => patch({ bagFullOrder: event.target.value === 'ask' ? 'ask' : 'home' })}>
+              <option value="home">Walk home</option>
+              <option value="ask">Hold and wait for me</option>
+            </select>
+          </label>
+          <Help label="About a full bag">
+            The bag counts as full when fewer than 4 room is free. Walk home returns and secures the loot. Hold and wait stops the run at that point, also while you
+            are away, until you come back and choose.
+          </Help>
+        </div>
+        <div className="controls">
+          <label>
             <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
             Run a cleared route again
           </label>
@@ -193,7 +206,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           {draft.awayRouteId === ''
             ? 'If you have no run when you leave, nothing starts. If a run is out, after each fight'
             : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}. After each fight`}{' '} the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
-          and the bag has room, otherwise walks home.{' '}
+          and the bag is not nearly full, otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
           {draft.repeatRoute
             ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'
             : 'Back in town it stops and waits for you.'}
@@ -379,6 +392,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
   const [error, setError] = useState<string | null>(null)
   const waiting = expeditionWaiting()
   const carried = expedition.unsecured.reduce((sum, stack) => sum + stack.quantity, 0)
+  const pouch = safePouch(expedition.unsecured)
   const resource = expedition.hero
   const hpFraction = resource.maxHp > 0 ? resource.hp / resource.maxHp : 0
   // During a fight the carried supplies change at once; the run's own slots catch up when the fight ends.
@@ -434,12 +448,26 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         ) : null}
         <Kpi label="Momentum" value={`${expedition.momentum}/${MOMENTUM_CAP}`} testId="momentum" />
         <Kpi label="Fights won" value={expedition.history.filter((entry) => entry.outcome === 'victory').length} />
-        <Kpi label="Loot bag" value={`${carried}/${LOOT_CAPACITY}`} testId="loot-bag" />
+        <Kpi label="Loot bag" value={`${carried}/${lootCapacityOf(expedition)}`} testId="loot-bag" note={bagIsFull(expedition) ? 'Nearly full' : undefined} tone={bagIsFull(expedition) ? 'warn' : undefined} />
       </KpiRow>
       <div className="pill-lines">
-        <div className="pill-line" data-testid="unsecured" title="Lost if you are defeated or retreat">
+        <div className="pill-line" data-testid="unsecured" title="Lost if you are defeated, except the safe pouch">
           <small className="pill-label">Carrying</small>
           <span className="pill-row">{lootPills(expedition.unsecured, 'nothing yet')}</span>
+        </div>
+        <div className="pill-line" data-testid="safe-pouch" title="The most valuable 5 you carry. Kept if you are defeated.">
+          <small className="pill-label">Safe pouch</small>
+          <span className="pill-row">
+            {pouch.length === 0 ? (
+              <span className="muted-inline">nothing yet</span>
+            ) : (
+              pouch.map((stack) => (
+                <Tag key={stack.materialId} kind="good">
+                  Safe {stack.quantity} {stack.materialId}
+                </Tag>
+              ))
+            )}
+          </span>
         </div>
         <div className="pill-line">
           <small className="pill-label">Secured</small>
@@ -478,7 +506,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
   const notes: string[] = []
   for (const rank of stats.bossRanks) notes.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
   if (stats.retreatedIn !== null) notes.push(`You retreated in fight ${stats.retreatedIn}. That fight gave no loot or momentum.`)
-  if (defeated) notes.push(stats.defeatedIn === null ? 'You were defeated.' : `You were defeated in fight ${stats.defeatedIn}. Unsecured loot was destroyed.`)
+  if (defeated) notes.push(stats.defeatedIn === null ? 'You were defeated.' : `You were defeated in fight ${stats.defeatedIn}. Loot outside the safe pouch was destroyed.`)
   if (stats.bossLoss) notes.push('A boss defeated you this life. You can now reincarnate.')
   return (
     <section aria-label="Expedition outcome">
@@ -503,6 +531,11 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
           <small className="pill-label">{defeated ? 'Kept' : 'Secured'}</small>
           <span className="pill-row">
             {lootPills(stats.secured, 'nothing')}
+            {stats.pouchSaved.map((stack) => (
+              <Tag key={`pouch-${stack.materialId}`} kind="good" title="Saved by the safe pouch">
+                Safe pouch {stack.quantity} {stack.materialId}
+              </Tag>
+            ))}
             {stats.overflow > 0 ? (
               <Tag kind="bad" title="Did not fit in the bag">
                 {stats.overflow} lost

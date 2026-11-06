@@ -25,6 +25,7 @@ const LATER_HERO_FIELDS = [
   'packedSupplies',
   'pushOnHpPercent',
   'repeatRoute',
+  'bagFullOrder',
   'updates',
 ]
 
@@ -73,6 +74,7 @@ describe('a save from the first version of the game', () => {
       packedSupplies: [],
       pushOnHpPercent: 50,
       repeatRoute: true,
+      bagFullOrder: 'home',
     })
     expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule'])
     expect(hero.priorityRows.slice(0, 2).map((row) => row.skillId)).toEqual(['healing-draught', 'antidote'])

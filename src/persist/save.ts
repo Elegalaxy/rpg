@@ -19,6 +19,10 @@ export const MAX_SLOTS = 5
 export const DEFAULT_CARRY_GOLD = 25
 /** Standing orders for time away: push on while HP is at least this percent. */
 export const DEFAULT_PUSH_ON_PERCENT = 50
+/** What a run does when the bag is nearly full: walk home, or hold and wait for the player. */
+export type BagFullOrder = 'home' | 'ask'
+export const BAG_FULL_ORDERS: readonly BagFullOrder[] = ['home', 'ask']
+export const DEFAULT_BAG_FULL_ORDER: BagFullOrder = 'home'
 /** The usual retreat threshold: 40% of maximum HP. */
 export const DEFAULT_RETREAT = 0.4
 /** A new game knows the town and the road out of it. */
@@ -133,12 +137,15 @@ export type HeroPurchases = {
   skillSeeds: number
   /** Whether the Second Heirloom was bought. */
   secondHeirloom: boolean
+  /** Whether Deep Pockets (+4 bag room) was bought. */
+  deepPockets: boolean
 }
 
 export const EMPTY_PURCHASES: HeroPurchases = {
   attributeSeeds: { strength: 0, vitality: 0, agility: 0, intellect: 0, spirit: 0 },
   skillSeeds: 0,
   secondHeirloom: false,
+  deepPockets: false,
 }
 
 export type SavedHero = {
@@ -168,6 +175,8 @@ export type SavedHero = {
   pushOnHpPercent: number
   /** Standing order while away: after a safe return, run the same route again if the hero has cleared it. */
   repeatRoute: boolean
+  /** Standing order while away: when fewer than 4 bag room is free, walk home (`home`) or hold for the player (`ask`). */
+  bagFullOrder: BagFullOrder
   /** Route to start on its own when the hero has no run as the player leaves. Null never starts one. */
   awayRouteId: string | null
   /** One-time content updates this hero already has (see `heroUpdates.ts`). */
@@ -386,6 +395,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.pushOnHpPercent, `${label} push-on percent`)
   check((value.pushOnHpPercent as number) >= 1 && (value.pushOnHpPercent as number) <= 100, `${label} push-on percent must be from 1 to 100`)
   check(typeof value.repeatRoute === 'boolean', `${label} repeat route must be true or false`)
+  check(value.bagFullOrder === 'home' || value.bagFullOrder === 'ask', `${label} bag-full order must be home or ask`)
   check(value.awayRouteId === null || typeof value.awayRouteId === 'string', `${label} away route must be a route id or null`)
   stringList(value.packedSupplies, `${label} packed supplies`)
   stringList(value.updates, `${label} updates`)
@@ -406,6 +416,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.purchases.skillSeeds, `${label} skill seeds`)
   check((value.purchases.skillSeeds as number) <= 3, `${label} has more than 3 skill seeds`)
   check(typeof value.purchases.secondHeirloom === 'boolean', `${label} second heirloom must be true or false`)
+  check(typeof value.purchases.deepPockets === 'boolean', `${label} deep pockets must be true or false`)
   whole(value.echoRank, `${label} Echo rank`)
   whole(value.fightRank, `${label} fight rank`)
   check(value.fightRank <= value.echoRank, `${label} fight rank is above the Echo rank it has unlocked`)
@@ -495,6 +506,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.packedSupplies === undefined) hero.packedSupplies = []
     if (hero.pushOnHpPercent === undefined) hero.pushOnHpPercent = DEFAULT_PUSH_ON_PERCENT
     if (hero.repeatRoute === undefined) hero.repeatRoute = true
+    if (hero.bagFullOrder === undefined) hero.bagFullOrder = DEFAULT_BAG_FULL_ORDER
     if (hero.awayRouteId === undefined) hero.awayRouteId = null
     if (hero.updates === undefined) hero.updates = []
     if (hero.craftXp === undefined) hero.craftXp = 0
@@ -502,6 +514,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.lives === undefined) hero.lives = 0
     if (hero.claimedBonuses === undefined) hero.claimedBonuses = []
     if (hero.purchases === undefined) hero.purchases = JSON.parse(JSON.stringify(EMPTY_PURCHASES))
+    if (isRecord(hero.purchases) && hero.purchases.deepPockets === undefined) hero.purchases.deepPockets = false
     if (hero.echoRank === undefined) hero.echoRank = 0
     if (hero.fightRank === undefined) hero.fightRank = 0
     if (hero.bossLossThisLife === undefined) hero.bossLossThisLife = false

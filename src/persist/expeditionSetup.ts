@@ -13,6 +13,7 @@ import {
 import { gearFromEquipment, statBonusesFor } from '../sim/economy.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 
+import { bagCapacity } from './bag.ts'
 import { masteryRank } from './reincarnation.ts'
 import type { SavedHero } from './save.ts'
 
@@ -51,6 +52,7 @@ export function blueprintForHero(
     carriedGold: gold.carried,
     depositedGold: gold.deposited,
     supplies: [...supplies],
+    lootCapacity: bagCapacity(hero),
     retreatThresholds: hero.retreatAtMost === null ? [] : [{ kind: 'hpFraction', atMost: hero.retreatAtMost }],
     hero: {
       id: hero.id,

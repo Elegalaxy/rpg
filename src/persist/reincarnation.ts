@@ -7,6 +7,7 @@ import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
 import { createProgress, legacyFromProgress } from '../sim/progression.ts'
 import type { Attributes } from '../sim/stats.ts'
 
+import { DEEP_POCKETS_COST } from './bag.ts'
 import { reachMilestone, type HeroPurchases, type SaveData, type SavedHero } from './save.ts'
 import type { RosterResult } from './roster.ts'
 
@@ -190,7 +191,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
   return { ok: true, save: scaleHeirlooms(next, heroId), hero: renewed }
 }
 
-export type PurchaseKind = 'attribute' | 'skill' | 'heirloom'
+export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets'
 
 export function skillSeedCost(purchases: HeroPurchases): number | null {
   return SKILL_SEED_COSTS[purchases.skillSeeds] ?? null
@@ -223,6 +224,10 @@ export function buyPurchase(
     if (price === null) return { ok: false, reason: 'You already have all 3 skill point seeds.' }
     cost = price
     purchases = { ...purchases, skillSeeds: purchases.skillSeeds + 1 }
+  } else if (kind === 'pockets') {
+    if (hero.purchases.deepPockets) return { ok: false, reason: 'You already have Deep Pockets.' }
+    cost = DEEP_POCKETS_COST
+    purchases = { ...purchases, deepPockets: true }
   } else {
     if (hero.purchases.secondHeirloom) return { ok: false, reason: 'You already have the Second Heirloom.' }
     cost = SECOND_HEIRLOOM_COST

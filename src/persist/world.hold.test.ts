@@ -89,8 +89,8 @@ describe('outcome summary', () => {
     expect(summary.lines).toEqual([
       'Fights won: 0.',
       'You were defeated in fight 1.',
-      'All unsecured loot was destroyed, and momentum was cleared.',
-      'Loot kept (already secured): 4 hide.',
+      'Loot outside the safe pouch was destroyed, and momentum was cleared.',
+      'Loot kept (secured): 4 hide.',
       'Gear damaged: chest 90/100.',
       'Rescue fee: 25 gold. Gold you carry now: 0. Debt: 25.',
       'Recovery wait: 5 minutes.',

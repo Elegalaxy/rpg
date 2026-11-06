@@ -1,4 +1,4 @@
-import { LOOT_CAPACITY, returnToTown } from '../sim/expedition.ts'
+import { bagIsFull, returnToTown } from '../sim/expedition.ts'
 import { stepExpedition } from '../sim/expedition.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { deriveSeed } from '../sim/rng.ts'
@@ -22,7 +22,7 @@ export const OFFLINE_LOOT_RATE = 0.5
 export const OFFLINE_SUMMARY_MIN_MS = 30_000
 
 /** Why the replay stopped running expeditions, or null when it ran to the end of the time. */
-export type OfflineStop = 'defeat' | 'returned' | 'uncleared' | 'supplies' | 'blocked' | null
+export type OfflineStop = 'defeat' | 'returned' | 'uncleared' | 'supplies' | 'blocked' | 'bagFull' | null
 
 export type OfflineSummary = {
   /** Time away, before the cap. */
@@ -180,10 +180,6 @@ function applyLootRate(state: OfflineState): void {
   state.baseline = baselineOf(state.save)
 }
 
-function lootCount(stacks: readonly { quantity: number }[]): number {
-  return stacks.reduce((sum, stack) => sum + stack.quantity, 0)
-}
-
 /** Every node of the route is in the hero's cleared list. */
 function routeCleared(hero: SavedHero, routeId: string): boolean {
   const route = routes[routeId]
@@ -246,9 +242,17 @@ function decideAtHold(state: OfflineState): void {
   const hero = selectedHero(state.save)
   if (expedition === null || hero === null) return
   const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
-  const room = lootCount(expedition.unsecured) < LOOT_CAPACITY
-  if (hpPercent >= hero.pushOnHpPercent && room) state.pushedAt = expedition.encounterIndex
-  else returnToTown(expedition)
+  if (hpPercent < hero.pushOnHpPercent) {
+    returnToTown(expedition)
+    return
+  }
+  if (bagIsFull(expedition)) {
+    // 'ask' holds the run for the player; replaying stops here and the run waits at this hold.
+    if (hero.bagFullOrder === 'ask') state.stopped = 'bagFull'
+    else returnToTown(expedition)
+    return
+  }
+  state.pushedAt = expedition.encounterIndex
 }
 
 /**

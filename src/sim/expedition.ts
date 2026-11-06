@@ -83,6 +83,8 @@ export type ExpeditionBlueprint = {
   depositedGold?: number
   /** Supply ids for the slots, in slot order, at most `SUPPLY_SLOT_COUNT`. Omitted packs none. */
   supplies?: readonly string[]
+  /** Bag room, from `LOOT_CAPACITY` up to `MAX_LOOT_CAPACITY`. Omitted means `LOOT_CAPACITY`. */
+  lootCapacity?: number
 }
 
 export const EQUIPMENT_SLOTS = [
@@ -127,6 +129,14 @@ export function isExpeditionId(value: unknown): value is ExpeditionId {
 export const TRAVEL_GAP_MS = 20_000
 export const MOMENTUM_CAP = 5
 export const LOOT_CAPACITY = 20
+/** The most room a bag can reach (GAME_DESIGN §8, Batch C). */
+export const MAX_LOOT_CAPACITY = 36
+/** Units of the most valuable carried material that survive a defeat. It is not extra space. */
+export const SAFE_POUCH_ROOM = 5
+/** The bag counts as full when fewer than this much room is free. */
+export const BAG_FULL_ROOM = 4
+/** Material value order for the safe pouch, rarest last. A material not listed ranks below all of these. */
+export const MATERIAL_RARITY: readonly string[] = ['scrap', 'hide', 'shard']
 export const SUPPLY_SLOT_COUNT = 4
 /** Stored rare-node chance, in percentage points. The road does not roll or spawn a node. */
 export const RARE_NODE_CHANCE_PER_STACK = 2
@@ -218,8 +228,12 @@ export type ExpeditionState = {
   xpEarned?: number
   /** Encounters remaining before Trapper may deploy. 0 is ready. A new expedition starts ready. */
   trapperCooldown: number
-  /** Materials carried on the road. Total quantity is at most `LOOT_CAPACITY`. A defeat clears this. */
+  /** Bag room for this run. Omitted means `LOOT_CAPACITY`. Fixed when the run starts. */
+  lootCapacity?: number
+  /** Materials carried on the road. Total quantity is at most the bag room. A defeat clears this, except the safe pouch. */
   unsecured: LootStack[]
+  /** What the safe pouch moved to `secured` when the hero was defeated. Absent otherwise. */
+  savedByPouch?: LootStack[]
   /** Materials moved here when the return walk arrives. A defeat leaves this in place. */
   secured: LootStack[]
   /** Quantity that did not fit. Older stacks stay. A defeat leaves this in place. */
@@ -365,7 +379,14 @@ export function assertExpedition(state: ExpeditionState): void {
       `rare-node chance must be ${RARE_NODE_CHANCE_PER_STACK} points per momentum stack, received momentum ${state.momentum} and chance ${describeValue(state.rareNodeChance)}`,
     )
   }
-  assertLoot(state.unsecured, 'unsecured loot', true)
+  if (
+    state.lootCapacity !== undefined &&
+    (!Number.isInteger(state.lootCapacity) || state.lootCapacity < 1 || state.lootCapacity > MAX_LOOT_CAPACITY)
+  ) {
+    throw new Error(`bag room must be a whole number from 1 to ${MAX_LOOT_CAPACITY}, received ${describeValue(state.lootCapacity)}`)
+  }
+  assertLoot(state.unsecured, 'unsecured loot', lootCapacityOf(state))
+  if (state.savedByPouch !== undefined) assertLoot(state.savedByPouch, 'safe pouch loot', false)
   assertLoot(state.secured, 'secured loot', false)
   if (typeof state.overflow !== 'number' || !Number.isInteger(state.overflow) || state.overflow < 0) {
     throw new Error(`loot overflow must be an integer of at least 0, received ${describeValue(state.overflow)}`)
@@ -400,7 +421,7 @@ export function assertExpedition(state: ExpeditionState): void {
   }
 }
 
-function assertLoot(stacks: unknown, label: string, capped: boolean): void {
+function assertLoot(stacks: unknown, label: string, capacity: number | false): void {
   if (!Array.isArray(stacks)) throw new Error(`${label} is missing`)
   const seen: { [materialId: string]: boolean } = {}
   let total = 0
@@ -418,8 +439,8 @@ function assertLoot(stacks: unknown, label: string, capped: boolean): void {
     }
     total += quantity
   }
-  if (capped && total > LOOT_CAPACITY) {
-    throw new Error(`${label} holds ${total}, above the capacity of ${LOOT_CAPACITY}`)
+  if (capacity !== false && total > capacity) {
+    throw new Error(`${label} holds ${total}, above the capacity of ${capacity}`)
   }
 }
 
@@ -708,6 +729,54 @@ function carriedFromTemplate(hero: CombatHeroSetup): CarriedHero {
   }
 }
 
+function checkedCapacity(value: number): number {
+  if (!Number.isInteger(value) || value < 1 || value > MAX_LOOT_CAPACITY) {
+    throw new Error(`bag room must be a whole number from 1 to ${MAX_LOOT_CAPACITY}, received ${describeValue(value)}`)
+  }
+  return value
+}
+
+/** Bag room for this run. */
+export function lootCapacityOf(state: Pick<ExpeditionState, 'lootCapacity'>): number {
+  return state.lootCapacity ?? LOOT_CAPACITY
+}
+
+/** Room still free in the bag. */
+export function bagRoomLeft(state: Pick<ExpeditionState, 'lootCapacity' | 'unsecured'>): number {
+  return Math.max(0, lootCapacityOf(state) - lootTotal(state.unsecured))
+}
+
+/** The bag is nearly full: fewer than `BAG_FULL_ROOM` free. */
+export function bagIsFull(state: Pick<ExpeditionState, 'lootCapacity' | 'unsecured'>): boolean {
+  return bagRoomLeft(state) < BAG_FULL_ROOM
+}
+
+function rarityRank(materialId: string): number {
+  return MATERIAL_RARITY.indexOf(materialId)
+}
+
+/**
+ * The safe pouch: up to `SAFE_POUCH_ROOM` units of the most valuable carried material. Rarer first, then the
+ * larger quantity, then the id. It is worked out from what is carried, so it re-sorts after every fight.
+ */
+export function safePouch(stacks: readonly LootStack[]): LootStack[] {
+  const ordered = [...stacks].sort(
+    (left, right) =>
+      rarityRank(right.materialId) - rarityRank(left.materialId) ||
+      right.quantity - left.quantity ||
+      (left.materialId < right.materialId ? -1 : left.materialId > right.materialId ? 1 : 0),
+  )
+  const kept: LootStack[] = []
+  let room = SAFE_POUCH_ROOM
+  for (const stack of ordered) {
+    if (room <= 0) break
+    const take = Math.min(room, stack.quantity)
+    kept.push({ materialId: stack.materialId, quantity: take })
+    room -= take
+  }
+  return kept
+}
+
 export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): ExpeditionState {
   if (typeof blueprint !== 'object' || blueprint === null) {
     throw new Error(`expedition blueprint must be an object, received ${describeValue(blueprint)}`)
@@ -758,6 +827,7 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
     unsecured: [],
     secured: [],
     overflow: 0,
+    ...(blueprint.lootCapacity === undefined ? {} : { lootCapacity: checkedCapacity(blueprint.lootCapacity) }),
     supplySlots: packedSupplySlots(blueprint.supplies),
     consumedSupplyIds: [],
     carriedGold,
@@ -990,8 +1060,9 @@ function addUnsecured(state: ExpeditionState, materialId: string, quantity: numb
   if (!Number.isInteger(quantity) || quantity < 1) {
     throw new Error(`drop quantity must be a positive integer, received ${describeValue(quantity)}`)
   }
-  const room = LOOT_CAPACITY - lootTotal(state.unsecured)
-  if (room < 0) throw new Error(`unsecured loot is above capacity ${LOOT_CAPACITY}`)
+  const capacity = lootCapacityOf(state)
+  const room = capacity - lootTotal(state.unsecured)
+  if (room < 0) throw new Error(`unsecured loot is above capacity ${capacity}`)
   const accepted = quantity < room ? quantity : room
   const lost = quantity - accepted
   if (accepted > 0) {
@@ -1070,6 +1141,14 @@ function applyDefeat(state: ExpeditionState, combat: CombatState): void {
   state.outcome = 'defeat'
   // Supplies the hero used in the lost fight are gone; settling returns only what is still packed.
   syncSupplies(state, combat.hero.supplies)
+  // The safe pouch survives: it is secured with the rest of the settlement, and only the rest is destroyed.
+  const saved = safePouch(state.unsecured)
+  for (const stack of saved) {
+    const existing = state.secured.find((entry) => entry.materialId === stack.materialId)
+    if (existing !== undefined) existing.quantity += stack.quantity
+    else state.secured.push({ ...stack })
+  }
+  if (saved.length > 0) state.savedByPouch = saved
   state.unsecured = []
   loseDurability(state)
   payRescueFee(state)

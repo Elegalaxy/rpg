@@ -4,14 +4,21 @@ import { spiritResourceFactor } from './classes/resources.ts'
 import { FURY_SCOPE, warriorClass } from './classes/warrior.ts'
 import { REGEN_PER_VITALITY, STEP_MS, type HeroClass } from './constants.ts'
 import {
+  assertExpedition,
+  bagIsFull,
+  bagRoomLeft,
   createExpedition,
+  lootCapacityOf,
   LOOT_CAPACITY,
+  MAX_LOOT_CAPACITY,
   MOMENTUM_CAP,
   MOMENTUM_RESET_REASONS,
   RARE_NODE_CHANCE_PER_STACK,
   resetMomentum,
   returnToTown,
   runExpedition,
+  safePouch,
+  SAFE_POUCH_ROOM,
   SMOKE_BOMB_ESCAPE_POINTS,
   SMOKE_BOMB_ID,
   SPLINTERED_ROAD_ID,
@@ -1255,10 +1262,107 @@ describe('splintered road expedition', () => {
     expect(state.outcome).toBe('defeat')
     expect(state.returning).toBe(false)
     expect(state.unsecured).toEqual([])
-    expect(state.secured).toEqual([{ materialId: 'hide', quantity: 3 }])
+    // The safe pouch keeps 5 of the 8 shard; the rest is destroyed.
+    expect(state.secured).toEqual([
+      { materialId: 'hide', quantity: 3 },
+      { materialId: 'shard', quantity: 5 },
+    ])
+    expect(state.savedByPouch).toEqual([{ materialId: 'shard', quantity: 5 }])
     expect(state.overflow).toBe(10)
     expect(state.momentum).toBe(0)
     expect(state.rareNodeChance).toBe(0)
+  })
+
+  it('orders the safe pouch by rarity, then quantity, and holds 5 units', () => {
+    expect(SAFE_POUCH_ROOM).toBe(5)
+    expect(safePouch([])).toEqual([])
+    expect(
+      safePouch([
+        { materialId: 'scrap', quantity: 9 },
+        { materialId: 'hide', quantity: 4 },
+        { materialId: 'shard', quantity: 2 },
+      ]),
+    ).toEqual([
+      { materialId: 'shard', quantity: 2 },
+      { materialId: 'hide', quantity: 3 },
+    ])
+    expect(safePouch([{ materialId: 'scrap', quantity: 3 }, { materialId: 'hide', quantity: 1 }])).toEqual([
+      { materialId: 'hide', quantity: 1 },
+      { materialId: 'scrap', quantity: 3 },
+    ])
+    // Unknown materials rank below the known ones; equal rank goes to the larger quantity, then the id.
+    expect(safePouch([{ materialId: 'zzz', quantity: 2 }, { materialId: 'aaa', quantity: 2 }, { materialId: 'bbb', quantity: 9 }])).toEqual([
+      { materialId: 'bbb', quantity: 5 },
+    ])
+    const input = [{ materialId: 'hide', quantity: 7 }]
+    safePouch(input)
+    expect(input).toEqual([{ materialId: 'hide', quantity: 7 }])
+  })
+
+  it('keeps the safe pouch on defeat the same way every time, merged with what was already secured', () => {
+    const run = () => {
+      const state = enterDefeatFight(defs, 83)
+      state.unsecured = [
+        { materialId: 'scrap', quantity: 6 },
+        { materialId: 'hide', quantity: 2 },
+        { materialId: 'shard', quantity: 1 },
+      ]
+      state.secured = [{ materialId: 'shard', quantity: 4 }]
+      forceDefeat(state, defs)
+      return state
+    }
+    const first = run()
+    expect(first.secured).toEqual([{ materialId: 'shard', quantity: 5 }, { materialId: 'hide', quantity: 2 }, { materialId: 'scrap', quantity: 2 }])
+    expect(first.savedByPouch).toEqual([
+      { materialId: 'shard', quantity: 1 },
+      { materialId: 'hide', quantity: 2 },
+      { materialId: 'scrap', quantity: 2 },
+    ])
+    expect(run().secured).toEqual(first.secured)
+    expect(() => assertExpedition(first)).not.toThrow()
+  })
+
+  it('does not touch the bag on a safe return or a retreat', () => {
+    const state = start()
+    state.unsecured = [{ materialId: 'shard', quantity: 8 }]
+    returnToTown(state)
+    stepFor(state, defs, TRAVEL_GAP_MS + 1000)
+    expect(state.outcome).toBe('returned')
+    expect(state.secured).toEqual([{ materialId: 'shard', quantity: 8 }])
+    expect(state.savedByPouch).toBeUndefined()
+  })
+
+  it('uses the run bag room: default 20, larger when the blueprint says so, never above 36', () => {
+    expect(lootCapacityOf(start())).toBe(LOOT_CAPACITY)
+    expect(MAX_LOOT_CAPACITY).toBe(36)
+    const defsLocal = fixtureDefs()
+    const drops = [
+      { id: 'shardling-pair', enemies: [droppedEnemy(0, 'shard'), droppedEnemy(1, 'shard')] },
+      { id: 'wolf-pair', enemies: [droppedEnemy(0, 'hide'), droppedEnemy(1, 'hide')] },
+      { id: 'deserter', enemies: [droppedEnemy(0, 'scrap')] },
+      { id: 'wolf-pair', enemies: [droppedEnemy(0, 'hide'), droppedEnemy(1, 'hide')] },
+    ]
+    const big = createExpedition({ ...droppedBlueprint(drops), lootCapacity: 26 }, 5)
+    for (let index = 0; index < 4; index += 1) win(big, defsLocal)
+    expect(lootCapacityOf(big)).toBe(26)
+    expect(lootTotal(big.unsecured)).toBe(26)
+    expect(big.overflow).toBe(4)
+    expect(() => assertExpedition(big)).not.toThrow()
+    expect(() => createExpedition({ ...droppedBlueprint(drops), lootCapacity: 37 }, 5)).toThrow(/bag room/)
+    expect(() => createExpedition({ ...droppedBlueprint(drops), lootCapacity: 0 }, 5)).toThrow(/bag room/)
+    big.unsecured = [{ materialId: 'shard', quantity: 27 }]
+    expect(() => assertExpedition(big)).toThrow(/capacity of 26/)
+  })
+
+  it('counts the bag as full when fewer than 4 room is free', () => {
+    const state = start()
+    state.unsecured = [{ materialId: 'shard', quantity: 16 }]
+    expect(bagRoomLeft(state)).toBe(4)
+    expect(bagIsFull(state)).toBe(false)
+    state.unsecured = [{ materialId: 'shard', quantity: 17 }]
+    expect(bagIsFull(state)).toBe(true)
+    state.lootCapacity = 24
+    expect(bagIsFull(state)).toBe(false)
   })
 
   it('removes 10 durability on defeat and disables a piece that reaches 0', () => {

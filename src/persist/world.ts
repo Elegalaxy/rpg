@@ -370,6 +370,8 @@ export type OutcomeStats = {
   debt: number
   recoveryMinutes: number
   secured: { materialId: string; quantity: number }[]
+  /** What the safe pouch saved from a defeat. Already included in `secured`. */
+  pouchSaved: { materialId: string; quantity: number }[]
   overflow: number
   /** Every equipped piece. Wear only changes after a defeat. */
   gear: GearWear[]
@@ -391,6 +393,7 @@ export function outcomeStats(expedition: ExpeditionState): OutcomeStats {
     debt: expedition.debt,
     recoveryMinutes: Math.round(expedition.recoveryMs / 60_000),
     secured: expedition.secured.map((stack) => ({ ...stack })),
+    pouchSaved: (expedition.savedByPouch ?? []).map((stack) => ({ ...stack })),
     overflow: expedition.overflow,
     gear: expedition.equipment.map((entry) => ({ slot: entry.slot, durability: entry.durability, maxDurability: entry.maxDurability, disabled: entry.disabled })),
     bossRanks: bossVictoryRanks(expedition),
@@ -415,8 +418,9 @@ export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
   if (expedition.outcome === 'defeat') {
     const lost = expedition.history.find((entry) => entry.outcome === 'defeat')
     lines.push(lost === undefined ? 'You were defeated.' : `You were defeated in fight ${lost.index + 1}.`)
-    lines.push('All unsecured loot was destroyed, and momentum was cleared.')
-    lines.push(`Loot kept (already secured): ${lootText(expedition.secured)}.`)
+    lines.push('Loot outside the safe pouch was destroyed, and momentum was cleared.')
+    if ((expedition.savedByPouch ?? []).length > 0) lines.push(`Saved by the safe pouch: ${lootText(expedition.savedByPouch ?? [])}.`)
+    lines.push(`Loot kept (secured): ${lootText(expedition.secured)}.`)
     const worn = expedition.equipment.filter((entry) => entry.durability < entry.maxDurability)
     if (worn.length > 0) {
       lines.push(`Gear damaged: ${worn.map((entry) => `${entry.slot} ${entry.durability}/${entry.maxDurability}${entry.disabled ? ' (disabled)' : ''}`).join(', ')}.`)

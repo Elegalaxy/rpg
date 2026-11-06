@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { purseOf } from '../../persist/save.ts'
 
 import { itemName } from '../../content/items.ts'
+import { DEEP_POCKETS_COST, DEEP_POCKETS_ROOM } from '../../persist/bag.ts'
 import { selectedHero } from '../../persist/character.ts'
 import {
   ATTRIBUTE_SEED_COST,
@@ -89,6 +90,12 @@ export function Legacy() {
         <li>
           Second Heirloom ({SECOND_HEIRLOOM_COST} Legacy, {hero.purchases.secondHeirloom ? 'bought' : 'not bought'}){' '}
           <button type="button" disabled={hero.purchases.secondHeirloom} onClick={() => run(buyPurchaseFromUi('heirloom'), 'Bought the Second Heirloom.')}>
+            Buy
+          </button>
+        </li>
+        <li>
+          Deep Pockets ({DEEP_POCKETS_COST} Legacy, +{DEEP_POCKETS_ROOM} loot bag room, {hero.purchases.deepPockets ? 'bought' : 'not bought'}){' '}
+          <button type="button" disabled={hero.purchases.deepPockets} onClick={() => run(buyPurchaseFromUi('pockets'), 'Bought Deep Pockets.')}>
             Buy
           </button>
         </li>

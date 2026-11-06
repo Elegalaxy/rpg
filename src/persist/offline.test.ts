@@ -187,6 +187,52 @@ describe('an expedition while away', () => {
     expect(bold.save.expedition?.history.length).toBeGreaterThan(1)
   })
 
+  describe('a nearly full bag', () => {
+    function atFirstHold(order: 'home' | 'ask', carried: number, capacity?: number): SaveData {
+      const save = withHero(running(withHero(strongHero(), { repeatRoute: false })), { bagFullOrder: order })
+      const run = save.expedition!
+      run.lootCapacity = capacity ?? 20
+      while (!(run.encounterIndex > 0 && run.phase === 'travel' && run.travelMs === 0 && !run.returning)) stepExpedition(run, defs)
+      run.hero.hp = run.hero.maxHp
+      run.unsecured = [{ materialId: 'shard', quantity: carried }]
+      return save
+    }
+
+    it('walks home when fewer than 4 room is free and the order is home', () => {
+      const away = runOffline(atFirstHold('home', 17), 30 * MINUTE, true)
+      expect(away.save.expedition?.outcome).toBe('returned')
+      expect(away.save.expedition?.history).toHaveLength(1)
+    })
+
+    it('keeps pushing on with 4 room free', () => {
+      const away = runOffline(atFirstHold('home', 16), 30 * MINUTE, true)
+      expect(away.save.expedition?.history.length).toBeGreaterThan(1)
+    })
+
+    it('holds the run and stops with the ask order, and the hold waits for the player', () => {
+      const away = runOffline(atFirstHold('ask', 17), 30 * MINUTE, true)
+      expect(away.summary.stopped).toBe('bagFull')
+      const run = away.save.expedition!
+      expect(run.outcome).toBe('ongoing')
+      expect(run.history).toHaveLength(1)
+      expect(run.encounterIndex).toBeGreaterThan(0)
+      expect(run.travelMs).toBe(0)
+    })
+
+    it('counts the run bag room, so a bigger bag is not full yet', () => {
+      const away = runOffline(atFirstHold('home', 17, 26), 30 * MINUTE, true)
+      expect(away.save.expedition?.history.length).toBeGreaterThan(1)
+    })
+
+    it('low HP still walks home first', () => {
+      const save = atFirstHold('ask', 17)
+      save.expedition!.hero.hp = 1
+      const away = runOffline(save, 30 * MINUTE, true)
+      expect(away.summary.stopped).not.toBe('bagFull')
+      expect(away.save.expedition?.outcome).toBe('returned')
+    })
+  })
+
   it('stops running after a defeat and leaves the outcome for the player', () => {
     const save = running(withHero(strongHero(), { repeatRoute: true }))
     const run = save.expedition!
