@@ -1,6 +1,6 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code
+- **Last Updated By:** Claude Code (2026-11-07)
 - **Current Goal:** First playable is built and playtested (Step 11.2 verified, second round recorded 2026-11-03). Now acting on playtest notes and follow-ups.
 - **Recent Changes & Files Touched:**
   - 2026-11-07 round 5: upgrade material now adds quality (scrap +0, hide +1, shard +2 points, cap 110%; `upgradedQuality`, GAME_DESIGN crafting); away route option (`SavedHero.awayRouteId`, `startAwayRun` in `offline.ts`, dropdown in the away box, GAME_DESIGN §11); skill web node preview shows skill facts even for known skills; stat rows flattened (fewer cards, `kpi` CSS). 739 tests.
@@ -38,7 +38,7 @@
   - One commit per finished part, pushed to `origin/main`. No force-push.
   - Measured: 2 Draughts lift Echo Knight lvl 16 Assassin 7-13% to 97-100%, Ranger 0% to 53-83%; 4 Draughts make every class win. The user kept the Draught as approved (2026-11-03): gold buys a way past an elite.
   - Known leftovers: rules matter late (kept on purpose); the 0-node Cleric still loses the Rootmaw (Faith-starved; a level-14 hero normally has 4-5 points). A future content change that old heroes need gets a new id in `HERO_UPDATES`.
-- **Exact Next Step:** FIRST decide the skill-web fix (user chose: give real bonuses to the pure-unlock nodes of skills already in the starting kit: Warrior Sundering Blow/Shield Brace/Second Wind, Assassin Venom Edge/Mark for Death/Execute, Ranger Piercing Arrow/Snare Trap, Mage Fireball/Frost Lance/Mana Ward, Cleric Ward/Judgment). Needs numbers in GAME_DESIGN first, then `nodeText.ts`, sim effects, snapshots; big, planner pass. Then Playtest feedback batch B (UI clarity: expedition panel, Potion Shop, materials beside gold, upgrade material comparison, skill/attribute info, AFK explanation, live used-item display) then batch C (secure loot, bag size, retreat-when-full rule, HP-value rule targets, queued item use, modifier variety; design in GAME_DESIGN first). Offline and Save panel still await the user's check.
+- **Exact Next Step:** (1) UX flow batch, proposed to the user and awaiting their yes: a Wear button on shop Buy/Craft/Upgrade results (`wearGear` in `town.ts` exists but no UI calls it) with a compare line per Buy row, and a read-only "Going in with" summary above Start expedition on the Map (loadout, rules count, gear durability, packed supplies, warnings, Edit links). (2) Batch C with the planner (Opus): skill-web fix (user chose real bonuses for the 13 pure-unlock nodes of starting skills: Warrior Sundering Blow/Shield Brace/Second Wind, Assassin Venom Edge/Mark for Death/Execute, Ranger Piercing Arrow/Snare Trap, Mage Fireball/Frost Lance/Mana Ward, Cleric Ward/Judgment; numbers in GAME_DESIGN first), secure loot, bigger loot bag, retreat-when-full rule, HP-value rule targets, queued item use, modifier variety. Offline, away route and Save panel still await the user's check.
 - **Ideas not in the plan yet (discussed, not decided):**
   - UI conventions to write under GAME_DESIGN §12: explanations in `?` tooltips, four-part shop rows with pills (amber gold, slate materials), stat cards over bullet lists, badges for unspent points and finished jobs.
   - Convert the remaining screens to `Kit.tsx` components: Equipment, Craft, Rules, and the Hero tabs.
