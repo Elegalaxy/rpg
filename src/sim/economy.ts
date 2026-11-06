@@ -266,6 +266,10 @@ export type StatBonuses = {
   magicalPenetrationBonus?: number
   equipmentHealingPower?: number
   cooldownReductionBonus?: number
+  /** Added to critical damage. 0.1 is +10 points (150% becomes 160%). */
+  critDamageBonus?: number
+  /** Added to the maximum HP multiplier. 0.04 is +4%. */
+  maxHpBonus?: number
 }
 
 export type ItemModifier = {
@@ -278,7 +282,14 @@ export type ItemModifier = {
   text: string
   /** The kinds of item it can be crafted on. */
   appliesTo: readonly ItemBase['type'][]
+  /** When set, armor must be in one of these slots (Hauler's: chest only). Other kinds are unaffected. */
+  armorSlots?: readonly ArmorSlot[]
+  /** Bag room it adds on a worn piece (Hauler's). Not a combat stat, so it is not in `bonus`. */
+  bagRoom?: number
 }
+
+/** The same modifier counts at most this many times across equipped gear (GAME_DESIGN §8, Batch C). */
+export const MODIFIER_STACK_CAP = 2
 
 const TYPE_NAMES: { readonly [type in ItemBase['type']]: string } = {
   weapon: 'weapons',
@@ -289,16 +300,20 @@ const TYPE_NAMES: { readonly [type in ItemBase['type']]: string } = {
 
 /** The kinds of item a modifier can go on, in words, such as `weapons and accessories`. */
 export function appliesToText(modifier: ItemModifier): string {
-  const names = modifier.appliesTo.map((type) => TYPE_NAMES[type])
+  const names = modifier.appliesTo.map((type) =>
+    type === 'armor' && modifier.armorSlots !== undefined ? `${modifier.armorSlots.join(' and ')} armor` : TYPE_NAMES[type],
+  )
   return names.length <= 1 ? (names[0] ?? 'nothing') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
 }
 
 /** Whether a modifier can be crafted on this kind of item. */
 export function modifierFits(modifier: ItemModifier, base: ItemBase): boolean {
-  return modifier.appliesTo.includes(base.type)
+  if (!modifier.appliesTo.includes(base.type)) return false
+  if (base.type === 'armor' && modifier.armorSlots !== undefined) return modifier.armorSlots.includes(base.slot)
+  return true
 }
 
-/** The six first-playable modifiers (G8). Percent values are fractions: 0.02 is 2 points. */
+/** The nine modifiers: six first-playable (G8) and three from Batch C. Percent values are fractions: 0.02 is 2 points. */
 export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
   keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance', appliesTo: ['weapon', 'accessory'] },
   precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy', appliesTo: ['weapon', 'offHand', 'accessory'] },
@@ -313,20 +328,66 @@ export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
   },
   mending: { id: 'mending', name: 'Mending', minLevel: 6, bonus: { equipmentHealingPower: 5 }, text: '+5 Healing Power', appliesTo: ['offHand', 'accessory'] },
   quick: { id: 'quick', name: 'Quick', minLevel: 9, bonus: { cooldownReductionBonus: 0.02 }, text: '+2 points cooldown reduction', appliesTo: ['weapon', 'accessory'] },
+  vicious: { id: 'vicious', name: 'Vicious', minLevel: 3, bonus: { critDamageBonus: 0.1 }, text: '+10 points critical damage', appliesTo: ['weapon', 'accessory'] },
+  sturdy: { id: 'sturdy', name: 'Sturdy', minLevel: 6, bonus: { maxHpBonus: 0.04 }, text: '+4% maximum HP', appliesTo: ['armor'] },
+  hauler: {
+    id: 'hauler',
+    name: "Hauler's",
+    minLevel: 4,
+    bonus: {},
+    bagRoom: 3,
+    text: '+3 bag room (at most 2 pieces count)',
+    appliesTo: ['armor', 'accessory'],
+    armorSlots: ['chest'],
+  },
 }
 
 /** The modifiers every hero's account knows at the start. */
 export const STARTING_MODIFIER_RECIPES: readonly string[] = ['keen', 'precise']
 
-/** The sum of every modifier on every equipped item. Empty when no modifier is equipped. */
+/**
+ * How many times each modifier is worn, and how many of those count. The same modifier counts at most
+ * `MODIFIER_STACK_CAP` times, in slot order.
+ */
+export function modifierCounts(equipment: Equipment): { id: string; worn: number; counted: number }[] {
+  const worn: { [id: string]: number } = {}
+  const order: string[] = []
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const item = equipment[slot]
+    if (item === null) continue
+    for (const id of item.modifiers) {
+      if (ITEM_MODIFIERS[id] === undefined) continue
+      if (worn[id] === undefined) order.push(id)
+      worn[id] = (worn[id] ?? 0) + 1
+    }
+  }
+  return order.map((id) => ({ id, worn: worn[id] ?? 0, counted: Math.min(worn[id] ?? 0, MODIFIER_STACK_CAP) }))
+}
+
+/** One line per modifier worn on more pieces than count, for the equipment screen. Empty when none is over the cap. */
+export function modifierCapNotes(equipment: Equipment): string[] {
+  return modifierCounts(equipment)
+    .filter((entry) => entry.worn > entry.counted)
+    .map((entry) => `${ITEM_MODIFIERS[entry.id]?.name ?? entry.id} is on ${entry.worn} pieces, but only ${entry.counted} count.`)
+}
+
+/** Worn pieces whose Hauler's modifier counts toward bag room (at most `MODIFIER_STACK_CAP`). */
+export function haulerPiecesWorn(equipment: Equipment): number {
+  return modifierCounts(equipment).find((entry) => entry.id === 'hauler')?.counted ?? 0
+}
+
+/** The sum of every counted modifier on every equipped item. Empty when no modifier is equipped. */
 export function statBonusesFor(equipment: Equipment): StatBonuses {
   const total: { [key in keyof StatBonuses]: number } = {}
+  const seen: { [id: string]: number } = {}
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = equipment[slot]
     if (item === null) continue
     for (const id of item.modifiers) {
       const modifier = ITEM_MODIFIERS[id]
       if (modifier === undefined) continue
+      seen[id] = (seen[id] ?? 0) + 1
+      if (seen[id] > MODIFIER_STACK_CAP) continue
       for (const key of Object.keys(modifier.bonus) as (keyof StatBonuses)[]) {
         total[key] = (total[key] ?? 0) + (modifier.bonus[key] ?? 0)
       }

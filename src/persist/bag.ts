@@ -1,3 +1,4 @@
+import { haulerPiecesWorn } from '../sim/economy.ts'
 import { LOOT_CAPACITY, MAX_LOOT_CAPACITY } from '../sim/expedition.ts'
 
 import type { SavedHero } from './save.ts'
@@ -12,9 +13,9 @@ export const HAULER_STACK_CAP = 2
 export const DEEP_POCKETS_ROOM = 4
 export const DEEP_POCKETS_COST = 15
 
-/** Pieces of worn gear with the Hauler's modifier. The modifier arrives in a later part of Batch C, so this counts none for now. */
-export function haulerPieces(_hero: SavedHero): number {
-  return 0
+/** Pieces of worn gear with the Hauler's modifier that count (at most 2). */
+export function haulerPieces(hero: SavedHero): number {
+  return haulerPiecesWorn(hero.equipment)
 }
 
 /** The bag room a hero starts a run with: 20, +2 at levels 10/20/30, +3 per Hauler's piece (at most 2), +4 for Deep Pockets, at most 36. */

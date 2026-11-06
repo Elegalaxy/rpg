@@ -5,7 +5,8 @@ import { purseOf } from '../../persist/save.ts'
 import { itemBase, itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { changeIsBetter, previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
-import { EQUIPMENT_SLOT_IDS, gearGaps, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { bagCapacity } from '../../persist/bag.ts'
+import { EQUIPMENT_SLOT_IDS, MODIFIER_STACK_CAP, gearGaps, modifierCapNotes, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
 import { groupItems } from './groupItems.ts'
 import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
@@ -32,6 +33,7 @@ const STAT_LABELS = [
   'Evasion',
   'Accuracy',
   'Critical chance',
+  'Critical damage',
   'Cooldown reduction',
   'Base action time',
 ]
@@ -59,6 +61,7 @@ export function Equipment() {
   }
   const stats = statsFor(hero)
   const lines = stats === null ? null : statLines(stats)
+  const capNotes = modifierCapNotes(hero.equipment)
   const gaps = gearGaps(hero.equipment, itemBase)
   const locked = save.expedition !== null
   const mainBase = hero.equipment.mainHand === null ? undefined : itemBase(hero.equipment.mainHand.baseId)
@@ -203,8 +206,20 @@ export function Equipment() {
                   </tr>
                 )
               })}
+              <tr>
+                <th scope="row">Bag room</th>
+                <td data-testid="stat-Bag room">{bagCapacity(hero)}</td>
+              </tr>
             </tbody>
           </table>
+          {capNotes.map((note) => (
+            <p key={note} className="row-note" data-testid="modifier-cap-note">
+              {note}
+              <Help label="About the modifier limit">
+                The same modifier counts at most {MODIFIER_STACK_CAP} times across worn gear. Extra pieces still work as gear but add nothing for that modifier.
+              </Help>
+            </p>
+          ))}
           {stats === null ? (
             <p className="row-note">
               Stats pending

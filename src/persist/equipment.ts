@@ -42,6 +42,7 @@ export function statLines(stats: HeroDerivedStats): StatLine[] {
     { label: 'Evasion', value: stats.evasion, unit: '' },
     { label: 'Accuracy', value: stats.accuracy, unit: '' },
     { label: 'Critical chance', value: Math.round(stats.critChance * 1000) / 10, unit: '%' },
+    { label: 'Critical damage', value: Math.round(stats.critDamage * 1000) / 10, unit: '%' },
     { label: 'Cooldown reduction', value: Math.round(stats.cooldownReduction * 1000) / 10, unit: '%' },
     { label: 'Base action time', value: stats.actionTime, unit: ' s' },
   ]

@@ -153,6 +153,8 @@ export type HeroStatInput = {
   evasionBonus?: number
   critChanceBonus?: number
   critDamageBonus?: number
+  /** Added to the maximum HP multiplier. 0.04 is +4%. */
+  maxHpBonus?: number
   armorPenetrationBonus?: number
   magicalPenetrationBonus?: number
   cooldownReductionBonus?: number
@@ -632,7 +634,10 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
 
   const racial = racialMultipliers(input)
   return {
-    maxHp: (HERO_HP_BASE + HERO_HP_PER_LEVEL * level + HERO_HP_PER_VITALITY * attributes.vitality) * racial.hp,
+    maxHp:
+      (HERO_HP_BASE + HERO_HP_PER_LEVEL * level + HERO_HP_PER_VITALITY * attributes.vitality) *
+      racial.hp *
+      (1 + optionalBonus(input.maxHpBonus, 'max HP bonus')),
     physicalPower: physicalPower * racial.power,
     magicalPower: magicalPower * racial.power,
     healingPower:

@@ -118,7 +118,7 @@ describe('queueing a craft', () => {
     expect(craftCheck(learned, hero(learned), { ...bow, modifierId: 'nimble' })).toBe('Nimble needs level 3. This hero is level 2.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, modifierId: 'nimble' })).toBe('Nimble can only go on armor and accessories.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, baseId: 'armor-heavy-chest', modifierId: 'nimble' })).toBeNull()
-    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(6)
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(9)
   })
 
   it('is closed while an expedition runs', () => {
@@ -329,9 +329,12 @@ describe('worn items and recipes', () => {
     const base = levelled()
     const grown = { ...base, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 12 } })) }
     const save = { ...updatePurse(grown, { gold: 300 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] } }
-    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['mending', 'nimble', 'piercing', 'quick'])
+    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['hauler', 'mending', 'nimble', 'piercing', 'quick', 'sturdy', 'vicious'])
     expect(recipePrice('nimble')).toBe(75)
     expect(recipePrice('quick')).toBe(225)
+    expect(recipePrice('vicious')).toBe(75)
+    expect(recipePrice('hauler')).toBe(100)
+    expect(recipePrice('sturdy')).toBe(150)
     const bought = ok(buyRecipe(save, 'nimble'))
     expect(bought.account.recipes).toContain('nimble')
     expect(purseOf(bought).gold).toBe(purseOf(save).gold - 75)
