@@ -28,6 +28,7 @@ import {
   type ExpeditionBlueprint,
   type ExpeditionEncounterDef,
   type ExpeditionState,
+  requestEscapeNow,
 } from './expedition.ts'
 import { formatEvent } from './log.ts'
 import { createRng, deriveSeed, nextFloat, type RngState } from './rng.ts'
@@ -1821,5 +1822,47 @@ describe('packed supplies', () => {
     expect(formatEvent(bomb!)).toBe('At 0.010s, warrior uses a Smoke Bomb (0 left).')
     expect(state.supplySlots).toEqual([null, { id: 'antidote' }, null, null])
     expect(state.consumedSupplyIds).toEqual([SMOKE_BOMB_ID])
+  })
+
+  it('Escape now rolls at once with no threshold, even with auto-escape off, and a Smoke Bomb still adds 15', () => {
+    const state = createExpedition(
+      { ...fixtureBlueprint(), retreatThresholds: [], travelGapMs: STEP_MS, supplies: [SMOKE_BOMB_ID] },
+      3,
+    )
+    expect(requestEscapeNow(state)).toBe(false)
+    state.autoEscapeOff = true
+    stepExpedition(state, defs)
+    expect(state.combat).not.toBeNull()
+    stepExpedition(state, defs)
+    expect(state.escapeLog).toEqual([])
+    expect(requestEscapeNow(state)).toBe(true)
+    expect(state.escapeNow).toBe(true)
+    stepExpedition(state, defs)
+    const attempt = state.escapeLog[0]
+    if (attempt === undefined) throw new Error('escape was not rolled')
+    expect(attempt.requested).toBe(true)
+    expect(attempt.suppliesBonus).toBe(SMOKE_BOMB_ESCAPE_POINTS)
+    expect(attempt.chancePercent).toBe(50 + attempt.agilityPoints + SMOKE_BOMB_ESCAPE_POINTS)
+    expect(formatEvent(attempt)).toContain('on request')
+    expect(state.escapeNow).toBe(false)
+    expect(state.supplySlots.every((slot) => slot === null)).toBe(true)
+    if (attempt.success) expect(state.combat).toBeNull()
+    else expect(state.escapeRetryMs).not.toBeNull()
+  })
+
+  it('Escape now ignores a pending retry wait but only rolls once per request', () => {
+    const state = createExpedition(
+      { ...fixtureBlueprint(), retreatThresholds: [], travelGapMs: STEP_MS },
+      3,
+    )
+    stepExpedition(state, defs)
+    state.escapeRetryMs = 60_000
+    requestEscapeNow(state)
+    stepExpedition(state, defs)
+    expect(state.escapeLog.length).toBe(1)
+    if (state.combat !== null) {
+      stepExpedition(state, defs)
+      expect(state.escapeLog.length).toBe(1)
+    }
   })
 })

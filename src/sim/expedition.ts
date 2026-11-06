@@ -266,6 +266,8 @@ export type ExpeditionState = {
   escapeRetryMs: number | null
   /** The player switched auto-escape off for this run. Absent or false means the thresholds apply. */
   autoEscapeOff?: boolean
+  /** The player pressed Escape now. The next step rolls an escape at once, then this clears. */
+  escapeNow?: boolean
   /** Every escape attempt on this road. The fight log is cleared when combat ends. */
   escapeLog: EscapeEvent[]
 }
@@ -412,6 +414,9 @@ export function assertExpedition(state: ExpeditionState): void {
         `escape retry must be an integer of at least 0, received ${describeValue(state.escapeRetryMs)}`,
       )
     }
+  }
+  if (state.escapeNow !== undefined && typeof state.escapeNow !== 'boolean') {
+    throw new Error(`escape now must be a boolean, received ${describeValue(state.escapeNow)}`)
   }
   if (!Array.isArray(state.escapeLog)) throw new Error('escape log is missing')
   for (const event of state.escapeLog) {
@@ -961,6 +966,7 @@ function combatSetup(state: ExpeditionState, encounter: ExpeditionEncounterDef):
 
 function beginEncounter(state: ExpeditionState, defs: GameDefs): void {
   state.escapeRetryMs = null
+  state.escapeNow = false
   const encounter = selectEncounter(state)
   const seed = deriveSeed(state.seed, state.encounterIndex)
   const combat = createCombat(combatSetup(state, encounter), defs, seed)
@@ -1291,6 +1297,7 @@ function retreatFromCombat(state: ExpeditionState): void {
   state.travelMs = 0
   state.returning = true
   state.escapeRetryMs = null
+  state.escapeNow = false
   resetFocus(state, 'retreat')
   resetFerocity(state, 'retreat')
 }
@@ -1302,11 +1309,17 @@ function retreatFromCombat(state: ExpeditionState): void {
 function tryEscape(state: ExpeditionState): boolean {
   const combat = state.combat
   if (combat === null || combat.outcome !== 'ongoing') return false
-  if (state.autoEscapeOff === true) return false
+  const requested = state.escapeNow === true
+  state.escapeNow = false
   const hero = combat.hero
-  const threshold = metThreshold(state, hero.hp, hero.maxHp)
-  if (threshold === null) return false
-  if (state.escapeRetryMs !== null && combat.timeMs < state.escapeRetryMs) return false
+  let thresholdPercent = 100
+  if (!requested) {
+    if (state.autoEscapeOff === true) return false
+    const threshold = metThreshold(state, hero.hp, hero.maxHp)
+    if (threshold === null) return false
+    if (state.escapeRetryMs !== null && combat.timeMs < state.escapeRetryMs) return false
+    thresholdPercent = Math.round(threshold.atMost * 1000) / 10
+  }
   const agilityPoints = Math.min(ESCAPE_AGILITY_CAP, Math.floor(hero.agility / 5))
   const trailEscape = pressTrailEscapePoints(state.heroTemplate.allocatedNodeIds, state.momentum)
   const momentumBonus = ESCAPE_MOMENTUM_BONUS + trailEscape
@@ -1337,7 +1350,8 @@ function tryEscape(state: ExpeditionState): boolean {
     actorName: hero.name,
     hp: hero.hp,
     maxHp: hero.maxHp,
-    thresholdPercent: Math.round(threshold.atMost * 1000) / 10,
+    thresholdPercent,
+    ...(requested ? { requested: true } : {}),
     roll,
     chancePercent,
     basePercent: ESCAPE_BASE_PERCENT,
@@ -1355,6 +1369,18 @@ function tryEscape(state: ExpeditionState): boolean {
     return false
   }
   retreatFromCombat(state)
+  return true
+}
+
+/**
+ * Ask for an escape attempt at once, whatever the hero's HP, the auto-escape setting or the retry wait.
+ * The next step rolls it (a packed Smoke Bomb still adds its points). Returns false, and does nothing,
+ * when no fight is under way.
+ */
+export function requestEscapeNow(state: ExpeditionState): boolean {
+  assertExpedition(state)
+  if (state.outcome !== 'ongoing' || state.combat === null || state.combat.outcome !== 'ongoing') return false
+  state.escapeNow = true
   return true
 }
 

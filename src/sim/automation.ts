@@ -408,6 +408,7 @@ export function setPriorityRules(state: CombatState, rules: unknown, defs: GameD
  * Store one equipped skill for the hero's next action.
  * Does not change the action already scheduled, its cost, or its timing.
  * A later call replaces the queued skill.
+ * A carried supply counts as equipped for this.
  * A skill that is not equipped throws and leaves the state unchanged.
  */
 export function queueManualAction(state: CombatState, skillId: string): void {
@@ -417,7 +418,7 @@ export function queueManualAction(state: CombatState, skillId: string): void {
   if (typeof skillId !== 'string' || skillId.length === 0) {
     throw new Error(`manual queue skill id must be a non-empty string, received ${describeValue(skillId)}`)
   }
-  if (!skillEquipped(state.hero, skillId)) {
+  if (!skillEquipped(state.hero, skillId) && !state.hero.supplies.includes(skillId)) {
     throw new Error(`cannot queue '${skillId}': not equipped`)
   }
   state.queuedSkillId = skillId

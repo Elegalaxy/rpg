@@ -1,6 +1,12 @@
+import { skills } from '../../content/skills.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
+import { queueManualAction, skipReason } from '../../sim/automation.ts'
 import type { CombatState } from '../../sim/types.ts'
+import { debugLog } from '../debug.ts'
+import { Help } from '../Help.tsx'
+import { Tag } from '../Kit.tsx'
 import { LogPanel } from '../log/LogPanel.tsx'
+import { noteHeroQueue } from '../store.ts'
 
 import { ActorCard } from './ActorCard.tsx'
 import './combat.css'
@@ -21,6 +27,16 @@ const JUST_USED_MS = 4000
 
 /** The hero's carried supplies for this fight, live: what is left, what has been used, and a flash when one was just used. */
 function SuppliesBar({ combat }: { combat: CombatState }) {
+  const live = combat.outcome === 'ongoing'
+  function queue(id: string): void {
+    debugLog('[ui]', 'queue supply', { id })
+    try {
+      queueManualAction(combat, id)
+      noteHeroQueue(null)
+    } catch (error) {
+      noteHeroQueue(error instanceof Error ? error.message : `cannot queue '${id}'`)
+    }
+  }
   const { hero } = combat
   const left: { [id: string]: number } = {}
   for (const id of hero.supplies) left[id] = (left[id] ?? 0) + 1
@@ -35,7 +51,6 @@ function SuppliesBar({ combat }: { combat: CombatState }) {
   }
   const ids = [...new Set([...Object.keys(left), ...Object.keys(used)])]
   if (ids.length === 0) return null
-  const live = combat.outcome === 'ongoing'
   const fresh = live && latest !== null && combat.timeMs - latest.timeMs < JUST_USED_MS
   return (
     <div className="fight-supplies" aria-label="Supplies this fight" data-testid="fight-supplies">
@@ -46,6 +61,29 @@ function SuppliesBar({ combat }: { combat: CombatState }) {
             {SUPPLIES.find((entry) => entry.id === id)?.name ?? names[id] ?? id}{' '}
             <strong>×{left[id] ?? 0}</strong>
             {(used[id] ?? 0) > 0 ? <span className="supply-used"> · used {used[id]}</span> : null}
+            {live && (left[id] ?? 0) > 0 ? (
+              combat.queuedSkillId === id ? (
+                <>
+                  {' '}
+                  <Tag kind="info" testId="supply-queued">
+                    Queued for next action
+                  </Tag>
+                </>
+              ) : (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    className="skill-queue"
+                    aria-label={`Queue ${SUPPLIES.find((entry) => entry.id === id)?.name ?? id}`}
+                    disabled={skills[id] === undefined || skipReason(combat, hero, skills[id], combat.timeMs) !== null}
+                    onClick={() => queue(id)}
+                  >
+                    Queue
+                  </button>
+                </>
+              )
+            ) : null}
           </li>
         ))}
       </ul>
@@ -66,10 +104,15 @@ export function FightView({
   combat,
   title,
   queueError = null,
+  onEscapeNow,
+  escapePending = false,
 }: {
   combat: CombatState
   title: string
   queueError?: string | null
+  /** Shown on a live expedition fight: start an escape attempt at once. */
+  onEscapeNow?: () => void
+  escapePending?: boolean
 }) {
   const { hero } = combat
   const live = combat.outcome === 'ongoing'
@@ -96,6 +139,16 @@ export function FightView({
               manualQueue={live ? { state: combat, queueError } : undefined}
             />
             <SuppliesBar combat={combat} />
+            {live && onEscapeNow !== undefined ? (
+              <div className="fight-escape">
+                <button type="button" className="btn-danger" disabled={escapePending} onClick={onEscapeNow}>
+                  {escapePending ? 'Escaping...' : 'Escape now'}
+                </button>
+                <Help label="About Escape now">
+                  Tries to escape at once, whatever your HP or the auto-escape setting. The usual chance applies, and a packed Smoke Bomb adds 15 points. A failed try waits before the next automatic one.
+                </Help>
+              </div>
+            ) : null}
             </div>
           </div>
           <div className="fight-vs" aria-hidden="true">

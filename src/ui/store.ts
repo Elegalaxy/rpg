@@ -13,7 +13,7 @@ import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
-import { returnToTown, stepExpedition } from '../sim/expedition.ts'
+import { requestEscapeNow, returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceOffline, createOffline, finishOffline, offlineDone, type OfflineState, type OfflineSummary } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
@@ -505,6 +505,14 @@ export function returnFromUi(): string | null {
   debugLog('[ui]', 'return to town', { fight: expedition.encounterIndex })
   commitSave(saveStatus.save, 'return to town')
   return null
+}
+
+/** Start an escape attempt at the next step, whatever the hero's HP. Nothing happens outside a live fight. */
+export function escapeNowFromUi(): void {
+  const expedition = saveStatus.save.expedition
+  if (expedition === null || !requestEscapeNow(expedition)) return
+  debugLog('[ui]', 'escape now', { fight: expedition.encounterIndex })
+  emit()
 }
 
 /** Switch the run's auto-escape off or back on. Takes effect on the next escape check, mid-fight included. */

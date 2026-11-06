@@ -28,6 +28,7 @@ import { FightView } from '../combat/FightView.tsx'
 import {
   pushOnFromUi,
   returnFromUi,
+  escapeNowFromUi,
   setAutoEscapeFromUi,
   savePreparationFromUi,
   settleExpeditionFromUi,
@@ -309,7 +310,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
  * The fight area of a run. It follows the live fight, and the same view then stays on the fight that
  * just ended, so the result never snaps away. Chips above it open any earlier fight of the run.
  */
-function FightArea({ live }: { live: ExpeditionState['combat'] }) {
+function FightArea({ live, escapePending }: { live: ExpeditionState['combat']; escapePending: boolean }) {
   const fights = getFinishedFights()
   const [chosen, setChosen] = useState<number | 'follow'>('follow')
   const latest = fights[fights.length - 1]
@@ -337,7 +338,14 @@ function FightArea({ live }: { live: ExpeditionState['combat'] }) {
           </button>
         ) : null}
       </div>
-      {showLive && live !== null ? <FightView combat={live} title={`Fight ${fights.length + 1}`} /> : null}
+      {showLive && live !== null ? (
+        <FightView
+          combat={live}
+          title={`Fight ${fights.length + 1}`}
+          onEscapeNow={escapeNowFromUi}
+          escapePending={escapePending}
+        />
+      ) : null}
       {shown !== undefined ? <FightView combat={shown.combat} title={`Fight ${shown.fight}: ${encounterLabel(shown.encounterId)}`} /> : null}
     </section>
   )
@@ -585,7 +593,7 @@ export function ExpeditionPanel() {
     return (
       <>
         {expedition.outcome === 'ongoing' ? <Running expedition={expedition} /> : <Ended expedition={expedition} />}
-        <FightArea live={expedition.combat} />
+        <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} />
       </>
     )
   }

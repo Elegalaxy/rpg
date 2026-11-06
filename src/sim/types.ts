@@ -980,6 +980,8 @@ export type EscapeEvent = {
   hp: number
   maxHp: number
   thresholdPercent: number
+  /** The player asked for this attempt (Escape now). Absent for an automatic one. */
+  requested?: boolean
   roll: number
   chancePercent: number
   basePercent: number

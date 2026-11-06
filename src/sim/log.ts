@@ -370,7 +370,8 @@ export function formatEvent(event: LogEvent): string {
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dodges ${event.sourceName}'s ${event.skillName}: no damage and no statuses.`
     case 'escape': {
       const result = event.success ? 'success' : 'failure'
-      return `At ${seconds(event.timeMs)}s, ${event.actorName} attempts escape (HP ${event.hp}/${event.maxHp}, threshold ${event.thresholdPercent}%): roll ${event.roll} against ${event.chancePercent}% (base ${event.basePercent}, Agility ${event.agility} adds ${event.agilityPoints}, supplies ${event.suppliesBonus}, zone ${event.zoneBonus}, momentum ${event.momentumBonus}): ${result}.`
+      const reason = event.requested === true ? 'on request' : `threshold ${event.thresholdPercent}%`
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} attempts escape (HP ${event.hp}/${event.maxHp}, ${reason}): roll ${event.roll} against ${event.chancePercent}% (base ${event.basePercent}, Agility ${event.agility} adds ${event.agilityPoints}, supplies ${event.suppliesBonus}, zone ${event.zoneBonus}, momentum ${event.momentumBonus}): ${result}.`
     }
     default: {
       const unexpected: never = event

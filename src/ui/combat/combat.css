@@ -395,3 +395,9 @@
   gap: var(--s2);
   min-width: 0;
 }
+
+.fight-escape {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
