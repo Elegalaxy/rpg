@@ -16,7 +16,7 @@
   - "Skill is ready" ignores resource cost and target availability.
   - Reference loadouts carry no supplies, so matrix numbers are unchanged by supplies.
 - **Checked in the browser (2026-11-07):** Rules tab (Duplicate 7 to 8, summary, new condition options), Legacy Deep Pockets row, Equipment Critical damage and Bag room rows, running panel (bag 0/20, Safe pouch line), supply Queue and Escape now (log "on request"). Not checked: safe pouch on a real defeat, bag-full setting in play, Hauler's gear, Sturdy/Vicious in a fight. Still unchecked by the user: offline, away route, Save panel, Wear button, Going in with.
-- **Exact Next Step:** (1) Ask the user to try the Batch C UI (list above). (2) Mark Step 12.2 `done` in `doc/IMPLEMENTATION_PLAN.md` after their check. (3) Optionally run more matrix seeds for the Ranger Echo Knight dip. (4) Warden tuning needs the user's hero level, points, gear and Draught count.
+- **Exact Next Step:** (1) Fix skill facts in Loadout and node preview to show node bonuses (`skillInfo.ts`). (2) Optionally run more matrix seeds for the Ranger Echo Knight dip. (3) Warden tuning needs the user's hero level, points, gear and Draught count. (4) Ask the user to check the remaining items above.
 - **Ideas not in the plan yet (discussed, not decided):**
   - UI conventions under GAME_DESIGN §12; convert Equipment, Craft, Rules and Hero tabs to `Kit.tsx`.
   - Mend alternatives if the Cleric proves too strong. Offline extras (run cap, other heroes, notifications, faster mastered zones).
