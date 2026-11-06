@@ -12,6 +12,8 @@ import {
 import { legs, nodes, routes } from '../../content/world.ts'
 import { getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
 import { Kpi, KpiRow } from '../Kit.tsx'
+import { GoingIn } from './GoingIn.tsx'
+import type { GoTo } from './goingInLines.ts'
 
 import './map.css'
 
@@ -34,7 +36,7 @@ function point(position: MarkerPosition): { x: number; y: number } {
   return { x: from.x + (to.x - from.x) * position.fraction, y: from.y + (to.y - from.y) * position.fraction }
 }
 
-export function MapView() {
+export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const [routeId, setRouteId] = useState<string>(() => getLastRouteId() ?? 'splintered-road')
@@ -135,6 +137,7 @@ export function MapView() {
         </dl>
         {expedition === null ? (
           <>
+            {hero !== null ? <GoingIn hero={hero} onGo={onGo} /> : null}
             <button
               type="button"
               className="btn-primary"

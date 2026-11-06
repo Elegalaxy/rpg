@@ -6,15 +6,18 @@ import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../..
 import { SUPPLIES } from '../../content/supplies.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { recipePrice, recipesForSale } from '../../persist/crafting.ts'
-import { wearerOf } from '../../persist/equipment.ts'
 import { purseOf, type SaveData } from '../../persist/save.ts'
-import { repairAllCost } from '../../persist/town.ts'
+import { previewEquip, wearerOf } from '../../persist/equipment.ts'
+import { previewBuy, repairAllCost } from '../../persist/town.ts'
+import { GearChanges } from './GearChanges.tsx'
 import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { Help } from '../Help.tsx'
 import { CostPill, Kpi, KpiRow, Pill, ShopRow, Tag } from '../Kit.tsx'
 import {
+  buyAndWearFromUi,
   buyItemFromUi,
+  equipFromUi,
   buyRecipeFromUi,
   brewSupplyFromUi,
   buySupplyFromUi,
@@ -106,17 +109,33 @@ function GearShop({ place }: { place: PlaceDef }) {
               key={entry.baseId}
               name={entry.name}
               effect={`Item level ${entry.itemLevel} · Quality 100%`}
+              note={<GearChanges preview={previewBuy(save, hero.id, entry.baseId)} empty="No stat change from what you wear." />}
               costs={[[{ kind: 'gold', amount: entry.price }]]}
               actions={
-                <button
-                  type="button"
-                  className="btn-primary"
-                  disabled={closed || gold < entry.price}
-                  aria-label={`Buy ${entry.baseId}`}
-                  onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}.`)}
-                >
-                  Buy
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={closed || gold < entry.price}
+                    aria-label={`Buy ${entry.baseId}`}
+                    onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}. It is in your archive.`)}
+                  >
+                    Buy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-good"
+                    disabled={closed || gold < entry.price}
+                    aria-label={`Buy and wear ${entry.baseId}`}
+                    title="Buy it and put it on. The piece it replaces goes to your archive, ready to sell."
+                    onClick={() => {
+                      const result = buyAndWearFromUi(entry.baseId)
+                      run(result.error, result.worn ? `Bought ${entry.name} and put it on. Your old piece is in the archive below, ready to sell.` : `Bought ${entry.name}. It could not be worn right now, so it is in your archive.`)
+                    }}
+                  >
+                    Buy and wear
+                  </button>
+                </>
               }
             />
           ))}
@@ -150,11 +169,17 @@ function GearShop({ place }: { place: PlaceDef }) {
             key={item.id}
             name={itemName(item)}
             effect={`Archive · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
+            note={<GearChanges preview={previewEquip(save, hero.id, item.id)} empty="No stat change from what you wear." />}
             costs={[[{ kind: 'gold', amount: itemSellPrice(item), prefix: '+' }]]}
             actions={
-              <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}.`)}>
-                Sell
-              </button>
+              <>
+                <button type="button" className="btn-good" disabled={closed} aria-label={`Wear ${item.id}`} onClick={() => run(equipFromUi(item.id, null), `Put on ${itemName(item)}.`)}>
+                  Wear
+                </button>
+                <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}.`)}>
+                  Sell
+                </button>
+              </>
             }
           />
         ))}

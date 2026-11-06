@@ -417,7 +417,12 @@ function App() {
               ) : null}
               {tab === 'map' ? (
                 <>
-                  <MapView />
+                  <MapView
+                    onGo={(to) => {
+                      if (to.heroPart !== undefined) setHeroPart(to.heroPart)
+                      setTab(to.tab)
+                    }}
+                  />
                   <ExpeditionPanel />
                 </>
               ) : null}

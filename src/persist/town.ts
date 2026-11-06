@@ -4,7 +4,7 @@ import { supplyTable } from '../content/supplies.ts'
 import { EQUIPMENT_SLOT_IDS, classBlock, type Equipment, type ItemInstance } from '../sim/economy.ts'
 
 import { selectedHero } from './character.ts'
-import { wearerOf } from './equipment.ts'
+import { equipFromArchive, previewEquip, wearerOf, type EquipPreview } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import { purseOf, updatePurse, type SaveData, type SavedHero } from './save.ts'
 
@@ -79,6 +79,33 @@ export function buyItem(save: SaveData, heroId: string, baseId: string): RosterR
   if (purse.gold < price) return { ok: false, reason: `That costs ${price} gold. You have ${purse.gold}.` }
   const item = newItem(nextShopId(save), baseId, hero.progress.level)
   return { ok: true, save: updatePurse(save, { gold: purse.gold - price, archive: [...purse.archive, item] }, heroId) }
+}
+
+/**
+ * What wearing a shop item would change, before buying it: the same preview an archive item gets, run on a
+ * stand-in copy of the item. Empty when the hero cannot wear it.
+ */
+export function previewBuy(save: SaveData, heroId: string, baseId: string): EquipPreview {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  const base = itemBase(baseId)
+  if (hero === undefined || base === undefined) return { block: 'Greyhaven does not sell that.', slot: null, changes: [] }
+  const standIn = newItem('preview-item', baseId, hero.progress.level)
+  const copy: SaveData = { ...save, expedition: null, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, purse: { ...entry.purse, archive: [...entry.purse.archive, standIn] } } : entry)) }
+  return previewEquip(copy, heroId, standIn.id)
+}
+
+/**
+ * Buy a shop item and put it on in one step. When the item cannot be worn right now (the slot rules refuse it),
+ * the purchase still stands and the item waits in the archive: `worn` says which happened.
+ */
+export function buyAndWear(save: SaveData, heroId: string, baseId: string): { ok: true; save: SaveData; worn: boolean } | { ok: false; reason: string } {
+  const bought = buyItem(save, heroId, baseId)
+  if (!bought.ok) return bought
+  const hero = bought.save.heroes.find((entry) => entry.id === heroId)
+  const item = hero?.purse.archive[hero.purse.archive.length - 1]
+  if (item === undefined) return { ok: true, save: bought.save, worn: false }
+  const worn = equipFromArchive(bought.save, heroId, item.id)
+  return worn.ok ? { ok: true, save: worn.save, worn: true } : { ok: true, save: bought.save, worn: false }
 }
 
 /** Buy supplies with the selected hero's gold. They go to that hero's stash. */
