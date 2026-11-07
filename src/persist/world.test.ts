@@ -228,6 +228,7 @@ describe('recording progress', () => {
     const hero = selectedHero(save)!
     expect(hero.clearedNodeIds).toEqual(['splintered-road', 'withered-grove'])
     expect(hero.defeatedEnemyIds).toEqual(['rootmaw-stalker'])
+    expect(save.account.discoveries).toContain('defeated:rootmaw-stalker')
     expect(save.account.discoveries).toContain('node:fracture-gate')
     expect(nodeStatus(node('fracture-gate'), save, hero).reason).toBe('Defeat Echo Knight first.')
     const bastion = {

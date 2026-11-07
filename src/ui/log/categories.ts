@@ -72,6 +72,7 @@ const EVENT_CATEGORIES = {
   field: ['statuses'],
   fieldTick: ['damage', 'statuses', 'defeatCause'],
   fieldHeal: ['healing', 'statuses'],
+  lifesteal: ['healing'],
   fieldExpired: ['statuses'],
   hpLoss: ['damage', 'defeatCause'],
   vow: ['resources'],

@@ -308,6 +308,8 @@ export function formatEvent(event: LogEvent): string {
         `mitigated ${event.afterDefense};`,
         `rounded ${event.hpDamage}.`,
       ].join(' ')
+    case 'lifesteal':
+      return `At ${seconds(event.timeMs)}s, ${event.actorName} siphons ${event.amount} HP from a ${event.damage} damage hit (HP ${event.targetHpBefore} to ${event.targetHpAfter}). ${event.fraction} of the damage = ${event.raw}, limited to missing HP.`
     case 'fieldHeal':
       return `At ${seconds(event.timeMs)}s, ${event.actorName}'s field restores ${event.amount} (HP ${event.targetHpBefore} to ${event.targetHpAfter}). Healing Power ${event.healingPower} × ${event.coefficient} = ${event.raw}; no roll; healing received ×${event.healingReceived} = ${event.afterReceived}; rounded ${event.amount}.`
     case 'fieldExpired':

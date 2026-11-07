@@ -102,3 +102,54 @@ describe('the modifier stack cap', () => {
     expect(modifierCapNotes(worn({ mainHand: ['keen'], accessory0: ['keen'] }))).toEqual([])
   })
 })
+
+describe('the Causeway modifiers', () => {
+  const input = {
+    level: 20,
+    classId: 'warrior',
+    attributes: { strength: 10, vitality: 10, agility: 10, intellect: 10, spirit: 10 },
+    gear: {
+      mainHand: { id: 'w', kind: 'oneHanded', itemLevel: 1, quality: 1 },
+      offHand: { id: 'o', kind: 'shield', itemLevel: 1, quality: 1 },
+      head: { id: 'a', slot: 'head', category: 'heavy', itemLevel: 1, quality: 1 },
+      chest: { id: 'b', slot: 'chest', category: 'heavy', itemLevel: 1, quality: 1 },
+      hands: { id: 'c', slot: 'hands', category: 'heavy', itemLevel: 1, quality: 1 },
+      feet: { id: 'd', slot: 'feet', category: 'heavy', itemLevel: 1, quality: 1 },
+      accessories: [
+        { id: 'e', itemLevel: 1, quality: 1 },
+        { id: 'f', itemLevel: 1, quality: 1 },
+      ],
+    },
+  } as HeroStatInput
+
+  it('have the decided levels, numbers, fits and unlocks', () => {
+    expect(ITEM_MODIFIERS.hallowed).toMatchObject({ minLevel: 16, bonus: { equipmentHealingPower: 10 }, requires: { discoveryId: 'node:drowned-causeway' } })
+    expect(ITEM_MODIFIERS.rending).toMatchObject({ minLevel: 18, bonus: { armorPenetrationBonus: 0.06, magicalPenetrationBonus: 0.06 }, requires: { discoveryId: 'node:drowned-causeway' } })
+    expect(ITEM_MODIFIERS.siphoning).toMatchObject({ minLevel: 20, bonus: { lifestealFraction: 0.03 }, requires: { enemyId: 'tidebound-colossus' } })
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(12)
+    const hallowed = ITEM_MODIFIERS.hallowed!
+    const rending = ITEM_MODIFIERS.rending!
+    const siphoning = ITEM_MODIFIERS.siphoning!
+    expect([shield, ring, sword, chest].map((base) => modifierFits(hallowed, base))).toEqual([true, true, false, false])
+    expect([sword, shield, ring, chest].map((base) => modifierFits(rending, base))).toEqual([true, false, false, false])
+    expect([sword, shield, ring, chest].map((base) => modifierFits(siphoning, base))).toEqual([true, false, false, false])
+  })
+
+  it('add their bonuses to the derived stats', () => {
+    const plain = deriveHeroStats(input)
+    expect(plain.lifestealFraction).toBe(0)
+    const boosted = deriveHeroStats({ ...input, ...statBonusesFor(worn({ mainHand: ['rending'], offHand: ['hallowed'] })) })
+    expect(boosted.healingPower).toBeCloseTo(plain.healingPower + 10, 10)
+    expect(boosted.armorPenetration).toBeGreaterThan(plain.armorPenetration)
+    expect(boosted.magicalPenetration).toBeGreaterThan(plain.magicalPenetration)
+    const siphon = deriveHeroStats({ ...input, ...statBonusesFor(worn({ mainHand: ['siphoning'] })) })
+    expect(siphon.lifestealFraction).toBeCloseTo(0.03, 10)
+  })
+
+  it('respect the two-piece stack cap', () => {
+    const bonus = statBonusesFor(worn({ offHand: ['hallowed'], accessory0: ['hallowed'], accessory1: ['hallowed'], mainHand: ['siphoning'] }))
+    expect(bonus.equipmentHealingPower).toBe(20)
+    expect(bonus.lifestealFraction).toBeCloseTo(0.03, 10)
+    expect(modifierCapNotes(worn({ offHand: ['hallowed'], accessory0: ['hallowed'], accessory1: ['hallowed'] }))).toEqual(['Hallowed is on 3 pieces, but only 2 count.'])
+  })
+})

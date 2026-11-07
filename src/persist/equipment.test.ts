@@ -218,6 +218,34 @@ describe('what equipping changes', () => {
     expect(statsFor(hero(sword))!.actionTime).toBe(before.actionTime)
   })
 
+  it('shows Healing Power, penetration and life steal from the Causeway modifiers', () => {
+    const save = heroSave()
+    const plain = Object.fromEntries(statLines(statsFor(hero(save))!).map((line) => [line.label, line.value]))
+    expect(plain['Life steal']).toBe(0)
+    const modified = {
+      ...save,
+      heroes: save.heroes.map((h) => ({
+        ...h,
+        equipment: {
+          ...h.equipment,
+          mainHand: { ...h.equipment.mainHand!, modifiers: ['siphoning'] },
+          offHand: h.equipment.offHand === null ? null : { ...h.equipment.offHand, modifiers: ['hallowed'] },
+          accessory0: { ...h.equipment.accessory0!, modifiers: ['hallowed'] },
+        },
+      })),
+    }
+    const lines = Object.fromEntries(statLines(statsFor(hero(modified))!).map((line) => [line.label, line.value]))
+    expect(lines['Life steal']).toBe(3)
+    expect(lines['Healing Power']).toBeGreaterThan(plain['Healing Power']!)
+    const rending = {
+      ...save,
+      heroes: save.heroes.map((h) => ({ ...h, equipment: { ...h.equipment, mainHand: { ...h.equipment.mainHand!, modifiers: ['rending'] } } })),
+    }
+    const rendLines = Object.fromEntries(statLines(statsFor(hero(rending))!).map((line) => [line.label, line.value]))
+    expect(rendLines['Armor penetration']).toBeCloseTo(plain['Armor penetration']! + 6, 5)
+    expect(rendLines['Magical penetration']).toBeCloseTo(plain['Magical penetration']! + 6, 5)
+  })
+
   it('previews the same numbers the equip then produces', () => {
     const save = withItems(heroSave(), developmentItems(1, 1))
     for (const id of ['dev-1', 'dev-2', 'dev-3', 'dev-6']) {

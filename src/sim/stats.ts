@@ -158,6 +158,8 @@ export type HeroStatInput = {
   armorPenetrationBonus?: number
   magicalPenetrationBonus?: number
   cooldownReductionBonus?: number
+  /** Fraction of damage dealt (after mitigation) the hero heals. 0.03 is 3%. */
+  lifestealFraction?: number
   /** Racial branch nodes that change derived stats. Omitted applies none. */
   racialNodeIds?: readonly string[]
   /** Human Renaissance is active. */
@@ -183,6 +185,8 @@ export type HeroDerivedStats = {
   ordinaryXpBonus: number
   outOfCombatRegenPerSecond: number
   healingReceivedBonus: number
+  /** Fraction of damage dealt the hero heals. 0 when no gear gives any. */
+  lifestealFraction: number
 }
 
 export type EnemyStatOverrides = {
@@ -674,6 +678,7 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
       (ORDINARY_XP_FACTOR * attributes.spirit) / (attributes.spirit + ORDINARY_XP_SOFT_CAP),
     outOfCombatRegenPerSecond: REGEN_PER_VITALITY * attributes.vitality,
     healingReceivedBonus: healingReceivedBonus(attributes.vitality),
+    lifestealFraction: optionalBonus(input.lifestealFraction, 'lifesteal fraction'),
   }
 }
 

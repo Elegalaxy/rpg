@@ -367,13 +367,23 @@ function Enchanter() {
               name={modifier.name}
               effect={`${modifier.text} · ${appliesToText(modifier)}`}
               costs={[[{ kind: 'gold', amount: recipePrice(entry.modifierId) }]]}
-              note={<Tag kind="info">Needs level {modifier.minLevel}</Tag>}
+              note={
+                <>
+                  <Tag kind="info">Needs level {modifier.minLevel}</Tag>
+                  {entry.locked === null ? null : (
+                    <>
+                      {' '}
+                      <Tag kind="bad">Locked</Tag> <span data-testid="recipe-lock">{entry.locked}</span>
+                    </>
+                  )}
+                </>
+              }
               actions={
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={closed || purseOf(save).gold < recipePrice(entry.modifierId) || heroLevel < modifier.minLevel}
-                  title={heroLevel < modifier.minLevel ? `Needs hero level ${modifier.minLevel}` : undefined}
+                  disabled={closed || entry.locked !== null || purseOf(save).gold < recipePrice(entry.modifierId) || heroLevel < modifier.minLevel}
+                  title={entry.locked ?? (heroLevel < modifier.minLevel ? `Needs hero level ${modifier.minLevel}` : undefined)}
                   aria-label={`Learn ${modifier.name} recipe`}
                   onClick={() => run(buyRecipeFromUi(entry.modifierId), `Learned the ${modifier.name} recipe.`)}
                 >

@@ -386,3 +386,48 @@ describe('combat input validation', () => {
     expect(() => createCombat(setup, defs, 1)).toThrow("unknown enemy 'missing'")
   })
 })
+
+describe('lifesteal (Siphoning)', () => {
+  function run(fraction: number, seed = 7) {
+    const setup = warriorSetup()
+    const hero = { ...setup.hero, statBonuses: { lifestealFraction: fraction } }
+    const defs = defsFor(dummy({ maxHp: 100_000, power: 40 }))
+    return runCombat(createCombat({ ...setup, hero }, defs, seed), defs, 30_000)
+  }
+
+  it('does nothing without lifesteal', () => {
+    expect(run(0).log.some((event) => event.type === 'lifesteal')).toBe(false)
+  })
+
+  it('heals a share of the HP a hero hit removes, never above missing HP, and logs it', () => {
+    const state = run(0.03)
+    expect(state.log.some((event) => event.type === 'lifesteal')).toBe(true)
+    state.log.forEach((event, index) => {
+      if (event.type !== 'lifesteal') return
+      expect(event.amount).toBeGreaterThan(0)
+      expect(event.amount).toBeLessThanOrEqual(event.raw)
+      expect(event.targetHpAfter).toBe(event.targetHpBefore + event.amount)
+      expect(event.targetHpAfter).toBeLessThanOrEqual(state.hero.maxHp)
+      expect(formatEvent(event)).toContain('siphons')
+      const hit = state.log[index - 1]
+      expect(hit?.type).toBe('damage')
+      if (hit?.type === 'damage') expect(event.raw).toBe(Math.round(hit.hpDamage * 0.03))
+    })
+  })
+
+  it('is capped by missing HP when the fraction is huge', () => {
+    const state = run(5)
+    for (const event of state.log) {
+      if (event.type === 'lifesteal') expect(event.targetHpAfter).toBeLessThanOrEqual(state.hero.maxHp)
+    }
+    expect(state.hero.hp).toBeLessThanOrEqual(state.hero.maxHp)
+    expect(state.log.some((event) => event.type === 'lifesteal' && event.amount < event.raw)).toBe(true)
+  })
+
+  it('is deterministic and draws no random numbers', () => {
+    expect(JSON.stringify(run(0.03).log)).toBe(JSON.stringify(run(0.03).log))
+    const damageOf = (state: CombatState) =>
+      state.log.filter((event) => event.type === 'damage' && event.actorId === state.hero.id).map((event) => (event.type === 'damage' ? event.hpDamage : 0))
+    expect(damageOf(run(0.03)).slice(0, 5)).toEqual(damageOf(run(0)).slice(0, 5))
+  })
+})

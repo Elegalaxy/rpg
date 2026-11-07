@@ -21,6 +21,7 @@ import { itemBase } from '../content/items.ts'
 import { awardXp } from '../sim/progression.ts'
 import { applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress, refreshBoard } from './contracts.ts'
+import { defeatRecordId } from './crafting.ts'
 import { scaleHeirlooms } from './reincarnation.ts'
 import { purseOf, reachMilestone, updatePurse, type SaveData, type SavedHero } from './save.ts'
 
@@ -238,7 +239,10 @@ export function recordProgress(save: SaveData): SaveData {
       const entry = expedition.history.find((item) => item.index === index && item.outcome === 'victory')
       if (entry === undefined) continue
       const def = enemies[entry.encounterId]
-      if (def !== undefined && (def.elite === true || def.boss === true)) defeated = add(defeated, def.id)
+      if (def !== undefined && (def.elite === true || def.boss === true)) {
+        defeated = add(defeated, def.id)
+        discoveries = add(discoveries, defeatRecordId(def.id))
+      }
       if (def?.boss === true) account = reachMilestone(account, 'first-warden-defeat')
     }
     if (indices.every((index) => won.has(index))) {

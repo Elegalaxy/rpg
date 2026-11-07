@@ -43,6 +43,9 @@ export function statLines(stats: HeroDerivedStats): StatLine[] {
     { label: 'Accuracy', value: stats.accuracy, unit: '' },
     { label: 'Critical chance', value: Math.round(stats.critChance * 1000) / 10, unit: '%' },
     { label: 'Critical damage', value: Math.round(stats.critDamage * 1000) / 10, unit: '%' },
+    { label: 'Armor penetration', value: Math.round(stats.armorPenetration * 1000) / 10, unit: '%' },
+    { label: 'Magical penetration', value: Math.round(stats.magicalPenetration * 1000) / 10, unit: '%' },
+    { label: 'Life steal', value: Math.round(stats.lifestealFraction * 1000) / 10, unit: '%' },
     { label: 'Cooldown reduction', value: Math.round(stats.cooldownReduction * 1000) / 10, unit: '%' },
     { label: 'Base action time', value: stats.actionTime, unit: ' s' },
   ]

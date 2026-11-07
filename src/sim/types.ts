@@ -764,6 +764,21 @@ export type FieldTickEvent = {
   varianceRoll: false
 }
 
+/** The hero heals from its own direct hit (the Siphoning modifier). Capped by missing HP. */
+export type LifestealEvent = {
+  type: 'lifesteal'
+  timeMs: number
+  actorId: string
+  actorName: string
+  /** HP the hit removed from its target. */
+  damage: number
+  fraction: number
+  raw: number
+  amount: number
+  targetHpBefore: number
+  targetHpAfter: number
+}
+
 export type FieldHealEvent = {
   type: 'fieldHeal'
   timeMs: number
@@ -1019,6 +1034,7 @@ export type LogEvent =
   | FieldEvent
   | FieldTickEvent
   | FieldHealEvent
+  | LifestealEvent
   | FieldExpiredEvent
   | HpLossEvent
   | VowEvent
@@ -1359,6 +1375,8 @@ export type CombatHero = CombatActor & {
   baseActionSeconds: number
   armorPenetration: number
   magicalPenetration: number
+  /** Fraction of the HP a direct hit removes that the hero heals back. 0 for no lifesteal. */
+  lifestealFraction: number
   mainHandKind: WeaponKind
   offHandKind: OffHandKind | null
   equippedSkillIds: string[]

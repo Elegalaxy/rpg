@@ -782,6 +782,8 @@ Modifiers (documented now; built in part 6):
 
 The same modifier still counts at most twice across worn gear (`MODIFIER_STACK_CAP`). Siphoning heals only from the hero's own direct damaging hits (not damage over time), is capped by missing HP, and is logged as a heal.
 
+Built in Step 13.1 part 6: the heal is `round(HP the hit removed x 3%)`, limited to missing HP, drawn from no random numbers, and logged as a `lifesteal` event under the Healing filter. Overkill damage does not count. Recipes with an unlock requirement stay on sale in the Enchanter but show a Locked tag with the reason and cannot be learned until it is met; crafting and wearing are unaffected once the recipe is known. The Colossus defeat is also stored on the account as the discovery entry `defeated:tidebound-colossus` (every elite and boss gets one), so Siphoning stays unlocked after the hero who beat it reincarnates. The equipment screen gains Armor penetration, Magical penetration and Life steal lines.
+
 Contracts and Legacy (documented now; built in part 7):
 
 - New contract kind Salvage: "bring home N riftglass", N from 6 to 12. It counts riftglass secured at settlement. The reward is `rewardFor(ceil(N / 3), 20, 'scrap')`, then the usual 80-130% roll. The board pool (`boardPool`) offers it once the Causeway is discovered.

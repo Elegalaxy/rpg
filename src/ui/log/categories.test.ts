@@ -38,6 +38,7 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   field: ['statuses'],
   fieldTick: ['damage', 'statuses', 'defeatCause'],
   fieldHeal: ['healing', 'statuses'],
+  lifesteal: ['healing'],
   fieldExpired: ['statuses'],
   hpLoss: ['damage', 'defeatCause'],
   vow: ['resources'],

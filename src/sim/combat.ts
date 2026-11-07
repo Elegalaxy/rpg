@@ -558,6 +558,30 @@ function applyStatusDamage(state: CombatState, defs: GameDefs, tick: StatusTickD
   noteDeath(state, target, tick.sourceId, tick.sourceName, tick.timeMs)
 }
 
+/** Heal the hero for a share of the HP its own direct hit removed. No RNG, never above missing HP, and nothing for a fallen hero. */
+function applyLifesteal(state: CombatState, damage: number, timeMs: number): void {
+  const hero = state.hero
+  if (!(hero.lifestealFraction > 0) || !hero.alive || hero.hp <= 0 || damage <= 0) return
+  const raw = Math.round(damage * hero.lifestealFraction)
+  const missing = hero.maxHp - hero.hp
+  const amount = raw > missing ? missing : raw
+  if (amount <= 0) return
+  const targetHpBefore = hero.hp
+  hero.hp = targetHpBefore + amount
+  state.log.push({
+    type: 'lifesteal',
+    timeMs,
+    actorId: hero.id,
+    actorName: hero.name,
+    damage,
+    fraction: hero.lifestealFraction,
+    raw,
+    amount,
+    targetHpBefore,
+    targetHpAfter: hero.hp,
+  })
+}
+
 function applyHit(
   state: CombatState,
   defs: GameDefs,
@@ -583,6 +607,7 @@ function applyHit(
     targetHpAfter: hpAfter,
     ...result,
   })
+  if (actor.id === state.hero.id) applyLifesteal(state, hpBefore - hpAfter, scheduled)
   afterEnemyHpLoss(state, target, hpBefore, hpAfter, scheduled, actor.side === 'hero', defs)
   if (target.id === state.hero.id) {
     notifyDamageTaken(
@@ -2438,6 +2463,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     baseActionSeconds: actionRatio.numerator / actionRatio.denominator,
     armorPenetration: derived.armorPenetration,
     magicalPenetration: derived.magicalPenetration,
+    lifestealFraction: derived.lifestealFraction,
     mainHandKind: hero.gear.mainHand.kind,
     offHandKind: hero.gear.offHand === null ? null : hero.gear.offHand.kind,
     equippedSkillIds,

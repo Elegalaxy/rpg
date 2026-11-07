@@ -1,4 +1,6 @@
+import { enemies } from '../content/enemies.ts'
 import { itemBase } from '../content/items.ts'
+import { nodes } from '../content/world.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
@@ -170,11 +172,34 @@ export function recipePrice(modifierId: string): number {
   return (ITEM_MODIFIERS[modifierId]?.minLevel ?? 1) * 25
 }
 
-/** The recipes the account has not learned yet, with their prices. */
-export function recipesForSale(save: SaveData): { modifierId: string; price: number }[] {
+/** The account-wide record of a defeated enemy, kept in `discoveries` so it survives a hero's reincarnation. */
+export function defeatRecordId(enemyId: string): string {
+  return `defeated:${enemyId}`
+}
+
+/** Whether any hero on the account has defeated this enemy, now or in a record that was kept. */
+export function enemyDefeatedByAnyHero(save: SaveData, enemyId: string): boolean {
+  return save.account.discoveries.includes(defeatRecordId(enemyId)) || save.heroes.some((hero) => hero.defeatedEnemyIds.includes(enemyId))
+}
+
+/** Why a recipe cannot be learned yet, in the words the screen shows, or null when it is open. */
+export function recipeLock(save: SaveData, modifierId: string): string | null {
+  const requires = ITEM_MODIFIERS[modifierId]?.requires
+  if (requires === undefined) return null
+  if ('discoveryId' in requires) {
+    if (save.account.discoveries.includes(requires.discoveryId)) return null
+    const place = Object.values(nodes).find((node) => node.discoveryId === requires.discoveryId)
+    return `Discover ${place?.name ?? requires.discoveryId} first.`
+  }
+  if (enemyDefeatedByAnyHero(save, requires.enemyId)) return null
+  return `Defeat ${enemies[requires.enemyId]?.name ?? requires.enemyId} with any hero first.`
+}
+
+/** The recipes the account has not learned yet, with their prices and the reason one is still locked. */
+export function recipesForSale(save: SaveData): { modifierId: string; price: number; locked: string | null }[] {
   return Object.keys(ITEM_MODIFIERS)
     .filter((id) => !save.account.recipes.includes(id))
-    .map((id) => ({ modifierId: id, price: recipePrice(id) }))
+    .map((id) => ({ modifierId: id, price: recipePrice(id), locked: recipeLock(save, id) }))
 }
 
 /** Learn a modifier recipe for the whole account, paid with the selected hero's gold. */
@@ -184,6 +209,8 @@ export function buyRecipe(save: SaveData, modifierId: string): RosterResult {
   const modifier = ITEM_MODIFIERS[modifierId]
   if (modifier === undefined) return { ok: false, reason: 'Unknown recipe.' }
   if (save.account.recipes.includes(modifierId)) return { ok: false, reason: `You already know the ${modifier.name} recipe.` }
+  const locked = recipeLock(save, modifierId)
+  if (locked !== null) return { ok: false, reason: `The ${modifier.name} recipe is locked. ${locked}` }
   if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero to pay for the recipe.' }
   const hero = selectedHero(save)
   if (hero !== null && hero.progress.level < modifier.minLevel) {

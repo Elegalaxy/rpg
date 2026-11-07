@@ -270,6 +270,8 @@ export type StatBonuses = {
   critDamageBonus?: number
   /** Added to the maximum HP multiplier. 0.04 is +4%. */
   maxHpBonus?: number
+  /** Heals this fraction of damage dealt after mitigation. 0.03 is 3%. */
+  lifestealFraction?: number
 }
 
 export type ItemModifier = {
@@ -286,7 +288,14 @@ export type ItemModifier = {
   armorSlots?: readonly ArmorSlot[]
   /** Bag room it adds on a worn piece (Hauler's). Not a combat stat, so it is not in `bonus`. */
   bagRoom?: number
+  /**
+   * When set, the recipe cannot be learned until the account has this: a discovered node, or an enemy
+   * that any hero has defeated. Crafting and wearing are unaffected once the recipe is known.
+   */
+  requires?: ModifierRequirement
 }
+
+export type ModifierRequirement = { discoveryId: string } | { enemyId: string }
 
 /** The same modifier counts at most this many times across equipped gear (GAME_DESIGN §8, Batch C). */
 export const MODIFIER_STACK_CAP = 2
@@ -313,7 +322,7 @@ export function modifierFits(modifier: ItemModifier, base: ItemBase): boolean {
   return true
 }
 
-/** The nine modifiers: six first-playable (G8) and three from Batch C. Percent values are fractions: 0.02 is 2 points. */
+/** The twelve modifiers: six first-playable (G8), three from Batch C and three gated ones from the Drowned Causeway. Percent values are fractions: 0.02 is 2 points. */
 export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
   keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance', appliesTo: ['weapon', 'accessory'] },
   precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy', appliesTo: ['weapon', 'offHand', 'accessory'] },
@@ -339,6 +348,33 @@ export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
     text: '+3 bag room (at most 2 pieces count)',
     appliesTo: ['armor', 'accessory'],
     armorSlots: ['chest'],
+  },
+  hallowed: {
+    id: 'hallowed',
+    name: 'Hallowed',
+    minLevel: 16,
+    bonus: { equipmentHealingPower: 10 },
+    text: '+10 Healing Power',
+    appliesTo: ['offHand', 'accessory'],
+    requires: { discoveryId: 'node:drowned-causeway' },
+  },
+  rending: {
+    id: 'rending',
+    name: 'Rending',
+    minLevel: 18,
+    bonus: { armorPenetrationBonus: 0.06, magicalPenetrationBonus: 0.06 },
+    text: '+6 points armor and magical penetration',
+    appliesTo: ['weapon'],
+    requires: { discoveryId: 'node:drowned-causeway' },
+  },
+  siphoning: {
+    id: 'siphoning',
+    name: 'Siphoning',
+    minLevel: 20,
+    bonus: { lifestealFraction: 0.03 },
+    text: 'Heals 3% of damage dealt',
+    appliesTo: ['weapon'],
+    requires: { enemyId: 'tidebound-colossus' },
   },
 }
 

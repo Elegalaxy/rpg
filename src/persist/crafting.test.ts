@@ -23,6 +23,7 @@ import {
   upgradedQuality,
   upgradeCheck,
   pickMaterialText,
+  recipeLock,
   upgradeCapFor,
   MATERIAL_QUALITY,
   UPGRADE_QUALITY_POINTS,
@@ -123,7 +124,7 @@ describe('queueing a craft', () => {
     expect(craftCheck(learned, hero(learned), { ...bow, modifierId: 'nimble' })).toBe('Nimble needs level 3. This hero is level 2.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, modifierId: 'nimble' })).toBe('Nimble can only go on armor and accessories.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, baseId: 'armor-heavy-chest', modifierId: 'nimble' })).toBeNull()
-    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(9)
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(12)
   })
 
   it('is closed while an expedition runs', () => {
@@ -334,7 +335,7 @@ describe('worn items and recipes', () => {
     const base = levelled()
     const grown = { ...base, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 12 } })) }
     const save = { ...updatePurse(grown, { gold: 300 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] } }
-    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['hauler', 'mending', 'nimble', 'piercing', 'quick', 'sturdy', 'vicious'])
+    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['hallowed', 'hauler', 'mending', 'nimble', 'piercing', 'quick', 'rending', 'siphoning', 'sturdy', 'vicious'])
     expect(recipePrice('nimble')).toBe(75)
     expect(recipePrice('quick')).toBe(225)
     expect(recipePrice('vicious')).toBe(75)
@@ -408,5 +409,46 @@ describe('riftglass', () => {
     const none = updatePurse(stocked(), { materials: { shard: 20 } })
     expect(purseOf(none).materials.riftglass ?? 0).toBe(0)
     expect(craftCheck(none, hero(none), { ...bow, materialId: 'riftglass' })).toBe('That needs 6 riftglass. You have 0.')
+  })
+})
+
+describe('gated recipes', () => {
+  function withGold(level: number, discoveries: string[] = [], defeated: string[] = []): SaveData {
+    const base = stocked()
+    const grown = {
+      ...base,
+      account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES], discoveries: [...base.account.discoveries, ...discoveries] },
+      heroes: base.heroes.map((h) => ({ ...h, defeatedEnemyIds: defeated, progress: { ...h.progress, level } })),
+    }
+    return updatePurse(grown, { gold: 5000 })
+  }
+
+  it('prices the three at 400, 450 and 500 gold', () => {
+    expect([recipePrice('hallowed'), recipePrice('rending'), recipePrice('siphoning')]).toEqual([400, 450, 500])
+  })
+
+  it('locks Hallowed and Rending until the Causeway is discovered, with the reason shown', () => {
+    const save = withGold(25)
+    const rows = recipesForSale(save)
+    expect(rows.find((row) => row.modifierId === 'hallowed')?.locked).toBe('Discover Drowned Causeway first.')
+    expect(rows.find((row) => row.modifierId === 'nimble')?.locked).toBeNull()
+    expect(buyRecipe(save, 'hallowed')).toEqual({ ok: false, reason: 'The Hallowed recipe is locked. Discover Drowned Causeway first.' })
+    const found = withGold(25, ['node:drowned-causeway'])
+    expect(recipeLock(found, 'rending')).toBeNull()
+    expect(ok(buyRecipe(found, 'rending')).account.recipes).toContain('rending')
+    expect(purseOf(ok(buyRecipe(found, 'hallowed'))).gold).toBe(5000 - 400)
+  })
+
+  it('locks Siphoning until any hero has defeated the Tidebound Colossus', () => {
+    const save = withGold(25, ['node:drowned-causeway'])
+    expect(buyRecipe(save, 'siphoning')).toEqual({ ok: false, reason: 'The Siphoning recipe is locked. Defeat Tidebound Colossus with any hero first.' })
+    expect(ok(buyRecipe(withGold(25, ['node:drowned-causeway'], ['tidebound-colossus']), 'siphoning')).account.recipes).toContain('siphoning')
+    const kept = withGold(25, ['node:drowned-causeway', 'defeated:tidebound-colossus'])
+    expect(recipeLock(kept, 'siphoning')).toBeNull()
+  })
+
+  it('still needs the hero level once unlocked', () => {
+    const save = withGold(15, ['node:drowned-causeway'])
+    expect(buyRecipe(save, 'hallowed')).toEqual({ ok: false, reason: 'The Hallowed recipe needs level 16. This hero is level 15.' })
   })
 })
