@@ -156,9 +156,9 @@ export function SkillWeb() {
             </p>
             {chosen.node.unlocksSkillId !== null && skillFacts(chosen.node.unlocksSkillId) !== null ? (
               <p className="skill-facts" data-testid="node-skill-facts">
-                {skillFacts(chosen.node.unlocksSkillId)?.stats.join(' · ')}
+                {skillFacts(chosen.node.unlocksSkillId, [...hero.progress.allocatedNodeIds, chosen.node.id])?.stats.join(' · ')}
                 <br />
-                {skillFacts(chosen.node.unlocksSkillId)?.effects.join('. ')}
+                {skillFacts(chosen.node.unlocksSkillId, [...hero.progress.allocatedNodeIds, chosen.node.id])?.effects.join('. ')}
               </p>
             ) : null}
             <ul>

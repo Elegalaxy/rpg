@@ -1,4 +1,5 @@
 import { skills } from '../content/skills.ts'
+import { heroSkill } from '../sim/classes/starterNodes.ts'
 import type { SkillDef, SkillEffect } from '../sim/types.ts'
 
 function percent(fraction: number): string {
@@ -37,10 +38,11 @@ export function effectLine(effect: SkillEffect): string {
 
 export type SkillFacts = { name: string; stats: string[]; effects: string[] }
 
-/** What a skill costs, how often it can be used, what it needs, and what it does. */
-export function skillFacts(skillId: string): SkillFacts | null {
-  const skill: SkillDef | undefined = skills[skillId]
-  if (skill === undefined) return null
+/** What a skill costs, how often it can be used, what it needs, and what it does. `nodeIds` are the nodes whose bonuses count. */
+export function skillFacts(skillId: string, nodeIds: readonly string[] = []): SkillFacts | null {
+  const base: SkillDef | undefined = skills[skillId]
+  if (base === undefined) return null
+  const skill = heroSkill({ allocatedNodeIds: nodeIds.slice() }, base)
   const stats = [skill.cost > 0 ? `Cost ${skill.cost}` : 'No cost', `Cooldown ${skill.cooldownSeconds} s`, skill.target === 'all' ? 'Hits all enemies' : 'One target']
   if (skill.requires?.mainHand !== undefined) stats.push(`Needs a ${humanize(skill.requires.mainHand)} weapon`)
   if (skill.requires?.offHand !== undefined) stats.push(`Needs a ${humanize(skill.requires.offHand)}`)

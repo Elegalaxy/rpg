@@ -12,7 +12,6 @@
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
   - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
-  - Skill facts in Loadout and node preview (`skillInfo.ts`) still show base skill numbers, not node bonuses.
   - "Skill is ready" ignores resource cost and target availability.
   - Reference loadouts carry no supplies, so matrix numbers are unchanged by supplies.
 - **Checked in the browser (2026-11-07):** Rules tab (Duplicate 7 to 8, summary, new condition options), Legacy Deep Pockets row, Equipment Critical damage and Bag room rows, running panel (bag 0/20, Safe pouch line), supply Queue and Escape now (log "on request"). Not checked: safe pouch on a real defeat, bag-full setting in play, Hauler's gear, Sturdy/Vicious in a fight. Still unchecked by the user: offline, away route, Save panel, Wear button, Going in with.

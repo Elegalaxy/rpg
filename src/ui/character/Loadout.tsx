@@ -43,7 +43,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
         {hero.progress.learnedSkillIds.map((skillId) => {
           const equipped = hero.progress.loadout.includes(skillId)
           const picked = chosen.includes(skillId)
-          const facts = skillFacts(skillId)
+          const facts = skillFacts(skillId, hero.progress.allocatedNodeIds)
           return (
             <li key={skillId}>
               <label>

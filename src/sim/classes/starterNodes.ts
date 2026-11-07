@@ -117,7 +117,7 @@ const BONUS_BY_SKILL: { readonly [skillId: string]: Bonus | undefined } = Object
 const DERIVED = new WeakMap<SkillDef, SkillDef>()
 
 /** The skill as this hero uses it: the base def, or the def improved by the hero's starting-skill node. */
-export function heroSkill(hero: CombatHero, skill: SkillDef): SkillDef {
+export function heroSkill(hero: Pick<CombatHero, 'allocatedNodeIds'>, skill: SkillDef): SkillDef {
   const bonus = BONUS_BY_SKILL[skill.id]
   if (bonus === undefined || !hero.allocatedNodeIds.includes(bonus.nodeId)) return skill
   let derived = DERIVED.get(skill)
