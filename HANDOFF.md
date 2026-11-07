@@ -1,13 +1,14 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-07)
-- **Current Goal:** Batch C (Step 12.2) is built, pushed and browser-checked. Next: Warden tuning, skill facts showing node bonuses, remaining roadmap.
+- **Current Goal:** Batch C and the Kit conversion are built, pushed and checked. Next: Warden tuning, mid-game pressure, remaining roadmap.
 - **Recent Changes & Files Touched (Batch C, commits c4f6ca7, cc6d59d, f567b94, 9e51c38, d2d652a; 798 tests):**
   - Part 1: the 13 starting-skill nodes each add a bonus (`src/sim/classes/starterNodes.ts`, `heroSkill` used in `automation.ts`/`combat.ts`; Shield Brace/Mark for Death/Execute in `warrior.ts`/`assassin.ts`; node text regenerated). Matrix 40 runs: Warrior Echo Knight 70 to 100% at 6 nodes, Assassin Echo Knight 8 to 28%, Ranger Echo Knight 33 to 30% (probably noise, one seed), Mage/Cleric unchanged, Warden still 0%.
   - Part 2: bag capacity 20, +2 at levels 10/20/30, +3 per worn Hauler's (max 2), +4 Deep Pockets (15 Legacy), max 36 (`src/persist/bag.ts`, `lootCapacity` in `expedition.ts`). Safe pouch: 5 most valuable carried units survive defeat (`safePouch`, `savedByPouch`). `SavedHero.bagFullOrder` 'home'|'ask' (full = under 4 room), used in `offline.ts`; stop reason `bagFull`. No courier by user decision.
   - Part 3: rule conditions `hpPoints` (hero/target, current/missing), `skillReady`, `fightTime`, rank and boss phase editable; summary line and Duplicate in `Rules.tsx`; `validateRules` in `loadout.ts`.
   - Part 4: queue carried supplies in fights (`SuppliesBar`), Escape now (`requestEscapeNow`, `escapeNow` flag, `escapeNowFromUi`).
   - Part 5: modifiers Vicious, Sturdy, Hauler's (`src/sim/economy.ts`); `MODIFIER_STACK_CAP = 2`; Equipment shows Critical damage, Bag room and a cap note.
+  - 2026-11-07 Kit conversion (dacb684, ffd20b1, 6a84049, 9d50c99, e2847a8): Equipment, Craft, Rules, Attributes and Skill web panels use Kit components; UI conventions written in GAME_DESIGN §12. Skill facts include node bonuses (842fc99). 799 tests.
   - Earlier: UX flow batch (shop compare, Wear button, Going in with, ×N grouping), away route, offline, Save panel.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
@@ -17,7 +18,6 @@
 - **Checked in the browser (2026-11-07):** Rules tab (Duplicate 7 to 8, summary, new condition options), Legacy Deep Pockets row, Equipment Critical damage and Bag room rows, running panel (bag 0/20, Safe pouch line), supply Queue and Escape now (log "on request"). Not checked: safe pouch on a real defeat, bag-full setting in play, Hauler's gear, Sturdy/Vicious in a fight. Still unchecked by the user: offline, away route, Save panel, Wear button, Going in with.
 - **Exact Next Step:** (1) Fix skill facts in Loadout and node preview to show node bonuses (`skillInfo.ts`). (2) Optionally run more matrix seeds for the Ranger Echo Knight dip. (3) Warden tuning needs the user's hero level, points, gear and Draught count. (4) Ask the user to check the remaining items above.
 - **Ideas not in the plan yet (discussed, not decided):**
-  - UI conventions under GAME_DESIGN §12; convert Equipment, Craft, Rules and Hero tabs to `Kit.tsx`.
   - Mend alternatives if the Cleric proves too strong. Offline extras (run cap, other heroes, notifications, faster mastered zones).
   - Roadmap: mid-game pressure (telegraphed heavy attacks, build contracts), Warden tuning, more zones and gear, pixel art.
   - Possible later supplies: crafted supplies, a Chill or Stun cleanse.
