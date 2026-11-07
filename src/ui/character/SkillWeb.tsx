@@ -6,6 +6,7 @@ import { skills } from '../../content/skills.ts'
 import { classWebIntro, clusterIntro, racialIntro } from '../../content/webs/intro.ts'
 import { nodeText } from '../../content/webs/nodeText.ts'
 import { confirmationText, nodeViews, selectedHero, type NodeView } from '../../persist/character.ts'
+import { Kpi, KpiRow, Tag } from '../Kit.tsx'
 import { takeNodeFromUi, useSaveStatus } from '../store.ts'
 
 import './character.css'
@@ -79,10 +80,15 @@ export function SkillWeb() {
   return (
     <section aria-label="Skill web">
       <h2>Skill web — {hero.name}</h2>
-      <p>
-        Skill points: <strong data-testid="skill-points">{points}</strong>.
-        <Help label="About the colours">Class clusters are blue; the racial branch is teal.</Help>
-      </p>
+      <KpiRow label="Skill points">
+        <Kpi
+          compact
+          tone={points > 0 ? 'good' : undefined}
+          label="Skill points"
+          value={<span data-testid="skill-points">{points}</span>}
+          note={<Help label="About the colours">Class clusters are blue; the racial branch is teal.</Help>}
+        />
+      </KpiRow>
       <p data-testid="web-intro">{classWebIntro[hero.classId]}</p>
       <ul aria-label="Clusters" data-testid="cluster-intros">
         {Object.entries(clusterIntro[hero.classId]).map(([name, text]) => (
@@ -161,29 +167,36 @@ export function SkillWeb() {
                 {skillFacts(chosen.node.unlocksSkillId, [...hero.progress.allocatedNodeIds, chosen.node.id])?.effects.join('. ')}
               </p>
             ) : null}
-            <ul>
-              <li>Cluster: {chosen.node.cluster}</li>
-              <li>Cost: 1 skill point</li>
-              <li>
-                Requires:{' '}
+            <dl className="node-facts">
+              <dt>Cluster</dt>
+              <dd>{chosen.node.cluster}</dd>
+              <dt>Cost</dt>
+              <dd>
+                <Tag kind="plain">1 skill point</Tag>
+              </dd>
+              <dt>Requires</dt>
+              <dd>
                 {chosen.node.requires === null
                   ? 'nothing (starts this line)'
                   : (views.find((view) => view.node.id === chosen.node.requires)?.node.name ?? chosen.node.requires)}
-              </li>
+              </dd>
               {chosen.node.unlocksSkillId !== null ? (
-                <li>
-                  {chosen.preview.unlocksSkillId === null ? 'Skill (already known)' : 'Unlocks skill'}: {skills[chosen.node.unlocksSkillId]?.name ?? chosen.node.unlocksSkillId}
-                </li>
+                <>
+                  <dt>{chosen.preview.unlocksSkillId === null ? 'Skill (already known)' : 'Unlocks skill'}</dt>
+                  <dd>{skills[chosen.node.unlocksSkillId]?.name ?? chosen.node.unlocksSkillId}</dd>
+                </>
               ) : null}
               {chosen.node.keystone ? (
-                <li>
-                  Closes the other keystones:{' '}
-                  {chosen.preview.blockedKeystoneIds
-                    .map((id) => views.find((view) => view.node.id === id)?.node.name ?? id)
-                    .join(', ')}
-                </li>
+                <>
+                  <dt>Closes</dt>
+                  <dd>
+                    <Tag kind="bad">
+                      {chosen.preview.blockedKeystoneIds.map((id) => views.find((view) => view.node.id === id)?.node.name ?? id).join(', ')}
+                    </Tag>
+                  </dd>
+                </>
               ) : null}
-            </ul>
+            </dl>
             {chosen.allocated ? (
               <p>Already taken.</p>
             ) : chosen.preview.canTake ? (

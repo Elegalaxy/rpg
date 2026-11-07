@@ -771,3 +771,26 @@ ul.rule-conditions > li {
 .rule-add {
   margin-left: 1.9rem;
 }
+
+/* ---- Key-value facts and attribute values ---- */
+
+dl.node-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem var(--s3);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+dl.node-facts dt {
+  color: var(--muted);
+}
+
+dl.node-facts dd {
+  margin: 0;
+}
+
+.attribute-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}

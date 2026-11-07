@@ -2,6 +2,7 @@ import { Help } from '../Help.tsx'
 import { useState } from 'react'
 
 import { ATTRIBUTE_KEYS, selectedHero, type AttributeKey, type AttributePlan } from '../../persist/character.ts'
+import { Kpi, KpiRow, Tag } from '../Kit.tsx'
 import { devGrantPoints, spendAttributesFromUi, useSaveStatus } from '../store.ts'
 
 const LABELS: Record<AttributeKey, string> = {
@@ -60,18 +61,27 @@ export function Attributes() {
   return (
     <section aria-label="Attributes">
       <h2>Attributes — {hero.name}</h2>
-      <p>
-        Unspent points: <strong data-testid="attribute-points">{left}</strong> of {unspent}.
-        <Help label="About spending points">Points are not refunded.</Help>
-        {import.meta.env.DEV ? (
-          <>
-            {' '}
-            <button type="button" onClick={devGrantPoints}>
-              Dev: grant 6 attribute and 4 skill points
-            </button>
-          </>
-        ) : null}
-      </p>
+      <KpiRow label="Attribute points">
+        <Kpi
+          compact
+          tone={left > 0 ? 'good' : undefined}
+          label="Unspent points"
+          value={<span data-testid="attribute-points">{left}</span>}
+          note={
+            <>
+              of {unspent}
+              <Help label="About spending points">Points are not refunded.</Help>
+            </>
+          }
+        />
+      </KpiRow>
+      {import.meta.env.DEV ? (
+        <p>
+          <button type="button" onClick={devGrantPoints}>
+            Dev: grant 6 attribute and 4 skill points
+          </button>
+        </p>
+      ) : null}
       <table>
         <tbody>
           {ATTRIBUTE_KEYS.map((key) => {
@@ -80,8 +90,15 @@ export function Attributes() {
               <tr key={key}>
                 <th scope="row">{LABELS[key]}</th>
                 <td>
-                  {hero.progress.attributes[key]}
-                  {added > 0 ? <strong> → {hero.progress.attributes[key] + added}</strong> : null}
+                  <span className="attribute-value">
+                    {hero.progress.attributes[key]}
+                    {added > 0 ? (
+                      <Tag kind="good">
+                        {' '}
+                        ▲ {hero.progress.attributes[key] + added} (+{added})
+                      </Tag>
+                    ) : null}
+                  </span>
                 </td>
                 <td>
                   <button
