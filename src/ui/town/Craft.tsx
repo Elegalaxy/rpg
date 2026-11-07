@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { purseOf } from '../../persist/save.ts'
 
 import { itemBases, itemName } from '../../content/items.ts'
-import { Row } from '../Row.tsx'
+import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
 import { groupItems } from './groupItems.ts'
 import { selectedHero } from '../../persist/character.ts'
 import {
@@ -86,18 +86,18 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
   return (
     <>
       <h3>Crafting</h3>
-      <p>
-        Proficiency rank <strong data-testid="rank">{rank}</strong> ({hero.craftXp} experience). Queue: {purseOf(save).craftQueue.length} of{' '}
-        {QUEUE_MAX}.
-        {import.meta.env.DEV ? (
-          <>
-            {' '}
-            <button type="button" onClick={devCraftingKit}>
-              Dev: crafting kit
-            </button>
-          </>
-        ) : null}
-      </p>
+      <KpiRow label="Crafting status">
+        <Kpi compact label="Proficiency rank" value={<span data-testid="rank">{rank}</span>} />
+        <Kpi compact label="Experience" value={hero.craftXp} />
+        <Kpi compact label="Queue" value={`${purseOf(save).craftQueue.length}/${QUEUE_MAX}`} />
+      </KpiRow>
+      {import.meta.env.DEV ? (
+        <p>
+          <button type="button" onClick={devCraftingKit}>
+            Dev: crafting kit
+          </button>
+        </p>
+      ) : null}
 
       <div className="controls">
         <label>
@@ -175,14 +175,25 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
           })}
         </tbody>
       </table>
-      <p data-testid="craft-summary">
-        Quality range: {range === null ? 'none' : `${percent(range.low)} to ${percent(range.high)}`}. Cost: {CRAFT_MATERIAL_COST} {materialId} and{' '}
-        {Number.isInteger(level) && level > 0 ? craftGold(level) : '?'} gold. Time: {CRAFT_MS / 1000} seconds.
-      </p>
-      <button type="button" className="btn-primary" disabled={problem !== null} onClick={() => setError(queueCraftFromUi(request))}>
-        Queue craft
-      </button>
-      {problem !== null ? <small data-testid="craft-block"> {problem}</small> : null}
+      <ul className="shop-rows" aria-label="Craft summary">
+        <ShopRow
+          testId="craft-summary"
+          name="Craft"
+          effect={`Quality ${range === null ? 'none' : `${percent(range.low)} to ${percent(range.high)}`} · ${CRAFT_MS / 1000} s`}
+          costs={[
+            [
+              { kind: 'mat', amount: CRAFT_MATERIAL_COST, label: materialId },
+              { kind: 'gold', amount: Number.isInteger(level) && level > 0 ? craftGold(level) : 0 },
+            ],
+          ]}
+          note={problem !== null ? <span data-testid="craft-block">{problem}</span> : undefined}
+          actions={
+            <button type="button" className="btn-primary" disabled={problem !== null} onClick={() => setError(queueCraftFromUi(request))}>
+              Queue craft
+            </button>
+          }
+        />
+      </ul>
 
       <h4>Upgrade</h4>
       <p className="muted">
@@ -199,38 +210,63 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         </select>
       </label>
       {upgradable.length === 0 ? <p>Nothing of this kind to upgrade.</p> : null}
-      <ul className="rows">
+      <ul className="shop-rows" aria-label="Upgrades">
         {groupUpgradable(upgradable).map(({ item, worn, count }) => {
           const block = upgradeCheck(save, hero, item, upgradeMaterial)
           return (
-            <Row
+            <ShopRow
               key={item.id}
+              name={`${itemName(item)}${count > 1 ? ` ×${count}` : ''}`}
+              effect={
+                <>
+                  {worn === null ? null : <Tag kind="info">Worn ({worn})</Tag>} lvl {item.itemLevel} → {item.itemLevel + 1} · quality {percent(item.quality)} →{' '}
+                  {percent(upgradedQuality(item.quality, upgradeMaterial))}
+                </>
+              }
+              costs={[
+                [
+                  { kind: 'mat', amount: UPGRADE_MATERIAL_COST, label: upgradeMaterial },
+                  { kind: 'gold', amount: upgradeGold(item.itemLevel) },
+                ],
+              ]}
+              note={block ?? undefined}
               actions={
                 <button type="button" className="btn-primary" disabled={block !== null} aria-label={`Upgrade ${item.id}`} onClick={() => setError(queueUpgradeFromUi(item.id, upgradeMaterial))}>
                   Upgrade
                 </button>
               }
-            >
-              {worn === null ? '' : `Worn (${worn}): `}
-              {itemName(item)}{count > 1 ? ` ×${count}` : ''}, item level {item.itemLevel} → {item.itemLevel + 1}, quality {percent(item.quality)} → {percent(upgradedQuality(item.quality, upgradeMaterial))} — {UPGRADE_MATERIAL_COST} {upgradeMaterial} and {upgradeGold(item.itemLevel)} gold
-              {block !== null ? <small className="row-note">{block}</small> : null}
-            </Row>
+            />
           )
         })}
       </ul>
 
       <h4>Queue (all shops)</h4>
       {purseOf(save).craftQueue.length === 0 ? <p>Nothing is being made.</p> : null}
-      <ol>
+      <ul className="shop-rows" aria-label="Craft queue">
         {purseOf(save).craftQueue.map((job, index) => (
-          <li key={job.id} data-testid="job">
-            {job.kind === 'craft'
-              ? `Craft ${itemBases[job.baseId]?.name ?? job.baseId}, item level ${job.itemLevel}${job.modifierId === null ? '' : `, ${ITEM_MODIFIERS[job.modifierId]?.name}`}`
-              : `Upgrade ${itemName(job.item)}`}{' '}
-            — {index === 0 ? `${Math.ceil(job.remainingMs / 1000)} seconds left` : 'waiting'}
-          </li>
+          <ShopRow
+            key={job.id}
+            testId="job"
+            name={
+              job.kind === 'craft'
+                ? `Craft ${itemBases[job.baseId]?.name ?? job.baseId}`
+                : `Upgrade ${itemName(job.item)}`
+            }
+            effect={
+              job.kind === 'craft'
+                ? `lvl ${job.itemLevel}${job.modifierId === null ? '' : ` · ${ITEM_MODIFIERS[job.modifierId]?.name}`}`
+                : undefined
+            }
+            pills={
+              index === 0 ? (
+                <Tag kind="info">▶ {Math.ceil(job.remainingMs / 1000)} s left</Tag>
+              ) : (
+                <Tag kind="plain">Waiting</Tag>
+              )
+            }
+          />
         ))}
-      </ol>
+      </ul>
       {notices.length > 0 ? (
         <ul aria-label="Finished jobs">
           {notices.map((text, index) => (
