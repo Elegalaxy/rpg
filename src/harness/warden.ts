@@ -33,7 +33,7 @@ export type WardenTier = {
   supplies: readonly string[]
 }
 
-const STARTER_MODIFIERS: WardenTier['modifiers'] = {
+export const STARTER_MODIFIERS: WardenTier['modifiers'] = {
   mainHand: 'keen',
   offHand: 'precise',
   head: null,
@@ -44,7 +44,7 @@ const STARTER_MODIFIERS: WardenTier['modifiers'] = {
   accessory1: 'precise',
 }
 
-const PREPARED_MODIFIERS: WardenTier['modifiers'] = {
+export const PREPARED_MODIFIERS: WardenTier['modifiers'] = {
   mainHand: 'piercing',
   offHand: 'precise',
   head: 'sturdy',

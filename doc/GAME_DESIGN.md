@@ -797,6 +797,30 @@ Measurement targets (for the later tuning step; part 3 records the first numbers
 - Colossus: prepared tier 40-85% wins (Warrior and Cleric at least 30%), over-levelled at least 85%.
 - Interrupt rules against blind (the same hero with its telegraph and interrupt rows removed) differ by at least 8 HP points lost for Ranger, Mage and Cleric.
 
+First measurements (2026-11-08, Step 13.1 part 3; measurement only, no number changed). Command `npm run sim -- --matrix causeway --seed N --runs 100`; seeds 1 and 2 agree within about 5 points. Heroes are built like the Warden heroes (`src/harness/causeway.ts`): reference attributes, a 4-slot backpack, the class reference rules behind the default supply rows, gear crafted at item level equal to hero level, one modifier per piece. Tiers: Just arrived = level 17, 6 nodes, quality 100%, starter modifiers (Keen, Precise), 2 Draughts. Well prepared = level 19, 6 nodes, quality 105%, Piercing weapon, Precise off-hand, Sturdy head and chest, Nimble hands and feet, Keen and Vicious accessories, 3 Draughts + 1 Ward Charm. Over-levelled = level 22, 8 nodes, quality 110%, as prepared but Vicious and Quick accessories. Fights: each new enemy alone at level 18 (`leech`, `raider`, `bulwark`), `leech-swarm` (3 x level 17), `causeway-mixed`, `causeway-deep`, and the Colossus at level 22. "Blind" removes the hero's telegraph and interruptible rows (run for the fights with a wind-up).
+
+Seed 1, 100 runs. Win % (mean share of maximum HP lost %), arrived / prepared / over-levelled:
+
+| Fight | Warrior | Assassin | Ranger | Mage | Cleric |
+| --- | --- | --- | --- | --- | --- |
+| leech | 100 (6) / 100 (4) / 100 (3) | 100 (6) / 100 (4) / 100 (3) | 100 (3) / 100 (2) / 100 (2) | 100 (7) / 100 (5) / 100 (5) | 100 (10) / 100 (7) / 100 (5) |
+| raider | 100 (12) / 100 (9) / 100 (7) | 100 (9) / 100 (7) / 100 (5) | 100 (7) / 100 (5) / 100 (3) | 100 (15) / 100 (11) / 100 (7) | 100 (19) / 100 (14) / 100 (10) |
+| bulwark | 100 (14) / 100 (10) / 100 (7) | 100 (14) / 100 (10) / 100 (6) | 100 (4) / 100 (2) / 100 (0) | 100 (14) / 100 (10) / 100 (6) | 100 (6) / 100 (11) / 100 (9) |
+| leech-swarm | 100 (33) / 100 (26) / 100 (19) | 100 (36) / 100 (25) / 100 (19) | 100 (21) / 100 (15) / 100 (12) | 100 (29) / 100 (22) / 100 (19) | 100 (42) / 100 (36) / 100 (27) |
+| causeway-mixed | 100 (46) / 100 (47) / 100 (37) | 100 (41) / 100 (29) / 100 (24) | 100 (12) / 100 (9) / 100 (6) | 100 (23) / 100 (14) / 100 (4) | 100 (42) / 100 (42) / 100 (38) |
+| causeway-deep | 100 (50) / 100 (46) / 100 (45) | 100 (52) / 100 (47) / 100 (40) | 100 (42) / 100 (33) / 100 (18) | 100 (45) / 100 (29) / 100 (14) | 100 (43) / 100 (42) / 100 (43) |
+| Colossus | 0 (100) / 39 (93) / 100 (52) | 1 (100) / 100 (52) / 100 (44) | 16 (98) / 100 (47) / 100 (45) | 97 (53) / 100 (47) / 100 (41) | 0 (100) / 60 (69) / 100 (43) |
+
+Blind (no telegraph or interrupt rows), mean HP lost % and Colossus wins %, prepared tier, against the same cell with rules: Ranger causeway-mixed 20 against 9, causeway-deep 41 against 33, bulwark 2 against 2, Colossus 90% wins and 73 lost against 100% and 47; Mage mixed 30 against 14, deep 51 against 29, bulwark 10 against 10, Colossus 100% and 52 against 100% and 47; Cleric mixed 44 against 42, deep 43 against 42, bulwark 14 against 11, Colossus 32% and 85 against 60% and 69; Warrior Colossus 10% against 39%; Assassin changes by 0-1 points except the arrived Colossus (6% against 1%).
+
+Against the targets:
+
+- Regular fights, prepared tier, at least 95% wins: met everywhere (every regular and mixed cell is 100%, including the 3-Leech swarm).
+- Mixed fights, prepared tier, 15-35% HP lost: only the Assassin is inside the band (causeway-mixed 29, deep 47 is above). Warrior (47, 46) and Cleric (42, 42) lose too much HP. Ranger (9, 33) and Mage (14, 29) lose too little in causeway-mixed (Mage deep is inside the band).
+- Colossus, prepared tier, 40-85% wins: only the Cleric (60) is inside; the Warrior is just below at 39 (38 at seed 2), above the floor of 30 that Warrior and Cleric need. Assassin, Ranger and Mage win 100%, above the band. Over-levelled, at least 85%: met by every class. Just arrived: Warrior 0, Assassin 1, Ranger 16, Mage 97, Cleric 0.
+- Interrupt rules against blind, a difference of at least 8 HP points for Ranger, Mage and Cleric: met in causeway-mixed for Ranger (+11) and Mage (+16), in causeway-deep for Mage (+22), and in the Colossus for Ranger (+26) and Cleric (+16). Ranger causeway-deep sits on the edge (+8). Not met: Cleric in every regular fight (+1 to +3), Ranger and Mage against the Bulwark alone (0).
+- Reading for the tuning step: the Colossus is a wall for the Warrior and Cleric at the arrived tier and a soft target for Assassin, Ranger and Mage once prepared; the regulars are easy for ranged heroes and heavy on HP for Warrior and Cleric. The Bulwark's Undertow barely matters on its own (the hero's ordinary hits already clear most of the 25% interrupt over the wind-up).
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
