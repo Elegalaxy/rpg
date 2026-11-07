@@ -570,12 +570,12 @@ describe('bastion-mixed', () => {
       durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
     })
     expect(state.outcome).toBe('victory')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 28_860 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 27_584 })
   })
 })
 
 describe('grove and bastion are different fights', () => {
-  it('shares a duration on seed 1 without copying one encounter log over the other', () => {
+  it('has its own duration on seed 1 without copying one encounter log over the other', () => {
     const defs = gameDefs()
     const grove = runCombat(createCombat(setupForScenario(GROVE_MIXED_ID), defs, 1), defs, 600_000)
     const bastion = runCombat(createCombat(setupForScenario(BASTION_MIXED_ID), defs, 1), defs, 600_000)
@@ -596,7 +596,7 @@ describe('grove and bastion are different fights', () => {
       },
     })
     expect(groveEnd).toMatchObject({ outcome: 'victory', timeMs: 28_860 })
-    expect(bastionEnd).toMatchObject({ outcome: 'victory', timeMs: 28_860 })
+    expect(bastionEnd).toMatchObject({ outcome: 'victory', timeMs: 27_584 })
     expect(groveLines.join('\n')).not.toBe(bastionLines.join('\n'))
     expect(grove.enemies.map((enemy) => enemy.name)).toEqual(['Thornbeast', 'Blight Spider'])
     expect(bastion.enemies.map((enemy) => enemy.name)).toEqual(['Hollow Sentry', 'Fallen Arbalist'])

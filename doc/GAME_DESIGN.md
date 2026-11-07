@@ -619,7 +619,7 @@ Thornbeast:
 - Levels 8-13; Tank archetype.
 - Regenerates 1% maximum HP per second during combat.
 - Burn pauses its regeneration; Expose halves it.
-- Bramble Slam has a 2-second telegraph, deals 200% Physical Power, cannot critically hit, and has a 9-second cooldown. It is interrupted if the hero deals 6% of the Thornbeast's maximum HP during the telegraph. It was a 1-second, 140%, 6-second skill with no interrupt until 2026-11-07, when mid-game regulars started testing the hero's telegraph rules (Step 12.3).
+- Bramble Slam has a 1.8-second telegraph, deals 220% Physical Power, cannot critically hit, and has a 9-second cooldown. It is interrupted if the hero deals 10% of the Thornbeast's maximum HP during the telegraph. It was a 1-second, 140%, 6-second skill with no interrupt until 2026-11-07, when mid-game regulars started testing the hero's telegraph rules (Step 12.3). The first numbers were 2 seconds, 200% and 6%; measurement showed the hero's ordinary hits interrupted almost every slam, so they moved to the hardest values the plan allows (see Step 12.3 measurements).
 
 Fracture Wisp:
 
@@ -638,6 +638,15 @@ Rootmaw Stalker:
 - Grasping Roots is interrupted if the hero deals 6% of Rootmaw's maximum HP during its telegraph (60 HP). It was 10% until 2026-11-03: one hero action deals 60-80, so 100 was unreachable and the "Telegraph can be interrupted" rule condition had nothing to answer. At 6% one well-timed hit cancels it.
 - If not interrupted, it pushes the hero's next action 2 seconds later and reduces Evasion by 20 for 6 seconds.
 
+Mid-game heavy telegraph measurements (Step 12.3, 2026-11-07, seed 1, floor builds at the band-middle hero level, 100 runs each, `npm run sim -- --matrix telegraph`):
+
+- Both regulars were tried at the plan's numbers (2.0 s, 200%/160%, interrupt 6%/8%) and at the hardest values the plan allows (1.8 s, 220%, interrupt 10%). Cooldowns stay 9 s and 10 s. Neither reached the target bands. Every class wins 100% of every changed fight, with the rules and with the telegraph rows removed ("blind"), so nobody is walled and nobody is hurt much either.
+- The cause is the interrupt. Any ordinary hero hit during the wind-up counts, and a floor hero hits for more than 10% of a Thornbeast or Sentry in one action. A blind hero therefore cancels most slams by accident (Warrior blind: 2.3 wind-ups started, 0.2 resolved at the first numbers). A wind-up also costs the enemy its actions, so the fights got slightly easier on average.
+- Final numbers (the hardest allowed): mean share of maximum HP lost, rules / blind. Thornbeast: Warrior 15 / 16, Assassin 7 / 7, Ranger 7 / 7, Mage 6 / 12, Cleric 17 / 32 (it was 30 / 30 before, with a 1 s wind-up). Sentry: Warrior 8 / 7, Assassin 11 / 11, Ranger 3 / 9, Mage 3 / 3, Cleric 11 / 13. Grove-mixed and Bastion-mixed move by 0-6 points, with the largest gaps for the Ranger (Bastion 13 / 28) and Mage (Grove 41 / 45).
+- The band "blind HP lost at least 8 points above rules" holds only for Cleric Thornbeast (+15), Ranger Bastion-mixed (+15), with Ranger Sentry and Mage Thornbeast at +6 (close). The Warrior and Assassin floor builds ignore the telegraph rows either way. The band "blind win 75-90%" is not met anywhere: blind wins stay at 100%.
+- Zone 1 solos (Shardling, Wolf, Deserter), Spider, Wisp, Oathbound Echo and Arbalist rows of the reference matrix are unchanged (seed 1, 100 runs). Rootmaw, Echo Knight and Warden win rates are unchanged at 0, 6 and 9 nodes (matrix `built`, 40 runs). The golden duel-basic snapshot is unchanged.
+- Open: a stronger effect needs a lever outside the plan's ranges, for example a shorter cooldown (6 s still gave no blind defeats), a first-use delay, an interrupt that only counts skill damage, or enemies that hit harder at equal level. Recorded for the user to decide.
+
 #### Fallen Bastion enemies
 
 Mixed Bastion encounters use Sentries to protect Arbalist or Echo backlines, making per-rule target selection important.
@@ -647,7 +656,7 @@ Hollow Sentry:
 - Levels 8-12; Tank archetype.
 - Uses 1.75× baseline Armor and 1.0× baseline Resistance instead of the normal Tank Defense multiplier.
 - Shield Wall grants 35% incoming-damage reduction to the Sentry and one ally until the Sentry's next action. Cooldown: 7 seconds.
-- Shield Bash has a 2-second telegraph, deals 160% Physical Power, and has a 60% base Stun chance. Cooldown: 10 seconds. It is interrupted if the hero deals 8% of the Sentry's maximum HP during the telegraph. It had no telegraph, 90% Power and an 8-second cooldown until 2026-11-07 (Step 12.3).
+- Shield Bash has a 1.8-second telegraph, deals 220% Physical Power, and has a 60% base Stun chance. Cooldown: 10 seconds. It is interrupted if the hero deals 10% of the Sentry's maximum HP during the telegraph. It had no telegraph, 90% Power and an 8-second cooldown until 2026-11-07 (Step 12.3).
 
 Fallen Arbalist:
 
@@ -1734,7 +1743,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
-- 2026-11-07: Mid-game heavy telegraphs: Thornbeast Bramble Slam (2 s wind-up, 200%, 9 s cooldown, interrupt at 6% max HP) and Hollow Sentry Shield Bash (2 s wind-up, 160%, 10 s cooldown, interrupt at 8% max HP). Telegraph and interruptible rule conditions now look at every enemy.
+- 2026-11-07: Mid-game heavy telegraphs: Thornbeast Bramble Slam (1.8 s wind-up, 220%, 9 s cooldown, interrupt at 10% max HP) and Hollow Sentry Shield Bash (1.8 s wind-up, 220%, 10 s cooldown, interrupt at 10% max HP). Telegraph and interruptible rule conditions now look at every enemy.
 - 2026-11-04: Mend cleanses one Poison or Bleed; the Ward Charm supply; brewing supplies from materials; Deserters can snatch a supply.
 - 2026-11-04: The Roster tab gets a Save file panel: export a backup file, load one, or start over, each with a confirmation where it deletes data.
 - 2026-11-04: Decided and built offline catch-up: an 8-hour cap, standing orders (push on at 50% HP, repeat a cleared route until a defeat), deterministic replays, a return summary, and half loot and gold from fights won while away.

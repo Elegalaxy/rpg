@@ -171,14 +171,15 @@ export const blightSpider: EnemyDef = {
 const brambleSlam: EnemySkillDef = {
   id: 'bramble-slam',
   name: 'Bramble Slam',
-  coefficient: 1.4,
+  coefficient: 2.2,
   school: 'physical',
-  cooldownSeconds: 6,
-  telegraphMs: 1000,
+  cooldownSeconds: 9,
+  telegraphMs: 1800,
   tag: 'bramble-slam',
   tags: ['physical', 'attack'],
   canCrit: false,
-  effects: [{ kind: 'damage', school: 'physical', coefficient: 1.4 }],
+  interruptMaxHpFraction: 0.1,
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 2.2 }],
 }
 
 /** Levels 8–13. Tank. Regenerates during combat. The filler is a physical basic attack. */
@@ -254,14 +255,16 @@ const shieldWall: EnemySkillDef = {
 const shieldBash: EnemySkillDef = {
   id: 'shield-bash',
   name: 'Shield Bash',
-  coefficient: 0.9,
+  coefficient: 2.2,
   school: 'physical',
-  cooldownSeconds: 8,
+  cooldownSeconds: 10,
+  telegraphMs: 1800,
   tag: 'shield-bash',
   tags: ['physical', 'attack'],
   canCrit: false,
+  interruptMaxHpFraction: 0.1,
   effects: [
-    { kind: 'damage', school: 'physical', coefficient: 0.9 },
+    { kind: 'damage', school: 'physical', coefficient: 2.2 },
     { kind: 'applyStatus', statusId: 'stun', baseChance: 0.6 },
   ],
 }

@@ -294,7 +294,7 @@ describe('Thornbeast', () => {
     expect(regen).toMatchObject({ fraction: 0.005, amount: gain, paused: false, hpAfter: enemy.maxHp - 50 + gain })
   })
 
-  it('telegraphs Bramble Slam for 140% Physical Power without a crit', () => {
+  it('telegraphs Bramble Slam for 1.8 seconds at 220% Physical Power without a crit', () => {
     const { state, defs } = open([{ defId: 'thornbeast', slot: 0, level: 10 }])
     const enemy = actorAt(state, 0)
     enemy.nextReadyMs = 10
@@ -304,15 +304,16 @@ describe('Thornbeast', () => {
     expect(telegraph).not.toBeNull()
     if (telegraph === null) return
     console.log('[enemy] bramble slam', { telegraph, actionMs: enemy.actionTimeMs, nextReadyMs: enemy.nextReadyMs })
-    expect(telegraph.resolvesAtMs - 10).toBe(1000)
+    expect(telegraph.resolvesAtMs - 10).toBe(1800)
+    expect(telegraph.interruptMaxHpFraction).toBe(0.1)
     expect(enemy.nextReadyMs - telegraph.resolvesAtMs).toBe(enemy.actionTimeMs)
     const resolvesAt = telegraph.resolvesAtMs
-    stepUntil(state, defs, () => state.log.some((event) => event.type === 'damage' && event.coefficient === 1.4))
+    stepUntil(state, defs, () => state.log.some((event) => event.type === 'damage' && event.coefficient === 2.2))
     const hit = state.log.find((event) => event.type === 'damage' && event.actorId === enemy.id)
     console.log('[enemy] bramble hit', hit)
-    expect(hit).toMatchObject({ coefficient: 1.4, school: 'physical', critChance: 0, crit: false })
+    expect(hit).toMatchObject({ coefficient: 2.2, school: 'physical', critChance: 0, crit: false })
     expect(state.log.some((event) => event.type === 'hitRoll' && event.actorId === enemy.id)).toBe(false)
-    expect(enemy.cooldowns['bramble-slam']).toBe(resolvesAt + 6000)
+    expect(enemy.cooldowns['bramble-slam']).toBe(resolvesAt + 9000)
     expect(enemy.telegraph).toBeNull()
   })
 })
@@ -546,7 +547,7 @@ describe('Hollow Sentry', () => {
     expect(frail.damageReduction).toBe(0)
   })
 
-  it('stuns with Shield Bash', () => {
+  it('stuns with Shield Bash after a 1.8-second telegraph', () => {
     const { state, defs } = open([{ defId: 'hollow-sentry', slot: 0, level: 10 }])
     const enemy = actorAt(state, 0)
     enemy.cooldowns['shield-wall'] = 1_000_000
@@ -556,11 +557,11 @@ describe('Hollow Sentry', () => {
     state.hero.physicalStatusResistance = 0
     const readyBefore = state.hero.nextReadyMs
     state.rng = rngBeforeDraw(0.6, 3)
-    stepUntil(state, defs, () => state.log.some((event) => event.type === 'action' && event.skillId === 'shield-bash'))
+    stepUntil(state, defs, () => state.log.some((event) => event.type === 'damage' && event.actorId === enemy.id))
     const attempt = state.log.find((event) => event.type === 'statusAttempt' && event.statusId === 'stun')
     const hit = state.log.find((event) => event.type === 'damage' && event.actorId === enemy.id)
     console.log('[enemy] shield bash', { attempt, hit, nextReadyMs: state.hero.nextReadyMs })
-    expect(hit).toMatchObject({ coefficient: 0.9, school: 'physical', critChance: 0, crit: false })
+    expect(hit).toMatchObject({ coefficient: 2.2, school: 'physical', critChance: 0, crit: false })
     expect(state.log.some((event) => event.type === 'hitRoll' && event.actorId === enemy.id)).toBe(false)
     expect(attempt).toMatchObject({ result: 'applied', baseChance: 0.6, school: 'physical' })
     expect(state.hero.nextReadyMs).toBe(readyBefore + stunDelayMs(STUN_DELAY_SECONDS, false))

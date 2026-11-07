@@ -398,10 +398,11 @@ describe('content integrity', () => {
     })
     expect(thornbeast.skills?.[0]).toMatchObject({
       id: 'bramble-slam',
-      coefficient: 1.4,
-      telegraphMs: 1000,
+      coefficient: 2.2,
+      telegraphMs: 1800,
       canCrit: false,
-      cooldownSeconds: 6,
+      cooldownSeconds: 9,
+      interruptMaxHpFraction: 0.1,
     })
     expect(fractureWisp).toMatchObject({
       levelMin: 10,
@@ -430,6 +431,14 @@ describe('content integrity', () => {
       affectSelf: true,
       cooldownSeconds: 7,
       effects: [{ kind: 'damageReduction', fraction: 0.35 }],
+    })
+    expect(hollowSentry.skills?.[1]).toMatchObject({
+      id: 'shield-bash',
+      coefficient: 2.2,
+      telegraphMs: 1800,
+      canCrit: false,
+      cooldownSeconds: 10,
+      interruptMaxHpFraction: 0.1,
     })
     expect(fallenArbalist.skills?.[0]).toMatchObject({
       id: 'aimed-bolt',
