@@ -1569,6 +1569,17 @@ Offline catch-up, decided 2026-11-04 (user approved; not built yet):
 - Placeholder/simple pixel art is acceptable during the first playable version.
 - Business model is undecided; the likely direction is a premium single-player game without microtransactions.
 
+### UI conventions (2026-11-07)
+
+Building blocks live in `src/ui/Kit.tsx` and `src/ui/kit.css`. Use the existing theme tokens; do not add new colours, fonts, or styling libraries.
+
+- Explanations and help text go in `?` tooltips (`Help`), not in screen text. The screen shows state, numbers, and actions.
+- Shop-like lists use four-part rows (`ShopRow`): name with an owned count, a muted effect, cost Tags, and buttons. Costs are Tags: amber for gold, slate for materials.
+- Numbers and statuses are stat cards (`Kpi`, `KpiRow`) or key-value rows, never bullet lists or sentences. Use tabular figures and show direction (▲/▼) where it matters.
+- `Pill` badges are for counts, unspent points, and finished jobs only. Prices, loot, lists, and inline status use `Tag` (coloured text, no box). Colour is always paired with a sign, icon, or label.
+- Identical items show once with `×N` (`groupItems`).
+- Avoid extra section cards and boxes; group with spacing first.
+
 ## 13. Technical Direction
 
 - TypeScript and React are the preferred starting stack.
