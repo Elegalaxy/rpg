@@ -619,7 +619,7 @@ Thornbeast:
 - Levels 8-13; Tank archetype.
 - Regenerates 1% maximum HP per second during combat.
 - Burn pauses its regeneration; Expose halves it.
-- Bramble Slam has a 1-second telegraph, deals 140% Physical Power, and has a 6-second cooldown.
+- Bramble Slam has a 2-second telegraph, deals 200% Physical Power, cannot critically hit, and has a 9-second cooldown. It is interrupted if the hero deals 6% of the Thornbeast's maximum HP during the telegraph. It was a 1-second, 140%, 6-second skill with no interrupt until 2026-11-07, when mid-game regulars started testing the hero's telegraph rules (Step 12.3).
 
 Fracture Wisp:
 
@@ -647,7 +647,7 @@ Hollow Sentry:
 - Levels 8-12; Tank archetype.
 - Uses 1.75× baseline Armor and 1.0× baseline Resistance instead of the normal Tank Defense multiplier.
 - Shield Wall grants 35% incoming-damage reduction to the Sentry and one ally until the Sentry's next action. Cooldown: 7 seconds.
-- Shield Bash deals 90% Physical Power and has a 60% base Stun chance. Cooldown: 8 seconds.
+- Shield Bash has a 2-second telegraph, deals 160% Physical Power, and has a 60% base Stun chance. Cooldown: 10 seconds. It is interrupted if the hero deals 8% of the Sentry's maximum HP during the telegraph. It had no telegraph, 90% Power and an 8-second cooldown until 2026-11-07 (Step 12.3).
 
 Fallen Arbalist:
 
@@ -1080,6 +1080,8 @@ Supported enemy conditions:
 - Boss phase
 
 Rules can inspect telegraphed enemy-action tags and time until resolution, enabling automated defensive, interrupt, and control responses.
+
+A row with a `telegraph` condition ('present' or 'at most') or an `interruptible` 'present' condition watches every living enemy, not only the row's picked target. Its focus becomes the enemy whose visible telegraph matches, the soonest-resolving first and then the lowest slot, and that overrides the row's target priority. If no enemy matches, the row behaves as before (it is checked against the picked target only). Rows with 'absent' conditions are unchanged. Decided 2026-11-07 (Step 12.3): with two enemies in a fight, a heavy attack from the one in the back slot must still be answered by a Shield Brace, a Ward or an interrupt.
 
 Conditions use contextual versions of:
 
@@ -1732,6 +1734,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-07: Mid-game heavy telegraphs: Thornbeast Bramble Slam (2 s wind-up, 200%, 9 s cooldown, interrupt at 6% max HP) and Hollow Sentry Shield Bash (2 s wind-up, 160%, 10 s cooldown, interrupt at 8% max HP). Telegraph and interruptible rule conditions now look at every enemy.
 - 2026-11-04: Mend cleanses one Poison or Bleed; the Ward Charm supply; brewing supplies from materials; Deserters can snatch a supply.
 - 2026-11-04: The Roster tab gets a Save file panel: export a backup file, load one, or start over, each with a confirmation where it deletes data.
 - 2026-11-04: Decided and built offline catch-up: an 8-hour cap, standing orders (push on at 50% HP, repeat a cleared route until a defeat), deterministic replays, a return summary, and half loot and gold from fights won while away.

@@ -970,6 +970,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-07: Part 5, modifiers. `vicious` (+10 points critical damage: `critDamageBonus` 0.1; level 3; weapons and accessories), `sturdy` (+4% maximum HP: new `maxHpBonus` in `StatBonuses` and `HeroStatInput`, multiplies max HP; level 6; armor) and `hauler` (+3 bag room, a `bagRoom` field outside `bonus`; level 4; chest armor and accessories, new `armorSlots` on `ItemModifier`) in `src/sim/economy.ts`. Recipe prices follow the existing 25 gold per level (75, 150, 100). `MODIFIER_STACK_CAP = 2` is applied in `statBonusesFor`; `modifierCounts`, `modifierCapNotes` and `haulerPiecesWorn` are new helpers. `haulerPieces` in `src/persist/bag.ts` now counts worn Hauler's pieces (capped at 2 by the stack cap; total bag cap 36 unchanged). Equipment screen: Critical damage and Bag room rows, and a note with a Help tooltip when a modifier is worn on more pieces than count. Snapshots were not changed. Tests: new `src/sim/modifiers.test.ts`, cases in `src/persist/bag.test.ts` and `crafting.test.ts` (modifier count 6 to 9). 798 tests.
   - 2026-11-07: UI-only conversion of the remaining screens to `Kit.tsx` (one commit each): Equipment (gear lines with coloured durability), Craft (stat cards, shop-style craft, upgrade and queue rows), Rules (tighter numbered rows), Attributes and Skill web panels (point cards, key-value node facts). No sim, persist or save changes. UI conventions written under GAME_DESIGN §12.
 
+### Step 12.3: Mid-game heavy telegraphs
+- Status: `in-progress`
+- Depends on: 12.2
+- Design: GAME_DESIGN enemy lists (Withered Grove, Fallen Bastion) and the Automation section, decided 2026-11-07.
+- Goal: mid-game regular monsters wind up heavy attacks that test the hero's rules, supplies and gear. Zone 1 does not change and nobody is hard-walled. Ranges allowed for tuning: wind-up 1.8-2.5 s, damage 1.6-2.2x, interrupt 5-10% max HP.
+- Parts: (1) docs and the telegraph harness baseline; (2) telegraph and interruptible rules watch every enemy; (3) Thornbeast and Sentry numbers, measured and tuned; (4) UI; (5) offline check.
+- Progress:
+  - 2026-11-07: Part 1. Docs written first. New `src/harness/telegraph.ts` and `--matrix telegraph` (every class floor build x wolf, road-mixed, thornbeast, sentry, arbalist, grove-mixed, bastion-mixed x rules/blind). Baselines saved before any content change.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
