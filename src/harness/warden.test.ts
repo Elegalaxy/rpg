@@ -30,6 +30,16 @@ describe('warden matrix', () => {
     expect(prepared.hero.statBonuses?.critDamageBonus).toBeCloseTo(0.1)
   })
 
+  it('adds a Causeway-geared tier after the original three', () => {
+    expect(WARDEN_TIERS.map((tier) => tier.id)).toEqual(['arrived', 'prepared', 'over', 'causeway'])
+    const tier = WARDEN_TIERS[3]!
+    expect(tier.level).toBe(22)
+    expect(tier.quality).toBe(1.12)
+    expect(wardenSetup('warrior', tier).hero.statBonuses?.lifestealFraction).toBeCloseTo(0.03)
+    expect(wardenSetup('warrior', tier).hero.statBonuses?.equipmentHealingPower ?? 0).toBe(0)
+    expect(wardenSetup('cleric', tier).hero.statBonuses?.equipmentHealingPower).toBe(20)
+  })
+
   it('runs every class and tier', () => {
     const rows = runWardenMatrix(1, 1)
     expect(rows).toHaveLength(HERO_CLASSES.length * WARDEN_TIERS.length)

@@ -759,10 +759,10 @@ The Leech's regeneration is the `REGENERATION_TRAIT` with a per-enemy multiplier
 
 Elite Tidebound Colossus:
 
-- Level 22 Tank elite. Stats: 3,600 HP (about the Echo Knight x 1.12), 31 Power; Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25.
+- Level 22 Tank elite. Stats: 3,600 HP (about the Echo Knight x 1.12), 35 Power (31 in the proposal, raised in tuning, Step 13.1 part 8); Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25.
 - Tide cycle uses the existing stance trait (10-second switch, the same constants as the Echo Knight): Ebb is the Guard stance (+30% Armor and Resistance), Flood is the Assault stance (+25% Power, -40% Armor and Resistance). It starts in Ebb. The sim keeps the names guard and assault; the Tide names are display text for later.
 - Breaker Wave: 2.5 s telegraph, 230% Physical Power, can critically hit, interruptible at 8% of max HP, 10 s cooldown.
-- At 50% HP it uses a 2-second telegraph to summon 2 Mire Leeches (level 18), through the HP summon trait. Summons award no XP.
+- At 35% HP (50% in the proposal, lowered in tuning, Step 13.1 part 8) it uses a 2-second telegraph to summon 2 Mire Leeches (level 18), through the HP summon trait. Summons award no XP.
 - Drops 10 riftglass. Gold is the elite rate, level x 3.
 - Its first defeat by any hero unlocks the Siphoning modifier recipe (account-wide).
 
@@ -791,7 +791,7 @@ Contracts and Legacy (documented now; built in part 7):
 
 Built in Step 13.1 part 7: Salvage is offered only for a zone whose resource is riftglass, at about 1 offer in 6 (after the elite and patrol shares, so boards without the Causeway roll exactly as before), counts the riftglass in the run's secured loot at settlement (safe return, retreat, or what the defeat pouch kept; unsecured loot is lost and does not count), and pays scrap at level 20. The board now offers Causeway contracts (bounties, patrol, Colossus elite, Salvage) only to a hero who can enter the Causeway, using the same gate as the route start (both elites defeated). A contract the hero already holds stays valid, and offers left over on a board refresh away on the next return. The Colossus Legacy bonus is per hero, like the other elite bonuses (`elite:tidebound-colossus`).
 
-XP intent: a Causeway-mixed win gives a level-18 hero about 87 XP, about 44 fights per level. The zone is the XP source for levels 16-24.
+XP intent: a Causeway-mixed win gives a level-18 hero about 97 XP, about 39 fights per level (measured in part 8; the first estimate was 87 and 44). The zone is the XP source for levels 16-24.
 
 Compatibility: no save version bump. Older saves load unchanged: the new node is undiscovered and the new material counts as 0.
 
@@ -824,6 +824,31 @@ Against the targets:
 - Colossus, prepared tier, 40-85% wins: only the Cleric (60) is inside; the Warrior is just below at 39 (38 at seed 2), above the floor of 30 that Warrior and Cleric need. Assassin, Ranger and Mage win 100%, above the band. Over-levelled, at least 85%: met by every class. Just arrived: Warrior 0, Assassin 1, Ranger 16, Mage 97, Cleric 0.
 - Interrupt rules against blind, a difference of at least 8 HP points for Ranger, Mage and Cleric: met in causeway-mixed for Ranger (+11) and Mage (+16), in causeway-deep for Mage (+22), and in the Colossus for Ranger (+26) and Cleric (+16). Ranger causeway-deep sits on the edge (+8). Not met: Cleric in every regular fight (+1 to +3), Ranger and Mage against the Bulwark alone (0).
 - Reading for the tuning step: the Colossus is a wall for the Warrior and Cleric at the arrived tier and a soft target for Assassin, Ranger and Mage once prepared; the regulars are easy for ranged heroes and heavy on HP for Warrior and Cleric. The Bulwark's Undertow barely matters on its own (the hero's ordinary hits already clear most of the 25% interrupt over the wind-up).
+
+Tuning (2026-11-08, Step 13.1 part 8). Two numbers changed, both on the Tidebound Colossus: Power 31 to 35, and the Leech summon at 35% HP instead of 50% (the 2-second telegraph and the two level-18 Leeches stay). Nothing else moved: Colossus HP 3,600, Breaker Wave (230%, 2.5 s, interrupt 8%, cooldown 10 s), the Tide cycle, and the Bulwark, Raider and Leech numbers are as proposed. The golden duel-basic snapshot is unchanged.
+
+- What was tried (prepared tier, 60 runs, seed 1, win % per class Warrior/Assassin/Ranger/Mage/Cleric). Before: 38/100/100/100/63. HP 4,200: 0/93/100/100/18. Power 36: 2/90/97/100/7. HP 4,200 and Power 28: 13/100/100/100/70. Breaker Wave interrupt 12%, 20% or 30%, or cooldown 8 s: no change for any class (the wave is not what beats the Warrior and Cleric). Summon at 70% HP: Warrior 0, Cleric 2 (the Leeches are what beats them). Summon at 35%: 83/98/100/100/97; with Power 33: 65/98/98/100/95; Power 34: 45/95/98/100/85; Power 35: 37/92/100/100/77; Power 40: 5/60/87/100/47. The Mage stays at 100% with about 48% HP lost even at Power 40 (the Ranger at 87%): no allowed lever lowers the Mage without walling the Warrior and Cleric.
+- Mixed fights: Bulwark HP x0.75-0.8 lowers the Warrior's causeway-mixed loss from 46 to 40-41 and the Mage's from 13 to 10; Bulwark Power x0.8-1.25, Raider Power x1.25, Leech HP and Power x1.25 and Undertow interrupt 15% or 30% move every class by 0-3 points. The Warrior and Cleric loss and the Ranger and Mage loss are driven by how fast each kills a high-Armor Bulwark, so no lever closes both gaps; the Bulwark, Raider and Leech numbers were left as proposed.
+
+Final measurements (seeds 1, 2, 3 at 100 runs, `npm run sim -- --matrix causeway`; the three seeds agree within about 8 points). Prepared tier, Colossus win % (HP lost %), mean of 3 seeds, before (seeds 1-2) / after:
+
+| Class | Before | After | Band |
+| --- | --- | --- | --- |
+| Warrior | 39 (93) | 37 (92) | at least 30: met |
+| Assassin | 100 (52) | 94 (69) | 40-85: above |
+| Ranger | 100 (47) | 98 (54) | 40-85: above |
+| Mage | 100 (47) | 100 (48) | 40-85: above |
+| Cleric | 60 (69) | 83 (56) | 40-85: met |
+
+- Colossus over-levelled: 100% for every class (met, at least 85%). Just arrived: Warrior 0, Assassin 0-1, Ranger 2-3, Mage 99-100, Cleric 0.
+- Regular fights, prepared tier: 100% wins in every cell for every class and seed (met, at least 95%).
+- Mixed fights, prepared tier, HP lost causeway-mixed / causeway-deep (unchanged by this tuning): Warrior 47 / 46, Assassin 29 / 46, Ranger 9 / 31, Mage 14 / 30, Cleric 42 / 42. In the 15-35% band: Assassin mixed, Ranger and Mage deep. Not met: Warrior and Cleric (too much), Ranger and Mage mixed (too little), Assassin deep (47).
+- Interrupt rules against blind (HP points lost, prepared): Ranger causeway-mixed +8 to +11, deep +8 to +9, Colossus +33 to +35; Mage mixed +16, deep +19 to +22; Cleric Colossus +12 to +17 and wins 83 against 59 (the Cleric's mixed and deep fights differ by only 1 to 2 points: not met there). Not met: Ranger and Mage against the Bulwark alone (0).
+- Not met after tuning, reported honestly: Assassin (94), Ranger (98) and Mage (100) Colossus prepared stay above 85%; Warrior and Cleric mixed-fight HP loss stays above 35%; Ranger and Mage causeway-mixed stay below 15%. No class-specific lever exists in the allowed set, and raising Power or HP further walls the Warrior (4,200 HP gives 0%, and Power 40 gives 5%).
+- Warden with a fourth tier `causeway` (Causeway-geared: level 22, 8 nodes, quality 112%, Siphoning on the weapon, Vicious and Quick accessories, a healer also wears Hallowed on the off-hand and one accessory; an item carries one modifier, so Rending cannot share the weapon with Siphoning), `npm run sim -- --matrix warden --seed 1 --runs 100`: Warrior 0% (lost 100), Assassin 100% (47), Ranger 100% (46), Mage 100% (41), Cleric 0% (100, Warden left 62%). The first three tiers' rows are produced by the unchanged code. Compared with the over-levelled tier (level 24): Assassin 100% (53), Ranger 99% (49), Mage 100% (49), Warrior and Cleric 0%. So Causeway gear at level 22 does what level-24 gear did for the three damage classes; the Warrior and Cleric wall stays.
+- Reference matrix (`--matrix reference`, seed 1, 100 runs): the tracked CSV is byte-identical. Telegraph and built matrices run and match the earlier numbers within seed noise (telegraph seed 1, 40 runs: Cleric Thornbeast 18 / 34; built: Rootmaw, Echo Knight rows as before). Note: the Warden numbers recorded earlier for the prepared tier (Ranger 26, Mage 77) are older than the rows now measured (Ranger 35, Mage 98) and are not caused by this part (no Warden code path changed); they were not re-investigated.
+- Offline-style expeditions (reference heroes, level 19, 40 seeds, defeat % of runs with at least one defeat), `sunken-causeway`: Warrior 0, Assassin 5, Ranger 10, Mage 5, Cleric 0 (before tuning 0 / 3 / 13 / 5 / 0). Same method for the baselines: Grove 8 / 38 / 28 / 8 / 0, Bastion 0 / 18 / 15 / 5 / 0. The Causeway is no harsher than the Grove or Bastion. `npm run sim -- --expedition sunken-causeway --seed 1..5` (Warrior only): all five seeds win five fights and retreat in `causeway-mixed` with no defeat.
+- XP: from the real formula (`xpFromEnemies`, enemy XP from the combat state, level-18 hero, Spirit 9-21), a causeway-mixed win gives 96-98 XP and a level costs 3,818 XP at level 18, so 39 to 40 fights per level (the design estimated 87 XP and 44). causeway-deep gives 147-149 XP (26 per level), a raider 42 (91), a leech-swarm 33 (116). The estimate in "XP intent" is updated below.
 
 ### Events
 

@@ -792,7 +792,7 @@ const summonMireLeeches: EnemySkillDef = {
   tags: ['summon'],
   canCrit: false,
   trigger: 'hp',
-  hpFraction: 0.5,
+  hpFraction: 0.35,
   effects: [
     { kind: 'summon', enemyId: 'mire-leech', level: 18 },
     { kind: 'summon', enemyId: 'mire-leech', level: 18 },
@@ -811,7 +811,7 @@ export const tideboundColossus: EnemyDef = {
   elite: true,
   school: 'physical',
   filler: { school: 'physical' },
-  overrides: { maxHp: 3600, power: 31, consistency: 25 },
+  overrides: { maxHp: 3600, power: 35, consistency: 25 },
   traitIds: [STANCE_TRAIT, HP_SUMMON_TRAIT],
   skills: [breakerWave, summonMireLeeches],
   drop: { materialId: 'riftglass', baseQuantity: 10 },

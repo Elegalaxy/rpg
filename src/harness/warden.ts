@@ -31,6 +31,8 @@ export type WardenTier = {
   modifiers: { readonly [slot in EquipmentSlotId]: string | null }
   /** Supply ids in the backpack. */
   supplies: readonly string[]
+  /** Per-class replacements for single slots in `modifiers` (for example Hallowed for a healer). */
+  classModifiers?: { readonly [classId in HeroClass]?: Partial<WardenTier['modifiers']> }
 }
 
 export const STARTER_MODIFIERS: WardenTier['modifiers'] = {
@@ -82,6 +84,20 @@ export const WARDEN_TIERS: readonly WardenTier[] = [
     quality: 1.1,
     modifiers: { ...PREPARED_MODIFIERS, accessory0: 'vicious', accessory1: 'quick' },
     supplies: ['healing-draught', 'healing-draught', 'healing-draught', 'ward-charm'],
+  },
+  /**
+   * Step 13.1 part 8: a hero geared from the Drowned Causeway. An item carries one modifier, so the weapon
+   * takes Siphoning (Rending cannot share it) and a healer wears Hallowed on the off-hand and one accessory.
+   */
+  {
+    id: 'causeway',
+    label: 'Causeway-geared',
+    level: 22,
+    nodes: 8,
+    quality: 1.12,
+    modifiers: { ...PREPARED_MODIFIERS, mainHand: 'siphoning', accessory0: 'vicious', accessory1: 'quick' },
+    supplies: ['healing-draught', 'healing-draught', 'healing-draught', 'ward-charm'],
+    classModifiers: { cleric: { offHand: 'hallowed', accessory1: 'hallowed' } },
   },
 ]
 
@@ -142,7 +158,7 @@ export function wardenSetup(classId: HeroClass, tier: WardenTier): CombatSetup {
       level: tier.level,
       attributes: reference.attributes,
       gear: scaleGear(reference.gear, tier.level, tier.quality),
-      statBonuses: statBonusesFor(modifierEquipment(tier.modifiers)),
+      statBonuses: statBonusesFor(modifierEquipment({ ...tier.modifiers, ...(tier.classModifiers?.[classId] ?? {}) })),
       priorityRows: startingRules(base.hero.priorityRows ?? []),
       supplies: tier.supplies,
       ...(classId === 'ranger' ? { carriedSupplyCount: tier.supplies.length } : {}),

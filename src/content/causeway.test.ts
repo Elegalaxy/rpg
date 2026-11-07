@@ -161,22 +161,22 @@ describe('Drowned Causeway enemies', () => {
     expect(drownedBulwark.drop).toEqual({ materialId: 'riftglass', baseQuantity: 4 })
   })
 
-  it('spawns the Colossus as a level-22 elite tank in Ebb (Guard) with 3,600 HP and 31 Power', () => {
+  it('spawns the Colossus as a level-22 elite tank in Ebb (Guard) with 3,600 HP and 35 Power', () => {
     const { state } = open([{ defId: 'tidebound-colossus', slot: 0 }])
     const colossus = actorAt(state, 0)
     const stats = deriveEnemyStats({
       level: 22,
       archetype: 'tank',
       elite: true,
-      overrides: { maxHp: 3600, power: 31, consistency: 25 },
+      overrides: { maxHp: 3600, power: 35, consistency: 25 },
     })
-    expect(stats).toMatchObject({ maxHp: 3600, power: 31, consistency: 25 })
+    expect(stats).toMatchObject({ maxHp: 3600, power: 35, consistency: 25 })
     expect(colossus.level).toBe(22)
     expect(colossus.maxHp).toBe(3600)
     expect(colossus.elite).toBe(true)
     expect(colossus.stance).toBe('guard')
     expect(colossus.armor).toBeCloseTo(stats.armor * 1.3, 8)
-    expect(colossus.power).toBeCloseTo(31, 8)
+    expect(colossus.power).toBeCloseTo(35, 8)
     console.log('[enemy] colossus stats', stats)
   })
 
@@ -208,7 +208,7 @@ describe('Drowned Causeway enemies', () => {
     expect(tideboundColossus.drop).toEqual({ materialId: 'riftglass', baseQuantity: 10 })
   })
 
-  it('summons two XP-less Mire Leeches at 50% HP', () => {
+  it('summons two XP-less Mire Leeches at 35% HP', () => {
     const { state, defs } = open([{ defId: 'tidebound-colossus', slot: 0 }])
     const colossus = actorAt(state, 0)
     colossus.cooldowns['breaker-wave'] = 1_000_000
@@ -216,7 +216,7 @@ describe('Drowned Causeway enemies', () => {
     state.hero.hp = 1_000_000
     state.hero.maxHp = 1_000_000
     state.hero.nextReadyMs = 1_000_000
-    colossus.hp = colossus.maxHp * 0.5
+    colossus.hp = colossus.maxHp * 0.35
     onEnemyHpChanged(state, colossus, state.timeMs)
     stepUntil(state, defs, () => state.enemies.filter((enemy) => enemy.defId === 'mire-leech').length >= 2, 10_000)
     const leeches = state.enemies.filter((enemy) => enemy.defId === 'mire-leech')
