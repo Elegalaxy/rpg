@@ -224,13 +224,13 @@ const fractureRay: EnemySkillDef = {
   effects: [{ kind: 'damage', school: 'magical', coefficient: 1.8 }],
 }
 
-/** Levels 10–14. Burst defense is replaced by 0.5× Armor and 1.5× Resistance. The filler is magical. */
+/** Levels 10–22. Burst defense is replaced by 0.5× Armor and 1.5× Resistance. The filler is magical. */
 export const fractureWisp: EnemyDef = {
   id: 'fracture-wisp',
   name: 'Fracture Wisp',
   level: 10,
   levelMin: 10,
-  levelMax: 14,
+  levelMax: 22,
   archetype: 'burst',
   school: 'magical',
   filler: { school: 'magical' },
@@ -348,13 +348,13 @@ const echoBolt: EnemySkillDef = {
   effects: [{ kind: 'damage', school: 'magical', coefficient: 0.7 }],
 }
 
-/** Levels 13–16. Support defense is replaced by 0.5× Armor and 1.5× Resistance. Ward, then Mend, then Echo Bolt. */
+/** Levels 13–22. Support defense is replaced by 0.5× Armor and 1.5× Resistance. Ward, then Mend, then Echo Bolt. */
 export const oathboundEcho: EnemyDef = {
   id: 'oathbound-echo',
   name: 'Oathbound Echo',
   level: 13,
   levelMin: 13,
-  levelMax: 16,
+  levelMax: 22,
   archetype: 'support',
   school: 'magical',
   filler: { school: 'magical' },
@@ -674,6 +674,149 @@ export const wardEcho: EnemyDef = {
   skills: [wardEchoWard, wardEchoMend, riftBolt],
 }
 
+const leechBite: EnemySkillDef = {
+  id: 'leech-bite',
+  name: 'Leech Bite',
+  coefficient: 0.8,
+  school: 'physical',
+  cooldownSeconds: 4,
+  tag: 'leech-bite',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 0.8 },
+    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.5, coefficient: 0.1, power: 'physical' },
+  ],
+}
+
+/** Levels 17-20. Swarm, in groups of 3. Regenerates 2% maximum HP per second (twice the trait's base rate). Drops 2 hide. */
+export const mireLeech: EnemyDef = {
+  id: 'mire-leech',
+  name: 'Mire Leech',
+  level: 17,
+  levelMin: 17,
+  levelMax: 20,
+  archetype: 'swarm',
+  school: 'physical',
+  filler: { school: 'physical' },
+  traitIds: [REGENERATION_TRAIT],
+  regenMultiplier: 2,
+  skills: [leechBite],
+  drop: { materialId: 'hide', baseQuantity: 2 },
+}
+
+const pilfer: EnemySkillDef = {
+  id: 'pilfer',
+  name: 'Pilfer',
+  coefficient: 0.9,
+  school: 'physical',
+  cooldownSeconds: 5,
+  tag: 'pilfer',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 0.9 },
+    { kind: 'stealSupply', chance: 0.35 },
+  ],
+}
+
+/** Levels 17-21. Standard. Pilfer, then Guard, as the Deserter does. Drops 4 scrap. */
+export const causewayRaider: EnemyDef = {
+  id: 'causeway-raider',
+  name: 'Causeway Raider',
+  level: 17,
+  levelMin: 17,
+  levelMax: 21,
+  archetype: 'standard',
+  school: 'physical',
+  filler: { school: 'physical' },
+  skills: [pilfer, guard],
+  drop: { materialId: 'scrap', baseQuantity: 4 },
+}
+
+const undertow: EnemySkillDef = {
+  id: 'undertow',
+  name: 'Undertow',
+  coefficient: 2,
+  school: 'physical',
+  cooldownSeconds: 9,
+  telegraphMs: 2200,
+  tag: 'undertow',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  interruptMaxHpFraction: 0.25,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 2 },
+    { kind: 'applyStatus', statusId: 'chill', baseChance: 1 },
+    { kind: 'applyStatus', statusId: 'chill', baseChance: 1 },
+  ],
+}
+
+/** Levels 18-22. Tank with 1.75x Armor like the Sentry. Shield Wall is listed first. Drops 4 riftglass. */
+export const drownedBulwark: EnemyDef = {
+  id: 'drowned-bulwark',
+  name: 'Drowned Bulwark',
+  level: 18,
+  levelMin: 18,
+  levelMax: 22,
+  archetype: 'tank',
+  school: 'physical',
+  filler: { school: 'physical' },
+  overrides: { armorMultiplier: 1.75, resistanceMultiplier: 1 },
+  skills: [shieldWall, undertow],
+  drop: { materialId: 'riftglass', baseQuantity: 4 },
+}
+
+const breakerWave: EnemySkillDef = {
+  id: 'breaker-wave',
+  name: 'Breaker Wave',
+  coefficient: 2.3,
+  school: 'physical',
+  cooldownSeconds: 10,
+  telegraphMs: 2500,
+  tag: 'breaker-wave',
+  tags: ['physical', 'attack'],
+  canCrit: true,
+  interruptMaxHpFraction: 0.08,
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 2.3 }],
+}
+
+const summonMireLeeches: EnemySkillDef = {
+  id: 'summon-mire-leeches',
+  name: 'Summon Mire Leeches',
+  coefficient: 0,
+  school: 'physical',
+  cooldownSeconds: 0,
+  telegraphMs: 2000,
+  tag: 'summon-leeches',
+  tags: ['summon'],
+  canCrit: false,
+  trigger: 'hp',
+  hpFraction: 0.5,
+  effects: [
+    { kind: 'summon', enemyId: 'mire-leech', level: 18 },
+    { kind: 'summon', enemyId: 'mire-leech', level: 18 },
+  ],
+}
+
+/**
+ * Level 22 elite tank. Ebb is the Guard stance and Flood is the Assault stance (the stance trait keeps its
+ * sim names). HP 3,600 is about the Echo Knight x 1.12.
+ */
+export const tideboundColossus: EnemyDef = {
+  id: 'tidebound-colossus',
+  name: 'Tidebound Colossus',
+  level: 22,
+  archetype: 'tank',
+  elite: true,
+  school: 'physical',
+  filler: { school: 'physical' },
+  overrides: { maxHp: 3600, power: 31, consistency: 25 },
+  traitIds: [STANCE_TRAIT, HP_SUMMON_TRAIT],
+  skills: [breakerWave, summonMireLeeches],
+  drop: { materialId: 'riftglass', baseQuantity: 10 },
+}
+
 export const enemies: { [id: string]: EnemyDef } = {
   [standardDummy.id]: standardDummy,
   [fractureShardling.id]: fractureShardling,
@@ -690,4 +833,8 @@ export const enemies: { [id: string]: EnemyDef } = {
   [fracturedWarden.id]: fracturedWarden,
   [bladeEcho.id]: bladeEcho,
   [wardEcho.id]: wardEcho,
+  [mireLeech.id]: mireLeech,
+  [causewayRaider.id]: causewayRaider,
+  [drownedBulwark.id]: drownedBulwark,
+  [tideboundColossus.id]: tideboundColossus,
 }

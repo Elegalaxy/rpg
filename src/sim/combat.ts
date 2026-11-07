@@ -2285,6 +2285,7 @@ function actorFromEnemy(
     skills: copyEnemySkills(def),
     defId: def.id,
     traitIds: [...(def.traitIds ?? [])],
+    ...(def.regenMultiplier === undefined ? {} : { regenMultiplier: def.regenMultiplier }),
     xp: summon ? 0 : stats.xp,
     summon,
     fillerCoefficient: filler.coefficient,

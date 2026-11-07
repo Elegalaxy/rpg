@@ -106,6 +106,52 @@ export const wardenEncounter: EncounterDef = {
   members: [{ enemyId: 'fractured-warden', slot: 0, level: 20 }],
 }
 
+/** Three level-17 Mire Leeches. */
+export const leechSwarm: EncounterDef = {
+  id: 'leech-swarm',
+  name: 'Mire Leech Swarm',
+  members: [
+    { enemyId: 'mire-leech', slot: 0, level: 17 },
+    { enemyId: 'mire-leech', slot: 1, level: 17 },
+    { enemyId: 'mire-leech', slot: 2, level: 17 },
+  ],
+}
+
+/** One level-18 Causeway Raider. */
+export const raiderEncounter: EncounterDef = {
+  id: 'raider',
+  name: 'Causeway Raider',
+  members: [{ enemyId: 'causeway-raider', slot: 0, level: 18 }],
+}
+
+/** One level-18 Drowned Bulwark and one level-18 Fracture Wisp. */
+export const causewayMixed: EncounterDef = {
+  id: 'causeway-mixed',
+  name: 'Drowned Causeway Mixed',
+  members: [
+    { enemyId: 'drowned-bulwark', slot: 0, level: 18 },
+    { enemyId: 'fracture-wisp', slot: 1, level: 18 },
+  ],
+}
+
+/** Level-20 Drowned Bulwark, Causeway Raider, and Oathbound Echo. */
+export const causewayDeep: EncounterDef = {
+  id: 'causeway-deep',
+  name: 'Drowned Causeway Deep',
+  members: [
+    { enemyId: 'drowned-bulwark', slot: 0, level: 20 },
+    { enemyId: 'causeway-raider', slot: 1, level: 20 },
+    { enemyId: 'oathbound-echo', slot: 2, level: 20 },
+  ],
+}
+
+/** The Drowned Causeway elite, level 22. */
+export const colossusEncounter: EncounterDef = {
+  id: 'tidebound-colossus',
+  name: 'Tidebound Colossus',
+  members: [{ enemyId: 'tidebound-colossus', slot: 0, level: 22 }],
+}
+
 export const encounters: { [id: string]: EncounterDef } = {
   [shardlingPair.id]: shardlingPair,
   [wolfPair.id]: wolfPair,
@@ -116,6 +162,11 @@ export const encounters: { [id: string]: EncounterDef } = {
   [rootmawEncounter.id]: rootmawEncounter,
   [echoKnightEncounter.id]: echoKnightEncounter,
   [wardenEncounter.id]: wardenEncounter,
+  [leechSwarm.id]: leechSwarm,
+  [raiderEncounter.id]: raiderEncounter,
+  [causewayMixed.id]: causewayMixed,
+  [causewayDeep.id]: causewayDeep,
+  [colossusEncounter.id]: colossusEncounter,
 }
 
 /** An encounter as an expedition fight list entry, with each enemy's drops copied from its definition. Gold is level × 2, or × 3 for an elite or the boss (G1). */

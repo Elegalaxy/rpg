@@ -405,14 +405,15 @@ export function referenceLoadoutFor(classId: HeroClass): ReferenceLoadout {
   return loadout
 }
 
-function bandMiddle(def: EnemyDef): number {
-  const min = def.levelMin ?? def.level
-  const max = def.levelMax ?? def.level
+function bandMiddle(def: EnemyDef, band?: readonly [number, number]): number {
+  const min = band?.[0] ?? def.levelMin ?? def.level
+  const max = band?.[1] ?? def.levelMax ?? def.level
   return Math.round((min + max) / 2)
 }
 
-function solo(slug: string, def: EnemyDef, level: number): MatrixEncounter {
-  const middle = bandMiddle(def)
+/** `band` is the band the reference level was chosen from, for enemies whose band was widened later (Step 13.1). */
+function solo(slug: string, def: EnemyDef, level: number, band?: readonly [number, number]): MatrixEncounter {
+  const middle = bandMiddle(def, band)
   if (middle !== level) {
     throw new Error(`enemy ${def.id} band middle is ${middle}, reference matrix expected ${level}`)
   }
@@ -441,10 +442,10 @@ const referenceEncounters: readonly MatrixEncounter[] = [
   solo('deserter', deserter, 6),
   solo('spider', blightSpider, 8),
   solo('thornbeast', thornbeast, 11),
-  solo('wisp', fractureWisp, 12),
+  solo('wisp', fractureWisp, 12, [10, 14]),
   solo('sentry', hollowSentry, 10),
   solo('arbalist', fallenArbalist, 13),
-  solo('oathbound-echo', oathboundEcho, 15),
+  solo('oathbound-echo', oathboundEcho, 15, [13, 16]),
   grouped('road-mixed', 5, [
     { defId: fractureShardling.id, slot: 0, level: 5 },
     { defId: starvedWolf.id, slot: 1, level: 5 },

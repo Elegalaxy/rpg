@@ -700,9 +700,10 @@ function regenerationOnSecond(state: CombatState, actor: CombatActor, timeMs: nu
   if (!actor.alive || state.outcome !== 'ongoing') return
   const burned = actor.statuses.burn !== null && actor.statuses.burn.expiresMs > timeMs
   const exposed = !burned && actor.statuses.expose !== null && actor.statuses.expose.expiresMs > timeMs
-  let fraction = REGEN_FRACTION_PER_SECOND
+  const scale = actor.regenMultiplier ?? 1
+  let fraction = REGEN_FRACTION_PER_SECOND * scale
   if (burned) fraction = 0
-  else if (exposed) fraction = REGEN_EXPOSED_FRACTION_PER_SECOND
+  else if (exposed) fraction = REGEN_EXPOSED_FRACTION_PER_SECOND * scale
   const hpBefore = actor.hp
   let amount = 0
   if (fraction > 0) {

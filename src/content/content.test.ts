@@ -406,7 +406,7 @@ describe('content integrity', () => {
     })
     expect(fractureWisp).toMatchObject({
       levelMin: 10,
-      levelMax: 14,
+      levelMax: 22,
       archetype: 'burst',
       filler: { school: 'magical' },
       overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5 },
@@ -457,7 +457,7 @@ describe('content integrity', () => {
     expect(oathboundEcho.skills?.map((skill) => skill.id)).toEqual(['echo-ward', 'echo-mend', 'echo-bolt'])
     expect(oathboundEcho).toMatchObject({
       levelMin: 13,
-      levelMax: 16,
+      levelMax: 22,
       archetype: 'support',
       filler: { school: 'magical' },
       overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5 },

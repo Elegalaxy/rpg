@@ -1021,6 +1021,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Parts: (1) docs; (2) enemies and encounters; (3) harness baseline (`--matrix causeway`), measurements only; (4) world (node, leg, route, gate, map); (5) riftglass material and crafting; (6) modifiers Hallowed, Rending, Siphoning (one lifesteal hook); (7) Salvage contract and Legacy +3; (8) tuning against the measurement targets.
 - Progress:
   - 2026-11-08: Part 1, docs written (GAME_DESIGN §6 "Second zone: Drowned Causeway", changelog, this step).
+  - 2026-11-08: Part 2, enemies and encounters. `mire-leech`, `causeway-raider`, `drowned-bulwark`, `tidebound-colossus` in `src/content/enemies.ts`; Wisp band 10-22 and Echo band 13-22; encounters `leech-swarm`, `raider`, `causeway-mixed`, `causeway-deep`, `tidebound-colossus` in `src/content/encounters.ts`. One small sim addition: `regenMultiplier` on `EnemyDef` and the actor scales the regeneration trait (the Leech uses 2; every other enemy is unchanged). The reference matrix keeps its original Wisp (10-14) and Echo (13-16) bands for its level check (`solo(..., band)` in `scenarios.ts`) so those rows do not move. New `src/content/causeway.test.ts`. The duel-basic snapshot is unchanged. Riftglass is dropped but not yet a registered material (part 5). 824 tests.
 
 ## 8. Risks, and what would reveal them early
 

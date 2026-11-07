@@ -246,6 +246,8 @@ export type CombatActor = {
   /** Enemy definition id. Empty for the hero. */
   defId: string
   traitIds: string[]
+  /** Scales the regeneration trait. Omitted means 1. */
+  regenMultiplier?: number
   /** XP after archetype multipliers. Summons stay at 0. */
   xp: number
   summon: boolean
@@ -1639,6 +1641,8 @@ export type EnemyDef = {
   filler?: EnemyFillerAttack
   skills?: readonly EnemySkillDef[]
   traitIds?: readonly string[]
+  /** Scales the regeneration trait's rate and its Expose half. Omitted means 1. */
+  regenMultiplier?: number
   /** Uses boss stack caps, half durations, and the 35% Stun delay. Not immunity. */
   boss?: boolean
   /** Ordered boss phases. The trait enters each threshold once. */
