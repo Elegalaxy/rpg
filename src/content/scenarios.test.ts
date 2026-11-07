@@ -556,7 +556,7 @@ describe('grove-mixed', () => {
       durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
     })
     expect(state.outcome).toBe('victory')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 28_860 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 22_688 })
   })
 })
 
@@ -570,7 +570,7 @@ describe('bastion-mixed', () => {
       durationMs: end?.type === 'encounterEnd' ? end.timeMs : state.timeMs,
     })
     expect(state.outcome).toBe('victory')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 27_584 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 27_360 })
   })
 })
 
@@ -595,8 +595,8 @@ describe('grove and bastion are different fights', () => {
         durationMs: bastionEnd?.type === 'encounterEnd' ? bastionEnd.timeMs : bastion.timeMs,
       },
     })
-    expect(groveEnd).toMatchObject({ outcome: 'victory', timeMs: 28_860 })
-    expect(bastionEnd).toMatchObject({ outcome: 'victory', timeMs: 27_584 })
+    expect(groveEnd).toMatchObject({ outcome: 'victory', timeMs: 22_688 })
+    expect(bastionEnd).toMatchObject({ outcome: 'victory', timeMs: 27_360 })
     expect(groveLines.join('\n')).not.toBe(bastionLines.join('\n'))
     expect(grove.enemies.map((enemy) => enemy.name)).toEqual(['Thornbeast', 'Blight Spider'])
     expect(bastion.enemies.map((enemy) => enemy.name)).toEqual(['Hollow Sentry', 'Fallen Arbalist'])

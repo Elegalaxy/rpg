@@ -402,7 +402,7 @@ describe('content integrity', () => {
       telegraphMs: 1800,
       canCrit: false,
       cooldownSeconds: 9,
-      interruptMaxHpFraction: 0.1,
+      interruptMaxHpFraction: 0.25,
     })
     expect(fractureWisp).toMatchObject({
       levelMin: 10,
@@ -438,7 +438,7 @@ describe('content integrity', () => {
       telegraphMs: 1800,
       canCrit: false,
       cooldownSeconds: 10,
-      interruptMaxHpFraction: 0.1,
+      interruptMaxHpFraction: 0.25,
     })
     expect(fallenArbalist.skills?.[0]).toMatchObject({
       id: 'aimed-bolt',

@@ -178,7 +178,7 @@ const brambleSlam: EnemySkillDef = {
   tag: 'bramble-slam',
   tags: ['physical', 'attack'],
   canCrit: false,
-  interruptMaxHpFraction: 0.1,
+  interruptMaxHpFraction: 0.25,
   effects: [{ kind: 'damage', school: 'physical', coefficient: 2.2 }],
 }
 
@@ -262,7 +262,7 @@ const shieldBash: EnemySkillDef = {
   tag: 'shield-bash',
   tags: ['physical', 'attack'],
   canCrit: false,
-  interruptMaxHpFraction: 0.1,
+  interruptMaxHpFraction: 0.25,
   effects: [
     { kind: 'damage', school: 'physical', coefficient: 2.2 },
     { kind: 'applyStatus', statusId: 'stun', baseChance: 0.6 },

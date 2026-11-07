@@ -305,7 +305,7 @@ describe('Thornbeast', () => {
     if (telegraph === null) return
     console.log('[enemy] bramble slam', { telegraph, actionMs: enemy.actionTimeMs, nextReadyMs: enemy.nextReadyMs })
     expect(telegraph.resolvesAtMs - 10).toBe(1800)
-    expect(telegraph.interruptMaxHpFraction).toBe(0.1)
+    expect(telegraph.interruptMaxHpFraction).toBe(0.25)
     expect(enemy.nextReadyMs - telegraph.resolvesAtMs).toBe(enemy.actionTimeMs)
     const resolvesAt = telegraph.resolvesAtMs
     stepUntil(state, defs, () => state.log.some((event) => event.type === 'damage' && event.coefficient === 2.2))

@@ -6,12 +6,12 @@ import { interruptText, isHeavy, telegraphSkill } from './telegraphInfo.ts'
 
 describe('telegraph display facts', () => {
   it('finds the skill, marks heavy attacks, and reads the interrupt progress', () => {
-    const slam = { tag: 'bramble-slam', skillId: 'bramble-slam', resolvesAtMs: 3000, hpTaken: 12.7, interruptMaxHpFraction: 0.1 }
+    const slam = { tag: 'bramble-slam', skillId: 'bramble-slam', resolvesAtMs: 3000, hpTaken: 12.7, interruptMaxHpFraction: 0.25 }
     const skill = telegraphSkill('thornbeast', slam)
     expect(skill?.name).toBe('Bramble Slam')
     expect(isHeavy(skill)).toBe(true)
-    expect(interruptText(slam, 265)).toBe('Interrupt 12/27 HP')
-    expect(interruptText({ ...slam, hpTaken: 500 }, 265)).toBe('Interrupt 27/27 HP')
+    expect(interruptText(slam, 265)).toBe('Interrupt 12/67 HP')
+    expect(interruptText({ ...slam, hpTaken: 500 }, 265)).toBe('Interrupt 67/67 HP')
   })
 
   it('shows no interrupt text for an uninterruptible telegraph and no Heavy for a light skill', () => {

@@ -619,7 +619,7 @@ Thornbeast:
 - Levels 8-13; Tank archetype.
 - Regenerates 1% maximum HP per second during combat.
 - Burn pauses its regeneration; Expose halves it.
-- Bramble Slam has a 1.8-second telegraph, deals 220% Physical Power, cannot critically hit, and has a 9-second cooldown. It is interrupted if the hero deals 10% of the Thornbeast's maximum HP during the telegraph. It was a 1-second, 140%, 6-second skill with no interrupt until 2026-11-07, when mid-game regulars started testing the hero's telegraph rules (Step 12.3). The first numbers were 2 seconds, 200% and 6%; measurement showed the hero's ordinary hits interrupted almost every slam, so they moved to the hardest values the plan allows (see Step 12.3 measurements).
+- Bramble Slam has a 1.8-second telegraph, deals 220% Physical Power, cannot critically hit, and has a 9-second cooldown. It is interrupted if the hero deals 25% of the Thornbeast's maximum HP during the telegraph. It was a 1-second, 140%, 6-second skill with no interrupt until 2026-11-07, when mid-game regulars started testing the hero's telegraph rules (Step 12.3). The first numbers were 2 seconds, 200% and 6%; measurement showed the hero's ordinary hits interrupted almost every slam, so they moved to 1.8 seconds, 220% and 10%, and on 2026-11-08 the interrupt moved to 25% so one ordinary hit no longer cancels the slam by accident (see Step 12.3 measurements).
 
 Fracture Wisp:
 
@@ -645,7 +645,11 @@ Mid-game heavy telegraph measurements (Step 12.3, 2026-11-07, seed 1, floor buil
 - Final numbers (the hardest allowed): mean share of maximum HP lost, rules / blind. Thornbeast: Warrior 15 / 16, Assassin 7 / 7, Ranger 7 / 7, Mage 6 / 12, Cleric 17 / 32 (it was 30 / 30 before, with a 1 s wind-up). Sentry: Warrior 8 / 7, Assassin 11 / 11, Ranger 3 / 9, Mage 3 / 3, Cleric 11 / 13. Grove-mixed and Bastion-mixed move by 0-6 points, with the largest gaps for the Ranger (Bastion 13 / 28) and Mage (Grove 41 / 45).
 - The band "blind HP lost at least 8 points above rules" holds only for Cleric Thornbeast (+15), Ranger Bastion-mixed (+15), with Ranger Sentry and Mage Thornbeast at +6 (close). The Warrior and Assassin floor builds ignore the telegraph rows either way. The band "blind win 75-90%" is not met anywhere: blind wins stay at 100%.
 - Zone 1 solos (Shardling, Wolf, Deserter), Spider, Wisp, Oathbound Echo and Arbalist rows of the reference matrix are unchanged (seed 1, 100 runs). Rootmaw, Echo Knight and Warden win rates are unchanged at 0, 6 and 9 nodes (matrix `built`, 40 runs). The golden duel-basic snapshot is unchanged.
-- Open: a stronger effect needs a lever outside the plan's ranges, for example a shorter cooldown (6 s still gave no blind defeats), a first-use delay, an interrupt that only counts skill damage, or enemies that hit harder at equal level. Recorded for the user to decide.
+- Interrupt raised to 25% (2026-11-08, option 1, user approved; wind-up 1.8 s, damage 220%, cooldowns 9/10 s and the Sentry's 60% Stun unchanged). Fractions 0.18, 0.25 and 0.30 were measured at seeds 1-3, 100 runs each (mean share of maximum HP lost, rules / blind, mean of 3 seeds; every cell still wins 100%, rules and blind):
+  - Thornbeast: Warrior 19 / 20, Assassin 16 / 16, Ranger 7 / 13, Mage 12 / 25, Cleric 17 / 34 at 25%. At 18% the Assassin and Ranger blind Thornbeast cells matched the rules (12 / 12, 7 / 7); 30% gave the same numbers as 25%, so 25% is where one ordinary hit stops cancelling the slam.
+  - Sentry at 25%: Warrior 12 / 12, Assassin 13 / 13, Ranger 3 / 10, Mage 3 / 12, Cleric 11 / 17. Bastion-mixed: Ranger 14 / 31, others within 1 point. Grove-mixed: Ranger 21 / 26, Mage 42 / 47.
+  - The Warrior and Assassin floor builds carry no telegraph answer, so rules and blind are the same for them in every fraction. Offline expedition defeats (reference heroes, 40 seeds, rules / blind): Grove Assassin 33% before, 20% now; Ranger 23 / 25% before, 23 / 28% now; Warrior 8 / 10% before, 8 / 8% now; Bastion Assassin 13%, Ranger 13% before and 13%, 15% now.
+- Open: blind wins stay at 100% in every cell at every fraction tried, so the band "blind win 75-90%" is still not met, and the band "blind loses 8 or more points more HP" holds for Ranger, Mage and Cleric in most changed fights but not for the Warrior and Assassin floor builds. A stronger effect needs a lever outside the plan's ranges, for example a shorter cooldown (6 s still gave no blind defeats), a first-use delay, an interrupt that only counts skill damage, or enemies that hit harder at equal level. Recorded for the user to decide.
 
 #### Fallen Bastion enemies
 
@@ -656,7 +660,7 @@ Hollow Sentry:
 - Levels 8-12; Tank archetype.
 - Uses 1.75× baseline Armor and 1.0× baseline Resistance instead of the normal Tank Defense multiplier.
 - Shield Wall grants 35% incoming-damage reduction to the Sentry and one ally until the Sentry's next action. Cooldown: 7 seconds.
-- Shield Bash has a 1.8-second telegraph, deals 220% Physical Power, and has a 60% base Stun chance. Cooldown: 10 seconds. It is interrupted if the hero deals 10% of the Sentry's maximum HP during the telegraph. It had no telegraph, 90% Power and an 8-second cooldown until 2026-11-07 (Step 12.3).
+- Shield Bash has a 1.8-second telegraph, deals 220% Physical Power, and has a 60% base Stun chance. Cooldown: 10 seconds. It is interrupted if the hero deals 25% of the Sentry's maximum HP during the telegraph (10% from 2026-11-07 until 2026-11-08). It had no telegraph, 90% Power and an 8-second cooldown until 2026-11-07 (Step 12.3).
 
 Fallen Arbalist:
 
@@ -1743,6 +1747,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-08: Thornbeast Bramble Slam and Hollow Sentry Shield Bash interrupt requirement raised from 10% to 25% of the enemy's maximum HP, so an ordinary hit no longer cancels the wind-up by accident. Other numbers unchanged.
 - 2026-11-07: Mid-game heavy telegraphs: Thornbeast Bramble Slam (1.8 s wind-up, 220%, 9 s cooldown, interrupt at 10% max HP) and Hollow Sentry Shield Bash (1.8 s wind-up, 220%, 10 s cooldown, interrupt at 10% max HP). Telegraph and interruptible rule conditions now look at every enemy.
 - 2026-11-04: Mend cleanses one Poison or Bleed; the Ward Charm supply; brewing supplies from materials; Deserters can snatch a supply.
 - 2026-11-04: The Roster tab gets a Save file panel: export a backup file, load one, or start over, each with a confirmation where it deletes data.
