@@ -119,6 +119,7 @@ export const EXPEDITION_IDS = [
   'fallen-bastion',
   'fracture-via-grove',
   'fracture-via-bastion',
+  'sunken-causeway',
 ] as const
 export type ExpeditionId = (typeof EXPEDITION_IDS)[number]
 

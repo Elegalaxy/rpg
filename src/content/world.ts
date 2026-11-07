@@ -4,6 +4,8 @@
  * account. The gate on the Fracture Gate is personal, because it reads what this hero has defeated.
  */
 
+import { enemies } from './enemies.ts'
+
 export type NodeKind = 'town' | 'zone' | 'fracture'
 
 export type ResourceNode = {
@@ -60,6 +62,7 @@ export const SPLINTERED_ROAD_NODE = 'splintered-road'
 export const WITHERED_GROVE_NODE = 'withered-grove'
 export const FALLEN_BASTION_NODE = 'fallen-bastion'
 export const FRACTURE_GATE_NODE = 'fracture-gate'
+export const DROWNED_CAUSEWAY_NODE = 'drowned-causeway'
 
 export const nodes: { readonly [id: string]: WorldNode } = {
   [GREYHAVEN_ID]: {
@@ -101,6 +104,18 @@ export const nodes: { readonly [id: string]: WorldNode } = {
     eliteEnemyId: 'echo-knight',
     discoveryId: 'node:fallen-bastion',
   },
+  [DROWNED_CAUSEWAY_NODE]: {
+    id: DROWNED_CAUSEWAY_NODE,
+    name: 'Drowned Causeway',
+    kind: 'zone',
+    levels: { min: 17, max: 22 },
+    encounterIds: ['leech-swarm', 'raider', 'causeway-mixed', 'tidebound-colossus'],
+    drawEncounterIds: ['causeway-mixed', 'causeway-deep', 'leech-swarm'],
+    resource: { id: 'riftglass-shoal', name: 'Riftglass Shoal', materialId: 'riftglass', quantity: 3 },
+    eliteEnemyId: 'tidebound-colossus',
+    gate: { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] },
+    discoveryId: 'node:drowned-causeway',
+  },
   [FRACTURE_GATE_NODE]: {
     id: FRACTURE_GATE_NODE,
     name: 'Fracture Gate',
@@ -119,6 +134,7 @@ export const legs: readonly Leg[] = [
   { from: SPLINTERED_ROAD_NODE, to: FALLEN_BASTION_NODE, travelMs: LEG_TRAVEL_MS },
   { from: WITHERED_GROVE_NODE, to: FRACTURE_GATE_NODE, travelMs: LEG_TRAVEL_MS },
   { from: FALLEN_BASTION_NODE, to: FRACTURE_GATE_NODE, travelMs: LEG_TRAVEL_MS },
+  { from: SPLINTERED_ROAD_NODE, to: DROWNED_CAUSEWAY_NODE, travelMs: LEG_TRAVEL_MS },
 ]
 
 /** Route ids match the expedition ids the simulation accepts. */
@@ -148,6 +164,11 @@ export const routes: { readonly [id: string]: Route } = {
     name: 'Fracture Gate through the Bastion',
     nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, FALLEN_BASTION_NODE, FRACTURE_GATE_NODE],
   },
+  'sunken-causeway': {
+    id: 'sunken-causeway',
+    name: 'Road to the Drowned Causeway',
+    nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, DROWNED_CAUSEWAY_NODE],
+  },
 }
 
 /** What a hero's record says about the Gate. Personal to the hero. */
@@ -160,7 +181,7 @@ export function gateBlock(node: WorldNode, record: HeroWorldRecord): string | nu
   if (node.gate === undefined) return null
   const missing = node.gate.defeatedEnemyIds.filter((id) => !record.defeatedEnemyIds.includes(id))
   if (missing.length === 0) return null
-  return `Defeat ${missing.join(' and ')} first.`
+  return `Defeat ${missing.map((id) => enemies[id]?.name ?? id).join(' and ')} first.`
 }
 
 /** The boss at a node is shown to a hero who has arrived there. Nothing else reveals it. */

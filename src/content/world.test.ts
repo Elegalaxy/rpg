@@ -17,12 +17,12 @@ import {
 } from './world.ts'
 
 describe('Fractured Frontier content', () => {
-  it('has the five decided nodes and no others', () => {
-    expect(Object.keys(nodes).sort()).toEqual(['fallen-bastion', 'fracture-gate', 'greyhaven', 'splintered-road', 'withered-grove'])
+  it('has the six decided nodes and no others', () => {
+    expect(Object.keys(nodes).sort()).toEqual(['drowned-causeway', 'fallen-bastion', 'fracture-gate', 'greyhaven', 'splintered-road', 'withered-grove'])
     for (const [id, node] of Object.entries(nodes)) expect(node.id).toBe(id)
     expect(nodes[GREYHAVEN_ID]?.kind).toBe('town')
     expect(nodes[FRACTURE_GATE_NODE]?.kind).toBe('fracture')
-    expect(new Set(Object.values(nodes).map((node) => node.discoveryId)).size).toBe(5)
+    expect(new Set(Object.values(nodes).map((node) => node.discoveryId)).size).toBe(6)
   })
 
   it('resolves every reference: legs, routes, encounters, enemies, and materials', () => {
@@ -43,9 +43,9 @@ describe('Fractured Frontier content', () => {
     for (const node of Object.values(nodes)) {
       if (node.resource === undefined) continue
       expect(dropped.has(node.resource.materialId), node.resource.id).toBe(true)
-      expect(node.resource.quantity).toBe(4)
+      expect(node.resource.quantity).toBe(node.id === 'drowned-causeway' ? 3 : 4)
     }
-    expect(Object.values(nodes).filter((node) => node.resource !== undefined)).toHaveLength(3)
+    expect(Object.values(nodes).filter((node) => node.resource !== undefined)).toHaveLength(4)
   })
 
   it('walks each route over real legs, and matches the expedition ids', () => {
@@ -80,13 +80,48 @@ describe('Fractured Frontier content', () => {
   it('opens the Gate only after both elites, per hero, and shows the boss on arrival', () => {
     const gate = nodes[FRACTURE_GATE_NODE]
     if (gate === undefined) throw new Error('no gate')
-    expect(gateBlock(gate, { defeatedEnemyIds: [] })).toBe('Defeat rootmaw-stalker and echo-knight first.')
-    expect(gateBlock(gate, { defeatedEnemyIds: ['rootmaw-stalker'] })).toBe('Defeat echo-knight first.')
-    expect(gateBlock(gate, { defeatedEnemyIds: ['echo-knight'] })).toBe('Defeat rootmaw-stalker first.')
+    expect(gateBlock(gate, { defeatedEnemyIds: [] })).toBe('Defeat Rootmaw Stalker and Echo Knight first.')
+    expect(gateBlock(gate, { defeatedEnemyIds: ['rootmaw-stalker'] })).toBe('Defeat Echo Knight first.')
+    expect(gateBlock(gate, { defeatedEnemyIds: ['echo-knight'] })).toBe('Defeat Rootmaw Stalker first.')
     expect(gateBlock(gate, { defeatedEnemyIds: ['echo-knight', 'rootmaw-stalker'] })).toBeNull()
     expect(gateBlock(nodes['splintered-road']!, { defeatedEnemyIds: [] })).toBeNull()
     expect(bossRevealed(gate, false)).toBe(false)
     expect(bossRevealed(gate, true)).toBe(true)
     expect(bossRevealed(nodes['withered-grove']!, true)).toBe(false)
+  })
+})
+
+describe('Drowned Causeway', () => {
+  it('is a gated zone reached by a leg from the Splintered Road, ending in the Colossus', () => {
+    const node = nodes['drowned-causeway']
+    if (node === undefined) throw new Error('no causeway')
+    expect(node).toMatchObject({
+      name: 'Drowned Causeway',
+      kind: 'zone',
+      levels: { min: 17, max: 22 },
+      encounterIds: ['leech-swarm', 'raider', 'causeway-mixed', 'tidebound-colossus'],
+      drawEncounterIds: ['causeway-mixed', 'causeway-deep', 'leech-swarm'],
+      eliteEnemyId: 'tidebound-colossus',
+      resource: { id: 'riftglass-shoal', name: 'Riftglass Shoal', materialId: 'riftglass', quantity: 3 },
+    })
+    expect(node.gate?.defeatedEnemyIds).toEqual(['rootmaw-stalker', 'echo-knight'])
+    expect(legs.some((leg) => leg.from === 'splintered-road' && leg.to === 'drowned-causeway' && leg.travelMs === LEG_TRAVEL_MS)).toBe(true)
+    expect(routes['sunken-causeway']?.nodeIds).toEqual(['greyhaven', 'splintered-road', 'drowned-causeway'])
+    expect(routeEncounterIds(routes['sunken-causeway']!)).toEqual([
+      'shardling-pair',
+      'wolf-pair',
+      'deserter',
+      'leech-swarm',
+      'raider',
+      'causeway-mixed',
+      'tidebound-colossus',
+    ])
+  })
+
+  it('names enemies, not ids, in the gate message', () => {
+    const node = nodes['drowned-causeway']!
+    expect(gateBlock(node, { defeatedEnemyIds: [] })).toBe('Defeat Rootmaw Stalker and Echo Knight first.')
+    expect(gateBlock(node, { defeatedEnemyIds: ['echo-knight'] })).toBe('Defeat Rootmaw Stalker first.')
+    expect(gateBlock(node, { defeatedEnemyIds: ['echo-knight', 'rootmaw-stalker'] })).toBeNull()
   })
 })

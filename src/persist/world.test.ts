@@ -66,11 +66,11 @@ describe('node states', () => {
     save = { ...save, account: { ...save.account, discoveries: [...save.account.discoveries, 'node:fracture-gate'] } }
     expect(nodeStatus(node('fracture-gate'), save, selectedHero(save))).toEqual({
       state: 'locked',
-      reason: 'Defeat rootmaw-stalker and echo-knight first.',
+      reason: 'Defeat Rootmaw Stalker and Echo Knight first.',
     })
     const hero = selectedHero(save)!
     const one = { ...hero, defeatedEnemyIds: ['rootmaw-stalker'] }
-    expect(nodeStatus(node('fracture-gate'), save, one).reason).toBe('Defeat echo-knight first.')
+    expect(nodeStatus(node('fracture-gate'), save, one).reason).toBe('Defeat Echo Knight first.')
     const both = { ...hero, defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] }
     expect(nodeStatus(node('fracture-gate'), save, both).state).toBe('discovered')
     const other = createHero(save, { name: 'Cinder', race: 'elf', classId: 'mage' })
@@ -149,7 +149,7 @@ describe('starting a route', () => {
     expect(canStartRoute(known, 'withered-grove')).toEqual({ ok: true })
     expect(canStartRoute(known, 'fracture-via-grove')).toEqual({
       ok: false,
-      reason: 'Fracture Gate: Defeat rootmaw-stalker and echo-knight first.',
+      reason: 'Fracture Gate: Defeat Rootmaw Stalker and Echo Knight first.',
     })
   })
 })
@@ -229,7 +229,7 @@ describe('recording progress', () => {
     expect(hero.clearedNodeIds).toEqual(['splintered-road', 'withered-grove'])
     expect(hero.defeatedEnemyIds).toEqual(['rootmaw-stalker'])
     expect(save.account.discoveries).toContain('node:fracture-gate')
-    expect(nodeStatus(node('fracture-gate'), save, hero).reason).toBe('Defeat echo-knight first.')
+    expect(nodeStatus(node('fracture-gate'), save, hero).reason).toBe('Defeat Echo Knight first.')
     const bastion = {
       ...save,
       heroes: save.heroes.map((h) => ({ ...h, defeatedEnemyIds: [...h.defeatedEnemyIds, 'echo-knight'] })),
@@ -310,5 +310,53 @@ describe('discovery notices', () => {
     expect(newlyDiscovered(['node:greyhaven', 'node:splintered-road'], ['node:greyhaven', 'node:splintered-road', 'node:withered-grove'])).toEqual(['Withered Grove'])
     expect(newlyDiscovered(['node:withered-grove'], ['node:withered-grove'])).toEqual([])
     expect(newlyDiscovered([], ['node:unknown-place'])).toEqual([])
+  })
+})
+
+describe('Drowned Causeway in the save', () => {
+  it('is discovered when the Splintered Road is cleared, and stays gated on both elites', () => {
+    const save = withRun('sunken-causeway')
+    expect(fightNodeIds(routes['sunken-causeway']!)).toEqual([
+      'splintered-road',
+      'splintered-road',
+      'splintered-road',
+      'drowned-causeway',
+      'drowned-causeway',
+      'drowned-causeway',
+      'drowned-causeway',
+    ])
+    victoryFor(save.expedition!, 3)
+    const next = recordProgress(save)
+    expect(next.account.discoveries).toContain('node:drowned-causeway')
+    const hero = selectedHero(next)!
+    expect(nodeStatus(node('drowned-causeway'), next, hero)).toEqual({
+      state: 'locked',
+      reason: 'Defeat Rootmaw Stalker and Echo Knight first.',
+    })
+    expect(canStartRoute({ ...next, expedition: null }, 'sunken-causeway')).toEqual({
+      ok: false,
+      reason: 'Drowned Causeway: Defeat Rootmaw Stalker and Echo Knight first.',
+    })
+    const ready = {
+      ...next,
+      expedition: null,
+      heroes: next.heroes.map((h) => ({ ...h, defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] })),
+    }
+    expect(nodeStatus(node('drowned-causeway'), ready, selectedHero(ready)!).state).toBe('discovered')
+    expect(canStartRoute(ready, 'sunken-causeway').ok).toBe(true)
+  })
+
+  it('records the Colossus as a defeated elite and lists the route info with its enemies', () => {
+    let save = withRun('sunken-causeway')
+    victoryFor(save.expedition!, 7)
+    save = recordProgress(save)
+    const hero = selectedHero(save)!
+    expect(hero.defeatedEnemyIds).toEqual(['tidebound-colossus'])
+    expect(hero.clearedNodeIds).toEqual(['splintered-road', 'drowned-causeway'])
+    const info = routeInfo('sunken-causeway', save)
+    expect(info.enemyNames).toEqual(expect.arrayContaining(['Mire Leech', 'Causeway Raider', 'Drowned Bulwark', 'Tidebound Colossus']))
+    expect(info.levels).toEqual({ min: 1, max: 22 })
+    expect(info.resources.map((entry) => entry.materialId)).toEqual(['scrap', 'riftglass'])
+    expect(info.fights).toBe(7)
   })
 })

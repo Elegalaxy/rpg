@@ -18,3 +18,11 @@ describe('world map without a hero', () => {
     expect(html).not.toContain('hero-marker')
   })
 })
+
+describe('world map with the Drowned Causeway', () => {
+  it('shows the Causeway node as undiscovered', () => {
+    const html = renderToStaticMarkup(<MapView />)
+    expect(html).toContain('Drowned Causeway')
+    expect(html).toContain('aria-label="Drowned Causeway, locked. Not discovered yet."')
+  })
+})
