@@ -43,6 +43,7 @@ export function bonusesDue(hero: SavedHero): Bonus[] {
   }
   if (reached('rootmaw-stalker')) add('elite:rootmaw-stalker', 'First defeat of the Rootmaw Stalker', ELITE_BONUS)
   if (reached('echo-knight')) add('elite:echo-knight', 'First defeat of the Echo Knight', ELITE_BONUS)
+  if (reached('tidebound-colossus')) add('elite:tidebound-colossus', 'First defeat of the Tidebound Colossus', ELITE_BONUS)
   if (reached('fractured-warden')) add('boss:fractured-warden', 'First defeat of the Fractured Warden', BOSS_BONUS)
   for (let rank = 1; rank <= hero.echoRank; rank += 1) add(`rank:${rank}`, `Echo rank ${rank} first unlocked`, RANK_BONUS)
   return due

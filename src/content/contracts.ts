@@ -1,6 +1,6 @@
 import { encounters } from './encounters.ts'
 import { enemies } from './enemies.ts'
-import { nodes, type WorldNode } from './world.ts'
+import { gateBlock, nodes, type HeroWorldRecord, type WorldNode } from './world.ts'
 
 /**
  * Greyhaven's contract board (G7). A contract asks for a number of units, which are enemies defeated
@@ -14,6 +14,8 @@ export type ContractTarget =
   | { kind: 'fights'; nodeId: string }
   /** Win one of these encounters. Each won fight counts. */
   | { kind: 'encounters'; encounterIds: readonly string[] }
+  /** Bring this material home. Counts what the expedition secures at settlement. */
+  | { kind: 'secure'; materialId: string }
 
 export type ContractReward = {
   xp: number
@@ -94,11 +96,16 @@ export const BOUNTY_COUNT = { min: 3, max: 8 } as const
 export const PATROL_COUNT = { min: 3, max: 6 } as const
 /** Shardlings come in pairs, so a Shardling bounty asks for twice as many. */
 const PAIRED_ENEMIES = ['fracture-shardling']
+/** Salvage: bring home 6 to 12 riftglass. Offered only for a zone whose resource is riftglass (the Causeway). */
+export const SALVAGE_COUNT = { min: 6, max: 12 } as const
+export const SALVAGE_MATERIAL = 'riftglass'
+export const SALVAGE_LEVEL = 20
+export const SALVAGE_CHANCE = 1 / 6
 export const REWARD_ROLL = { min: 0.8, max: 1.3 } as const
 export const ELITE_CHANCE = 1 / 8
 export const PATROL_CHANCE = 1 / 4
 
-type Pick = { kind: 'bounty' | 'patrol' | 'elite'; key: string; level: number; materialId: string; zoneName: string; target: ContractTarget; name: string; noun: string }
+type Pick = { kind: 'bounty' | 'patrol' | 'elite' | 'salvage'; key: string; level: number; materialId: string; zoneName: string; target: ContractTarget; name: string; noun: string }
 
 function plural(name: string): string {
   if (name.endsWith('f')) return `${name.slice(0, -1)}ves`
@@ -122,12 +129,20 @@ function zoneMonsters(node: WorldNode): { enemyId: string; level: number }[] {
   return found
 }
 
-/** Everything a board could offer for these discoveries, by kind. */
-export function boardPool(discoveries: readonly string[]): { bounty: Pick[]; patrol: Pick[]; elite: Pick[] } {
+/**
+ * Everything a board could offer for these discoveries, by kind. With a hero's record, a zone the hero
+ * cannot enter yet (its gate is not met) offers nothing, the same rule the route start uses.
+ */
+export function boardPool(
+  discoveries: readonly string[],
+  record?: HeroWorldRecord,
+): { bounty: Pick[]; patrol: Pick[]; elite: Pick[]; salvage: Pick[] } {
   const bounty: Pick[] = []
   const patrol: Pick[] = []
   const elite: Pick[] = []
+  const salvage: Pick[] = []
   for (const node of discoveredZones(discoveries)) {
+    if (record !== undefined && gateBlock(node, record) !== null) continue
     const material = node.resource?.materialId ?? 'scrap'
     const monsters = zoneMonsters(node)
     for (const monster of monsters) {
@@ -156,6 +171,18 @@ export function boardPool(discoveries: readonly string[]): { bounty: Pick[]; pat
         noun: 'fights',
       })
     }
+    if (node.resource?.materialId === SALVAGE_MATERIAL) {
+      salvage.push({
+        kind: 'salvage',
+        key: `secure:${SALVAGE_MATERIAL}`,
+        level: SALVAGE_LEVEL,
+        materialId: 'scrap',
+        zoneName: node.name,
+        target: { kind: 'secure', materialId: SALVAGE_MATERIAL },
+        name: 'Salvage: Riftglass',
+        noun: SALVAGE_MATERIAL,
+      })
+    }
     const eliteId = node.eliteEnemyId
     const eliteDef = eliteId === undefined ? undefined : enemies[eliteId]
     const eliteFight = node.encounterIds.find((id) => encounters[id]?.members.some((member) => member.enemyId === eliteId))
@@ -173,7 +200,7 @@ export function boardPool(discoveries: readonly string[]): { bounty: Pick[]; pat
       })
     }
   }
-  return { bounty, patrol, elite }
+  return { bounty, patrol, elite, salvage }
 }
 
 function between(next: () => number, min: number, max: number): number {
@@ -184,6 +211,7 @@ function between(next: () => number, min: number, max: number): number {
 export function targetKey(target: ContractTarget): string {
   if (target.kind === 'kill') return `kill:${target.enemyId}`
   if (target.kind === 'fights') return `fights:${target.nodeId}`
+  if (target.kind === 'secure') return `secure:${target.materialId}`
   return `encounter:${target.encounterIds.join('+')}`
 }
 
@@ -191,14 +219,28 @@ export function targetKey(target: ContractTarget): string {
  * Roll one offer. `next` gives floats in [0, 1). An offer whose target is already in `avoid` is
  * rolled again, up to a few times. Null when nothing is discovered.
  */
-export function rollContract(id: string, discoveries: readonly string[], next: () => number, avoid: readonly string[] = []): ContractDef | null {
-  const pool = boardPool(discoveries)
-  if (pool.bounty.length + pool.patrol.length + pool.elite.length === 0) return null
+export function rollContract(
+  id: string,
+  discoveries: readonly string[],
+  next: () => number,
+  avoid: readonly string[] = [],
+  record?: HeroWorldRecord,
+): ContractDef | null {
+  const pool = boardPool(discoveries, record)
+  if (pool.bounty.length + pool.patrol.length + pool.elite.length + pool.salvage.length === 0) return null
   let pick: Pick | undefined
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const kindRoll = next()
-    const list = pool.elite.length > 0 && kindRoll < ELITE_CHANCE ? pool.elite : pool.patrol.length > 0 && kindRoll < ELITE_CHANCE + PATROL_CHANCE ? pool.patrol : pool.bounty
-    const candidates = list.length > 0 ? list : pool.bounty.length > 0 ? pool.bounty : pool.patrol
+    const salvageOpen = pool.salvage.length > 0 && kindRoll >= ELITE_CHANCE + PATROL_CHANCE && kindRoll < ELITE_CHANCE + PATROL_CHANCE + SALVAGE_CHANCE
+    const list =
+      pool.elite.length > 0 && kindRoll < ELITE_CHANCE
+        ? pool.elite
+        : pool.patrol.length > 0 && kindRoll < ELITE_CHANCE + PATROL_CHANCE
+          ? pool.patrol
+          : salvageOpen
+            ? pool.salvage
+            : pool.bounty
+    const candidates = list.length > 0 ? list : pool.bounty.length > 0 ? pool.bounty : pool.patrol.length > 0 ? pool.patrol : pool.elite.length > 0 ? pool.elite : pool.salvage
     pick = candidates[Math.floor(next() * candidates.length)]
     if (pick !== undefined && !avoid.includes(pick.key)) break
   }
@@ -209,9 +251,11 @@ export function rollContract(id: string, discoveries: readonly string[], next: (
     if (pick.target.kind === 'kill' && PAIRED_ENEMIES.includes(pick.target.enemyId)) count *= 2
   } else if (pick.kind === 'patrol') {
     count = between(next, PATROL_COUNT.min, PATROL_COUNT.max)
+  } else if (pick.kind === 'salvage') {
+    count = between(next, SALVAGE_COUNT.min, SALVAGE_COUNT.max)
   }
   const factor = REWARD_ROLL.min + next() * (REWARD_ROLL.max - REWARD_ROLL.min)
-  const base = rewardFor(count, pick.level, pick.materialId)
+  const base = rewardFor(pick.kind === 'salvage' ? Math.ceil(count / 3) : count, pick.level, pick.materialId)
   const reward: ContractReward = {
     xp: roundHalfUp(base.xp * factor),
     gold: roundHalfUp(base.gold * factor),
@@ -223,6 +267,8 @@ export function rollContract(id: string, discoveries: readonly string[], next: (
       ? `Defeat ${count} ${pick.noun} (${pick.zoneName}).`
       : pick.kind === 'patrol'
         ? `Win ${count} fights ${pick.zoneName.endsWith('Road') ? 'on' : 'in'} the ${pick.zoneName}.`
-        : `Defeat the ${pick.noun} once.`
+        : pick.kind === 'salvage'
+          ? `Salvage: bring home ${count} ${pick.noun} (${pick.zoneName}).`
+          : `Defeat the ${pick.noun} once.`
   return { id, name: pick.name, description, target: pick.target, count, level: pick.level, reward }
 }

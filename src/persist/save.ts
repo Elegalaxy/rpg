@@ -119,7 +119,7 @@ function assertContractDef(value: unknown, label: string): asserts value is Cont
   whole(value.count, `${label} count`)
   check((value.count as number) >= 1, `${label} count must be at least 1`)
   whole(value.level, `${label} level`)
-  check(isRecord(value.target) && ['kill', 'fights', 'encounters'].includes(String(value.target.kind)), `${label} target is unknown`)
+  check(isRecord(value.target) && ['kill', 'fights', 'encounters', 'secure'].includes(String(value.target.kind)), `${label} target is unknown`)
   check(isRecord(value.reward), `${label} reward is missing`)
   const reward = value.reward as Record<string, unknown>
   whole(reward.xp, `${label} reward XP`)

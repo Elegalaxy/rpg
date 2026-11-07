@@ -368,4 +368,15 @@ describe('heirlooms keep up when the hero levels', () => {
     expect(now).toBeGreaterThan(level)
     expect(purseOf(settled).archive.find((item) => item.id === 'blade')?.itemLevel).toBe(Math.min(now, 9))
   })
+  it('pays 3 Legacy once for the first defeat of the Tidebound Colossus', () => {
+    const base = veteran()
+    const beaten = { ...base, heroes: base.heroes.map((h) => ({ ...h, defeatedEnemyIds: [...h.defeatedEnemyIds, 'tidebound-colossus'] })) }
+    const due = bonusesDue(hero(beaten)).find((bonus) => bonus.id === 'elite:tidebound-colossus')
+    expect(due).toMatchObject({ amount: 3, text: 'First defeat of the Tidebound Colossus' })
+    expect(bonusesDue(hero(base)).some((bonus) => bonus.id === 'elite:tidebound-colossus')).toBe(false)
+    const first = ok(reincarnate(beaten, 'hero-1', null))
+    expect(hero(first).claimedBonuses).toContain('elite:tidebound-colossus')
+    const again = { ...first, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true, defeatedEnemyIds: ['tidebound-colossus'] })) }
+    expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:tidebound-colossus')).toBe(false)
+  })
 })

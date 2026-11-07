@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, contractList, contracts, rewardFor, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
+import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, boardPool, contractList, contracts, rewardFor, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
 import { createRng, nextFloat } from '../sim/rng.ts'
 import { encounters } from '../content/encounters.ts'
 import { enemies } from '../content/enemies.ts'
@@ -11,10 +11,10 @@ import { awardXp, xpFromEnemies } from '../sim/progression.ts'
 import { humanOrdinaryXp } from '../sim/races/human.ts'
 
 import { selectedHero } from './character.ts'
-import { abandonContract, acceptContract, addContractProgress, collectContract, isComplete, unitsFrom } from './contracts.ts'
+import { abandonContract, acceptContract, addContractProgress, collectContract, isComplete, refreshBoard, unitsFrom, withFilledBoard } from './contracts.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
-import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
+import { assertSaveData, contractFor, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
 import { outcomeSummary, settleExpedition } from './world.ts'
 
 /** A new hero whose board holds the six old fixed contracts, so tests can name them. */
@@ -80,7 +80,7 @@ describe('the contract board', () => {
         expect(encounterEnemies.has(target.enemyId), def.id).toBe(true)
       } else if (target.kind === 'fights') {
         expect(nodes[target.nodeId]?.encounterIds.length, def.id).toBeGreaterThan(0)
-      } else {
+      } else if (target.kind === 'encounters') {
         for (const id of target.encounterIds) expect(encounters[id], def.id).toBeDefined()
       }
       expect(def.count).toBeGreaterThan(0)
@@ -348,3 +348,118 @@ describe('the rolled board', () => {
     expect(board).toHaveLength(BOARD_SIZE)
   })
 })
+
+describe('Salvage and the Causeway gate', () => {
+  const found = [...newSave().account.discoveries, 'node:withered-grove', 'node:fallen-bastion', 'node:drowned-causeway']
+  const open = { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] }
+  const shut = { defeatedEnemyIds: [] as string[] }
+  const causewayKeys = (pool: ReturnType<typeof boardPool>) =>
+    [...pool.bounty, ...pool.patrol, ...pool.elite, ...pool.salvage].filter((entry) => entry.zoneName === 'Drowned Causeway').map((entry) => entry.key)
+
+  it('offers Salvage only for the Causeway, once it is discovered', () => {
+    expect(boardPool(found).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass'])
+    expect(boardPool(newSave().account.discoveries).salvage).toEqual([])
+    expect(boardPool([...newSave().account.discoveries, 'node:withered-grove', 'node:fallen-bastion']).salvage).toEqual([])
+    expect(targetKey({ kind: 'secure', materialId: 'riftglass' })).toBe('secure:riftglass')
+  })
+
+  it('offers no Causeway contract to a hero who cannot enter yet, and all of them to one who can', () => {
+    expect(causewayKeys(boardPool(found, shut))).toEqual([])
+    expect(causewayKeys(boardPool(found, { defeatedEnemyIds: ['rootmaw-stalker'] }))).toEqual([])
+    const keys = causewayKeys(boardPool(found, open))
+    expect(keys).toEqual(expect.arrayContaining(['secure:riftglass', 'encounter:tidebound-colossus', 'fights:drowned-causeway']))
+    // Without a hero record the pool is unfiltered, as before.
+    expect(causewayKeys(boardPool(found))).toEqual(keys)
+    // Other zones are not affected by the Causeway gate.
+    expect(boardPool(found, shut).patrol.map((entry) => entry.key)).toContain('fights:fallen-bastion')
+  })
+
+  it('rolls a Salvage contract of 6 to 12 riftglass paying rewardFor(ceil(N / 3), 20, scrap) with the usual roll', () => {
+    const seen: ContractDef[] = []
+    for (let seed = 1; seed <= 400 && seen.length < 12; seed += 1) {
+      const rng = createRng(seed)
+      const offer = rollContract(`s-${seed}`, found, () => nextFloat(rng), [], open)
+      if (offer?.target.kind === 'secure') seen.push(offer)
+    }
+    expect(seen.length).toBeGreaterThan(0)
+    for (const offer of seen) {
+      expect(offer.count).toBeGreaterThanOrEqual(6)
+      expect(offer.count).toBeLessThanOrEqual(12)
+      expect(offer.target).toEqual({ kind: 'secure', materialId: 'riftglass' })
+      expect(offer.level).toBe(20)
+      expect(offer.description).toBe(`Salvage: bring home ${offer.count} riftglass (Drowned Causeway).`)
+      const base = rewardFor(Math.ceil(offer.count / 3), 20, 'scrap')
+      expect(offer.reward.materialId).toBe('scrap')
+      expect(offer.reward.gold).toBeGreaterThanOrEqual(Math.floor(base.gold * 0.8))
+      expect(offer.reward.gold).toBeLessThanOrEqual(Math.ceil(base.gold * 1.3))
+    }
+    expect(rewardFor(Math.ceil(7 / 3), 20, 'scrap')).toEqual({ xp: 81, gold: 60, materialId: 'scrap', materialQuantity: 2 })
+  })
+
+  it('never rolls a Causeway contract onto the board of a hero who cannot enter', () => {
+    const base = { ...hero(heroSave()), defeatedEnemyIds: [] as string[] }
+    for (let rolls = 0; rolls < 60; rolls += 1) {
+      const filled = withFilledBoard({ ...base, purse: { ...base.purse, board: [], boardRolls: rolls * 4 } }, found)
+      expect(filled.purse.board).toHaveLength(BOARD_SIZE)
+      for (const offer of filled.purse.board) {
+        expect(targetKey(offer.target)).not.toBe('secure:riftglass')
+        expect(targetKey(offer.target)).not.toContain('drowned-causeway')
+        expect(targetKey(offer.target)).not.toContain('tidebound-colossus')
+        expect(offer.description).not.toContain('Drowned Causeway')
+      }
+    }
+  })
+
+  it('keeps a Causeway contract the hero already holds valid, through a board refresh and a collect', () => {
+    const held = rollSalvage()
+    let save = heroSave()
+    save = updatePurse(save, { board: [held, ...purseOf(save).board.slice(0, 3)], contracts: [{ contractId: held.id, progress: held.count }] })
+    save = { ...save, heroes: save.heroes.map((h) => ({ ...h, defeatedEnemyIds: [] })), account: { ...save.account, discoveries: found } }
+    const refreshed = refreshBoard(save, 'hero-1')
+    expect(purseOf(refreshed).board.some((entry) => entry.id === held.id)).toBe(true)
+    expect(contractFor(purseOf(refreshed), held.id)).toBeDefined()
+    expect(purseOf(refreshed).board.filter((entry) => entry.id !== held.id).every((entry) => !targetKey(entry.target).includes('riftglass'))).toBe(true)
+    const paid = ok(collectContract(refreshed, 'hero-1', held.id))
+    expect(purseOf(paid).materials.scrap).toBe(held.reward.materialQuantity)
+  })
+
+  it('counts riftglass secured at settlement, never unsecured, and never past the target', () => {
+    const def = rollSalvage()
+    const run = (secured: { materialId: string; quantity: number }[], unsecured: { materialId: string; quantity: number }[]) =>
+      ({ history: [], secured, unsecured, id: 'sunken-causeway' }) as never
+    expect(unitsFrom(run([{ materialId: 'riftglass', quantity: 7 }, { materialId: 'scrap', quantity: 9 }], [{ materialId: 'riftglass', quantity: 5 }]), def)).toBe(7)
+    expect(unitsFrom(run([], [{ materialId: 'riftglass', quantity: 5 }]), def)).toBe(0)
+    const save = updatePurse(newSaveWithHero(), { contracts: [{ contractId: def.id, progress: def.count - 1 }], board: [def] })
+    const next = addContractProgress(save, run([{ materialId: 'riftglass', quantity: 30 }], []))
+    expect(purseOf(next).contracts[0]?.progress).toBe(def.count)
+    const early = addContractProgress(updatePurse(save, { contracts: [{ contractId: def.id, progress: 0 }] }), run([{ materialId: 'riftglass', quantity: 2 }], []))
+    expect(purseOf(early).contracts[0]?.progress).toBe(2)
+    expect(() => assertSaveData(next)).not.toThrow()
+    expect(parseSave(serializeSave(next)).ok).toBe(true)
+  })
+
+  it('leaves the contracts of a board with no Causeway exactly as before', () => {
+    const early = newSave().account.discoveries
+    const a = createRng(11)
+    const b = createRng(11)
+    const plain = rollContract('x', early, () => nextFloat(a), [])
+    const gated = rollContract('x', early, () => nextFloat(b), [], shut)
+    expect(gated).toEqual(plain)
+  })
+})
+
+function rollSalvage(): ContractDef {
+  const discoveries = [...newSave().account.discoveries, 'node:drowned-causeway']
+  for (let seed = 1; seed <= 400; seed += 1) {
+    const r = createRng(seed)
+    const rolled = rollContract('salvage-1', discoveries, () => nextFloat(r), [])
+    if (rolled?.target.kind === 'secure') return rolled
+  }
+  throw new Error('no salvage offer rolled')
+}
+
+function newSaveWithHero(): SaveData {
+  const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+  if (!made.ok) throw new Error(made.reason)
+  return made.save
+}

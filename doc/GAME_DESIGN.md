@@ -789,6 +789,8 @@ Contracts and Legacy (documented now; built in part 7):
 - New contract kind Salvage: "bring home N riftglass", N from 6 to 12. It counts riftglass secured at settlement. The reward is `rewardFor(ceil(N / 3), 20, 'scrap')`, then the usual 80-130% roll. The board pool (`boardPool`) offers it once the Causeway is discovered.
 - The first-ever defeat of the Tidebound Colossus gives 3 Legacy once (a milestone in the reincarnation list).
 
+Built in Step 13.1 part 7: Salvage is offered only for a zone whose resource is riftglass, at about 1 offer in 6 (after the elite and patrol shares, so boards without the Causeway roll exactly as before), counts the riftglass in the run's secured loot at settlement (safe return, retreat, or what the defeat pouch kept; unsecured loot is lost and does not count), and pays scrap at level 20. The board now offers Causeway contracts (bounties, patrol, Colossus elite, Salvage) only to a hero who can enter the Causeway, using the same gate as the route start (both elites defeated). A contract the hero already holds stays valid, and offers left over on a board refresh away on the next return. The Colossus Legacy bonus is per hero, like the other elite bonuses (`elite:tidebound-colossus`).
+
 XP intent: a Causeway-mixed win gives a level-18 hero about 87 XP, about 44 fights per level. The zone is the XP source for levels 16-24.
 
 Compatibility: no save version bump. Older saves load unchanged: the new node is undiscovered and the new material counts as 0.

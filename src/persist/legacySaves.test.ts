@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { BOARD_SIZE } from '../content/contracts.ts'
 
+import { recipesForSale } from './crafting.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, newSave, parseSave, purseOf, serializeSave } from './save.ts'
 
@@ -96,5 +97,18 @@ describe('a save from the first version of the game', () => {
     const second = parseSave(serializeSave(first.data))
     if (!second.ok) throw new Error(second.reason)
     expect(second.data).toEqual(first.data)
+  })
+  it('has no Causeway data: undiscovered, no riftglass, no Salvage offer, and the new recipes locked', () => {
+    const parsed = parseSave(oldestSave())
+    if (!parsed.ok) throw new Error(parsed.reason)
+    const save = parsed.data
+    expect(save.account.discoveries).not.toContain('node:drowned-causeway')
+    expect(save.account.discoveries.some((id) => id.startsWith('defeated:'))).toBe(false)
+    expect(purseOf(save).materials.riftglass ?? 0).toBe(0)
+    expect(purseOf(save).board.some((offer) => offer.target.kind === 'secure')).toBe(false)
+    expect(save.account.recipes).not.toContain('siphoning')
+    const rows = recipesForSale(save)
+    expect(rows.filter((row) => row.locked !== null).map((row) => row.modifierId)).toEqual(['hallowed', 'rending', 'siphoning'])
+    expect(Object.keys(save.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots'])
   })
 })

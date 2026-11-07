@@ -31,7 +31,7 @@ export function withFilledBoard(hero: SavedHero, discoveries: readonly string[])
   let rolls = hero.purse.boardRolls
   while (board.length < BOARD_SIZE) {
     const rng = createRng(deriveSeed(deriveSeed(BOARD_SEED, heroNumber(hero.id)), rolls))
-    const offer = rollContract(`${hero.id}-contract-${rolls + 1}`, discoveries, () => nextFloat(rng), board.map((entry) => targetKey(entry.target)))
+    const offer = rollContract(`${hero.id}-contract-${rolls + 1}`, discoveries, () => nextFloat(rng), board.map((entry) => targetKey(entry.target)), hero)
     rolls += 1
     if (offer === null) break
     board.push(offer)
@@ -149,9 +149,16 @@ export function unitsFrom(expedition: ExpeditionState, def: ContractDef): number
       if ((where[entry.index] ?? last) === target.nodeId) units += 1
     } else if (target.kind === 'encounters') {
       if (target.encounterIds.includes(entry.encounterId)) units += 1
+    } else if (target.kind === 'secure') {
+      continue
     } else {
       for (const member of encounters[entry.encounterId]?.members ?? []) if (member.enemyId === target.enemyId) units += 1
     }
+  }
+  if (def.target.kind === 'secure') {
+    // Counted from what the run brings home: a safe return, a retreat, or the defeat pouch.
+    const materialId = def.target.materialId
+    units += expedition.secured.filter((stack) => stack.materialId === materialId).reduce((sum, stack) => sum + stack.quantity, 0)
   }
   return units
 }
