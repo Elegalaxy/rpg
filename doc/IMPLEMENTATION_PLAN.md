@@ -978,6 +978,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Parts: (1) docs and the telegraph harness baseline; (2) telegraph and interruptible rules watch every enemy; (3) Thornbeast and Sentry numbers, measured and tuned; (4) UI; (5) offline check.
 - Progress:
   - 2026-11-07: Part 1. Docs written first. New `src/harness/telegraph.ts` and `--matrix telegraph` (every class floor build x wolf, road-mixed, thornbeast, sentry, arbalist, grove-mixed, bastion-mixed x rules/blind). Baselines saved before any content change.
+  - 2026-11-07: Part 2. In `src/sim/automation.ts`, a row with a `telegraph` ('present' or 'at most') or `interruptible` 'present' condition now takes as its focus the living enemy whose visible telegraph satisfies every such condition of the row (soonest-resolving, then lowest slot), over targetPriority (`watchedEnemy`). With no match the old path runs. Tests in `automation.test.ts` (slot-1 telegraph answered by a barrier row, at-most, interrupt row, absent unchanged). 805 tests.
 
 ## 8. Risks, and what would reveal them early
 

@@ -332,6 +332,77 @@ describe('priority conditions and target priorities', () => {
     expect(skipReasons(closed)).toContain('interruptible telegraph is absent')
   })
 
+  describe('rows that watch every enemy', () => {
+    const brace = makeSkill({
+      id: 'brace',
+      name: 'Brace',
+      effects: [{ kind: 'barrier', source: 'magical', coefficient: 1, durationSeconds: 8 }],
+    })
+    const twoEnemies = [
+      { defId: 'dummy', slot: 0 },
+      { defId: 'dummy', slot: 1 },
+    ]
+
+    it('answers a telegraph from the enemy in slot 1 even though the picked target is slot 0', () => {
+      const defs = defsFor([ready, brace])
+      const state = openPriority(
+        defs,
+        { equipped: [ready.id, brace.id], enemies: twoEnemies, rows: [{ skillId: brace.id, conditions: [{ kind: 'telegraph', operator: 'present' }] }] },
+        (combat) => {
+          enemyAt(combat, 1).telegraph = { tag: 'slam', resolvesAtMs: combat.hero.nextReadyMs + 1500 }
+        },
+      )
+      expect(heroAction(state)).toMatchObject({ skillId: brace.id })
+    })
+
+    it('an at-most telegraph row picks the enemy that matches, not the first one', () => {
+      const defs = defsFor([ready, brace])
+      const state = openPriority(
+        defs,
+        { equipped: [ready.id, brace.id], enemies: twoEnemies, rows: [{ skillId: brace.id, conditions: [{ kind: 'telegraph', operator: 'atMost', value: 1000 }] }] },
+        (combat) => {
+          enemyAt(combat, 0).telegraph = { tag: 'slam', resolvesAtMs: combat.hero.nextReadyMs + 5000 }
+          enemyAt(combat, 1).telegraph = { tag: 'slam', resolvesAtMs: combat.hero.nextReadyMs + 500 }
+        },
+      )
+      expect(heroAction(state)).toMatchObject({ skillId: brace.id })
+    })
+
+    it('an interrupt row hits the enemy that is winding up, and the soonest one first', () => {
+      const defs = defsFor([ready, brace])
+      const rows: PriorityRow[] = [{ skillId: ready.id, conditions: [{ kind: 'interruptible', operator: 'present' }] }]
+      const slotOne = openPriority(defs, { equipped: [ready.id], enemies: twoEnemies, rows }, (combat) => {
+        enemyAt(combat, 1).telegraph = { tag: 'slam', resolvesAtMs: combat.hero.nextReadyMs + 1500, interruptMaxHpFraction: 0.1 }
+      })
+      expect(heroAction(slotOne)).toMatchObject({ skillId: ready.id, targetId: enemyAt(slotOne, 1).id })
+
+      const soonest = openPriority(defs, { equipped: [ready.id], enemies: twoEnemies, rows }, (combat) => {
+        enemyAt(combat, 0).telegraph = { tag: 'slam', resolvesAtMs: combat.hero.nextReadyMs + 1800, interruptMaxHpFraction: 0.1 }
+        enemyAt(combat, 1).telegraph = { tag: 'slam', resolvesAtMs: combat.hero.nextReadyMs + 900, interruptMaxHpFraction: 0.1 }
+      })
+      expect(heroAction(soonest)).toMatchObject({ targetId: enemyAt(soonest, 1).id })
+    })
+
+    it('keeps the old path when no enemy matches, and leaves absent conditions alone', () => {
+      const defs = defsFor([ready, brace])
+      const none = openPriority(
+        defs,
+        { equipped: [ready.id, brace.id], enemies: twoEnemies, rows: [{ skillId: brace.id, conditions: [{ kind: 'telegraph', operator: 'present' }] }] },
+      )
+      expect(skipReasons(none)).toContain('telegraph is absent')
+      expect(heroAction(none)).toMatchObject({ action: 'basicAttack' })
+
+      const absent = openPriority(
+        defs,
+        { equipped: [ready.id, brace.id], enemies: twoEnemies, rows: [{ skillId: brace.id, conditions: [{ kind: 'telegraph', operator: 'absent' }] }] },
+        (combat) => {
+          enemyAt(combat, 1).telegraph = { tag: 'slam', resolvesAtMs: combat.hero.nextReadyMs + 1500 }
+        },
+      )
+      expect(heroAction(absent)).toMatchObject({ skillId: brace.id })
+    })
+  })
+
   it('ORs one skill through a later row with a different condition', () => {
     const defs = defsFor([ready])
     const state = openPriority(

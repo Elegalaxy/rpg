@@ -831,6 +831,42 @@ function defenseLabel(priority: 'lowestArmor' | 'lowestResistance'): string {
   return priority === 'lowestArmor' ? 'lowest armor' : 'lowest resistance'
 }
 
+/** A telegraph ('present' or 'at most') or an interruptible-present condition: the row watches every enemy. */
+function isWatchCondition(condition: AutomationCondition): boolean {
+  if (condition.kind === 'interruptible') return condition.operator === 'present'
+  if (condition.kind === 'telegraph') return condition.operator === 'present' || condition.operator === 'atMost'
+  return false
+}
+
+/**
+ * The living enemy a watching row answers: every watch condition of the row must pass for it. The enemy
+ * whose telegraph resolves soonest wins, then the lowest slot. Null when the row does not watch or no enemy matches.
+ */
+function watchedEnemy(state: CombatState, defs: GameDefs, hero: CombatHero, row: PriorityRow, timeMs: number): CombatActor | null {
+  const watch = (row.conditions ?? []).filter(isWatchCondition)
+  if (watch.length === 0) return null
+  let best: CombatActor | null = null
+  let bestResolves = 0
+  for (const enemy of livingEnemies(state)) {
+    let matches = true
+    for (const condition of watch) {
+      if (conditionFailure(state, defs, hero, enemy, condition, timeMs) !== null) {
+        matches = false
+        break
+      }
+    }
+    if (!matches) continue
+    const tagged = watch.find((condition) => condition.kind === 'telegraph')
+    const telegraph = visibleTelegraph(enemy, tagged !== undefined && tagged.kind === 'telegraph' ? tagged.tag : undefined)
+    const resolves = telegraph === null ? Number.MAX_SAFE_INTEGER : telegraph.resolvesAtMs
+    if (best === null || resolves < bestResolves || (resolves === bestResolves && enemy.slot < best.slot)) {
+      best = enemy
+      bestResolves = resolves
+    }
+  }
+  return best
+}
+
 function pickTarget(state: CombatState, hero: CombatHero, priority: TargetPriority | null): PickResult {
   const living = livingEnemies(state)
   if (living.length === 0) return { enemy: null, unrevealed: [], failure: null }
@@ -1000,15 +1036,18 @@ export function chooseHeroAction(
     const priority = row.targetPriority ?? globalPriority
     let focus: CombatActor | null = null
     if (rowNeedsEnemy(skill, row)) {
-      const picked = pickTarget(state, hero, priority)
-      for (const hidden of picked.unrevealed) {
-        events.push(priorityEvent(hero, timeMs, index, skill, 'skip', hidden))
+      focus = watchedEnemy(state, defs, hero, row, timeMs)
+      if (focus === null) {
+        const picked = pickTarget(state, hero, priority)
+        for (const hidden of picked.unrevealed) {
+          events.push(priorityEvent(hero, timeMs, index, skill, 'skip', hidden))
+        }
+        if (picked.enemy === null) {
+          events.push(priorityEvent(hero, timeMs, index, skill, 'skip', picked.failure ?? 'no target'))
+          continue
+        }
+        focus = picked.enemy
       }
-      if (picked.enemy === null) {
-        events.push(priorityEvent(hero, timeMs, index, skill, 'skip', picked.failure ?? 'no target'))
-        continue
-      }
-      focus = picked.enemy
     }
     const failed = conditionsFailure(state, defs, hero, focus, row, timeMs)
     if (failed !== null) {
