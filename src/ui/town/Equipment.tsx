@@ -8,6 +8,7 @@ import { changeIsBetter, previewEquip, statLines, statsFor } from '../../persist
 import { bagCapacity } from '../../persist/bag.ts'
 import { EQUIPMENT_SLOT_IDS, MODIFIER_STACK_CAP, gearGaps, modifierCapNotes, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
+import { Tag } from '../Kit.tsx'
 import { groupItems } from './groupItems.ts'
 import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
 
@@ -40,6 +41,23 @@ const STAT_LABELS = [
 
 function describeItem(item: ItemInstance): string {
   return `${itemName(item)}, item level ${item.itemLevel}, quality ${Math.round(item.quality * 100)}%, durability ${item.durability}/${item.maxDurability}`
+}
+
+/** One piece as a name over muted facts, with worn-down durability called out in colour and text. */
+function ItemFacts({ item }: { item: ItemInstance }) {
+  const fraction = item.maxDurability <= 0 ? 0 : item.durability / item.maxDurability
+  const wear = item.durability <= 0 ? 'bad' : fraction < 0.3 ? 'bad' : fraction < 0.6 ? 'gold' : 'plain'
+  return (
+    <span className="item-facts" aria-label={describeItem(item)}>
+      <strong>{itemName(item)}</strong>
+      <small className="row-note">
+        lvl {item.itemLevel} · {Math.round(item.quality * 100)}% quality ·{' '}
+        <Tag kind={wear} title="Durability">
+          {item.durability <= 0 ? '✕ Broken' : `${wear === 'bad' ? '▼ ' : ''}${item.durability}/${item.maxDurability}`}
+        </Tag>
+      </small>
+    </span>
+  )
 }
 
 function format(value: number, unit: string): string {
@@ -115,10 +133,8 @@ export function Equipment() {
                     </>
                   }
                 >
-                  <strong>{SLOT_LABELS[slot]}</strong>
-                  <span className="row-note">
-                    {item === null ? (disabled ? 'disabled by the two-handed weapon' : 'empty') : describeItem(item)}
-                  </span>
+                  <small className="slot-label">{SLOT_LABELS[slot]}</small>
+                  {item === null ? <span className="row-note">{disabled ? 'disabled by the two-handed weapon' : 'empty'}</span> : <ItemFacts item={item} />}
                   {open ? (
                     <div className="chooser">
                       {choices.length === 0 ? (
@@ -146,7 +162,7 @@ export function Equipment() {
                                   </button>
                                 }
                               >
-                                {describeItem(choice)}
+                                <ItemFacts item={choice} />
                                 {count > 1 ? <strong> ×{count}</strong> : null}
                                 {preview.block !== null ? (
                                   <small className="row-note" data-testid="equip-block">
@@ -189,7 +205,9 @@ export function Equipment() {
           )}
           <ul className="rows" aria-label="Archive">
             {purseOf(save).archive.map((item) => (
-              <Row key={item.id}>{describeItem(item)}</Row>
+              <Row key={item.id}>
+                <ItemFacts item={item} />
+              </Row>
             ))}
           </ul>
         </div>

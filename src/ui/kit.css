@@ -701,3 +701,20 @@ ul.away-facts li {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* ---- Gear lines: a small slot label, then the name over muted facts ---- */
+
+.slot-label {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+}
+
+.item-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
