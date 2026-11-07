@@ -28,7 +28,7 @@ function copyRow(row: RowDraft): RowDraft {
   return { ...row, conditions: row.conditions.map((condition) => ({ ...condition })), kept: [...(row.kept ?? [])] }
 }
 
-function RulesForm({ hero }: { hero: SavedHero }) {
+export function RulesForm({ hero }: { hero: SavedHero }) {
   const [rows, setRows] = useState<RowDraft[]>(() => draftsFromRows(hero.priorityRows))
   const [errors, setErrors] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
@@ -206,6 +206,11 @@ function RulesForm({ hero }: { hero: SavedHero }) {
                         onChange={(event) => patchCondition(index, conditionIndex, { value: event.target.value })}
                       />
                     ) : null}{' '}
+                    {condition.type === 'telegraph' || condition.type === 'telegraphWithin' || condition.type === 'interruptible' ? (
+                      <span className="muted-inline rule-hint" data-testid="telegraph-hint">
+                        Watches every enemy. Answer with Shield Brace, Ward, Mana Ward, Fade Back or Ward Charm. Interrupt by dealing the shown HP during the wind-up.
+                      </span>
+                    ) : null}
                     <button
                       type="button"
                       aria-label={`Remove condition ${conditionIndex + 1} from rule ${index + 1}`}

@@ -118,9 +118,15 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
           <dt>Enemies</dt>
           <dd>
             <ul className="fact-list">
-              {info.enemyNames.map((name) => (
-                <li key={name}>{name}</li>
-              ))}
+              {info.enemyNames.map((name) => {
+                const fact = info.enemyFacts.find((entry) => entry.name === name)
+                return (
+                  <li key={name}>
+                    {name}
+                    {fact !== undefined ? <span className="enemy-fact muted-inline">{fact.line}</span> : null}
+                  </li>
+                )
+              })}
               {info.bossHidden ? <li className="muted-inline">Boss unseen until arrival</li> : null}
             </ul>
           </dd>

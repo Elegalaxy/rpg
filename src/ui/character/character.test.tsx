@@ -2,12 +2,15 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { classIdentity, raceIdentity } from '../../content/heroes.ts'
+import { selectedHero } from '../../persist/character.ts'
+import { createHero } from '../../persist/roster.ts'
+import { newSave } from '../../persist/save.ts'
 
 import { Attributes } from './Attributes.tsx'
 import { CreateHero } from './CreateHero.tsx'
 import { Loadout } from './Loadout.tsx'
 import { Roster } from './Roster.tsx'
-import { Rules } from './Rules.tsx'
+import { Rules, RulesForm } from './Rules.tsx'
 import { SkillWeb } from './SkillWeb.tsx'
 
 describe('hero creation screen', () => {
@@ -38,5 +41,16 @@ describe('loadout and rules screens without a hero', () => {
   it('ask for a selected hero', () => {
     expect(renderToStaticMarkup(<Loadout />)).toContain('Select a hero to choose their skills.')
     expect(renderToStaticMarkup(<Rules />)).toContain('Select a hero to edit their rules.')
+  })
+})
+
+describe('rules screen telegraph hint', () => {
+  it('explains a telegraph condition under its row', () => {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    const hero = selectedHero(made.save)
+    if (hero === null) throw new Error('no hero')
+    const html = renderToStaticMarkup(<RulesForm hero={hero} />)
+    expect(html).toContain('Watches every enemy. Answer with Shield Brace, Ward, Mana Ward, Fade Back or Ward Charm.')
   })
 })

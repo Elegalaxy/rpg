@@ -111,6 +111,24 @@ describe('route info', () => {
     expect(shown.enemyNames.join(' ')).toMatch(/Warden/)
     expect(() => routeInfo('nowhere', save)).toThrow(/unknown route/)
   })
+
+  it('gives a plain line for each enemy that winds up a damaging skill', () => {
+    const save = withHero()
+    const facts = (routeId: string) => Object.fromEntries(routeInfo(routeId, save).enemyFacts.map((fact) => [fact.name, fact.line]))
+    const road = facts('splintered-road')
+    expect(road['Starved Wolf']).toBe('Pounce · 1.5 s wind-up')
+    expect(road['Fracture Shardling']).toBeUndefined()
+    expect(road['Deserter']).toBeUndefined()
+    const grove = facts('fracture-via-grove')
+    expect(grove['Thornbeast']).toBe('Bramble Slam · 1.8 s wind-up · can be interrupted')
+    expect(grove['Blight Spider']).toBeUndefined()
+    const bastion = facts('fracture-via-bastion')
+    expect(bastion['Hollow Sentry']).toBe('Shield Bash · 1.8 s wind-up · can be interrupted')
+    expect(bastion['Fallen Arbalist']).toBe('Aimed Bolt · 2.5 s wind-up')
+    for (const fact of routeInfo('fracture-via-grove', save).enemyFacts) {
+      expect(routeInfo('fracture-via-grove', save).enemyNames).toContain(fact.name)
+    }
+  })
 })
 
 describe('starting a route', () => {

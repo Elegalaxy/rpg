@@ -794,3 +794,8 @@ dl.node-facts dd {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+
+.rule-hint {
+  display: block;
+  margin-top: var(--s1);
+}

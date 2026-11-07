@@ -1,5 +1,6 @@
 import { encounters } from '../content/encounters.ts'
 import { enemies } from '../content/enemies.ts'
+import type { EnemyDef } from '../sim/types.ts'
 import {
   GREYHAVEN_ID,
   LEG_TRAVEL_MS,
@@ -53,6 +54,8 @@ export type RouteInfo = {
   levels: { min: number; max: number } | null
   /** Enemy names on the route. The boss shows as hidden until the hero has arrived at its node. */
   enemyNames: string[]
+  /** A plain line for each listed enemy that winds up a damaging skill, for example "Bramble Slam · 1.8 s wind-up · can be interrupted". */
+  enemyFacts: { name: string; line: string }[]
   bossHidden: boolean
   resources: { name: string; materialId: string; quantity: number }[]
   /** One way, in seconds. A return walk takes the same. */
@@ -66,6 +69,19 @@ function routeNodes(route: Route): WorldNode[] {
   })
 }
 
+/** One line per telegraphed damage skill an enemy uses in the action slot (a death burst or a no-damage skill is left out). */
+export function enemyFactLine(def: EnemyDef): string | null {
+  const parts: string[] = []
+  for (const skill of def.skills ?? []) {
+    if (skill.telegraphMs === undefined || skill.telegraphMs <= 0) continue
+    if (skill.trigger !== undefined && skill.trigger !== 'action') continue
+    if (!skill.effects.some((effect) => effect.kind === 'damage' && effect.coefficient > 0)) continue
+    const seconds = Number((skill.telegraphMs / 1000).toFixed(1))
+    parts.push(`${skill.name} · ${seconds} s wind-up${skill.interruptMaxHpFraction !== undefined ? ' · can be interrupted' : ''}`)
+  }
+  return parts.length === 0 ? null : parts.join('; ')
+}
+
 export function routeInfo(routeId: string, save: SaveData): RouteInfo {
   const route = routes[routeId]
   if (route === undefined) throw new Error(`unknown route '${routeId}'`)
@@ -73,6 +89,7 @@ export function routeInfo(routeId: string, save: SaveData): RouteInfo {
   let min: number | null = null
   let max: number | null = null
   const names: string[] = []
+  const facts: RouteInfo['enemyFacts'] = []
   let bossHidden = false
   let fights = 0
   const resources: RouteInfo['resources'] = []
@@ -91,11 +108,19 @@ export function routeInfo(routeId: string, save: SaveData): RouteInfo {
         const def = enemies[member.enemyId]
         if (def === undefined) continue
         if (def.boss === true) {
-          if (bossRevealed(node, save.account.discoveries.includes(node.discoveryId))) names.push(def.name)
+          if (bossRevealed(node, save.account.discoveries.includes(node.discoveryId))) {
+            names.push(def.name)
+            const line = enemyFactLine(def)
+            if (line !== null) facts.push({ name: def.name, line })
+          }
           else bossHidden = true
           continue
         }
-        if (!names.includes(def.name)) names.push(def.name)
+        if (!names.includes(def.name)) {
+          names.push(def.name)
+          const line = enemyFactLine(def)
+          if (line !== null) facts.push({ name: def.name, line })
+        }
       }
     }
   }
@@ -105,6 +130,7 @@ export function routeInfo(routeId: string, save: SaveData): RouteInfo {
     fights,
     levels: min === null || max === null ? null : { min, max },
     enemyNames: names,
+    enemyFacts: facts,
     bossHidden,
     resources,
     travelSeconds: ((route.nodeIds.length - 1) * LEG_TRAVEL_MS) / 1000,

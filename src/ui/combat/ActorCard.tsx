@@ -16,8 +16,10 @@ import type {
   PoisonStatus,
 } from '../../sim/types.ts'
 
+import { Tag } from '../Kit.tsx'
 import { debugLog } from '../debug.ts'
 import { noteHeroQueue } from '../store.ts'
+import { interruptText, isHeavy, telegraphSkill } from './telegraphInfo.ts'
 
 const missingSprites = new Set<string>()
 
@@ -296,20 +298,41 @@ function TimingBar({
   kind,
   telegraph,
   timeMs,
+  defId,
+  maxHp,
 }: {
   label: string
   kind: 'telegraph' | 'reaction'
   telegraph: ActorTelegraph
   timeMs: number
+  defId: string
+  maxHp: number
 }) {
   const remaining = telegraph.resolvesAtMs - timeMs
+  const skill = telegraphSkill(defId, telegraph)
+  const interrupt = interruptText(telegraph, maxHp)
   return (
     <div className={`timing timing-${kind}`}>
       <div className="timing-row">
         <span className="timing-label">{label}</span>
-        <span className="timing-tag">{telegraph.tag}</span>
+        <span className="timing-tag">
+          {skill === null ? telegraph.tag : skill.name}
+          {isHeavy(skill) ? (
+            <>
+              {' '}
+              <Tag kind="bad" title="A heavy attack: 150% Power or more. Answer it with a barrier, a ward, or an interrupt.">
+                Heavy
+              </Tag>
+            </>
+          ) : null}
+        </span>
         <span className="timing-remaining">{seconds(remaining)}</span>
       </div>
+      {interrupt !== null ? (
+        <div className="timing-row timing-interrupt" data-testid="interrupt-progress">
+          <span className="timing-label">{interrupt}</span>
+        </div>
+      ) : null}
       <div className="timing-track" aria-hidden="true">
         <div className={`timing-fill timing-fill-${kind}`} style={{ width: `${telegraphFillPercent(telegraph, timeMs)}%` }} />
       </div>
@@ -407,10 +430,10 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
         </p>
       ) : null}
       {actor.telegraph !== null ? (
-        <TimingBar label="Telegraph" kind="telegraph" telegraph={actor.telegraph} timeMs={timeMs} />
+        <TimingBar label="Telegraph" kind="telegraph" telegraph={actor.telegraph} timeMs={timeMs} defId={actor.defId} maxHp={actor.maxHp} />
       ) : null}
       {actor.reaction !== null ? (
-        <TimingBar label="Reaction" kind="reaction" telegraph={actor.reaction} timeMs={timeMs} />
+        <TimingBar label="Reaction" kind="reaction" telegraph={actor.reaction} timeMs={timeMs} defId={actor.defId} maxHp={actor.maxHp} />
       ) : null}
       <StatusList statuses={actor.statuses} timeMs={timeMs} />
     </article>

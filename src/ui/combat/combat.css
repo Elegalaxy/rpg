@@ -401,3 +401,8 @@
   align-items: center;
   gap: var(--s2);
 }
+
+.timing-interrupt {
+  color: var(--muted, inherit);
+  font-size: 0.75rem;
+}
