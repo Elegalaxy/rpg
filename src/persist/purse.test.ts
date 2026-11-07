@@ -49,6 +49,14 @@ describe('each hero keeps its own purse', () => {
     expect(purseOf(sold, 'hero-2').materials).toEqual({})
   })
 
+  it('keeps riftglass per hero and sells it at 5 gold', () => {
+    const save = updatePurse(twoHeroes(), { materials: { riftglass: 4 } }, 'hero-1')
+    expect(purseOf(save, 'hero-2').materials.riftglass ?? 0).toBe(0)
+    const sold = ok(sellMaterial(ok(selectHero(save, 'hero-1')), 'riftglass', 4))
+    expect(purseOf(sold, 'hero-1').gold).toBe(20)
+    expect(purseOf(sold, 'hero-2').gold).toBe(0)
+  })
+
   it('shares a recipe bought by one hero, paid from that hero\'s gold only', () => {
     const base = updatePurse(twoHeroes(), { gold: 100 }, 'hero-1')
     const save = { ...base, heroes: base.heroes.map((h) => (h.id === 'hero-1' ? { ...h, progress: { ...h.progress, level: 3 } } : h)) }

@@ -21,6 +21,11 @@ import {
   craftGold,
   upgradeGold,
   upgradedQuality,
+  upgradeCheck,
+  pickMaterialText,
+  upgradeCapFor,
+  MATERIAL_QUALITY,
+  UPGRADE_QUALITY_POINTS,
 } from './crafting.ts'
 import { equipFromArchive, statsFor } from './equipment.ts'
 import { blueprintForHero } from './expeditionSetup.ts'
@@ -359,5 +364,49 @@ describe('upgrade quality', () => {
     expect(upgradedQuality(1.09, 'shard')).toBe(1.1)
     expect(upgradedQuality(1.1, 'shard')).toBe(1.1)
     expect(upgradedQuality(0.95, 'unknown')).toBe(0.95)
+  })
+})
+
+function upgradeCheckText(save: SaveData): string | null {
+  const item = newItem('t-1', 'weapon-one-handed', 0)
+  return upgradeCheck(save, hero(save), item, 'iron')
+}
+
+describe('riftglass', () => {
+  it('is the best craft material: 102% to 112%, rank raises the minimum up to the maximum', () => {
+    expect(qualityRange('riftglass', 0)).toEqual({ low: 1.02, high: 1.12 })
+    expect(qualityRange('riftglass', 5)?.low).toBeCloseTo(1.07, 10)
+    expect(qualityRange('riftglass', 10)?.low).toBeCloseTo(1.12, 10)
+    expect(qualityRange('riftglass', 10)?.high).toBe(1.12)
+    expect(Object.keys(MATERIAL_QUALITY)).toEqual(['scrap', 'hide', 'shard', 'riftglass'])
+  })
+
+  it('adds 3 upgrade points up to 112%, while other materials keep 110% and never lower quality', () => {
+    expect(UPGRADE_QUALITY_POINTS.riftglass).toBe(3)
+    expect(upgradedQuality(1, 'riftglass')).toBeCloseTo(1.03)
+    expect(upgradedQuality(1.1, 'riftglass')).toBe(1.12)
+    expect(upgradedQuality(1.12, 'riftglass')).toBe(1.12)
+    expect(upgradedQuality(1.115, 'shard')).toBe(1.115)
+    expect(upgradedQuality(1.09, 'shard')).toBe(1.1)
+    expect(upgradeCapFor('riftglass')).toBe(1.12)
+    expect(upgradeCapFor('shard')).toBe(1.1)
+  })
+
+  it('lists every material in the pick-a-material message, from the table', () => {
+    expect(pickMaterialText()).toBe('Pick scrap, hide, shard, or riftglass.')
+    const save = stocked()
+    expect(craftCheck(save, hero(save), { ...bow, materialId: 'iron' })).toBe(pickMaterialText())
+    expect(upgradeCheckText(save)).toBe(pickMaterialText())
+  })
+
+  it('crafts with riftglass, and a hero with none sees it as 0 and cannot craft', () => {
+    const save = updatePurse(stocked(), { materials: { riftglass: 6 } })
+    const done = finish(ok(queueCraft(save, 'hero-1', { ...bow, materialId: 'riftglass' })))
+    const made = purseOf(done).archive.at(-1)
+    expect(made?.quality).toBeGreaterThanOrEqual(1.02)
+    expect(made?.quality).toBeLessThanOrEqual(1.12)
+    const none = updatePurse(stocked(), { materials: { shard: 20 } })
+    expect(purseOf(none).materials.riftglass ?? 0).toBe(0)
+    expect(craftCheck(none, hero(none), { ...bow, materialId: 'riftglass' })).toBe('That needs 6 riftglass. You have 0.')
   })
 })

@@ -11,7 +11,9 @@ import {
   MATERIAL_QUALITY,
   QUEUE_MAX,
   UPGRADE_MATERIAL_COST,
+  UPGRADE_QUALITY_CAP,
   UPGRADE_QUALITY_POINTS,
+  upgradeCapFor,
   craftCheck,
   craftGold,
   proficiencyRank,
@@ -197,7 +199,8 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
 
       <h4>Upgrade</h4>
       <p className="muted">
-        An upgrade always adds 1 item level. The material adds quality too: scrap +0, hide +1, shard +2 percentage points, up to 110%.
+        An upgrade always adds 1 item level. The material adds quality too:{' '}
+        {MATERIALS.map((id) => `${id} +${UPGRADE_QUALITY_POINTS[id] ?? 0}`).join(', ')} percentage points, up to 110% ({MATERIALS.filter((id) => upgradeCapFor(id) > UPGRADE_QUALITY_CAP).map((id) => `${percent(upgradeCapFor(id))} with ${id}`).join(', ')}).
       </p>
       <label>
         Material{' '}

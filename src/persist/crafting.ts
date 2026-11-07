@@ -13,14 +13,33 @@ export const CRAFT_MS = 30_000
 export const QUEUE_MAX = 3
 export const MAX_RANK = 10
 /** Percentage points of quality an upgrade adds, by the material spent (GAME_DESIGN crafting). */
-export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2 }
-/** An upgrade never lifts quality above the best a craft can roll. */
+export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, riftglass: 3 }
+/** An upgrade never lifts quality above this, except with a material that has its own cap. */
 export const UPGRADE_QUALITY_CAP = 1.1
+/** Materials whose upgrades may go higher than `UPGRADE_QUALITY_CAP`. */
+export const UPGRADE_QUALITY_CAP_BY_MATERIAL: { readonly [materialId: string]: number } = { riftglass: 1.12 }
 
-/** The quality an item has after an upgrade with this material. */
+/** The highest quality an upgrade with this material can reach. */
+export function upgradeCapFor(materialId: string): number {
+  return UPGRADE_QUALITY_CAP_BY_MATERIAL[materialId] ?? UPGRADE_QUALITY_CAP
+}
+
+/** The quality an item has after an upgrade with this material. An item already above the cap keeps its quality. */
 export function upgradedQuality(quality: number, materialId: string): number {
   const raised = quality + (UPGRADE_QUALITY_POINTS[materialId] ?? 0) / 100
-  return raised > UPGRADE_QUALITY_CAP ? Math.max(quality, UPGRADE_QUALITY_CAP) : raised
+  const cap = upgradeCapFor(materialId)
+  return raised > cap ? Math.max(quality, cap) : raised
+}
+
+/** The material ids a craft or upgrade accepts, in table order. */
+export function materialIds(): string[] {
+  return Object.keys(MATERIAL_QUALITY)
+}
+
+/** "Pick scrap, hide, shard, or riftglass.", built from the table. */
+export function pickMaterialText(): string {
+  const ids = materialIds()
+  return `Pick ${ids.slice(0, -1).join(', ')}, or ${ids[ids.length - 1]}.`
 }
 /** Seeds the crafting rolls. Each job adds its own index, so a saved game rolls the same way. */
 export const CRAFT_SEED = 0x5eed
@@ -30,6 +49,7 @@ export const MATERIAL_QUALITY: { readonly [materialId: string]: { low: number; h
   scrap: { low: 0.9, high: 1.0 },
   hide: { low: 0.95, high: 1.05 },
   shard: { low: 1.0, high: 1.1 },
+  riftglass: { low: 1.02, high: 1.12 },
 }
 
 export function proficiencyRank(xp: number): number {
@@ -109,7 +129,7 @@ export function craftCheck(save: SaveData, hero: SavedHero, request: CraftReques
   if (request.itemLevel > hero.progress.level) {
     return `Item level ${request.itemLevel} needs hero level ${request.itemLevel}. This hero is level ${hero.progress.level}.`
   }
-  if (MATERIAL_QUALITY[request.materialId] === undefined) return 'Pick scrap, hide, or shard.'
+  if (MATERIAL_QUALITY[request.materialId] === undefined) return pickMaterialText()
   if (request.modifierId !== null) {
     const modifier = ITEM_MODIFIERS[request.modifierId]
     if (modifier === undefined) return 'Unknown modifier.'
@@ -188,7 +208,7 @@ export function upgradeCheck(save: SaveData, hero: SavedHero, item: ItemInstance
   if (hero.purse.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
   if (item === undefined) return 'That item is not in the archive or worn by this hero.'
   if (item.itemLevel >= hero.progress.level) return `This hero is level ${hero.progress.level}. An item cannot go above the hero's level.`
-  if (MATERIAL_QUALITY[materialId] === undefined) return 'Pick scrap, hide, or shard.'
+  if (MATERIAL_QUALITY[materialId] === undefined) return pickMaterialText()
   return spend(hero.purse, materialId, UPGRADE_MATERIAL_COST, upgradeGold(item.itemLevel))
 }
 
