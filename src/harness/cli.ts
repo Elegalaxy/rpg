@@ -15,6 +15,7 @@ import { routeBlueprint, routeFightCount } from './expedition.ts'
 import { formatBuiltTable, runBuiltMatrix } from './builds.ts'
 import { runComboMatrix } from './combos.ts'
 import { formatTelegraphTable, runTelegraphMatrix } from './telegraph.ts'
+import { formatWardenTable, runWardenMatrix } from './warden.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
 const RPG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -227,8 +228,8 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
@@ -249,6 +250,15 @@ function printMatrix(args: ParsedArgs): void {
     const rows = runTelegraphMatrix(seed, runs)
     const elapsedMs = performance.now() - started
     process.stdout.write(formatTelegraphTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
+  if (args.matrix === 'warden') {
+    console.log(`[sim] matrix warden seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const rows = runWardenMatrix(seed, runs)
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatWardenTable(rows))
     printTiming(rows.length * runs, elapsedMs)
     return
   }

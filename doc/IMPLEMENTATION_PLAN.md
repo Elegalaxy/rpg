@@ -984,6 +984,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Interrupt requirement of Bramble Slam and Shield Bash raised from 10% to 25% of max HP (option 1, approved). Fractions 0.18, 0.25, 0.30 measured at seeds 1-3; 0.25 and 0.30 give the same numbers, so 0.25 is kept. Numbers and open items are in GAME_DESIGN under the Withered Grove enemies. 809 tests. Not checked in the browser.
   - 2026-11-08: Step closed (Part 5, the offline check, was done on 2026-11-07). Acceptance bands: "wind-ups interrupt-able, zone 1 unchanged, nobody walled" met (every cell wins 100%, zone 1 rows and the golden snapshot unchanged). NOT met: blind win rate 75-90% (blind wins 100% everywhere), blind HP lost 8 or more points above rules (holds for Ranger, Mage and Cleric in most changed fights, not for Warrior and Assassin), and offline blind defeats under 5% (fails for Warrior, Assassin and Ranger with and without the change). Warrior and Assassin reference rows were tried and none was added: no candidate row opened a gap (measurements in GAME_DESIGN). No code changed in this close-out.
 
+### Step 12.4: Warden measurement
+- Status: `done`
+- Depends on: 12.3
+- Goal: find out how hard the rank-0 Fractured Warden is for realistic heroes, without changing any number.
+- Progress:
+  - 2026-11-08: New `src/harness/warden.ts`, `--matrix warden` (every class x 3 tiers: just arrived level 18, well prepared level 20, over-levelled level 24; reference rules plus the default supply rows; modifiers through `statBonusesFor`), `warden.test.ts`, and the valid-matrix list in `cli.test.ts`. Tier definitions and results are in GAME_DESIGN under the Fractured Warden. Seeds 1-3, 100 runs: Assassin, Ranger and Mage are walled until about level 22-24 (or 4 Draughts for the Mage); Warrior and Cleric never win at levels up to 28. No enemy, class, skill or content number changed.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
