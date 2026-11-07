@@ -718,3 +718,56 @@ ul.away-facts li {
   gap: 0.1rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- Rule rows: one tight line of controls, the sentence, then conditions inline ---- */
+
+ol.rule-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li.rule-item {
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.rule-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.rule-num {
+  min-width: 1.4rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rule-tools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin-left: auto;
+}
+
+.rule-item .rule-summary {
+  margin: var(--s1) 0 var(--s1) 1.9rem;
+  color: var(--muted);
+}
+
+ul.rule-conditions {
+  margin: 0 0 var(--s1) 1.9rem;
+  padding: 0;
+  list-style: none;
+}
+
+ul.rule-conditions > li {
+  padding: 0.15rem 0;
+}
+
+.rule-add {
+  margin-left: 1.9rem;
+}

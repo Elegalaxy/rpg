@@ -77,9 +77,13 @@ function RulesForm({ hero }: { hero: SavedHero }) {
           The hero tries rule 1 first, then the next, and uses the first skill whose conditions pass. {RESOURCE_NAMES[hero.classId]} is this class resource.
         </Help>
       </p>
-      <ol>
+      <ol className="rule-list">
         {rows.map((row, index) => (
-          <li key={index}>
+          <li key={index} className="rule-item">
+            <div className="rule-head">
+              <span className="rule-num" aria-hidden="true">
+                {index + 1}
+              </span>
             <label>
               Skill{' '}
               <select
@@ -109,7 +113,8 @@ function RulesForm({ hero }: { hero: SavedHero }) {
                   </option>
                 ))}
               </select>
-            </label>{' '}
+            </label>
+              <span className="rule-tools">
             <button type="button" aria-label={`Move rule ${index + 1} up`} disabled={index === 0} onClick={() => move(index, -1)}>
               ↑
             </button>{' '}
@@ -133,10 +138,12 @@ function RulesForm({ hero }: { hero: SavedHero }) {
             <button type="button" aria-label={`Remove rule ${index + 1}`} onClick={() => update(rows.filter((_, at) => at !== index))}>
               Remove
             </button>
+              </span>
+            </div>
             <p className="rule-summary" aria-label={`Rule ${index + 1} summary`}>
               {summarizeRule(row, hero.classId)}
             </p>
-            <ul>
+            <ul className="rule-conditions">
               {row.conditions.map((condition, conditionIndex) => {
                 const kind = CONDITION_KINDS.find((entry) => entry.type === condition.type)
                 return (
@@ -212,6 +219,7 @@ function RulesForm({ hero }: { hero: SavedHero }) {
             </ul>
             <button
               type="button"
+              className="rule-add"
               onClick={() => patchRow(index, { conditions: [...row.conditions, newCondition(kinds[0]?.type ?? 'heroHp')] })}
             >
               Add condition
