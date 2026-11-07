@@ -736,6 +736,67 @@ Echo Knight:
   - What it does: no single hit is dangerous (prepared level-20 hero with 335-400 max HP: Warden Strike mean 12-23, max 37-57; the 200% Fracture Hammer mean 19-40, max 47-94; Blade Echo Severing Dash max 42). The Warden wins by attrition: about 580-1,170 HP of damage per fight against 335-400 max HP plus 3 Draughts (120 HP each) and a Charm. Warden Strike and Hammer are about 55-80% of the damage and the Echoes 20-45%. The Warrior reaches phase 2 at about 31 s. The default Ward Charm rule spends the Charm on the first telegraph (the Hammer) in every run.
   - Reading: a wall that needs preparation for Assassin, Ranger and Mage (about level 22-24, or level 20 with 4 Draughts for the Mage), and out of reach for Warrior and Cleric at every tested level and kit. A Warden HP multiplier of 6 instead of 8 (tested on a copy, not applied) at the prepared tier gives Assassin 70%, Ranger 93%, Mage 100%, Warrior 0%, Cleric 0%: the Warrior and Cleric gap is damage and sustain, not the Warden.
 
+### Second zone: Drowned Causeway
+
+Decided 2026-11-08 (user approved), Step 13.1. One new zone and one elite, no boss. Gear grows through a new material tier (riftglass) and gated modifiers, not new item bases or sets. The zone fixes the XP desert at levels 16-24 and gives the Warden a gear and level path. Grove and Bastion material drops into the later tiers are a later step and are not part of this one.
+
+World:
+
+- Node Drowned Causeway, levels 17-22, reached by a leg from the Splintered Road (20 seconds, like every leg). Resource node Riftglass Shoal gives 3 riftglass per visit.
+- Gate: both elites defeated (Rootmaw Stalker and Echo Knight), personal to the hero, the same rule as the Fracture Gate. The gate message names the enemies ("Defeat Rootmaw Stalker and Echo Knight first."), never raw ids.
+- Route `sunken-causeway`: Greyhaven, Splintered Road, Drowned Causeway. Fixed fights in order: `leech-swarm` (3 Mire Leeches, level 17), `raider` (one Causeway Raider, level 18), `causeway-mixed` (Drowned Bulwark level 18 and Fracture Wisp level 18), then the elite fight. Drawn fights after the fixed ones: `causeway-mixed`, `causeway-deep` (Drowned Bulwark, Causeway Raider and Oathbound Echo, all level 20), `leech-swarm`.
+- Fracture Wisp widens from levels 10-14 to 10-22 and Oathbound Echo from 13-16 to 13-22, so they can appear here. They drop nothing.
+
+Regular enemies (stats from the Enemy balance framework; a Standard enemy at level 18 has 440 HP and 26 Power):
+
+| Enemy | Levels | Archetype | Skills | Drop |
+| --- | --- | --- | --- | --- |
+| Mire Leech | 17-20 | Swarm, groups of 3 | Regenerates 2% max HP per second (Burn pauses it, Expose halves it). Bite: 80% Physical Power, 50% base chance to apply Bleed | 2 hide |
+| Causeway Raider | 17-21 | Standard | Pilfer: 90% Physical Power, 35% chance to steal the last carried supply, once per fight (like the Deserter's snatch). Guard as the Deserter's (30% reduction, 7 s cooldown, 0.75x action time) | 4 scrap |
+| Drowned Bulwark | 18-22 | Tank with 1.75x Armor (as the Sentry) | Undertow: 2.2 s telegraph, 200% Physical Power, applies 2 Chill (two independent applications), interruptible at 25% of max HP, 9 s cooldown. Shield Wall on an ally (35% reduction, 7 s cooldown) | 4 riftglass |
+
+The Leech's regeneration is the `REGENERATION_TRAIT` with a per-enemy multiplier of 2 (the trait's 1% per second becomes 2%; every other regenerating enemy is unchanged). The Raider's steal is the existing `stealSupply` effect at 35%. The proposal gave no cooldowns for Undertow and Pilfer or the Leech's Bite; they use 9 s (like Bramble Slam), 5 s (like Rusted Cut) and 4 s (like Venom Bite). Shield Wall on an ally follows the Sentry (affects the Bulwark itself and one ally).
+
+Elite Tidebound Colossus:
+
+- Level 22 Tank elite. Stats: 3,600 HP (about the Echo Knight x 1.12), 31 Power; Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25.
+- Tide cycle uses the existing stance trait (10-second switch, the same constants as the Echo Knight): Ebb is the Guard stance (+30% Armor and Resistance), Flood is the Assault stance (+25% Power, -40% Armor and Resistance). It starts in Ebb. The sim keeps the names guard and assault; the Tide names are display text for later.
+- Breaker Wave: 2.5 s telegraph, 230% Physical Power, can critically hit, interruptible at 8% of max HP, 10 s cooldown.
+- At 50% HP it uses a 2-second telegraph to summon 2 Mire Leeches (level 18), through the HP summon trait. Summons award no XP.
+- Drops 10 riftglass. Gold is the elite rate, level x 3.
+- Its first defeat by any hero unlocks the Siphoning modifier recipe (account-wide).
+
+Riftglass (new material, documented here; code follows in Step 13.1 parts 5 on):
+
+- Sells for 5 gold. A craft with riftglass rolls quality 102% to 112% (the average of two rolls, plus the proficiency bonus as for the other materials, never above the range maximum).
+- As an upgrade material it adds +3 quality points, up to 112%. Other materials keep their 110% cap, and an item above 110% keeps its quality when upgraded with another material.
+- It is the rarest material in `MATERIAL_RARITY`, so the safe pouch keeps it first.
+
+Modifiers (documented now; built in part 6):
+
+| Modifier | Effect | Min level | Slots | Recipe | Unlock |
+| --- | --- | --- | --- | --- | --- |
+| Hallowed | +10 Healing Power | 16 | off-hand, accessory | 400 gold | Causeway discovered |
+| Rending | +6 points Armor and magical penetration | 18 | weapon | 450 gold | Causeway discovered |
+| Siphoning | Heals 3% of damage dealt after mitigation (new `lifestealFraction` stat, one new sim hook) | 20 | weapon | 500 gold | Colossus defeated by any hero |
+
+The same modifier still counts at most twice across worn gear (`MODIFIER_STACK_CAP`). Siphoning heals only from the hero's own direct damaging hits (not damage over time), is capped by missing HP, and is logged as a heal.
+
+Contracts and Legacy (documented now; built in part 7):
+
+- New contract kind Salvage: "bring home N riftglass", N from 6 to 12. It counts riftglass secured at settlement. The reward is `rewardFor(ceil(N / 3), 20, 'scrap')`, then the usual 80-130% roll. The board pool (`boardPool`) offers it once the Causeway is discovered.
+- The first-ever defeat of the Tidebound Colossus gives 3 Legacy once (a milestone in the reincarnation list).
+
+XP intent: a Causeway-mixed win gives a level-18 hero about 87 XP, about 44 fights per level. The zone is the XP source for levels 16-24.
+
+Compatibility: no save version bump. Older saves load unchanged: the new node is undiscovered and the new material counts as 0.
+
+Measurement targets (for the later tuning step; part 3 records the first numbers and changes nothing). Tiers, as in the Warden measurement: Just arrived (level 17, 6 nodes, quality 100%, starter modifiers, 2 Draughts), Well prepared (level 19, 6 nodes, quality 105%, a prepared modifier set, 3 Draughts and a Ward Charm), Over-levelled (level 22, 8 nodes, quality 110%).
+
+- Regular fights, prepared tier: at least 95% wins, and the mixed fights lose 15-35% of maximum HP on average.
+- Colossus: prepared tier 40-85% wins (Warrior and Cleric at least 30%), over-levelled at least 85%.
+- Interrupt rules against blind (the same hero with its telegraph and interrupt rows removed) differ by at least 8 HP points lost for Ranger, Mage and Cleric.
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
@@ -1754,6 +1815,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-08: Designed the second zone, Drowned Causeway (levels 17-22): three new enemies, the Tidebound Colossus elite, riftglass, three gated modifiers (Hallowed, Rending, Siphoning), a Salvage contract and Legacy +3 for the first Colossus defeat (Step 13.1).
 - 2026-11-08: Thornbeast Bramble Slam and Hollow Sentry Shield Bash interrupt requirement raised from 10% to 25% of the enemy's maximum HP, so an ordinary hit no longer cancels the wind-up by accident. Other numbers unchanged.
 - 2026-11-07: Mid-game heavy telegraphs: Thornbeast Bramble Slam (1.8 s wind-up, 220%, 9 s cooldown, interrupt at 10% max HP) and Hollow Sentry Shield Bash (1.8 s wind-up, 220%, 10 s cooldown, interrupt at 10% max HP). Telegraph and interruptible rule conditions now look at every enemy.
 - 2026-11-04: Mend cleanses one Poison or Bleed; the Ward Charm supply; brewing supplies from materials; Deserters can snatch a supply.

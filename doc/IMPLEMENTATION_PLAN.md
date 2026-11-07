@@ -1013,6 +1013,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
     B, C and E tie within noise on wins. B was chosen: it reads plainly ("Use Ward Charm when Enemy telegraph is present and Hero HP % is at most 70."), keeps a margin before the Draught rule at 40%, and 80% (H) gave the Ranger less. G changes nothing because the Charm is never up twice in these fights. Rootmaw and Echo Knight stay at 100% wins for every class with the Charm packed under A and B (mean HP lost differs: the Charm is now held back, for example Warrior vs Rootmaw 24% to 41%, Mage vs Echo Knight 50% to 38%); the reference matrix rows (zone 1 and the built matrix) carry no supplies, so they are unchanged. The Assassin prepared tier stays walled (3-5%): the Charm is not its gap.
   - 2026-11-08: Decision recorded in GAME_DESIGN Supplies first, then `WARD_CHARM_ROW` in `src/content/supplies.ts` changed. Existing heroes keep the rows in their saves; no hero update was added. `addWardCharmRule` and `addSupplyRules` insert `WARD_CHARM_ROW`, so a legacy hero that never got the rule now receives the new row; a hero whose `updates` already lists `ward-charm-rule` is untouched. New test in `src/persist/supplies.test.ts`. 813 tests. Not checked in the browser.
 
+### Step 13.1: Drowned Causeway
+- Status: `in-progress`
+- Depends on: 12.5
+- Design: GAME_DESIGN §6, "Second zone: Drowned Causeway", decided 2026-11-08 (user approved).
+- Goal: one new zone (levels 17-22) and one elite, no boss, so levels 16-24 have an XP source and a gear path. New material riftglass plus gated modifiers; no new item bases or sets. Grove and Bastion material drops are a later step.
+- Parts: (1) docs; (2) enemies and encounters; (3) harness baseline (`--matrix causeway`), measurements only; (4) world (node, leg, route, gate, map); (5) riftglass material and crafting; (6) modifiers Hallowed, Rending, Siphoning (one lifesteal hook); (7) Salvage contract and Legacy +3; (8) tuning against the measurement targets.
+- Progress:
+  - 2026-11-08: Part 1, docs written (GAME_DESIGN §6 "Second zone: Drowned Causeway", changelog, this step).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
