@@ -60,8 +60,17 @@ export function supplyName(id: string): string {
 /** Supplies a priority rule can name. */
 export const RULE_SUPPLY_IDS: readonly string[] = SUPPLIES.filter((supply) => supply.ruleUsed).map((supply) => supply.id)
 
-/** The Ward Charm's default rule: raise the barrier when an enemy telegraphs. */
-export const WARD_CHARM_ROW: PriorityRow = { skillId: 'ward-charm', conditions: [{ kind: 'telegraph', operator: 'present' }] }
+/**
+ * The Ward Charm's default rule: raise the barrier when an enemy telegraphs and the hero is at 70% HP
+ * or less (decided 2026-11-08, GAME_DESIGN Supplies). Telegraph alone spent it on the first, weak hit.
+ */
+export const WARD_CHARM_ROW: PriorityRow = {
+  skillId: 'ward-charm',
+  conditions: [
+    { kind: 'telegraph', operator: 'present' },
+    { kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 70 },
+  ],
+}
 
 /** The supply rules a new hero starts with, above the class rules. Without a supply in the slots they skip. */
 export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [

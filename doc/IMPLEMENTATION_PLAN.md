@@ -991,6 +991,28 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-08: New `src/harness/warden.ts`, `--matrix warden` (every class x 3 tiers: just arrived level 18, well prepared level 20, over-levelled level 24; reference rules plus the default supply rows; modifiers through `statBonusesFor`), `warden.test.ts`, and the valid-matrix list in `cli.test.ts`. Tier definitions and results are in GAME_DESIGN under the Fractured Warden. Seeds 1-3, 100 runs: Assassin, Ranger and Mage are walled until about level 22-24 (or 4 Draughts for the Mage); Warrior and Cleric never win at levels up to 28. No enemy, class, skill or content number changed.
 
+### Step 12.5: Ward Charm default rule
+- Status: `done`
+- Depends on: 12.4
+- Goal: stop the default Ward Charm rule (telegraph present) from spending the Charm on the first, usually weak, telegraph. The Charm's own numbers (barrier 20% of maximum HP, 8 s) do not change.
+- Progress:
+  - 2026-11-08: Candidates measured against the Warden (seeds 1-2, 60 runs each, reference rules plus default supply rows; win % / mean HP lost %). Warrior and Cleric prepared 0% in every row and the arrived tier is 0-2% for Assassin, Ranger and Mage in every row, so only these columns separate the candidates:
+
+    | Rule | Assassin prepared | Ranger prepared | Mage prepared | Assassin over | Ranger over | Mage over |
+    | --- | --- | --- | --- | --- | --- | --- |
+    | A telegraph (old) | 5/100 | 25/97 | 70/86 | 100/56 | 100/48 | 100/48 |
+    | B telegraph + HP at most 70 (chosen) | 3/99 | 34/96 | 98/66 | 100/55 | 99/48 | 100/49 |
+    | C telegraph + HP at most 60 | 2/100 | 34/96 | 98/68 | 100/55 | 99/48 | 100/49 |
+    | D telegraph + HP at most 50 | 5/99 | 33/96 | 97/68 | 100/55 | 100/48 | 100/52 |
+    | E telegraph at most 1 s + HP at most 70 | 3/99 | 34/96 | 98/67 | 100/55 | 100/48 | 100/50 |
+    | F telegraph at most 1 s + HP at most 50 | 4/100 | 32/96 | 93/71 | 99/55 | 100/48 | 100/51 |
+    | G telegraph + no barrier up | 5/100 | 25/97 | 70/86 | 100/56 | 100/48 | 100/48 |
+    | H telegraph + HP at most 80 | 3/100 | 30/97 | 98/66 | 100/54 | 100/48 | 100/49 |
+    | I HP at most 60 alone | 4/100 | 27/96 | 99/62 | 100/56 | 100/49 | 100/48 |
+
+    B, C and E tie within noise on wins. B was chosen: it reads plainly ("Use Ward Charm when Enemy telegraph is present and Hero HP % is at most 70."), keeps a margin before the Draught rule at 40%, and 80% (H) gave the Ranger less. G changes nothing because the Charm is never up twice in these fights. Rootmaw and Echo Knight stay at 100% wins for every class with the Charm packed under A and B (mean HP lost differs: the Charm is now held back, for example Warrior vs Rootmaw 24% to 41%, Mage vs Echo Knight 50% to 38%); the reference matrix rows (zone 1 and the built matrix) carry no supplies, so they are unchanged. The Assassin prepared tier stays walled (3-5%): the Charm is not its gap.
+  - 2026-11-08: Decision recorded in GAME_DESIGN Supplies first, then `WARD_CHARM_ROW` in `src/content/supplies.ts` changed. Existing heroes keep the rows in their saves; no hero update was added. `addWardCharmRule` and `addSupplyRules` insert `WARD_CHARM_ROW`, so a legacy hero that never got the rule now receives the new row; a hero whose `updates` already lists `ward-charm-rule` is untouched. New test in `src/persist/supplies.test.ts`. 813 tests. Not checked in the browser.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |

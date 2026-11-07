@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_SUPPLY_ROWS } from '../content/supplies.ts'
+import { DEFAULT_SUPPLY_ROWS, WARD_CHARM_ROW } from '../content/supplies.ts'
 import { SMOKE_BOMB_ID, SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
 
-import { buildCondition, draftsFromRows, describeCondition } from './loadout.ts'
+import { buildCondition, draftsFromRows, describeCondition, summarizeRule } from './loadout.ts'
 import { checkPreparation, draftFor, packFromStash, packedCounts, clampToStash, savePreparation, stepPacked } from './preparation.ts'
 import { createHero, selectHero } from './roster.ts'
 import { newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
@@ -79,6 +79,17 @@ describe('supply rules', () => {
     expect(hero.priorityRows.slice(0, DEFAULT_SUPPLY_ROWS.length)).toEqual(DEFAULT_SUPPLY_ROWS)
     expect(hero.packedSupplies).toEqual([])
     expect(purseOf(heroSave()).supplies).toEqual({})
+  })
+
+  it('starts the Ward Charm rule on a telegraph while the hero is at 70% HP or less', () => {
+    expect(WARD_CHARM_ROW.conditions).toEqual([
+      { kind: 'telegraph', operator: 'present' },
+      { kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 70 },
+    ])
+    expect(DEFAULT_SUPPLY_ROWS).toContainEqual(WARD_CHARM_ROW)
+    const [draft] = draftsFromRows([WARD_CHARM_ROW])
+    expect(draft?.conditions.map((condition) => buildCondition(condition))).toEqual(WARD_CHARM_ROW.conditions)
+    expect(summarizeRule(draft!, 'warrior')).toContain('70')
   })
 
   it('edits a hero status stacks condition without losing it', () => {
