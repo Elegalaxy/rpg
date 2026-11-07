@@ -1,7 +1,7 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-07)
-- **Current Goal:** Batch C and the Kit conversion are built, pushed and checked. Next: Warden tuning, mid-game pressure, remaining roadmap.
+- **Current Goal:** Batch C, the Kit conversion and Step 12.3 (heavy telegraphs) are built and pushed; 12.3 acceptance bands are not met, decision pending.
 - **Recent Changes & Files Touched (Batch C, commits c4f6ca7, cc6d59d, f567b94, 9e51c38, d2d652a; 798 tests):**
   - Part 1: the 13 starting-skill nodes each add a bonus (`src/sim/classes/starterNodes.ts`, `heroSkill` used in `automation.ts`/`combat.ts`; Shield Brace/Mark for Death/Execute in `warrior.ts`/`assassin.ts`; node text regenerated). Matrix 40 runs: Warrior Echo Knight 70 to 100% at 6 nodes, Assassin Echo Knight 8 to 28%, Ranger Echo Knight 33 to 30% (probably noise, one seed), Mage/Cleric unchanged, Warden still 0%.
   - Part 2: bag capacity 20, +2 at levels 10/20/30, +3 per worn Hauler's (max 2), +4 Deep Pockets (15 Legacy), max 36 (`src/persist/bag.ts`, `lootCapacity` in `expedition.ts`). Safe pouch: 5 most valuable carried units survive defeat (`safePouch`, `savedByPouch`). `SavedHero.bagFullOrder` 'home'|'ask' (full = under 4 room), used in `offline.ts`; stop reason `bagFull`. No courier by user decision.
@@ -9,6 +9,7 @@
   - Part 4: queue carried supplies in fights (`SuppliesBar`), Escape now (`requestEscapeNow`, `escapeNow` flag, `escapeNowFromUi`).
   - Part 5: modifiers Vicious, Sturdy, Hauler's (`src/sim/economy.ts`); `MODIFIER_STACK_CAP = 2`; Equipment shows Critical damage, Bag room and a cap note.
   - 2026-11-07 Kit conversion (dacb684, ffd20b1, 6a84049, 9d50c99, e2847a8): Equipment, Craft, Rules, Attributes and Skill web panels use Kit components; UI conventions written in GAME_DESIGN §12. Skill facts include node bonuses (842fc99). 799 tests.
+  - 2026-11-08 Step 12.3 mid-game heavy telegraphs (a4f24ef, 0ab6612, eb9896b, ee6f948, cdf6778; 809 tests): Thornbeast Bramble Slam and Hollow Sentry Shield Bash are 1.8 s, 220%, interruptible at 25% max HP (cooldowns 9/10 s); telegraph/interruptible rules watch every enemy (`watchedEnemy` in `automation.ts`); `--matrix telegraph` harness (`src/harness/telegraph.ts`); UI: skill name, Heavy tag, Interrupt n/m HP, Map enemy facts, Rules hint. NOT met: blind heroes still win 100% and Warrior/Assassin floor builds show no rules-vs-blind gap (they carry no telegraph rows); offline defeat rates unchanged (Grove Assassin 33% to 20%, Ranger 23-28%). Step 12.3 stays in-progress. Levers left: shorter cooldown, first-use delay, skill-damage-only interrupt, harder-hitting enemies, or give Warrior/Assassin floor builds telegraph rows.
   - Earlier: UX flow batch (shop compare, Wear button, Going in with, ×N grouping), away route, offline, Save panel.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
