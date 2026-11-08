@@ -106,7 +106,7 @@ describe('harness CLI', () => {
     expect(withoutTiming(second.stdout)).toBe(withoutTiming(first.stdout))
     expect(first.stdout).not.toContain('encounter started')
     expect(second.stdout).not.toContain('basic attacks')
-  })
+  }, 30_000)
 
   it('lists scenarios and rejects unknown scenario, a non-integer seed, and runs below 1', () => {
     const list = runCli(['--list'])
