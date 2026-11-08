@@ -183,6 +183,8 @@ export type SavedHero = {
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the hero has no run as the player leaves. Null never starts one. */
   awayRouteId: string | null
+  /** This hero's run while another hero is selected: the away route it keeps running in the background. Null when it has none. Promoted to `SaveData.expedition` when the hero is selected. */
+  awayRun: ExpeditionState | null
   /** One-time content updates this hero already has (see `heroUpdates.ts`). */
   updates: string[]
   /** The highest Fractured Warden Echo rank this hero can fight. Each victory unlocks the next. Personal to the hero. */
@@ -402,6 +404,10 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check(typeof value.repeatLimit === 'number' && REPEAT_LIMITS.includes(value.repeatLimit), `${label} run limit must be one of ${REPEAT_LIMITS.join(', ')}`)
   check(value.bagFullOrder === 'home' || value.bagFullOrder === 'ask', `${label} bag-full order must be home or ask`)
   check(value.awayRouteId === null || typeof value.awayRouteId === 'string', `${label} away route must be a route id or null`)
+  if (value.awayRun !== null) {
+    check(isRecord(value.awayRun), `${label} away run must be an object or null`)
+    assertExpedition(value.awayRun as unknown as ExpeditionState)
+  }
   stringList(value.packedSupplies, `${label} packed supplies`)
   stringList(value.updates, `${label} updates`)
   check(value.packedSupplies.length <= SUPPLY_SLOT_COUNT, `${label} packs more than ${SUPPLY_SLOT_COUNT} supplies`)
@@ -514,6 +520,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.repeatLimit === undefined) hero.repeatLimit = 0
     if (hero.bagFullOrder === undefined) hero.bagFullOrder = DEFAULT_BAG_FULL_ORDER
     if (hero.awayRouteId === undefined) hero.awayRouteId = null
+    if (hero.awayRun === undefined) hero.awayRun = null
     if (hero.updates === undefined) hero.updates = []
     if (hero.craftXp === undefined) hero.craftXp = 0
     if (hero.legacy === undefined) hero.legacy = 0

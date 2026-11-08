@@ -24,11 +24,10 @@ export const OFFLINE_SUMMARY_MIN_MS = 30_000
 /** Why the replay stopped running expeditions, or null when it ran to the end of the time. */
 export type OfflineStop = 'defeat' | 'returned' | 'uncleared' | 'supplies' | 'blocked' | 'bagFull' | 'runLimit' | null
 
-export type OfflineSummary = {
-  /** Time away, before the cap. */
-  awayMs: number
-  /** Time actually replayed. */
-  replayedMs: number
+/** What one hero did while the player was away. */
+export type HeroAwaySummary = {
+  heroId: string
+  heroName: string
   /** Runs that ended: returned safely, or defeated. */
   runs: number
   fightsWon: number
@@ -39,31 +38,54 @@ export type OfflineSummary = {
   levelsGained: number
   gold: number
   materials: { [materialId: string]: number }
+  contractsFinished: number
+  /** Why this hero stopped running. A reason the player may need to act on. */
+  stopped: OfflineStop
+  /** The reason a repeat could not start, in words, when `stopped` is blocked. */
+  note: string | null
+}
+
+/** The "while you were away" report: shared facts, and one row per hero that ran. The selected hero is first. */
+export type AwayReport = {
+  /** Time away, before the cap. */
+  awayMs: number
+  /** Time actually replayed. */
+  replayedMs: number
   /** What every hero's crafts finished, as the notices say. */
   crafts: string[]
   /** The base item of each finished craft, in the same order as `crafts`, so the shops can badge themselves. */
   craftBaseIds: string[]
-  contractsFinished: number
+  /** Places discovered, sorted. Several heroes can reach them in any order. */
   discovered: string[]
-  /** Why running stopped. A reason the player may need to act on. */
+  heroes: HeroAwaySummary[]
+}
+
+/** One hero's replay: the selected hero's live run, or another hero's away run. */
+export type Lane = {
+  heroId: string
+  /** The fight count the run was pushed on from, as the live screen keeps it. */
+  pushedAt: number | null
+  /** Gold and loot the run held when the last fight ended, so a won fight's gain can be told apart and reduced. */
+  baseline: { gold: number; unsecured: { [materialId: string]: number } }
   stopped: OfflineStop
-  /** The reason a repeat could not start, in words, when `stopped` is blocked. */
-  note: string | null
+  summary: HeroAwaySummary
+  /** Before-values for the summary, taken from the starting save. */
+  start: { level: number; gold: number; materials: { [materialId: string]: number }; contractsDone: number }
 }
 
 export type OfflineState = {
   save: SaveData
   /** Simulation steps still to replay. */
   stepsLeft: number
-  /** The fight count the run was pushed on from, as the live screen keeps it. */
-  pushedAt: number | null
   crafting: boolean
-  /** Gold and loot the run held when the last fight ended, so a won fight's gain can be told apart and reduced. */
-  baseline: { gold: number; unsecured: { [materialId: string]: number } }
-  summary: OfflineSummary
-  /** Before-values for the summary, taken from the starting save. */
-  start: { level: number; gold: number; materials: { [materialId: string]: number }; discoveries: string[]; contractsDone: number }
-  stopped: OfflineStop
+  awayMs: number
+  replayedMs: number
+  crafts: string[]
+  craftBaseIds: string[]
+  /** Discoveries in the starting save. */
+  discoveries: string[]
+  /** Lane 0 is the selected hero. The others are the heroes with an away route, in roster order. */
+  lanes: Lane[]
 }
 
 const defs = gameDefs()
@@ -89,46 +111,67 @@ export function replayMs(awayMs: number): number {
 }
 
 /**
+ * Run `change` on a view of the save in which `heroId` is the selected hero and that hero's away run is the
+ * expedition. Everything the persist helpers do for "the selected hero" then applies to that hero. The
+ * result goes back with the real selected hero and expedition restored and the run stored on the hero.
+ */
+export function withView(save: SaveData, heroId: string, change: (view: SaveData) => SaveData): SaveData {
+  if (save.selectedHeroId === heroId) return change(save)
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return save
+  const view: SaveData = {
+    ...save,
+    selectedHeroId: heroId,
+    expedition: hero.awayRun,
+    heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, awayRun: null } : entry)),
+  }
+  const out = change(view)
+  return {
+    ...out,
+    selectedHeroId: save.selectedHeroId,
+    expedition: save.expedition,
+    heroes: out.heroes.map((entry) => (entry.id === heroId ? { ...entry, awayRun: out.expedition } : entry)),
+  }
+}
+
+/**
  * The player left with no run and chose an away route: start it first (GAME_DESIGN §11). It is refused, with the
  * reason, when the hero has not cleared the route, the packed supplies are not in the stash, or the run cannot begin.
  */
-function startAwayRun(save: SaveData): { save: SaveData; stopped: OfflineStop; note: string | null } {
+function startAwayRun(save: SaveData, seed: number): { save: SaveData; stopped: OfflineStop; note: string | null } {
   const hero = selectedHero(save)
   if (save.expedition !== null || hero === null || hero.awayRouteId === null) return { save, stopped: null, note: null }
   if (!routeCleared(hero, hero.awayRouteId)) return { save, stopped: 'uncleared', note: null }
   if (packFromStash(hero).missing.length > 0) return { save, stopped: 'supplies', note: null }
-  const begun = beginExpedition(save, hero.awayRouteId, deriveSeed(save.lastSeenAt ?? 1, 4242))
+  const begun = beginExpedition(save, hero.awayRouteId, seed)
   if (!begun.ok) return { save, stopped: 'blocked', note: begun.reason }
   return { save: begun.save, stopped: null, note: null }
 }
 
-/**
- * Start a catch-up. The given save is copied, so nothing about it changes. Time is replayed in whole
- * simulation steps by `advanceOffline`. `crafting` is false when something else already counted the
- * crafting time, such as the wall-clock craft timer of a tab that was only hidden.
- */
-export function createOffline(save: SaveData, awayMs: number, crafting: boolean): OfflineState {
-  const copy = structuredClone(save)
-  const ms = replayMs(awayMs)
-  const purse = purseOf(copy)
-  const away = startAwayRun(copy)
+/** The first run's seed for a lane. Lane 0 keeps the seed it always had; the others differ by lane. */
+function laneSeed(lastSeenAt: number | null, laneIndex: number): number {
+  const base = deriveSeed(lastSeenAt ?? 1, 4242)
+  return laneIndex === 0 ? base : deriveSeed(base, laneIndex)
+}
+
+/** The ids of the heroes that run: the selected hero first, then every other hero with an away route, in roster order. */
+export function laneHeroIds(save: SaveData): string[] {
+  const ids: string[] = save.selectedHeroId === null ? [] : [save.selectedHeroId]
+  for (const hero of save.heroes) if (hero.id !== save.selectedHeroId && hero.awayRouteId !== null) ids.push(hero.id)
+  return ids
+}
+
+function newLane(view: SaveData, heroId: string, note: string | null, stopped: OfflineStop): Lane {
+  const purse = purseOf(view)
   return {
-    save: away.save,
-    stepsLeft: Math.floor(ms / STEP_MS),
+    heroId,
     pushedAt: null,
-    crafting,
-    baseline: baselineOf(away.save),
-    stopped: away.stopped,
-    start: {
-      level: heroLevel(copy),
-      gold: safeGold(copy),
-      materials: { ...purse.materials },
-      discoveries: [...copy.account.discoveries],
-      contractsDone: contractsDone(copy),
-    },
+    baseline: baselineOf(view),
+    stopped,
+    start: { level: heroLevel(view), gold: safeGold(view), materials: { ...purse.materials }, contractsDone: contractsDone(view) },
     summary: {
-      awayMs,
-      replayedMs: ms,
+      heroId,
+      heroName: selectedHero(view)?.name ?? heroId,
       runs: 0,
       fightsWon: 0,
       retreats: 0,
@@ -137,13 +180,39 @@ export function createOffline(save: SaveData, awayMs: number, crafting: boolean)
       levelsGained: 0,
       gold: 0,
       materials: {},
-      crafts: [],
-      craftBaseIds: [],
       contractsFinished: 0,
-      discovered: [],
       stopped: null,
-      note: away.note,
+      note,
     },
+  }
+}
+
+/**
+ * Start a catch-up. The given save is copied, so nothing about it changes. Time is replayed in whole
+ * simulation steps by `advanceOffline`. `crafting` is false when something else already counted the
+ * crafting time, such as the wall-clock craft timer of a tab that was only hidden.
+ */
+export function createOffline(save: SaveData, awayMs: number, crafting: boolean): OfflineState {
+  let copy = structuredClone(save)
+  const ms = replayMs(awayMs)
+  const lanes: Lane[] = []
+  laneHeroIds(copy).forEach((heroId, index) => {
+    copy = withView(copy, heroId, (view) => {
+      const away = startAwayRun(view, laneSeed(copy.lastSeenAt, index))
+      lanes.push(newLane(away.save, heroId, away.note, away.stopped))
+      return away.save
+    })
+  })
+  return {
+    save: copy,
+    stepsLeft: Math.floor(ms / STEP_MS),
+    crafting,
+    awayMs,
+    replayedMs: ms,
+    crafts: [],
+    craftBaseIds: [],
+    discoveries: [...copy.account.discoveries],
+    lanes,
   }
 }
 
@@ -155,29 +224,33 @@ function roundHalfUp(value: number): number {
   return Math.floor(value + 0.5)
 }
 
-function baselineOf(save: SaveData): OfflineState['baseline'] {
+function baselineOf(save: SaveData): Lane['baseline'] {
   const expedition = save.expedition
   const unsecured: { [materialId: string]: number } = {}
   for (const stack of expedition?.unsecured ?? []) unsecured[stack.materialId] = stack.quantity
   return { gold: expedition?.carriedGold ?? 0, unsecured }
 }
 
+/** A lane being replayed on its view of the save. */
+type Ctx = { save: SaveData; lane: Lane }
+
 /**
  * A fight just ended. Reduce what it dropped to the offline rate, then take a new baseline. The drop is
  * what the run holds now minus what it held after the last fight.
  */
-function applyLootRate(state: OfflineState): void {
-  const expedition = state.save.expedition
+function applyLootRate(ctx: Ctx): void {
+  const expedition = ctx.save.expedition
   if (expedition === null) return
-  const gold = expedition.carriedGold - state.baseline.gold
-  if (gold > 0) expedition.carriedGold = state.baseline.gold + roundHalfUp(gold * OFFLINE_LOOT_RATE)
+  const baseline = ctx.lane.baseline
+  const gold = expedition.carriedGold - baseline.gold
+  if (gold > 0) expedition.carriedGold = baseline.gold + roundHalfUp(gold * OFFLINE_LOOT_RATE)
   expedition.unsecured = expedition.unsecured.flatMap((stack) => {
-    const before = state.baseline.unsecured[stack.materialId] ?? 0
+    const before = baseline.unsecured[stack.materialId] ?? 0
     const gain = stack.quantity - before
     const quantity = gain > 0 ? before + roundHalfUp(gain * OFFLINE_LOOT_RATE) : stack.quantity
     return quantity > 0 ? [{ ...stack, quantity }] : []
   })
-  state.baseline = baselineOf(state.save)
+  ctx.lane.baseline = baselineOf(ctx.save)
 }
 
 /** Every node of the route is in the hero's cleared list. */
@@ -188,62 +261,63 @@ function routeCleared(hero: SavedHero, routeId: string): boolean {
 }
 
 /** Count the fights an expedition has finished since `seen` of its history entries. */
-function countNewFights(state: OfflineState, seen: number): number {
-  const expedition = state.save.expedition
+function countNewFights(ctx: Ctx, seen: number): number {
+  const expedition = ctx.save.expedition
   if (expedition === null) return seen
   for (let index = seen; index < expedition.history.length; index += 1) {
     const entry = expedition.history[index]
     if (entry === undefined) continue
-    if (entry.outcome === 'victory') state.summary.fightsWon += 1
-    else if (entry.outcome === 'retreat') state.summary.retreats += 1
+    if (entry.outcome === 'victory') ctx.lane.summary.fightsWon += 1
+    else if (entry.outcome === 'retreat') ctx.lane.summary.retreats += 1
   }
   return expedition.history.length
 }
 
 /** A run that came home safely. Settle it and start the next one when the standing orders say so. Returns false when running must stop. */
-function afterReturn(state: OfflineState): boolean {
-  const expedition = state.save.expedition
-  const hero = selectedHero(state.save)
+function afterReturn(ctx: Ctx): boolean {
+  const expedition = ctx.save.expedition
+  const hero = selectedHero(ctx.save)
+  const lane = ctx.lane
   if (expedition === null || hero === null) return false
-  state.summary.runs += 1
+  lane.summary.runs += 1
   if (!hero.repeatRoute) {
-    state.stopped = 'returned'
+    lane.stopped = 'returned'
     return false
   }
-  if (hero.repeatLimit > 0 && state.summary.runs >= hero.repeatLimit) {
-    state.stopped = 'runLimit'
+  if (hero.repeatLimit > 0 && lane.summary.runs >= hero.repeatLimit) {
+    lane.stopped = 'runLimit'
     return false
   }
   const routeId = expedition.id
   const seed = deriveSeed(expedition.seed, 7919)
-  state.summary.xp += expedition.xpEarned ?? 0
-  state.save = settleExpedition(state.save)
-  const settled = selectedHero(state.save)
+  lane.summary.xp += expedition.xpEarned ?? 0
+  ctx.save = settleExpedition(ctx.save)
+  const settled = selectedHero(ctx.save)
   if (settled === null) return false
   if (!routeCleared(settled, routeId)) {
-    state.stopped = 'uncleared'
+    lane.stopped = 'uncleared'
     return false
   }
   if (packFromStash(settled).missing.length > 0) {
-    state.stopped = 'supplies'
+    lane.stopped = 'supplies'
     return false
   }
-  const begun = beginExpedition(state.save, routeId, seed)
+  const begun = beginExpedition(ctx.save, routeId, seed)
   if (!begun.ok) {
-    state.stopped = 'blocked'
-    state.summary.note = begun.reason
+    lane.stopped = 'blocked'
+    lane.summary.note = begun.reason
     return false
   }
-  state.save = begun.save
-  state.pushedAt = null
-  state.baseline = baselineOf(state.save)
+  ctx.save = begun.save
+  lane.pushedAt = null
+  lane.baseline = baselineOf(ctx.save)
   return true
 }
 
 /** At the hold between fights: the standing orders choose to push on or to walk home. */
-function decideAtHold(state: OfflineState): void {
-  const expedition = state.save.expedition
-  const hero = selectedHero(state.save)
+function decideAtHold(ctx: Ctx): void {
+  const expedition = ctx.save.expedition
+  const hero = selectedHero(ctx.save)
   if (expedition === null || hero === null) return
   const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
   if (hpPercent < hero.pushOnHpPercent) {
@@ -252,16 +326,49 @@ function decideAtHold(state: OfflineState): void {
   }
   if (bagIsFull(expedition)) {
     // 'ask' holds the run for the player; replaying stops here and the run waits at this hold.
-    if (hero.bagFullOrder === 'ask') state.stopped = 'bagFull'
+    if (hero.bagFullOrder === 'ask') ctx.lane.stopped = 'bagFull'
     else returnToTown(expedition)
     return
   }
-  state.pushedAt = expedition.encounterIndex
+  ctx.lane.pushedAt = expedition.encounterIndex
+}
+
+/** Replay up to `budget` steps of one lane's run. */
+function runLane(ctx: Ctx, budget: number): void {
+  const lane = ctx.lane
+  let used = 0
+  let seen = ctx.save.expedition?.history.length ?? 0
+  while (used < budget && lane.stopped === null) {
+    const expedition = ctx.save.expedition
+    if (expedition === null) break
+    if (expedition.outcome === 'defeat') {
+      lane.summary.runs += 1
+      lane.summary.defeated = true
+      lane.stopped = 'defeat'
+      break
+    }
+    if (expedition.outcome === 'returned') {
+      seen = countNewFights(ctx, seen)
+      if (!afterReturn(ctx)) break
+      seen = ctx.save.expedition?.history.length ?? 0
+      continue
+    }
+    if (shouldHold(expedition, lane.pushedAt)) {
+      decideAtHold(ctx)
+      continue
+    }
+    stepExpedition(expedition, defs)
+    used += 1
+    if (expedition.history.length !== seen) {
+      applyLootRate(ctx)
+      seen = countNewFights(ctx, seen)
+    }
+  }
 }
 
 /**
  * Replay up to `maxSteps` simulation steps. The result does not depend on how the time is split
- * into calls: crafting adds up, and the expedition only moves by single steps.
+ * into calls: crafting adds up (once for all heroes), and each hero's expedition only moves by single steps.
  */
 export function advanceOffline(state: OfflineState, maxSteps: number): void {
   const budget = Math.min(Math.max(0, Math.floor(maxSteps)), state.stepsLeft)
@@ -270,70 +377,63 @@ export function advanceOffline(state: OfflineState, maxSteps: number): void {
     const crafted = advanceCrafting(state.save, budget * STEP_MS)
     state.save = crafted.save
     for (const notice of crafted.finished) {
-      state.summary.crafts.push(notice.text)
-      state.summary.craftBaseIds.push(notice.baseId)
+      state.crafts.push(notice.text)
+      state.craftBaseIds.push(notice.baseId)
     }
   }
-  let used = 0
-  let seen = state.save.expedition?.history.length ?? 0
-  while (used < budget && state.stopped === null) {
-    const expedition = state.save.expedition
-    if (expedition === null) break
-    if (expedition.outcome === 'defeat') {
-      state.summary.runs += 1
-      state.summary.defeated = true
-      state.stopped = 'defeat'
-      break
-    }
-    if (expedition.outcome === 'returned') {
-      seen = countNewFights(state, seen)
-      if (!afterReturn(state)) break
-      seen = state.save.expedition?.history.length ?? 0
-      continue
-    }
-    if (shouldHold(expedition, state.pushedAt)) {
-      decideAtHold(state)
-      continue
-    }
-    stepExpedition(expedition, defs)
-    used += 1
-    if (expedition.history.length !== seen) {
-      applyLootRate(state)
-      seen = countNewFights(state, seen)
-    }
+  for (const lane of state.lanes) {
+    state.save = withView(state.save, lane.heroId, (view) => {
+      const ctx: Ctx = { save: view, lane }
+      runLane(ctx, budget)
+      return ctx.save
+    })
   }
   state.stepsLeft -= budget
 }
 
-/** The finished save and summary. A run that ended is left for the player to close on the Map. */
-export function finishOffline(state: OfflineState): { save: SaveData; summary: OfflineSummary } {
+/** The finished save and report. A run that ended is left for the player to close on the Map. */
+export function finishOffline(state: OfflineState): { save: SaveData; summary: AwayReport } {
   let save = state.save
-  if (save.expedition !== null) save = recordProgress(save)
-  const before = state.start
-  const purse = purseOf(save)
-  const materials: { [materialId: string]: number } = {}
-  for (const [id, amount] of Object.entries(purse.materials)) {
-    const gained = amount - (before.materials[id] ?? 0)
-    if (gained > 0) materials[id] = gained
+  const heroes: HeroAwaySummary[] = []
+  for (const lane of state.lanes) {
+    save = withView(save, lane.heroId, (view) => {
+      let current = view
+      if (current.expedition !== null) current = recordProgress(current)
+      const before = lane.start
+      const purse = purseOf(current)
+      const materials: { [materialId: string]: number } = {}
+      for (const [id, amount] of Object.entries(purse.materials)) {
+        const gained = amount - (before.materials[id] ?? 0)
+        if (gained > 0) materials[id] = gained
+      }
+      // A defeat on the very last replayed step has not been looked at by the loop yet.
+      const lost = current.expedition?.outcome === 'defeat'
+      heroes.push({
+        ...lane.summary,
+        runs: lane.summary.runs + (lost && !lane.summary.defeated ? 1 : 0),
+        defeated: lane.summary.defeated || lost,
+        gold: Math.max(0, safeGold(current) - before.gold),
+        materials,
+        levelsGained: Math.max(0, heroLevel(current) - before.level),
+        contractsFinished: Math.max(0, contractsDone(current) - before.contractsDone),
+        stopped: lost ? 'defeat' : lane.stopped,
+      })
+      return current
+    })
   }
-  // A defeat on the very last replayed step has not been looked at by the loop yet.
-  const lost = save.expedition?.outcome === 'defeat'
-  const summary: OfflineSummary = {
-    ...state.summary,
-    runs: state.summary.runs + (lost && !state.summary.defeated ? 1 : 0),
-    defeated: state.summary.defeated || lost,
-    gold: Math.max(0, safeGold(save) - before.gold),
-    materials,
-    levelsGained: Math.max(0, heroLevel(save) - before.level),
-    contractsFinished: Math.max(0, contractsDone(save) - before.contractsDone),
-    discovered: newlyDiscovered(before.discoveries, save.account.discoveries),
-    stopped: lost ? 'defeat' : state.stopped,
+  const summary: AwayReport = {
+    awayMs: state.awayMs,
+    replayedMs: state.replayedMs,
+    crafts: [...state.crafts],
+    craftBaseIds: [...state.craftBaseIds],
+    discovered: newlyDiscovered(state.discoveries, save.account.discoveries).sort(),
+    heroes,
   }
   return { save, summary }
 }
 
 /** Replay everything in one call. Tests and small catch-ups use this; the screen uses `advanceOffline` in chunks. */
-export function runOffline(save: SaveData, awayMs: number, crafting: boolean): { save: SaveData; summary: OfflineSummary } {
+export function runOffline(save: SaveData, awayMs: number, crafting: boolean): { save: SaveData; summary: AwayReport } {
   const state = createOffline(save, awayMs, crafting)
   advanceOffline(state, state.stepsLeft)
   return finishOffline(state)

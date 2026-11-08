@@ -66,6 +66,7 @@ function withHero(): SaveData {
     bagFullOrder: 'home',
     repeatLimit: 0,
     awayRouteId: null,
+    awayRun: null,
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,

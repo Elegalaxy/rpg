@@ -90,6 +90,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     repeatLimit: 0,
     bagFullOrder: DEFAULT_BAG_FULL_ORDER,
     awayRouteId: null,
+    awayRun: null,
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,
@@ -117,7 +118,12 @@ export function selectHero(save: SaveData, heroId: string): RosterResult {
   if (save.expedition !== null && save.selectedHeroId !== heroId) {
     return { ok: false, reason: 'Finish the expedition before switching heroes.' }
   }
-  return { ok: true, save: { ...save, selectedHeroId: heroId } }
+  if (save.selectedHeroId === heroId) return { ok: true, save }
+  // A run the hero kept going in the background comes onto the live screen. The current hero has no run.
+  const away = save.heroes.find((hero) => hero.id === heroId)?.awayRun ?? null
+  if (away === null) return { ok: true, save: { ...save, selectedHeroId: heroId } }
+  const heroes = save.heroes.map((hero) => (hero.id === heroId ? { ...hero, awayRun: null } : hero))
+  return { ok: true, save: { ...save, heroes, selectedHeroId: heroId, expedition: away } }
 }
 
 /**
@@ -128,6 +134,7 @@ export function deleteHero(save: SaveData, heroId: string): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
   if (save.expedition !== null) return { ok: false, reason: 'Finish the expedition before deleting a hero.' }
+  if (hero.awayRun !== null) return { ok: false, reason: `${hero.name} is out on an away run. Select the hero and close the run on the Map first.` }
   const heroes = save.heroes.filter((entry) => entry.id !== heroId)
   const selectedHeroId = save.selectedHeroId === heroId ? (heroes[0]?.id ?? null) : save.selectedHeroId
   return { ok: true, save: { ...save, heroes, selectedHeroId } }

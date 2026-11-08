@@ -1,4 +1,4 @@
-import type { OfflineSummary } from '../persist/offline.ts'
+import type { AwayReport, HeroAwaySummary } from '../persist/offline.ts'
 import { dismissAway, getAwayView, useSaveStatus } from './store.ts'
 
 function duration(ms: number): string {
@@ -6,6 +6,22 @@ function duration(ms: number): string {
   if (minutes < 60) return `${Math.max(1, minutes)} min`
   const hours = Math.floor(minutes / 60)
   return minutes % 60 === 0 ? `${hours} h` : `${hours} h ${minutes % 60} min`
+}
+
+const EMPTY: HeroAwaySummary = {
+  heroId: '',
+  heroName: '',
+  runs: 0,
+  fightsWon: 0,
+  retreats: 0,
+  defeated: false,
+  xp: 0,
+  levelsGained: 0,
+  gold: 0,
+  materials: {},
+  contractsFinished: 0,
+  stopped: null,
+  note: null,
 }
 
 const STOP_TEXT: { [reason: string]: string } = {
@@ -17,7 +33,8 @@ const STOP_TEXT: { [reason: string]: string } = {
   defeat: 'The hero fell. Close the run on the Map to pay the rescue fee.',
 }
 
-function lines(summary: OfflineSummary): string[] {
+function lines(report: AwayReport): string[] {
+  const summary = { ...report, ...(report.heroes[0] ?? EMPTY) }
   const out: string[] = []
   out.push(
     summary.awayMs > summary.replayedMs

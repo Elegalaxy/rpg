@@ -15,7 +15,7 @@ import { savePreparation, type PreparationDraft } from '../persist/preparation.t
 import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
-import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceOffline, createOffline, finishOffline, offlineDone, type OfflineState, type OfflineSummary } from '../persist/offline.ts'
+import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceOffline, createOffline, finishOffline, offlineDone, type AwayReport, type OfflineState } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
 import { createHero, deleteHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
@@ -689,7 +689,7 @@ export type AwayView = {
   phase: 'idle' | 'running' | 'summary'
   /** 0 to 1 while a catch-up runs. */
   progress: number
-  summary: OfflineSummary | null
+  summary: AwayReport | null
 }
 
 let awayView: AwayView = { phase: 'idle', progress: 0, summary: null }
@@ -716,7 +716,7 @@ function finishCatchUp(): void {
   const { save, summary } = finishOffline(state)
   offlineState = null
   catchingUp = false
-  pushedAt = state.pushedAt
+  pushedAt = state.lanes[0]?.pushedAt ?? null
   saveStatus = { ...saveStatus, save }
   commitSave(save, 'offline catch-up', false)
   if (summary.discovered.length > 0) {
