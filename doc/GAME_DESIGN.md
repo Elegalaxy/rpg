@@ -1289,6 +1289,46 @@ First-region level bands:
 
 These formulas are calibration targets. Individual enemies can override any value when their role requires it.
 
+### Class balance pass (Step 13.5)
+
+Decided 2026-11-08 (user accepted all recommendations). Warrior and Cleric cannot beat the Warden and trail the other classes at the elites; the Mage's Mana Ward is the outlier. Order: lift Warrior and Cleric, trim Mage, then harden the elites (Colossus, Reaver). Skill and node text in §4 and §7 changes only in the part that changes the number.
+
+Diagnosis (Step 12.4, 13.1 and 13.4 measurements):
+
+- Warrior against the Warden, prepared: dies at about 86 s with the Warden at 52%. Damage is about 21 per second; sustain is only Second Wind (15% max HP per 12 s) and Shield Brace (30% reduction).
+- Cleric against the Warden: about 11 damage per second, the Warden at 58-73% after 100-209 s.
+- Mage: Mana Ward with its node absorbs 125% of Magical Power (about 175 HP every 8.8 s), about 2.5 times the Cleric's Ward. It is the outlier.
+- Assassin: Warden prepared 0-4% yet Colossus 94%. That is an enemy-side issue and is accepted for now (parts 5-6).
+
+Bands (prepared = the Warden "prepared" tier, over = over-levelled):
+
+- Warden prepared (level 20): 30-70% wins for every class. Over-levelled (level 24): at least 85%. Causeway-geared tier: at least 85%. Just arrived: at most 20%.
+- Tidebound Colossus and Hollowmaw Reaver, prepared: 40-85% for all five classes; over-levelled at least 85%.
+- Mixed fights: 15-40% of maximum HP lost.
+- Telegraphs: in elite fights the rules hero beats the blind hero by at least 8 HP points and at least 10 win points, for every class with an answer skill.
+- Crafted supplies: the crafted prepared tier wins at most 30 points more than the plain prepared tier.
+
+Levers. Skill-definition and class constants only, no sim change. Start value, then the sweep range; a chosen value outside the range is reported, not forced. Starter-node constants are absolute values, so a base change needs its node constant changed too. Do not touch Fury generation, `FURY_PHYSICAL_BONUS_AT_FULL`, basic attacks, reference hero stats or damage formulas (`duel-basic` is a Warrior on basic attacks and its golden snapshot must not change).
+
+| Id | Class | Lever | Now | Start | Range |
+| --- | --- | --- | --- | --- | --- |
+| W1 | Warrior | Driving Blow damage | 110% | 130% | 120-140% |
+| W2 | Warrior | Sundering Blow damage, Expose Armor reduction | 125%, 20% | 150%, 30% | 25-35% Armor |
+| W3 | Warrior | Second Wind heal | 15% max HP | 25% | 20-30% |
+| W4 | Warrior | Shield Brace reduction | 30% | 50% | 40-60% |
+| C1 | Cleric | Smite damage; `SMITE_NODE_COEFFICIENT` | 100%; 1.2 | 130%; 1.5 | to be swept |
+| C2 | Cleric | Judgment damage and cost; `JUDGMENT_NODE_COEFFICIENT` | 200%, 50; 2.3 | 250%, 40; 2.8 | to be swept |
+| C3 | Cleric | `ZEAL_BASE`, only if C1 and C2 are not enough | 7 | 9 | |
+| M1 | Mage | Mana Ward barrier; `MANA_WARD_NODE_COEFFICIENT` | 100%; 1.25 | 70%; 0.9 | 60-90%; 0.8-1.0 |
+
+If Echo-first targeting (Q5) explains most of the Warrior and Cleric Warden gap (the `lowestHpPercent` diagnostic row of `--matrix elites`), their reference rules change for multi-enemy rows only, which moves the reference CSV; that is recorded here when done.
+
+Guards after each class part: the built matrix (Rootmaw and Echo Knight at 6 nodes) is not trivialised (Warrior and Cleric HP lost not down more than 15 points); reference regular fights at least 95% wins; Causeway and Hollows regular fights at least 95%; Mage over-levelled Warden at least 85%. Acceptance: seeds 1, 2 and 3 at 100 runs, mean of the seeds, seeds within 8 points of each other.
+
+Later parts: 5 elite retune (Colossus HP 3,600 to 4,200 and Breaker Wave 230% to 320%; Reaver HP 3,400 to 4,400, Power 40 to 44, Rift Surge 300% to 400%; Warden unchanged unless Warrior or Cleric is below 30% prepared, then the HP multiplier 8 to 7); 6 telegraph check (an optional single-action interrupt mechanic only with user approval); 7 crafted supplies (Greater Draught 50% to 40%, Riftglass Ward 30% to 25%); 8 full re-measure and close.
+
+Baselines and results are recorded below as each part is measured.
+
 ### Automation
 
 Each loadout supports up to 12 ordered priority rows for its four equipped active skills.
