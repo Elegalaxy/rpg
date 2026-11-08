@@ -143,7 +143,7 @@ describe('content integrity', () => {
       cooldownSeconds: 15,
       actionTimeCoefficient: 1,
       tags: expect.arrayContaining(['spender']),
-      effects: [{ kind: 'heal', maxHpFraction: 0.3, healingCoefficient: 0.5 }],
+      effects: [{ kind: 'heal', maxHpFraction: 0.15, healingCoefficient: 0.5 }],
     })
     expect(skills['sundering-blow']).toMatchObject({
       cost: 20,

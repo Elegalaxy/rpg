@@ -65,7 +65,7 @@ const secondWind = {
   actionTimeCoefficient: 1,
   tags: ['heal', FURY_SPENDER_TAG],
   target: 'single',
-  effects: [{ kind: 'heal', maxHpFraction: 0.3, healingCoefficient: 0.5 }],
+  effects: [{ kind: 'heal', maxHpFraction: 0.15, healingCoefficient: 0.5 }],
 } satisfies SkillDef
 
 const sunderingBlow = {

@@ -1455,6 +1455,26 @@ With Second Wind trimmed to 15% (part 3, same seed and runs): 7 / 3000 gives War
 
 Part 3 (Warrior trim): Second Wind `maxHpFraction` 0.30 to 0.15 (the part 2 value of 0.30 was a lever against the wrong cause); re-check the built guard (Rootmaw about 76 and Echo Knight about 64 HP lost within 15 points) and the Warden bands. Cleric Smite, Judgment and Zeal buffs stay unless the Cleric ends above 70% prepared (then Zeal 9 to 7 is suggested, not applied). Colossus and Reaver numbers are unchanged.
 
+Part 3 result (2026-11-08). Chosen: Second Wind `maxHpFraction` 0.15 (was 0.30 after the superseded part 2; the original value too). Node text is unchanged (it only mentions the cooldown). Warden acceptance with Warden 7 / 3000 ms / 10 stacks and Second Wind 15% (seeds 1-3 x 100 runs, rules mode, mean with the seeds listed; wins % with HP lost % / Warden HP left %):
+
+| Class | Arrived | Prepared (band 30-70) | Over (at least 85) | Causeway (at least 85) | Prepared-crafted |
+| --- | --- | --- | --- | --- | --- |
+| Warrior | 0 | 79 (87 / 1; 73, 82, 81) | 100 | 100 | 100 |
+| Assassin | 0 | 18 (98 / 16; 18, 16, 20) | 100 | 100 | 98 |
+| Ranger | 0 | 54 (88 / 4; 59, 54, 49) | 100 | 100 | 99 |
+| Mage | 0 | 48 (93 / 2; 45, 45, 53) | 100 | 100 | 98 |
+| Cleric | 0 | 45 (89 / 2; 47, 42, 45) | 100 | 100 | 97 |
+
+Bands met: Ranger, Mage and Cleric prepared; every class over-levelled and Causeway-geared (100%); every class arrived at most 20% (0%). NOT met: Warrior prepared 79 (9 over 70; seeds 73-82), Assassin prepared 18 (12 under 30; reported, no class buff or nerf applied). An intermediate Second Wind of 10% (seed 1, 60 runs) gives the Warrior 55% prepared (100 / 100 over and Causeway), which would be in band; it was NOT applied because the plan fixed the trim at 15%, so it is for the user to decide. The Cleric ends at 45% prepared, below the 70% ceiling, so its Smite, Judgment and Zeal buffs stay (the Zeal 9 to 7 suggestion is not needed). Crafted supplies lift the prepared tier by 21 (Warrior), 80 (Assassin), 45 (Ranger), 50 (Mage) and 52 (Cleric) points, beyond the 30-point ceiling for four classes (part 7).
+
+Guards (Warrior, seed 1, 100 runs): built 6-node Rootmaw HP lost 65% and Echo Knight 52% (pre-step values about 76 and 64, down 11 and 12, within the 15-point limit; before the trim, with Second Wind 30%, they were 45 and 43); Warrior 0-node Rootmaw 96% and Echo Knight 100% wins. Cleric built 6-node Rootmaw 42% and Echo Knight 42% lost (before 43 and 42). Reference regular fights (seed 1, 100 runs): every class at least 95% (Warrior Rootmaw 96, everything else 100; the Warrior floor reference build loses the Warden 0%). Causeway and Hollows regular fights 100% for every class at every tier.
+
+Mixed fights (seed 1, 100 runs, rules mode, HP lost %; band 15-40): Warrior causeway-mixed arrived/prepared/over 33/24/17, hollows-mixed 22/17/13; the other classes' mixed fights are unchanged by this work apart from the Cleric and the Warrior being re-measured in part 1 (Cleric causeway-mixed 43/40/31, hollows-mixed 28/22/17). Out of band: Cleric causeway-mixed arrived (43), Warrior hollows-mixed over (13); the rest of the earlier out-of-band cells are unchanged and left for part 8.
+
+Elites after the targeting fix (seeds 1-3 x 100 runs, mean, rules mode; wins % with HP lost % / elite HP left %): Warrior Colossus arrived 2 (100 / 25), prepared 100 (57 / 0), over 100; Reaver prepared 100 (43 / 0), over 100. Cleric Colossus arrived 85 (54 / 4; 85, 84, 87), prepared 100 (43 / 0), over 100; Reaver prepared 100 (39 / 0), over 100. Colossus and Reaver prepared 100 for Warrior and Cleric are above the 40-85 band (before the targeting fix: Warrior 100 and Cleric 54 for the Colossus); the Colossus Assassin (33), Ranger (87) and Mage (100) cells and the Reaver cells for those classes are unchanged from part 5B (their rules and levers did not change). The Colossus and Reaver numbers are unchanged, as instructed; a time-pressure ramp for them is a separate later step.
+
+Before / after summary of this fix (Warden prepared, over, causeway wins %; part 5A values with the untargeted rules and Warden 5.75, then now): Warrior 40 / 100 / 100 to 79 / 100 / 100; Cleric 0 / 8 / 64 to 45 / 100 / 100; Assassin 86 / 100 / 100 to 18 / 100 / 100; Ranger 99 / 100 / 100 to 54 / 100 / 100; Mage 100 / 100 / 100 to 48 / 100 / 100. Colossus prepared Warrior 100 to 100, Cleric 54 to 100.
+
 ### Automation
 
 Each loadout supports up to 12 ordered priority rows for its four equipped active skills.
@@ -1529,7 +1549,7 @@ These are a first broad roster for mechanical review. Names and effects are not 
 2. Cleave: costs 25 Fury; deals 80% Physical Power to every enemy; 5-second cooldown; 1.15× action time.
 3. Reckless Strike: requires a two-handed weapon; costs 40 Fury; deals 220% Physical Power; 8-second cooldown; 1.35× action time; increases incoming damage by 20% until the Warrior's next action.
 4. Shield Brace: requires a shield; no Fury cost; reduces incoming damage by 40% (Step 13.5, was 30%) until the Warrior's next action; being struck during the effect generates 5 base Fury; 8-second cooldown; 0.75× action time.
-5. Second Wind: costs 50 Fury; heals 30% maximum HP (Step 13.5, was 15%) plus 50% Healing Power; 15-second cooldown; 1.0× action time.
+5. Second Wind: costs 50 Fury; heals 15% maximum HP (Step 13.5 targeting fix part 3; briefly 30% in the superseded part 2) plus 50% Healing Power; 15-second cooldown; 1.0× action time.
 6. Sundering Blow: costs 20 Fury; deals 150% Physical Power (Step 13.5, was 125%); applies 30% Armor Expose (was 20%) for 8 seconds; 6-second cooldown; 1.0× action time.
 
 #### Assassin
