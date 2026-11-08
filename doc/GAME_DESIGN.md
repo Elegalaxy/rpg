@@ -1424,6 +1424,8 @@ After (seeds 1-3 x 100 runs, mean, rules mode; wins % with HP lost % / elite HP 
 
 Bands met: Colossus prepared Cleric (54); Colossus over-levelled for all five (at least 85). NOT met: Colossus prepared Warrior and Mage (100, band 40-85), Ranger (87, 2 points over), Assassin (33, 7 under); Reaver prepared 100 for all five (band 40-85). To reach the Reaver band the Assassin and Mage would be walled well before the other three, so the needed lever is class power or a new mechanic, not the Reaver numbers; this is reported, not forced.
 
+Guards after the retune (Step 13.5 part 5, `--matrix causeway` and `--matrix hollows`, seed 1, 100 runs, rules mode): every regular (non-elite) fight is won at least 95% by every class at every tier (all 100%). The Colossus rows match the table above (seed 1: prepared Warrior 87, Assassin 31, Ranger 85, Mage 51 (this is the harness Mage tier), Cleric 58). The mixed fights do not contain an elite and were not changed by this part; their HP lost is mostly outside 15-40%, as recorded before (causeway-mixed arrived/prepared/over: Warrior 45/39/35, Assassin 41/29/24, Ranger 12/9/6, Mage 33/21/8, Cleric 43/40/31; hollows-mixed: Warrior 15/10/6, Assassin 24/19/14, Ranger 16/11/10, Mage 6/2/0, Cleric 28/22/17). Out of band (above 40): Warrior and Cleric causeway-mixed arrived, Assassin causeway-mixed arrived. Below 15: Ranger and Mage causeway-mixed, most hollows-mixed rows. Not changed here; left for part 8.
+
 ### Automation
 
 Each loadout supports up to 12 ordered priority rows for its four equipped active skills.

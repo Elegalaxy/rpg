@@ -1,20 +1,23 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-08)
-- **Current Goal:** Step 12.6 Offline extras is done and pushed (6 parts, commits c7ad1e7..1403cc3 plus the browser-check commit). Notifications were deferred by the user.
-- **Recent Changes & Files Touched (Step 12.6):**
-  - Docs: GAME_DESIGN §11 "Offline extras" and Roster rules; IMPLEMENTATION_PLAN Step 12.6.
-  - Run limit: `SavedHero.repeatLimit` (0,1,3,5,10,25; `REPEAT_LIMITS` in `save.ts`), stop `runLimit` in `offline.ts`, select in `ExpeditionPanel.tsx`.
-  - Other heroes: `SavedHero.awayRun`; `offline.ts` runs lanes (selected hero first, then heroes with an away route) via `withView` (swaps the hero's awayRun in as the selected hero's expedition and back). `AwayReport` = shared facts + `HeroAwaySummary[]`. `selectHero` promotes a background run, `deleteHero` refuses with one. Seeds fixed: `laneSeed` folds `lastSeenAt` into int32 (old code threw for real timestamps).
-  - UI: `AwayReportView` table in `AwayPanel.tsx`; Roster badge from `src/persist/awayStatus.ts`.
-  - Background ticking while the page is open: `advanceBackground` (persist) and `tickBackground` in `store.ts` on the 10 s heartbeat and on hide/pagehide, before the save stamps `lastSeenAt` (no double count).
-  - Mastered routes: `SavedHero.routeReturns`, `MASTERY_RETURNS = 10`, `routeMastery` in `world.ts`; x8 in `PLAYBACK_SPEEDS` (`MASTERED_SPEED`), gated in `store.ts`; Mastery n/10 on the Map.
-  - Tests: 935 pass (offline, roster badge, away table, mastery).
+- **Current Goal:** Step 13.5 class balance pass, parts 0-5 done (parts 6-8 open). Step 13.4 (Rift Hollows) is closed (part 8 carried by 13.5 part 5).
+- **Recent Changes & Files Touched (Step 13.5 part 5, commits 4d5aecc, fa07b9c, a9f1ac2 + docs commit):**
+  - Harness: `--matrix elites` row filters `--classes --elites --tiers --modes` (comma lists; any filter drops the diagnostic rows). `src/harness/elites.ts` (`tiers` filter), `cli.ts`, tests.
+  - 5A (user chose to weaken the Warden): `fracturedWarden.hpMultiplier` 8 to 5.75 (HP 3,840 to 2,760) in `src/content/enemies.ts`; tests re-anchored (enemies, scenarios warrior-vs-warden 38,800 ms, content). Warden prepared wins: Warrior 0 to 40, Assassin 3 to 86, Ranger 35 to 99, Mage 48 to 100, Cleric 0 to 0 (43% Warden left). Over/causeway: Warrior 100/100, Assassin/Ranger/Mage 100/100, Cleric 8/64.
+  - 5B: Colossus HP 3,600 to 4,000 and Breaker Wave 230% to 300%; Reaver HP 3,400 to 4,400, Power 40 to 44, Rift Surge 300% to 400%. Colossus prepared: Warrior 100, Assassin 33, Ranger 87, Mage 100, Cleric 54 (over 100 all). Reaver prepared 100 for all (no value in the sweep range changes it). Regular fights stay 100% (causeway and hollows matrices, seed 1).
+  - Numbers, sweeps and before/after tables are in GAME_DESIGN §7 "Class balance pass (Step 13.5)"; Step 13.4 done and 13.5 part 5 noted in IMPLEMENTATION_PLAN.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - No shared vault. One commit per finished part, pushed to `origin/main`, no force-push.
-  - `save.expedition` stays the selected hero's run; other heroes keep theirs in `awayRun`. Do not make it a per-hero map.
-  - Known limit: a run parked by the run limit in the background is continued by a later reload catch-up (limit counts runs per catch-up).
-  - x8 is live only; offline loot and the 0.5 rate are unchanged.
-- **Not checked in the browser:** a defeat of a background hero, selecting a hero with a live background run mid-fight (only the persist level is tested), bag-full order for a background hero.
-- **Exact Next Step:** (1) User playtest of the offline extras (two heroes with away routes, Away table, Roster badges, x8). (2) Open items from before: Colossus and Warden tuning, Warrior/Cleric class work, Grove/Bastion materials. (3) Later: notifications (deferred).
+  - One commit per finished part, pushed to `origin/main`, no force-push. No shared vault, no class nerfs to fix bands.
+  - One HP/Power number cannot put all five classes in a band: the class spread (Warrior/Mage strong, Assassin/Cleric weak) is the structural issue.
+- **Open issues:**
+  - Warden prepared band 30-70 only Warrior (40) met; Assassin 86, Ranger 99, Mage 100 above 70; Cleric 0 (needs a Cleric damage/sustain lever, about Warden multiplier 3 otherwise, which trivialises the rest).
+  - Colossus prepared: Warrior/Mage 100 and Ranger 87 above 85, Assassin 33 below 40. Reaver prepared 100 for all (needs out-of-range numbers, HP 6-7k, Power 50+, Surge 500+, which wall Assassin/Mage first, or a new mechanic).
+  - Built-matrix guard fails for the Warrior floor build on Rootmaw/Echo Knight (HP lost down 31/21 points, wins 100%).
+  - Mixed fights HP lost mostly outside 15-40% (causeway-mixed arrived/prepared high for Warrior/Cleric/Assassin, low for Ranger/Mage; hollows-mixed low).
+  - Crafted supplies lift the Warden prepared tier more than 30 points (part 7: Greater Draught 50 to 40%, Riftglass Ward 30 to 25%).
+  - Telegraph check (part 6): rules vs blind not met in any class; optional single-action interrupt mechanic only with user approval.
+  - Still unchecked by the user: Causeway playtest, offline, away route, Save panel, Wear button, Going in with.
+- **Exact Next Step:** (1) Ask the user how to handle the class spread at Colossus/Reaver/Warden (class power lever or new mechanic; numbers alone cannot do it). (2) Part 7 crafted supplies trim. (3) Part 6 telegraph check. (4) Part 8 full re-measure (`npm run sim -- --matrix elites --seed N --runs 100`, about 35 min per seed; use the new filters for sweeps) and close.
+- **Ideas not in the plan yet (discussed, not decided):** Mend alternatives if the Cleric proves too strong. Offline extras. Later: Grove/Bastion material drops, post-Warden zone, pixel art, crafted supplies, a Chill or Stun cleanse.
