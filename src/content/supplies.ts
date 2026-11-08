@@ -60,6 +60,24 @@ export const SUPPLIES: readonly SupplyDef[] = [
     ruleUsed: true,
     brew: { materialId: 'hide', quantity: 2, gold: 4 },
   },
+  {
+    id: 'greater-draught',
+    name: 'Greater Draught',
+    price: null,
+    effect: 'Restores 50% of maximum HP.',
+    ruleUsed: true,
+    brew: { materialId: 'riftglass', quantity: 2, gold: 10 },
+    requires: { discoveryId: 'node:drowned-causeway' },
+  },
+  {
+    id: 'riftglass-ward',
+    name: 'Riftglass Ward',
+    price: null,
+    effect: 'A barrier of 30% of maximum HP for 8 seconds.',
+    ruleUsed: true,
+    brew: { materialId: 'riftglass', quantity: 2, gold: 12 },
+    requires: { enemyId: 'tidebound-colossus' },
+  },
 ]
 
 export const supplyTable: { readonly [id: string]: SupplyDef } = Object.fromEntries(SUPPLIES.map((supply) => [supply.id, supply]))
@@ -89,13 +107,27 @@ export const WARMING_TONIC_ROW: PriorityRow = {
   conditions: [{ kind: 'status', who: 'hero', statusId: 'chill', measure: 'stacks', operator: 'atLeast', value: 2 }],
 }
 
+/** The Greater Draught's default rule: drink it at 30% HP or less, above the Healing Draught row (decided 2026-11-08). */
+export const GREATER_DRAUGHT_ROW: PriorityRow = {
+  skillId: 'greater-draught',
+  conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 30 }],
+}
+
+/** The Riftglass Ward's default rule: the Ward Charm's conditions, above the Ward Charm row (decided 2026-11-08). */
+export const RIFTGLASS_WARD_ROW: PriorityRow = {
+  skillId: 'riftglass-ward',
+  conditions: WARD_CHARM_ROW.conditions?.map((condition) => ({ ...condition })),
+}
+
 /** The supply rules a new hero starts with, above the class rules. Without a supply in the slots they skip. */
 export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [
+  GREATER_DRAUGHT_ROW,
   { skillId: 'healing-draught', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 40 }] },
   {
     skillId: 'antidote',
     conditions: [{ kind: 'status', who: 'hero', statusId: 'poison', measure: 'stacks', operator: 'atLeast', value: 3 }],
   },
+  RIFTGLASS_WARD_ROW,
   WARD_CHARM_ROW,
   WARMING_TONIC_ROW,
 ]

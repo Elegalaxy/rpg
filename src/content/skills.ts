@@ -556,6 +556,30 @@ const warmingTonic = {
   ],
 } satisfies SkillDef
 
+const greaterDraught = {
+  id: 'greater-draught',
+  name: 'Greater Draught',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 0.5,
+  tags: ['supply'],
+  target: 'single',
+  supply: true,
+  effects: [{ kind: 'heal', maxHpFraction: 0.5, healingCoefficient: 0 }],
+} satisfies SkillDef
+
+const riftglassWard = {
+  id: 'riftglass-ward',
+  name: 'Riftglass Ward',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 0.5,
+  tags: ['supply'],
+  target: 'single',
+  supply: true,
+  effects: [{ kind: 'barrier', source: 'anchorMaxHp', coefficient: 0.3, durationSeconds: 8 }],
+} satisfies SkillDef
+
 export const skills: { [id: string]: SkillDef } = {
   [drivingBlow.id]: drivingBlow,
   [cleave.id]: cleave,
@@ -599,5 +623,7 @@ export const skills: { [id: string]: SkillDef } = {
   [healingDraught.id]: healingDraught,
   [antidote.id]: antidote,
   [warmingTonic.id]: warmingTonic,
+  [greaterDraught.id]: greaterDraught,
+  [riftglassWard.id]: riftglassWard,
   [wardCharm.id]: wardCharm,
 }

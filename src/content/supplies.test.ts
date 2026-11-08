@@ -42,6 +42,8 @@ describe('supplies', () => {
       ['smoke-bomb', 20, false, { materialId: 'scrap', quantity: 3, gold: 8 }],
       ['ward-charm', 20, true, { materialId: 'shard', quantity: 3, gold: 8 }],
       ['warming-tonic', 12, true, { materialId: 'hide', quantity: 2, gold: 4 }],
+      ['greater-draught', null, true, { materialId: 'riftglass', quantity: 2, gold: 10 }],
+      ['riftglass-ward', null, true, { materialId: 'riftglass', quantity: 2, gold: 12 }],
     ])
     for (const supply of SUPPLIES) expect(skills[supply.id]?.supply === true).toBe(supply.ruleUsed)
     expect(supplyTable['antidote']?.name).toBe('Antidote')
@@ -111,6 +113,21 @@ describe('the Warming Tonic', () => {
 
   it('is a half-time supply with no cost or cooldown', () => {
     expect(skills['warming-tonic']).toMatchObject({ tags: ['supply'], cooldownSeconds: 0, actionTimeCoefficient: 0.5, supply: true })
+  })
+})
+
+describe('crafted supplies', () => {
+  it('heals 50% with the Greater Draught and raises a 30% barrier with the Riftglass Ward', () => {
+    const defs = gameDefs()
+    const draught = createCombat(withSupplies(DUEL_BASIC_ID, ['greater-draught'], [{ skillId: 'greater-draught', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 30 }] }], 10), defs, 42)
+    const maxHp = draught.hero.maxHp
+    while (!draught.log.some((event) => event.type === 'supplyUse')) stepCombat(draught, defs)
+    expect(firstOf(draught.log, 'heal', () => true)?.amount).toBe(Math.round(maxHp * 0.5))
+    const row: PriorityRow = { skillId: 'riftglass-ward', conditions: [{ kind: 'telegraph', operator: 'present' }] }
+    const ward = runCombat(createCombat(withSupplies(ROOTMAW_ID, ['riftglass-ward'], [row]), defs, 4), defs, 300_000)
+    const used = firstOf(ward.log, 'supplyUse', (event) => event.supplyId === 'riftglass-ward')
+    const barrier = ward.log.find((event) => event.type === 'barrier' && event.timeMs === used!.timeMs)
+    expect(barrier).toMatchObject({ amount: ward.hero.maxHp * 0.3 })
   })
 })
 

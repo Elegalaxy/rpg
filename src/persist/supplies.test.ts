@@ -6,7 +6,7 @@ import { SMOKE_BOMB_ID, SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
 import { buildCondition, draftsFromRows, describeCondition, summarizeRule } from './loadout.ts'
 import { checkPreparation, draftFor, packFromStash, packedCounts, clampToStash, savePreparation, stepPacked } from './preparation.ts'
 import { createHero, selectHero } from './roster.ts'
-import { newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
+import { assertSaveData, newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
 import { supplyLock } from './crafting.ts'
 import { brewSupply, buySupply } from './town.ts'
 import { beginExpedition, settleExpedition } from './world.ts'
@@ -94,7 +94,7 @@ describe('supply rules', () => {
   })
 
   it('edits a hero status stacks condition without losing it', () => {
-    const antidote = DEFAULT_SUPPLY_ROWS[1]!
+    const antidote = DEFAULT_SUPPLY_ROWS.find((row) => row.skillId === 'antidote')!
     const [draft] = draftsFromRows([antidote])
     expect(draft?.conditions).toEqual([{ type: 'heroStacks', operator: 'atLeast', value: '3', statusId: 'poison' }])
     expect(buildCondition(draft!.conditions[0]!)).toEqual(antidote.conditions?.[0])
@@ -203,5 +203,35 @@ describe('brew-only and locked supplies (stand-in supply)', () => {
 
   it('leaves supplies with no requirement open', () => {
     expect(supplyLock(heroSave(), 'healing-draught')).toBeNull()
+  })
+})
+
+describe('crafted supplies in town and saves', () => {
+  const stocked = () => updatePurse(heroSave(), { gold: 200, materials: { riftglass: 4 } })
+
+  it('Greater Draught is brew only and locked until the Drowned Causeway is discovered', () => {
+    expect(buySupply(stocked(), 'greater-draught')).toEqual({ ok: false, reason: 'Greyhaven does not sell that. Brew it at the Potion Shop.' })
+    expect(brewSupply(stocked(), 'greater-draught')).toEqual({ ok: false, reason: 'The Greater Draught is locked. Discover Drowned Causeway first.' })
+    const found = { ...stocked(), account: { ...stocked().account, discoveries: ['node:drowned-causeway'] } }
+    const brewed = purseOf(ok(brewSupply(found, 'greater-draught', 2)))
+    expect(brewed.supplies['greater-draught']).toBe(2)
+    expect(brewed.materials.riftglass).toBeUndefined()
+    expect(brewed.gold).toBe(200 - 20)
+  })
+
+  it('Riftglass Ward is locked until any hero has beaten the Tidebound Colossus', () => {
+    expect(brewSupply(stocked(), 'riftglass-ward')).toEqual({ ok: false, reason: 'The Riftglass Ward is locked. Defeat Tidebound Colossus with any hero first.' })
+    const base = stocked()
+    const beaten = { ...base, heroes: base.heroes.map((hero) => ({ ...hero, defeatedEnemyIds: ['tidebound-colossus'] })) }
+    expect(purseOf(ok(brewSupply(beaten, 'riftglass-ward'))).supplies['riftglass-ward']).toBe(1)
+    const kept = { ...base, account: { ...base.account, discoveries: ['defeated:tidebound-colossus'] } }
+    expect(purseOf(ok(brewSupply(kept, 'riftglass-ward'))).gold).toBe(188)
+  })
+
+  it('a save holding the crafted supplies in the stash and packed validates', () => {
+    const save = updatePurse(heroSave(), { supplies: { 'greater-draught': 2, 'riftglass-ward': 1, 'warming-tonic': 3 } })
+    const packedSave = packed(save, ['greater-draught', 'riftglass-ward', 'warming-tonic', ''])
+    expect(() => assertSaveData(JSON.parse(serializeSave(packedSave)))).not.toThrow()
+    expect(parseSave(serializeSave(packedSave)).ok).toBe(true)
   })
 })

@@ -167,7 +167,7 @@ describe('loadout', () => {
     const rowsBefore = hero(save).priorityRows
     const kept = rowsBefore.filter((row) => keep.includes(row.skillId) || RULE_SUPPLY_IDS.includes(row.skillId))
     expect(hero(result.save).priorityRows).toEqual(kept)
-    expect(kept.slice(0, 2).map((row) => row.skillId)).toEqual(['healing-draught', 'antidote'])
+    expect(kept.slice(0, 2).map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught'])
     expect(result.removedRules).toBe(rowsBefore.length - kept.length)
     expect(result.removedRules).toBeGreaterThan(0)
     expect(() => assertSaveData(result.save)).not.toThrow()

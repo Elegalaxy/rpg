@@ -77,8 +77,8 @@ describe('a save from the first version of the game', () => {
       repeatRoute: true,
       bagFullOrder: 'home',
     })
-    expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule'])
-    expect(hero.priorityRows.slice(0, 2).map((row) => row.skillId)).toEqual(['healing-draught', 'antidote'])
+    expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules'])
+    expect(hero.priorityRows.slice(0, 2).map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught'])
   })
 
   it('moves the old account wealth and contract onto the hero, and posts a full board', () => {

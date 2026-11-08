@@ -13,7 +13,7 @@ describe('warden matrix', () => {
         expect(setup.hero.allocatedNodeIds).toHaveLength(tier.nodes)
         expect(setup.hero.supplies).toHaveLength(tier.supplies.length)
         expect(tier.supplies.length).toBeLessThanOrEqual(4)
-        expect(setup.hero.priorityRows?.[0]?.skillId).toBe('healing-draught')
+        expect(setup.hero.priorityRows?.[0]?.skillId).toBe('greater-draught')
         expect(setup.hero.gear.mainHand.itemLevel).toBe(tier.level)
         expect(setup.hero.gear.mainHand.quality).toBe(tier.quality)
         expect(setup.enemies).toHaveLength(1)

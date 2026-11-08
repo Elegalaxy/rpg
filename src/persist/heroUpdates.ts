@@ -1,5 +1,5 @@
 import { contracts } from '../content/contracts.ts'
-import { DEFAULT_SUPPLY_ROWS, RULE_SUPPLY_IDS, WARD_CHARM_ROW, WARMING_TONIC_ROW } from '../content/supplies.ts'
+import { DEFAULT_SUPPLY_ROWS, GREATER_DRAUGHT_ROW, RIFTGLASS_WARD_ROW, RULE_SUPPLY_IDS, WARD_CHARM_ROW, WARMING_TONIC_ROW } from '../content/supplies.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
@@ -13,7 +13,7 @@ import type { SaveData, SavedHero } from './save.ts'
  * lists the ones it already has, so a rule the player later removes does not come back. New heroes
  * start with every id.
  */
-export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule'] as const
+export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules'] as const
 
 const FADE_BACK = 'fade-back'
 const VOLLEY = 'volley'
@@ -86,12 +86,34 @@ function addSupplyRowAfterSupplies(hero: SavedHero, row: PriorityRow): SavedHero
   return { ...hero, priorityRows: [...hero.priorityRows.slice(0, at), copyRow(row), ...hero.priorityRows.slice(at)] }
 }
 
+/**
+ * The Greater Draught and Riftglass Ward came on 2026-11-08. Each rule goes just above its basic
+ * counterpart (Healing Draught, Ward Charm), or after the supply rules when the hero has no such row,
+ * unless a rule already names it.
+ */
+function addCraftedSupplyRules(hero: SavedHero): SavedHero {
+  let next = hero
+  for (const [row, counterpart] of [
+    [GREATER_DRAUGHT_ROW, 'healing-draught'],
+    [RIFTGLASS_WARD_ROW, 'ward-charm'],
+  ] as const) {
+    if (next.priorityRows.some((existing) => existing.skillId === row.skillId)) continue
+    if (next.priorityRows.length >= MAX_PRIORITY_ROWS) continue
+    const above = next.priorityRows.findIndex((existing) => existing.skillId === counterpart)
+    const firstOther = next.priorityRows.findIndex((existing) => !RULE_SUPPLY_IDS.includes(existing.skillId))
+    const at = above >= 0 ? above : firstOther < 0 ? next.priorityRows.length : firstOther
+    next = { ...next, priorityRows: [...next.priorityRows.slice(0, at), copyRow(row), ...next.priorityRows.slice(at)] }
+  }
+  return next
+}
+
 const APPLY: { [id in (typeof HERO_UPDATES)[number]]: (hero: SavedHero, save: SaveData) => SavedHero } = {
   'supply-rules': addSupplyRules,
   'ranger-fade-back': addFadeBack,
   'contract-board': addContractBoard,
   'ward-charm-rule': addWardCharmRule,
   'warming-tonic-rule': addWarmingTonicRule,
+  'crafted-supply-rules': addCraftedSupplyRules,
 }
 
 /** Apply every update a hero does not have yet, in order, and record it. */
