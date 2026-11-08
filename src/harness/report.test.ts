@@ -66,7 +66,7 @@ describe('reference report flags and XP', () => {
         {
           classId: 'warrior',
           encounter: 'warden',
-          scenarioId: 'ref-warrior-warden',
+          scenarioId: 'ref-assassin-warden',
           runs: 1,
           wins: 0,
           winPercent: 0,
@@ -129,7 +129,7 @@ describe('runReferenceMatrix', () => {
     const opening = first.rows[0]
     if (opening === undefined) throw new Error('reference matrix has no rows')
     const seeded = runScenario(opening.scenarioId, deriveSeed(input.baseSeed, 0))
-    const warden = first.rows.find((row) => row.scenarioId === 'ref-warrior-warden')
+    const warden = first.rows.find((row) => row.scenarioId === 'ref-assassin-warden')
     console.log('[sim] matrix sample', {
       rows: first.rows.length,
       opening,

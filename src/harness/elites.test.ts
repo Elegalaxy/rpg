@@ -43,7 +43,7 @@ describe('elites matrix', () => {
     const table = formatElitesTable(rows)
     expect(table).toContain('warrior warden prepared rules:')
     expect(table).toContain('cleric reaver over blind:')
-    expect(table).toContain('[target lowestHpPercent]')
+    expect(table).toContain('[target untargeted]')
   }, 300_000)
 
   it('filters by class, elite, tier and mode', () => {

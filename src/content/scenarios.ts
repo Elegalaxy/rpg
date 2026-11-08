@@ -211,8 +211,9 @@ const baseScenarios: { [id: string]: ScenarioDef } = {
       {
         skillId: 'judgment',
         conditions: [{ kind: 'classResource', operator: 'atLeast', value: 75 }],
+        targetPriority: 'lowestResistance',
       },
-      { skillId: 'smite' },
+      { skillId: 'smite', targetPriority: 'lowestResistance' },
     ],
   },
   [WARRIOR_VS_WOLF_PAIR_ID]: {
@@ -303,8 +304,9 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
         conditions: [
           { kind: 'status', who: 'target', statusId: 'expose', measure: 'presence', operator: 'absent' },
         ],
+        targetPriority: 'lowestArmor',
       },
-      { skillId: 'driving-blow' },
+      { skillId: 'driving-blow', targetPriority: 'lowestArmor' },
     ],
   },
   assassin: {
@@ -392,8 +394,9 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
       {
         skillId: 'judgment',
         conditions: [{ kind: 'classResource', operator: 'atLeast', value: 75 }],
+        targetPriority: 'lowestResistance',
       },
-      { skillId: 'smite' },
+      { skillId: 'smite', targetPriority: 'lowestResistance' },
     ],
   },
 }

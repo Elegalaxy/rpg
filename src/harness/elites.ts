@@ -42,7 +42,7 @@ export const ELITE_CELLS: readonly EliteCell[] = [
   { elite: 'reaver', tier: 'prepared-crafted', tierDef: craftedVariant(hollowsTier('prepared')) },
 ]
 
-/** The diagnostic rows: Warrior and Cleric at the Warden with focus-fire on the lowest-HP-percent enemy (Echo-first targeting check). */
+/** The diagnostic rows: Warrior and Cleric at the Warden with every row's target priority removed (the old untargeted reference rules, for comparison with the targeted ones). */
 export const ELITE_DIAGNOSTIC_CLASSES: readonly HeroClass[] = ['warrior', 'cleric']
 export const ELITE_DIAGNOSTIC_TIER = 'prepared'
 
@@ -52,7 +52,7 @@ export type EliteRow = {
   tier: string
   mode: EliteMode
   /** Set on the diagnostic rows: the hero's target priority override. */
-  targeting: 'lowestHpPercent' | null
+  targeting: 'untargeted' | null
   winRate: number
   /** Mean share of the hero's maximum HP lost by the end of the fight, over every run. */
   hpLost: number
@@ -114,8 +114,9 @@ export function runElitesMatrix(seed: number, runs: number, filter: EliteFilter 
     for (const classId of ELITE_DIAGNOSTIC_CLASSES) {
       if (filter.classes !== undefined && !filter.classes.includes(classId)) continue
       const base = eliteSetup(classId, cell)
-      const setup: CombatSetup = { ...base, hero: { ...base.hero, targetPriority: 'lowestHpPercent' } }
-      rows.push({ classId, elite: 'warden', tier: cell.tier, mode: 'rules', targeting: 'lowestHpPercent', ...measure(setup, seed, runs) })
+      const rows0 = (base.hero.priorityRows ?? []).map(({ targetPriority: _unused, ...row }) => row)
+      const setup: CombatSetup = { ...base, hero: { ...base.hero, targetPriority: 'current', priorityRows: rows0 } }
+      rows.push({ classId, elite: 'warden', tier: cell.tier, mode: 'rules', targeting: 'untargeted', ...measure(setup, seed, runs) })
     }
   }
   return rows
