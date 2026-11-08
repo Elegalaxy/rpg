@@ -22,6 +22,8 @@ export const DEFAULT_PUSH_ON_PERCENT = 50
 /** What a run does when the bag is nearly full: walk home, or hold and wait for the player. */
 export type BagFullOrder = 'home' | 'ask'
 export const BAG_FULL_ORDERS: readonly BagFullOrder[] = ['home', 'ask']
+/** The run limits the preparation offers. 0 is no limit. */
+export const REPEAT_LIMITS: readonly number[] = [0, 1, 3, 5, 10, 25]
 export const DEFAULT_BAG_FULL_ORDER: BagFullOrder = 'home'
 /** The usual retreat threshold: 40% of maximum HP. */
 export const DEFAULT_RETREAT = 0.4
@@ -175,6 +177,8 @@ export type SavedHero = {
   pushOnHpPercent: number
   /** Standing order while away: after a safe return, run the same route again if the hero has cleared it. */
   repeatRoute: boolean
+  /** Standing order while away: stop starting runs once this many have ended in one catch-up. 0 is no limit. */
+  repeatLimit: number
   /** Standing order while away: when fewer than 4 bag room is free, walk home (`home`) or hold for the player (`ask`). */
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the hero has no run as the player leaves. Null never starts one. */
@@ -395,6 +399,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.pushOnHpPercent, `${label} push-on percent`)
   check((value.pushOnHpPercent as number) >= 1 && (value.pushOnHpPercent as number) <= 100, `${label} push-on percent must be from 1 to 100`)
   check(typeof value.repeatRoute === 'boolean', `${label} repeat route must be true or false`)
+  check(typeof value.repeatLimit === 'number' && REPEAT_LIMITS.includes(value.repeatLimit), `${label} run limit must be one of ${REPEAT_LIMITS.join(', ')}`)
   check(value.bagFullOrder === 'home' || value.bagFullOrder === 'ask', `${label} bag-full order must be home or ask`)
   check(value.awayRouteId === null || typeof value.awayRouteId === 'string', `${label} away route must be a route id or null`)
   stringList(value.packedSupplies, `${label} packed supplies`)
@@ -506,6 +511,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.packedSupplies === undefined) hero.packedSupplies = []
     if (hero.pushOnHpPercent === undefined) hero.pushOnHpPercent = DEFAULT_PUSH_ON_PERCENT
     if (hero.repeatRoute === undefined) hero.repeatRoute = true
+    if (hero.repeatLimit === undefined) hero.repeatLimit = 0
     if (hero.bagFullOrder === undefined) hero.bagFullOrder = DEFAULT_BAG_FULL_ORDER
     if (hero.awayRouteId === undefined) hero.awayRouteId = null
     if (hero.updates === undefined) hero.updates = []

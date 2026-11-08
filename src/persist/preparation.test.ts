@@ -22,7 +22,7 @@ function hero(save: SaveData) {
 
 describe('preparation', () => {
   it('starts from the usual defaults, per class', () => {
-    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, bagFullOrder: 'home', awayRouteId: '' })
+    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, repeatLimit: 0, bagFullOrder: 'home', awayRouteId: '' })
     expect(draftFor(hero(heroSave('cleric'))).vow).toBe('zeal')
     expect(draftFor(hero(heroSave('ranger'))).specialAmmo).toBe('6')
   })

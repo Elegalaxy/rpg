@@ -22,7 +22,7 @@ export const OFFLINE_LOOT_RATE = 0.5
 export const OFFLINE_SUMMARY_MIN_MS = 30_000
 
 /** Why the replay stopped running expeditions, or null when it ran to the end of the time. */
-export type OfflineStop = 'defeat' | 'returned' | 'uncleared' | 'supplies' | 'blocked' | 'bagFull' | null
+export type OfflineStop = 'defeat' | 'returned' | 'uncleared' | 'supplies' | 'blocked' | 'bagFull' | 'runLimit' | null
 
 export type OfflineSummary = {
   /** Time away, before the cap. */
@@ -208,6 +208,10 @@ function afterReturn(state: OfflineState): boolean {
   state.summary.runs += 1
   if (!hero.repeatRoute) {
     state.stopped = 'returned'
+    return false
+  }
+  if (hero.repeatLimit > 0 && state.summary.runs >= hero.repeatLimit) {
+    state.stopped = 'runLimit'
     return false
   }
   const routeId = expedition.id

@@ -13,6 +13,7 @@ const STOP_TEXT: { [reason: string]: string } = {
   uncleared: 'The hero stopped: this route is not cleared yet, so it was not run again.',
   supplies: 'The hero stopped: the packed supplies are not in the stash any more.',
   bagFull: 'The hero stopped: the bag is nearly full and your order is to ask. The run waits for you on the Map.',
+  runLimit: 'The hero stopped: the run limit you set was reached.',
   defeat: 'The hero fell. Close the run on the Map to pay the rescue fee.',
 }
 

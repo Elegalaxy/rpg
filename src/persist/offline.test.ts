@@ -271,3 +271,15 @@ describe('starting a run while away', () => {
     expect(result.save.expedition).toBeNull()
   })
 })
+
+describe('the run limit', () => {
+  it('stops after exactly the limit and behaves as before at 0', () => {
+    const limited = runOffline(running(withHero(strongHero(), { repeatLimit: 3 })), 2 * 60 * MINUTE, true)
+    expect(limited.summary.runs).toBe(3)
+    expect(limited.summary.stopped).toBe('runLimit')
+    expect(limited.save.expedition?.outcome).toBe('returned')
+    const free = runOffline(running(withHero(strongHero(), { repeatLimit: 0 })), 2 * 60 * MINUTE, true)
+    expect(free.summary.runs).toBeGreaterThan(3)
+    expect(free.summary.stopped).toBeNull()
+  })
+})

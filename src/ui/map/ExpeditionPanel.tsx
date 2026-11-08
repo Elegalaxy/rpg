@@ -13,7 +13,7 @@ import {
   stepPacked,
   type PreparationDraft,
 } from '../../persist/preparation.ts'
-import type { SavedHero } from '../../persist/save.ts'
+import { REPEAT_LIMITS, type SavedHero } from '../../persist/save.ts'
 import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
 import { countNames } from '../town/groupItems.ts'
@@ -202,6 +202,16 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           <label>
             <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
             Run a cleared route again
+          </label>
+          <label>
+            Run limit{' '}
+            <select aria-label="Run limit" value={draft.repeatLimit} onChange={(event) => patch({ repeatLimit: Number(event.target.value) })}>
+              {REPEAT_LIMITS.map((limit) => (
+                <option key={limit} value={limit}>
+                  {limit === 0 ? 'No limit' : `${limit} ${limit === 1 ? 'run' : 'runs'}`}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <p data-testid="away-plan">

@@ -6,7 +6,7 @@ import { EFFICIENT_QUIVER_CAPACITY, NODE_EFFICIENT_QUIVER, QUIVER_CAPACITY } fro
 import { CURSES, NODE_UNDEAD_CURSEBOUND } from '../sim/races/racialNodes.ts'
 
 import type { RosterResult } from './roster.ts'
-import { BAG_FULL_ORDERS, type BagFullOrder, type SaveData, type SavedHero } from './save.ts'
+import { BAG_FULL_ORDERS, REPEAT_LIMITS, type BagFullOrder, type SaveData, type SavedHero } from './save.ts'
 
 /** What the preparation screen edits for the selected hero. Text fields keep what was typed. */
 export type PreparationDraft = {
@@ -25,6 +25,8 @@ export type PreparationDraft = {
   pushOnPercent: string
   /** Standing order while away: run a cleared route again after a safe return. */
   repeatRoute: boolean
+  /** Standing order while away: stop after this many runs in one catch-up. 0 is no limit. */
+  repeatLimit: number
   /** Standing order while away: what to do when the bag is nearly full. */
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the player leaves with no run. An empty string never starts one. */
@@ -47,6 +49,7 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     supplies: Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => hero.packedSupplies[index] ?? ''),
     pushOnPercent: String(hero.pushOnHpPercent),
     repeatRoute: hero.repeatRoute,
+    repeatLimit: hero.repeatLimit,
     bagFullOrder: hero.bagFullOrder,
     awayRouteId: hero.awayRouteId ?? '',
   }
@@ -182,6 +185,7 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   const packedSupplies = draft.supplies.filter((id) => id !== '')
   if (draft.supplies.length > SUPPLY_SLOT_COUNT) errors.push(`Pack at most ${SUPPLY_SLOT_COUNT} supplies.`)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
+  if (!REPEAT_LIMITS.includes(draft.repeatLimit)) errors.push(`Pick a run limit of ${REPEAT_LIMITS.join(', ')} (0 is no limit).`)
   if (!BAG_FULL_ORDERS.includes(draft.bagFullOrder)) errors.push('Pick what to do when the bag is nearly full: walk home or ask.')
   if (draft.awayRouteId !== '' && routes[draft.awayRouteId] === undefined) errors.push('Pick a route Greyhaven knows for away runs, or none.')
   if (errors.length > 0) return { ok: false, errors }
@@ -198,6 +202,7 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
       packedSupplies,
       pushOnHpPercent,
       repeatRoute: draft.repeatRoute,
+      repeatLimit: draft.repeatLimit,
       bagFullOrder: draft.bagFullOrder,
       awayRouteId: draft.awayRouteId === '' ? null : draft.awayRouteId,
     },

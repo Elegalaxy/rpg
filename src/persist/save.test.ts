@@ -64,6 +64,7 @@ function withHero(): SaveData {
     pushOnHpPercent: 50,
     repeatRoute: true,
     bagFullOrder: 'home',
+    repeatLimit: 0,
     awayRouteId: null,
     updates: [...HERO_UPDATES],
     craftXp: 0,

@@ -27,6 +27,7 @@ const LATER_HERO_FIELDS = [
   'pushOnHpPercent',
   'repeatRoute',
   'bagFullOrder',
+  'repeatLimit',
   'updates',
 ]
 
@@ -76,6 +77,7 @@ describe('a save from the first version of the game', () => {
       pushOnHpPercent: 50,
       repeatRoute: true,
       bagFullOrder: 'home',
+      repeatLimit: 0,
     })
     expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules'])
     expect(hero.priorityRows.slice(0, 2).map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught'])
