@@ -693,7 +693,7 @@ Echo Knight:
 - A former protector fused with the spreading fracture.
 - Rank-0 level: 20.
 - Rank-0 stats from the Standard baseline:
-  - 8× HP: 3,840
+  - 5.75× HP: 2,760 (Step 13.5 part 5; was 8×, 3,840)
   - 1.3× Power: 36
   - 1.5× Armor and Resistance: 68 each
   - Accuracy: 40
@@ -1373,6 +1373,38 @@ Mage after (seeds 1-3 x 100 runs, mean; wins % with HP lost % / elite HP left %,
 Guards (Mage, seed 1, 100 runs): Mage over-levelled Warden 100% (at least 85); reference regulars 100% wins; Causeway and Hollows regular fights 100%; built 6-node Rootmaw 69 / 70% lost and Echo Knight 63 / 65% lost (unchanged, not a Warrior/Cleric guard but not trivialised). The floor builds are weaker: Rootmaw 69 / 52% wins, Echo Knight 54 / 1% wins.
 
 Reference CSV changes (Mage rows, seed 1, 100 runs; before / after): win % rootmaw 69 / 52, echo-knight 54 / 1; median victory time ms rootmaw 53372 / 52416, echo-knight 119494 / 113616; mean HP attrition % arbalist 0 / 0.9, bastion-mixed 48.0 / 48.3, echo-knight 90.5 / 96.0, grove-mixed 41.8 / 44.3, rootmaw 86.1 / 87.2. Every other Mage row is unchanged. The golden duel-basic snapshot is unchanged.
+
+Warden result (Step 13.5 part 5A, 2026-11-08, user decision: weaken the Warden instead of designing a new Cleric lever). Lever: Fractured Warden `hpMultiplier` (was 8). Chosen: 5.75 (Warden HP 2,760, was 3,840). Phase thresholds, Power, defences and skills are unchanged.
+
+Sweep (seed 1, 60 runs, rules mode; wins % at Warden prepared / over / causeway, then Warden HP left % at prepared):
+
+| Class | 8 | 7 | 6 | 5.75 | 5.5 | 5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Warrior | 0 / 100 / 87 (23) | 0 / 100 / 100 (14) | 20 / 100 / 100 (4) | 33 / 100 / 100 (2) | 55 / 100 / 100 (1) | 98 / 100 / 100 (0) |
+| Cleric | 0 / 0 / 0 (66) | 0 / 0 / 0 (59) | 0 / 0 / 35 (47) | 0 / 8 / 68 (43) | 0 / 25 / 80 (40) | 0 / 70 / 98 (31) |
+| Assassin | 2 / 100 / 100 | 27 / 100 / 100 | 80 / 100 / 100 | not run | not run | 97 / 100 / 100 |
+| Ranger | 40 / 98 / 100 | 72 / 100 / 100 | 98 / 100 / 100 | not run | not run | 100 / 100 / 100 |
+| Mage | 53 / 100 / 100 | 98 / 100 / 100 | 100 / 100 / 100 | not run | not run | 100 / 100 / 100 |
+
+The bands cannot all be met with one HP multiplier. The Warrior needs about 5.75 or less to reach 30% prepared, the Mage is already above 70% at 7, and the Cleric stays at 0% prepared even at 5 (31% Warden HP left). Warrior (the user's priority class for this lever) takes precedence: 5.75 is the highest tested value that gives the Warrior at least 30% prepared on all three seeds. Fractional values were added to the sweep because the Warrior goes from 20% (6) to 98% (5).
+
+Confirmation (seeds 1-3 x 100 runs, mean, seeds listed; wins % with HP lost % / Warden HP left %), 5.75 and 5.5:
+
+| Class | Tier | 8 (part 4) | 5.75 | 5.5 |
+| --- | --- | --- | --- | --- |
+| Warrior | prepared | 0 (100 / 23) | 40 (78 / 2; 39, 43, 39) | 66 (63 / 1; 65, 68, 64) |
+| Warrior | over | 99 | 100 | 100 |
+| Warrior | causeway | 90 | 100 | 100 |
+| Cleric | prepared | 0 (100 / 66) | 0 (100 / 43) | 0 (100 / 39) |
+| Cleric | over | 0 | 8 | 21 |
+| Cleric | causeway | 0 | 64 | 83 |
+| Assassin | prepared | 3 | 86 (76 / 1; 88, 84, 87) | 91 (72 / 1) |
+| Assassin | over / causeway | 100 / 100 | 100 / 100 | 100 / 100 |
+| Ranger | prepared | 35 | 99 (52 / 0) | 100 |
+| Mage | prepared | 48 | 100 (49 / 0) | 100 |
+| Ranger, Mage | over / causeway | 100 / 100 | 100 / 100 | 100 / 100 |
+
+Bands met: Warrior prepared (30-70), Warrior over and causeway (at least 85), Assassin, Ranger and Mage over and causeway. NOT met: Cleric prepared (0%, band 30-70), Cleric over (8%) and causeway (64%) at least 85; Assassin (86), Ranger (99) and Mage (100) prepared are above the 70% ceiling. Class nerfs were not applied, per the instruction. What else the Cleric would need: it removes about 57% of a 5.75-multiplier Warden (about 3.3 multiplier-units) before dying, so a multiplier of about 3 would be needed, which would make every other class win 100% at every tier; so the Warden number is not the right lever for the Cleric. A Cleric damage-source or sustain lever is. A smaller Warden Power or a longer-cooldown telegraph would not be a better single extra lever: the Cleric dies 100% of runs at the prepared tier with 39-43% of the Warden left, so it needs damage, not just survival.
 
 ### Automation
 

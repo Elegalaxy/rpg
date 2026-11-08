@@ -505,7 +505,7 @@ describe('content integrity', () => {
       traitIds: ['boss-phases'],
       filler: { school: 'physical', coefficient: 1 },
       overrides: {
-        hpMultiplier: 8,
+        hpMultiplier: 5.75,
         powerMultiplier: 1.3,
         armorMultiplier: 1.5,
         resistanceMultiplier: 1.5,

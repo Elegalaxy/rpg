@@ -1531,7 +1531,7 @@ describe('Fractured Warden', () => {
       boss: warden.boss,
       phase,
     })
-    expect(warden.maxHp).toBe(3840)
+    expect(warden.maxHp).toBe(2760)
     expect(warden.power).toBe(36)
     expect(warden.armor).toBe(68)
     expect(warden.resistance).toBe(68)
@@ -1562,7 +1562,7 @@ describe('Fractured Warden', () => {
       actionTimeMs: warden.actionTimeMs,
       xp: warden.xp,
     })
-    expect(warden.maxHp).toBe(4817)
+    expect(warden.maxHp).toBe(3462)
     expect(warden.power).toBe(45)
     expect(warden.armor).toBe(85)
     expect(warden.resistance).toBe(85)
@@ -1583,7 +1583,7 @@ describe('Fractured Warden', () => {
     warden.hp = 2689
     onEnemyHpChanged(state, warden, state.timeMs)
     expect(warden.bossPhase).toBe(1)
-    warden.hp = 2688
+    warden.hp = 1932
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     const blade = state.enemies.find((enemy) => enemy.defId === 'blade-echo')
@@ -1601,20 +1601,20 @@ describe('Fractured Warden', () => {
       "Warden's Guard",
       "Warden's Echoes",
     ])
-    expect(blade).toMatchObject({ maxHp: 576, power: 25, armor: 51, resistance: 51, actionTimeMs: 1650, xp: 0, summon: true })
+    expect(blade).toMatchObject({ maxHp: 414, power: 25, armor: 51, resistance: 51, actionTimeMs: 1650, xp: 0, summon: true })
     expect(ward).toMatchObject({
-      maxHp: 576,
+      maxHp: 414,
       power: 18,
       armor: 51,
       resistance: 51,
       actionTimeMs: 2200,
       xp: 0,
       summon: true,
-      anchorMaxHp: 3840,
+      anchorMaxHp: 2760,
     })
     expect(summons).toHaveLength(2)
     expect(encounterXpAward(state.enemies)).toEqual({ sum: warden.xp, count: 1, discount: 0, amount: warden.xp })
-    warden.hp = 1345
+    warden.hp = 967
     onEnemyHpChanged(state, warden, state.timeMs)
     expect(warden.bossPhase).toBe(2)
     warden.hp = warden.maxHp
@@ -1623,7 +1623,7 @@ describe('Fractured Warden', () => {
     expect(state.log.filter((event) => event.type === 'phase')).toHaveLength(2)
     expect(state.enemies.filter((enemy) => enemy.defId === 'blade-echo')).toHaveLength(1)
     expect(state.enemies.filter((enemy) => enemy.defId === 'ward-echo')).toHaveLength(1)
-    warden.hp = 1344
+    warden.hp = 966
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     onEnemyHpChanged(state, warden, state.timeMs)
@@ -1673,7 +1673,7 @@ describe('Fractured Warden', () => {
     expect(guarded).toBeCloseTo(68 * 1.5 * 0.8, 8)
     expect(guardedResistance).toBeCloseTo(68 * 1.5 * 0.8, 8)
     const phaseAt = state.timeMs
-    warden.hp = 2688
+    warden.hp = 1932
     onEnemyHpChanged(state, warden, phaseAt)
     stepCombat(state, defs)
     expect(warden.bossPhase).toBe(2)
@@ -1699,7 +1699,7 @@ describe('Fractured Warden', () => {
     state.hero.hp = 1_000_000
     state.hero.maxHp = 1_000_000
     warden.nextReadyMs = 500_000
-    warden.hp = 1344
+    warden.hp = 966
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     expect(warden.bossPhase).toBe(3)
@@ -1758,7 +1758,7 @@ describe('Fractured Warden', () => {
     const warden = actorAt(state, 0)
     hold(state.hero)
     hold(warden)
-    warden.hp = 1344
+    warden.hp = 966
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     console.log('[enemy] warden crossed both', {
@@ -1791,16 +1791,16 @@ describe('Fractured Warden', () => {
       ward: ward && { hp: ward.maxHp, power: ward.power, armor: ward.armor, resistance: ward.resistance, actionTimeMs: ward.actionTimeMs, anchor: ward.anchorMaxHp },
     })
     expect(warden.bossPhase).toBe(2)
-    expect(blade).toMatchObject({ maxHp: 723, power: 32, armor: 64, resistance: 64, actionTimeMs: 1650, xp: 0, summon: true })
+    expect(blade).toMatchObject({ maxHp: 519, power: 32, armor: 64, resistance: 64, actionTimeMs: 1650, xp: 0, summon: true })
     expect(ward).toMatchObject({
-      maxHp: 723,
+      maxHp: 519,
       power: 23,
       armor: 64,
       resistance: 64,
       actionTimeMs: 2200,
       xp: 0,
       summon: true,
-      anchorMaxHp: 4817,
+      anchorMaxHp: 3462,
     })
     expect(encounterXpAward(state.enemies)).toEqual({ sum: warden.xp, count: 1, discount: 0, amount: warden.xp })
   })
@@ -1816,7 +1816,7 @@ describe('Fractured Warden', () => {
     console.log('[enemy] warden phase condition before', before.events.map((event) => event.reason))
     expect(before.kind).toBe('basicAttack')
     expect(before.events.some((event) => event.reason === 'boss phase 1 is not 2')).toBe(true)
-    warden.hp = 2688
+    warden.hp = 1932
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     const after = chooseHeroAction(state, defs, state.hero, state.timeMs)
@@ -1867,7 +1867,7 @@ describe('Fractured Warden', () => {
     expect(warden.cooldowns['fracture-hammer']).toBe(resolvesAt + 8000)
     expect(state.log.some((event) => event.type === 'hitRoll' && event.actorId === warden.id && event.timeMs === resolvesAt)).toBe(false)
 
-    warden.hp = 2688
+    warden.hp = 1932
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     expect(warden.bossPhase).toBe(2)
@@ -1883,7 +1883,7 @@ describe('Fractured Warden', () => {
     expect(state.log.some((event) => event.type === 'action' && event.skillId === 'wardens-guard' && event.timeMs >= phase2At)).toBe(false)
 
     warden.telegraph = null
-    warden.hp = 1344
+    warden.hp = 966
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     expect(warden.bossPhase).toBe(3)
@@ -1912,7 +1912,7 @@ describe('Fractured Warden', () => {
     state.hero.hp = 1_000_000
     state.hero.maxHp = 1_000_000
     hold(warden)
-    warden.hp = 2688
+    warden.hp = 1932
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     const blade = state.enemies.find((enemy) => enemy.defId === 'blade-echo')
@@ -2005,7 +2005,7 @@ describe('Fractured Warden', () => {
     state.hero.maxHp = 1_000_000
     state.hero.magicalStatusResistance = 0
     hold(warden)
-    warden.hp = 1344
+    warden.hp = 966
     onEnemyHpChanged(state, warden, state.timeMs)
     stepCombat(state, defs)
     for (const enemy of state.enemies) {
