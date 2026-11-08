@@ -1,5 +1,5 @@
 import { contracts } from '../content/contracts.ts'
-import { DEFAULT_SUPPLY_ROWS, RULE_SUPPLY_IDS, WARD_CHARM_ROW } from '../content/supplies.ts'
+import { DEFAULT_SUPPLY_ROWS, RULE_SUPPLY_IDS, WARD_CHARM_ROW, WARMING_TONIC_ROW } from '../content/supplies.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
@@ -13,7 +13,7 @@ import type { SaveData, SavedHero } from './save.ts'
  * lists the ones it already has, so a rule the player later removes does not come back. New heroes
  * start with every id.
  */
-export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule'] as const
+export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule'] as const
 
 const FADE_BACK = 'fade-back'
 const VOLLEY = 'volley'
@@ -73,11 +73,25 @@ function addWardCharmRule(hero: SavedHero): SavedHero {
   return { ...hero, priorityRows: [...hero.priorityRows.slice(0, at), copyRow(WARD_CHARM_ROW), ...hero.priorityRows.slice(at)] }
 }
 
+/** The Warming Tonic came on 2026-11-08. Its rule goes after the hero's other supply rules, unless a rule already names it. */
+function addWarmingTonicRule(hero: SavedHero): SavedHero {
+  return addSupplyRowAfterSupplies(hero, WARMING_TONIC_ROW)
+}
+
+function addSupplyRowAfterSupplies(hero: SavedHero, row: PriorityRow): SavedHero {
+  if (hero.priorityRows.some((existing) => existing.skillId === row.skillId)) return hero
+  if (hero.priorityRows.length >= MAX_PRIORITY_ROWS) return hero
+  const supplyRows = hero.priorityRows.findIndex((existing) => !RULE_SUPPLY_IDS.includes(existing.skillId))
+  const at = supplyRows < 0 ? hero.priorityRows.length : supplyRows
+  return { ...hero, priorityRows: [...hero.priorityRows.slice(0, at), copyRow(row), ...hero.priorityRows.slice(at)] }
+}
+
 const APPLY: { [id in (typeof HERO_UPDATES)[number]]: (hero: SavedHero, save: SaveData) => SavedHero } = {
   'supply-rules': addSupplyRules,
   'ranger-fade-back': addFadeBack,
   'contract-board': addContractBoard,
   'ward-charm-rule': addWardCharmRule,
+  'warming-tonic-rule': addWarmingTonicRule,
 }
 
 /** Apply every update a hero does not have yet, in order, and record it. */

@@ -541,6 +541,21 @@ const antidote = {
   effects: [{ kind: 'cleanse', statusIds: ['poison', 'bleed'] }],
 } satisfies SkillDef
 
+const warmingTonic = {
+  id: 'warming-tonic',
+  name: 'Warming Tonic',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 0.5,
+  tags: ['supply'],
+  target: 'single',
+  supply: true,
+  effects: [
+    { kind: 'cleanse', statusIds: ['chill', 'burn'] },
+    { kind: 'heal', maxHpFraction: 0.1, healingCoefficient: 0 },
+  ],
+} satisfies SkillDef
+
 export const skills: { [id: string]: SkillDef } = {
   [drivingBlow.id]: drivingBlow,
   [cleave.id]: cleave,
@@ -583,5 +598,6 @@ export const skills: { [id: string]: SkillDef } = {
   [sanctuaryReleaseStrike.id]: sanctuaryReleaseStrike,
   [healingDraught.id]: healingDraught,
   [antidote.id]: antidote,
+  [warmingTonic.id]: warmingTonic,
   [wardCharm.id]: wardCharm,
 }

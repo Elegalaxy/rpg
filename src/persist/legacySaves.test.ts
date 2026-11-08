@@ -77,7 +77,7 @@ describe('a save from the first version of the game', () => {
       repeatRoute: true,
       bagFullOrder: 'home',
     })
-    expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule'])
+    expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule'])
     expect(hero.priorityRows.slice(0, 2).map((row) => row.skillId)).toEqual(['healing-draught', 'antidote'])
   })
 

@@ -52,6 +52,14 @@ export const SUPPLIES: readonly SupplyDef[] = [
     ruleUsed: true,
     brew: { materialId: 'shard', quantity: 3, gold: 8 },
   },
+  {
+    id: 'warming-tonic',
+    name: 'Warming Tonic',
+    price: 12,
+    effect: 'Removes all Chill and Burn, and restores 10% of maximum HP.',
+    ruleUsed: true,
+    brew: { materialId: 'hide', quantity: 2, gold: 4 },
+  },
 ]
 
 export const supplyTable: { readonly [id: string]: SupplyDef } = Object.fromEntries(SUPPLIES.map((supply) => [supply.id, supply]))
@@ -75,6 +83,12 @@ export const WARD_CHARM_ROW: PriorityRow = {
   ],
 }
 
+/** The Warming Tonic's default rule: drink it at 2 Chill stacks (decided 2026-11-08, GAME_DESIGN Supplies). */
+export const WARMING_TONIC_ROW: PriorityRow = {
+  skillId: 'warming-tonic',
+  conditions: [{ kind: 'status', who: 'hero', statusId: 'chill', measure: 'stacks', operator: 'atLeast', value: 2 }],
+}
+
 /** The supply rules a new hero starts with, above the class rules. Without a supply in the slots they skip. */
 export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [
   { skillId: 'healing-draught', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 40 }] },
@@ -83,6 +97,7 @@ export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [
     conditions: [{ kind: 'status', who: 'hero', statusId: 'poison', measure: 'stacks', operator: 'atLeast', value: 3 }],
   },
   WARD_CHARM_ROW,
+  WARMING_TONIC_ROW,
 ]
 
 /** A hero's starting rules: the supply rules, then the class rules. */

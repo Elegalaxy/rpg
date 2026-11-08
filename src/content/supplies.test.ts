@@ -41,6 +41,7 @@ describe('supplies', () => {
       ['antidote', 10, true, { materialId: 'shard', quantity: 2, gold: 3 }],
       ['smoke-bomb', 20, false, { materialId: 'scrap', quantity: 3, gold: 8 }],
       ['ward-charm', 20, true, { materialId: 'shard', quantity: 3, gold: 8 }],
+      ['warming-tonic', 12, true, { materialId: 'hide', quantity: 2, gold: 4 }],
     ])
     for (const supply of SUPPLIES) expect(skills[supply.id]?.supply === true).toBe(supply.ruleUsed)
     expect(supplyTable['antidote']?.name).toBe('Antidote')
@@ -89,6 +90,27 @@ describe('supplies', () => {
     expect(skills['healing-draught']?.tags).toEqual(['supply'])
     expect(skills['antidote']?.cooldownSeconds).toBe(0)
     expect(skills['antidote']?.actionTimeCoefficient).toBe(0.5)
+  })
+})
+
+describe('the Warming Tonic', () => {
+  it('clears Chill and Burn and heals 10% of maximum HP in one action, then is used up', () => {
+    const defs = gameDefs()
+    const row: PriorityRow = { skillId: 'warming-tonic', conditions: [{ kind: 'status', who: 'hero', statusId: 'chill', measure: 'stacks', operator: 'atLeast', value: 1 }] }
+    const setup = withSupplies(ROOTMAW_ID, ['warming-tonic'], [row])
+    const state = createCombat({ ...setup, enemies: [{ defId: 'fracture-wisp', slot: 0, level: 12 }] }, defs, 3)
+    runCombat(state, defs, 120_000)
+    const used = firstOf(state.log, 'supplyUse', (event) => event.supplyId === 'warming-tonic')
+    if (used === undefined) throw new Error('the tonic was never used')
+    const cleared = state.log.filter((event) => event.type === 'statusCleared' && event.timeMs === used.timeMs && event.actorId === state.hero.id)
+    expect(cleared.map((event) => (event.type === 'statusCleared' ? event.statusId : ''))).toContain('chill')
+    const heal = state.log.find((event) => event.type === 'heal' && event.timeMs === used.timeMs)
+    expect(heal).toMatchObject({ amount: Math.round(state.hero.maxHp * 0.1) })
+    expect(state.hero.supplies).toEqual([])
+  })
+
+  it('is a half-time supply with no cost or cooldown', () => {
+    expect(skills['warming-tonic']).toMatchObject({ tags: ['supply'], cooldownSeconds: 0, actionTimeCoefficient: 0.5, supply: true })
   })
 })
 
