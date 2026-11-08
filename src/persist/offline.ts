@@ -150,7 +150,8 @@ function startAwayRun(save: SaveData, seed: number): { save: SaveData; stopped: 
 
 /** The first run's seed for a lane. Lane 0 keeps the seed it always had; the others differ by lane. */
 function laneSeed(lastSeenAt: number | null, laneIndex: number): number {
-  const base = deriveSeed(lastSeenAt ?? 1, 4242)
+  // A wall-clock time is far above the 32-bit range `deriveSeed` takes, so fold it into that range first.
+  const base = deriveSeed(Math.trunc(lastSeenAt ?? 1) | 0, 4242)
   return laneIndex === 0 ? base : deriveSeed(base, laneIndex)
 }
 

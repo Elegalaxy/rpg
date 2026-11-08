@@ -1014,7 +1014,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Decision recorded in GAME_DESIGN Supplies first, then `WARD_CHARM_ROW` in `src/content/supplies.ts` changed. Existing heroes keep the rows in their saves; no hero update was added. `addWardCharmRule` and `addSupplyRules` insert `WARD_CHARM_ROW`, so a legacy hero that never got the rule now receives the new row; a hero whose `updates` already lists `ward-charm-rule` is untouched. New test in `src/persist/supplies.test.ts`. 813 tests. Not checked in the browser.
 
 ### Step 12.6: Offline extras
-- Status: `in-progress`
+- Status: `done`
 - Depends on: 12.1
 - Design: GAME_DESIGN §11, "Offline extras", decided 2026-11-08 (user approved). Notifications are deferred.
 - Parts: (1) docs; (2) per-hero run limit; (3) other heroes progress while away (persist, `SavedHero.awayRun`, lanes in `offline.ts`); (4) away panel with one row per hero and Roster badges; (5) background heroes tick while the page is open; (6) mastered routes (x8 speed).
@@ -1025,6 +1025,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Part 4, `AwayReportView` in `src/ui/AwayPanel.tsx` (one table row per hero, Tag status, shared crafts and discoveries, materials per hero in a details block), Roster status badge from `awayStatusOf` (`src/persist/awayStatus.ts`), delete disabled while a hero has an away run.
   - 2026-11-08: Part 5, `advanceBackground` (persist, `offline.ts`) runs the non-selected away heroes with lane state carried between calls; `store.ts` `tickBackground` runs on the 10 s heartbeat and on hide/pagehide (before the save stamps `lastSeenAt`, so a later catch-up never replays ticked time; at most one heartbeat of background time is lost on a crash). `chooseHero` starts the live loop for a promoted run. Known limit: a run parked by the run limit in the background is continued by a later reload catch-up (the limit counts runs per catch-up).
   - 2026-11-08: Part 6, `SavedHero.routeReturns`, `settleExpedition` adds 1 per safe return (`MASTERY_RETURNS = 10`, `routeMastery` in `world.ts`); `PLAYBACK_SPEEDS` gains 8 (`MASTERED_SPEED`), refused and shown disabled ("Return safely 10 times to unlock") unless the live run's route (else the last one started) is mastered; the loops fall back to x4 otherwise; Map route info shows Mastery n/10.
+  - 2026-11-08: Browser check (rpg-dev, two heroes with an away route, 3 h away): Away table with both rows (Ash stopped at the run limit of 3, Brin still running), Roster badge ("Away: Splintered Road, 4 fights, bag 15/26") that advanced while the page stayed open, Run limit select options, Mastery 4/10 and 10/10 on the Map, 8x disabled with "Return safely 10 times to unlock"; no new console errors. The check found a latent bug: `deriveSeed(lastSeenAt, 4242)` threw for a real wall-clock `lastSeenAt` (above 32 bits), so starting an away run in a real browser crashed the catch-up. `laneSeed` now folds the timestamp into int32 first (test added). Step closed.
 
 ### Step 13.1: Drowned Causeway
 - Status: `done`

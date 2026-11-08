@@ -436,3 +436,11 @@ describe('background heroes while the page is open', () => {
     expect(selected.lanes).toEqual([])
   })
 })
+
+describe('seeds from a real clock', () => {
+  it('starts away runs when the last-seen time is a wall-clock timestamp', () => {
+    const save: SaveData = { ...withHero(strongHero(), { awayRouteId: 'splintered-road', clearedNodeIds: ['splintered-road'] }), lastSeenAt: 1_794_097_745_595 }
+    const result = runOffline(save, 10 * MINUTE, true)
+    expect(result.summary.heroes[0]!.fightsWon).toBeGreaterThan(0)
+  })
+})
