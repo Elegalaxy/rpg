@@ -1458,7 +1458,7 @@ First-playable town numbers, decided 2026-10-31:
 
 - Gold comes from enemies. Each regular enemy drops its level × 2 gold. An elite or the boss drops its level × 3. Gold is added to the gold the hero is carrying.
 - Before an expedition the player chooses how much gold to carry, with a default of 25, the rescue fee. The rest of the account's gold stays deposited and safe. On a safe return the carried gold goes back to the account. After a defeat the carried gold that is left after the rescue fee is lost.
-- Greyhaven buys materials at 3 gold each (scrap 2) and buys archive items for `item level × 5 × quality`, rounded half up. It sells base items at 100% quality for `item level × 10` gold at the hero's level, and the three supplies at the prices under Inventory.
+- Greyhaven buys materials at 3 gold each (scrap 2) and buys archive items for `item level × 5 × quality`, rounded half up. It sells base items at 100% quality for `item level × 10` gold at the hero's level, and the shop supplies at the prices under Inventory.
 - Repair restores an item to full durability. One item costs `ceil(missing durability × (1 + item level ÷ 2) ÷ 10)` gold. A disabled item is repaired the same way.
 - Debt is kept on the account and added to by each defeat. It can be paid off in any amount from the account's gold, and it still blocks nothing.
 
@@ -1633,7 +1633,18 @@ First-playable supplies, decided 2026-11-03:
   - Ward Charm: a barrier of 20% of maximum HP for 8 seconds, used by a rule at the same 0.5× action time. 20 gold. Default rule for a new hero: when an enemy telegraph is present. Existing heroes get the rule once, unless a rule already names it.
   - Brewing at the Potion Shop: any supply can be made at once from the hero's own materials instead of bought: Healing Draught 3 hide + 5 gold, Antidote 2 shard + 3 gold, Smoke Bomb 3 scrap + 8 gold, Ward Charm 3 shard + 8 gold. No queue and no time.
 - Changed 2026-11-08 (user approved, Step 12.5): the Ward Charm default rule is "an enemy telegraph is present AND hero HP at most 70%". The old rule (telegraph only) spent the Charm on the first telegraph, usually a weak hit, in almost every Warden run. The Charm's own numbers (barrier 20% of maximum HP, 8 s) do not change. Measured against the Fractured Warden (seeds 1-2, 60 runs each, reference rules plus default supply rows, wins / mean HP lost): Mage well prepared 70% to 98%, Ranger well prepared 25% to 34%, Assassin well prepared 5% to 3% (noise, still walled), over-levelled tiers 99-100% either way, Warrior and Cleric 0% either way. Other candidates (HP at most 60, 50, 80; telegraph at most 1 s plus HP; HP alone; no barrier up) are in doc/IMPLEMENTATION_PLAN.md Step 12.5. Rootmaw and Echo Knight stay at 100% wins with the Charm packed. Reference-matrix rows carry no supplies and are unchanged. Heroes who already have a Ward Charm rule keep it; only new heroes, reincarnated heroes, the harness, and legacy heroes that get the rule for the first time use the new row.
-- A supply shortcut during a fight, more supply kinds, and Chill or Stun cleanses are later work.
+- Crafted supplies, decided 2026-11-08 (user approved, Step 13.3). New supplies that Greyhaven does not sell, brewed at the Potion Shop like any other, plus one shop supply. All are used by rules at 0.5x action time with no cost and no cooldown.
+
+| Supply | Effect | Shop price | Brew | Unlock | Default rule |
+|---|---|---|---|---|---|
+| Warming Tonic | Removes all Chill and Burn from the hero and restores 10% of maximum HP. | 12 gold | 2 hide + 4 gold | none | Hero Chill at least 2 stacks |
+| Greater Draught | Restores 50% of maximum HP. | not sold | 2 riftglass + 10 gold | Drowned Causeway discovered | Hero HP at most 30%, placed above the Healing Draught row |
+| Riftglass Ward | A barrier of 30% of maximum HP for 8 seconds. | not sold | 2 riftglass + 12 gold | Any hero has beaten the Tidebound Colossus | Same conditions as the Ward Charm row, placed above it |
+
+  - A locked supply cannot be brewed and shows its lock reason, the same way a locked recipe does. A supply with no shop price cannot be bought.
+  - Existing heroes get each new default row once, unless a rule already names that supply; one the player removes later does not come back.
+  - Stun cleanse dropped: Stun has nothing to remove (it ends by timer), so a cleanse would do nothing. A Steadfast Tonic would need a new timed-buff effect and is left for a later step.
+  - A supply shortcut during a fight is done (Queue and Escape now).
 - Kept after measurement, 2026-11-03: two Draughts lift the floor Assassin against the level-16 Echo Knight from 7% to 97% wins, and four let every class win. Buying supplies is the intended way past an elite early, paid for in gold.
 - Loot capacity is 20. Each Splintered Road enemy drops 4 of its own material: a Fracture Shardling drops a shard, a Starved Wolf drops a hide, and a Deserter drops a scrap.
 - The drop uses the momentum already held when the fight is won. The victory then adds its stack. Quantity is `4 × (1 + 5% × stacks)`, rounded half-up. Three stacks turn 4 into 5. One stack does not change a drop of 4, because 4.2 rounds to 4.
@@ -1880,10 +1891,10 @@ Skill webs, priority rules, logs, crafting, routes, and risk systems can overwhe
 - Exact first-region node map, resources, contracts, and unlock requirements
 - Authored Fracture Echo rank modifiers and rewards
 - Healing-roll distribution
-- Exact DoT coefficients, Expose magnitude, and cleanse availability
+- Exact DoT coefficients and Expose magnitude (cleanse supplies: Antidote, Warming Tonic)
 - How much boss progress a retreat removes once a boss-progress counter exists. The first playable removes none.
 - What stored debt blocks, and how a disabled item is repaired. The first-playable fee is 25 gold from carried gold. Unpaid gold is stored as debt with no other effect. Deposited gold is untouched. The next expedition waits 5 minutes.
-- Crafted supplies, and what Deserter supply pressure takes. The first playable has the three supplies in §9 Inventory.
+- What Deserter supply pressure takes. Crafted supplies are decided in §9 Inventory (2026-11-08).
 - Crafting quality, proficiency, and upgrade formulas
 - Save format and local persistence
 - Accessibility options

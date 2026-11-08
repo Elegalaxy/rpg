@@ -1043,6 +1043,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Part 4, `drop` on Thornbeast, Blight Spider, Rootmaw Stalker, Hollow Sentry, Fallen Arbalist, Echo Knight. New `src/content/midzones.test.ts`; Spider and Arbalist bounties now pay witherbark and oathsteel (they used the zone resource before); one existing assertion in `content.test.ts` (Spider had no drop) updated. No snapshot changed.
   - 2026-11-08: Part 5, measured (numbers in GAME_DESIGN under "Grove and Bastion materials"; no earlier Causeway loot number existed to re-measure) and browser-checked (fresh-ish profile, desktop and 375 px): Town KPIs show 6 materials and wrap inside the row on mobile, Craft lists witherbark and oathsteel with ranges 99-109% and 101-111%, the upgrade list shows 2 witherbark (3 for the others), no console errors. Not exercised in a live run: a real Grove or Bastion drop in the UI. Status `done`.
 
+### Step 13.3: Supplies expansion
+- Status: `in-progress`
+- Depends on: 13.2
+- Design: GAME_DESIGN §9 Inventory, "Crafted supplies", decided 2026-11-08 (user approved).
+- Goal: Warming Tonic (shop and brew, cleanses Chill and Burn), Greater Draught and Riftglass Ward (brew only, unlocked by Causeway discovery and the Colossus). Stun cleanse dropped.
+- Parts: (1) docs; (2) data model (null price, `requires`, `supplyLock`); (3) Warming Tonic; (4) Greater Draught and Riftglass Ward; (5) measurement (harness only); (6) UI and browser check.
+- Acceptance: locked supplies cannot be brewed, unsold supplies cannot be bought, saves holding the new ids validate, the reference matrix and golden snapshot are unchanged, tests, typecheck, lint and the architecture test pass.
+- Progress:
+  - 2026-11-08: Part 1, docs written.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
@@ -1066,7 +1076,6 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - The event and event-policy system, route events, lore quests (§6, §14)
 - Hybrid branches for difficult pairings, the Undead/Cleric hybrid node, repeated-element Convergence recipes (§4, §17)
 - The "Most dangerous" target priority until threat scoring is designed (Q13)
-- Cleanse sources (no first-playable skill cleanses; this depends on the G1 consumables)
 - Gradual feature unlocking for onboarding, accessibility options, audio, polished pixel art
 - More regions, world tiers, final balance for all 20 pairings, business model
 
