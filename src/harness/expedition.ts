@@ -5,7 +5,7 @@ import {
   toExpeditionEncounter,
   type EncounterDef,
 } from '../content/encounters.ts'
-import { nodes, routeEncounterIds, routes } from '../content/world.ts'
+import { nodes, routeEncounterIds, routeOpeningPlan, routes } from '../content/world.ts'
 import { referenceHeroAtLevel } from '../content/heroes.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import type { HeroClass } from '../sim/constants.ts'
@@ -17,7 +17,7 @@ import {
 
 const ROAD_HERO_LEVEL = 5
 
-const toEncounter = toExpeditionEncounter
+const toEncounter = (encounter: EncounterDef) => toExpeditionEncounter(encounter)
 
 /** Level-5 reference hero on the Splintered Road, with that class's Q4 loadout. */
 export function splinteredRoadBlueprint(classId: HeroClass = 'warrior'): ExpeditionBlueprint {
@@ -81,7 +81,7 @@ export function routeBlueprint(routeId: string, classId: HeroClass = 'warrior'):
   return {
     ...base,
     id: routeId as ExpeditionBlueprint['id'],
-    opening: routeEncounterIds(route).map((id) => toEncounter(find(id))),
+    opening: routeOpeningPlan(route).map((step) => toExpeditionEncounter(find(step.encounterId), { drops: step.drops })),
     draw: drawIds.map((id) => toEncounter(find(id))),
     hero: { ...base.hero, id: hero.id, level: hero.level, attributes: hero.attributes, gear: hero.gear },
   }

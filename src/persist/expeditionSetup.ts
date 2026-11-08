@@ -1,7 +1,7 @@
 import { toExpeditionEncounter, encounters } from '../content/encounters.ts'
 import { enemies } from '../content/enemies.ts'
 import { itemBase } from '../content/items.ts'
-import { nodes, routeEncounterIds, routes } from '../content/world.ts'
+import { nodes, routeOpeningPlan, routes } from '../content/world.ts'
 import { classWebs } from '../content/webs/index.ts'
 import {
   TRAVEL_GAP_MS,
@@ -36,18 +36,18 @@ export function blueprintForHero(
 ): ExpeditionBlueprint {
   const route = routes[routeId]
   if (route === undefined) throw new Error(`unknown route '${routeId}'`)
-  const find = (id: string) => {
+  const find = (id: string, drops = true) => {
     const encounter = encounters[id]
     if (encounter === undefined) throw new Error(`route '${routeId}' names unknown encounter '${id}'`)
-    return toExpeditionEncounter(encounter)
+    return toExpeditionEncounter(encounter, { drops })
   }
   const last = nodes[route.nodeIds[route.nodeIds.length - 1] ?? '']
   const drawIds = last?.drawEncounterIds ?? last?.encounterIds ?? []
   const nodeIds = hero.progress.allocatedNodeIds
   return {
     id: routeId as ExpeditionBlueprint['id'],
-    opening: routeEncounterIds(route).map(find).map((encounter) => withBossRank(encounter, hero.fightRank)),
-    draw: drawIds.map(find).map((encounter) => withBossRank(encounter, hero.fightRank)),
+    opening: routeOpeningPlan(route).map((step) => withBossRank(find(step.encounterId, step.drops), hero.fightRank)),
+    draw: drawIds.map((id) => withBossRank(find(id), hero.fightRank)),
     travelGapMs: TRAVEL_GAP_MS,
     carriedGold: gold.carried,
     depositedGold: gold.deposited,

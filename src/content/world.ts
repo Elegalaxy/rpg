@@ -189,6 +189,21 @@ export function bossRevealed(node: WorldNode, arrived: boolean): boolean {
   return node.bossRevealedOn === 'arrival' && arrived
 }
 
+/**
+ * Fights along a route with whether they drop materials. Only the route's last node drops them; fights at
+ * earlier nodes (the Road's fixed fights on a longer route) give gold only (GAME_DESIGN §6, Step 13.2).
+ */
+export function routeOpeningPlan(route: Route): { encounterId: string; drops: boolean }[] {
+  const plan: { encounterId: string; drops: boolean }[] = []
+  route.nodeIds.forEach((nodeId, index) => {
+    const node = nodes[nodeId]
+    if (node === undefined) return
+    const drops = index === route.nodeIds.length - 1
+    for (const encounterId of node.encounterIds) plan.push({ encounterId, drops })
+  })
+  return plan
+}
+
 /** Fights along a route, in order: each node's fixed list. */
 export function routeEncounterIds(route: Route): string[] {
   const ids: string[] = []
