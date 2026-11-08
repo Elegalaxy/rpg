@@ -1058,6 +1058,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Part 5, harness only: `craftedVariant` and `tonicVariant` in `src/harness/warden.ts`, `WARDEN_VARIANTS` (prepared-crafted, causeway-crafted, prepared-tonic) and `CAUSEWAY_VARIANTS` (prepared-crafted) run beside the tiers in `--matrix warden` and `--matrix causeway`. Numbers in GAME_DESIGN under "Crafted supplies". Existing tier rows verified identical against a checkout of the commit before Step 13.3. Crafted supplies make the Colossus a 100% win for every class; Warrior and Cleric still 0% at the Warden.
   - 2026-11-08: Part 6, `SupplyCard` (`src/ui/town/SupplyCard.tsx`, with test) replaces the inline Potion Shop card: unsold supplies show a "Brew only" tag, locked ones a Locked tag with the reason and Brew disabled. The Going-in pack list hides a locked supply the stash has none of. Browser-checked (Potion Shop at desktop width, pack list, Rules editor options, no console errors); the fight bar was not exercised live. Step 13.3 done.
 
+### Step 13.4: Rift Hollows
+- Status: `in-progress`
+- Depends on: 13.1
+- Design: GAME_DESIGN §6, "Third zone: Rift Hollows", decided 2026-11-08 (user approved).
+- Goal: third zone (levels 22-28) and one elite (Hollowmaw Reaver), new material duskiron, gated modifiers Stalwart, Devout, Bloodbound. Content only, no sim change. Warrior and Cleric must not be walled.
+- Parts: (1) docs; (2) enemies and encounters; (3) harness baseline (`--matrix hollows`), measurements only; (4) world (node, leg, route, gate, map); (5) duskiron material and crafting; (6) modifiers; (7) Salvage contract, Legacy +3 and browser check; (8) tuning (waits for a separate class-work decision).
+- Progress:
+  - 2026-11-08: Part 1, docs written (GAME_DESIGN §6 "Third zone: Rift Hollows", changelog, this step).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |

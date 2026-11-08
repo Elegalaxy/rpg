@@ -886,6 +886,52 @@ Measured 2026-11-08 (Step 13.2 part 5). Reference Warrior at level 22, no retrea
 
 Before this step the Road's three fights alone put 20 units in the bag (the intro rule above), so on every longer route the zone's own loot was lost. A Causeway run holds 5 riftglass at fight 6 and a Grove or Bastion run about 12 units of the zone material by the elite. No earlier Causeway loot number was recorded in this document, so none needed re-measuring. `npm run sim -- --expedition <route> --seed 1..3` (the level-5-style reference hero with a 40% retreat) stops at the first retreat and secured `hide 5 witherbark 2` (Grove seeds 3), `shard 5 oathsteel 2` (Bastion seeds 1-3), `hide 6 scrap 5` (Causeway seeds 1-3, retreat before riftglass); the Grove seeds 1-2 retreated in the first Grove fight and secured nothing.
 
+### Third zone: Rift Hollows
+
+Decided 2026-11-08 (user approved), Step 13.4. One new zone and one elite, no boss, copying the Causeway pattern (Step 13.1) with one new material (duskiron). Content only: it reuses the telegraph skills, the Ward Echo heal, Bleed, `maxHpBonus`, equipment Healing Power and `lifestealFraction`; no sim change. Warrior and Cleric must not be walled, so there is no Tank archetype, no regeneration and no HP-summon adds; the danger is burst.
+
+World:
+
+- Node Rift Hollows, levels 22-28, reached by a leg from the Splintered Road (20 seconds), not through the Causeway. Resource node Dusk Vein gives 3 duskiron per visit (display only, like the other resource nodes).
+- Gate: the Tidebound Colossus defeated (personal to the hero; the Warden is not required). The gate message reads "Defeat Tidebound Colossus first."
+- Route `rift-hollows`: Greyhaven, Splintered Road, Rift Hollows. Fixed fights in order: `shade-pair` (2 Rift Shades, level 22), `brute` (one Riftborn Brute, level 23), `hollows-mixed` (Brute and Hollow Channeler, level 23), then the elite fight. Drawn fights after the fixed ones: `hollows-mixed`, `hollows-deep` (Rift Shade level 25, Riftborn Brute level 25, Hollow Channeler level 25), `shade-pair`.
+- Pass-through rule (Step 13.2): only the Hollows' own fights drop materials; the Road's fights drop gold only.
+
+Regular enemies (a Standard enemy at level 24 has 560 HP and 32 Power):
+
+| Enemy | Levels | Archetype | Skills | Drop |
+| --- | --- | --- | --- | --- |
+| Rift Shade | 22-26 | Skirmisher | Shade Cut: 100% Physical Power, 40% base chance to apply Bleed, 4 s cooldown | 3 shard |
+| Hollow Channeler | 22-27 | Support | Heals an ally for 6% of its max HP, 10 s cooldown (like the Ward Echo's Mend). Rift Bolt: 90% Magical Power | 3 riftglass |
+| Riftborn Brute | 23-28 | Burst | Rift Cleave: 1.8 s telegraph, 240% Physical Power, interruptible at 25% of max HP, 10 s cooldown | 3 duskiron |
+
+Elite Hollowmaw Reaver:
+
+- Level 26 Burst elite. 3,400 HP, 40 Power, Consistency 25; the other stats come from the elite Burst line.
+- Rift Surge: 2.5 s telegraph, 300% Magical Power, can critically hit, NOT interruptible, 12 s cooldown. Reaver Strike fills ordinary actions at 100% Physical Power.
+- Uses the stance trait (10 seconds, guard and assault, as the Echo Knight and the Colossus). No summons.
+- Drops 10 duskiron. Gold is the elite rate. Its first defeat by any hero records `defeated:hollowmaw-reaver` and unlocks Bloodbound.
+
+Duskiron (new material): sells for 8 gold. A craft rolls quality 106% to 116% (average of two rolls, plus proficiency bonus, never above the range maximum). As an upgrade material it adds +4 points, up to 116%. It is last in `MATERIAL_RARITY` (the safe pouch keeps it first), after riftglass.
+
+Modifiers (one modifier per item; the stack cap is 2 across worn gear):
+
+| Modifier | Effect | Min level | Slots | Recipe | Unlock |
+| --- | --- | --- | --- | --- | --- |
+| Stalwart | +6% max HP | 22 | armor | 550 gold | Rift Hollows discovered |
+| Devout | +12 Healing Power | 22 | off-hand, accessory | 550 gold | Rift Hollows discovered |
+| Bloodbound | Heals 5% of damage dealt after mitigation (`lifestealFraction`) | 24 | weapon | 650 gold | Hollowmaw Reaver defeated by any hero |
+
+Contracts and Legacy: the Salvage contract becomes zone-aware. A duskiron Salvage is "bring home N duskiron", N from 5 to 10, reward `rewardFor(ceil(N / 3), 25, 'riftglass')`, then the usual roll; it is offered once the Hollows are discovered. Existing riftglass Salvage boards roll as before. The first defeat of the Hollowmaw Reaver gives 3 Legacy once (`elite:hollowmaw-reaver`).
+
+Compatibility: no save version bump. Older saves load unchanged: the node is undiscovered and the material counts as 0.
+
+Measurement targets (for the later tuning step; part 3 records numbers and changes nothing). Tiers: Arrived (level 22, 8 nodes, quality 112%, Siphoning, 3 Draughts), Prepared (level 24, quality 116%, plus Stalwart and Devout), Over-levelled (level 27).
+
+- Regular fights, prepared tier: at least 95% wins for every class; the mixed fights lose 15-40% of maximum HP.
+- Hollowmaw Reaver: prepared 40-85% wins (Warrior and Cleric at least 30%), over-levelled at least 85%.
+- About 35-45 fights per level at level 24.
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
@@ -1921,6 +1967,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-08: Designed the third zone, Rift Hollows (levels 22-28): three new enemies, the Hollowmaw Reaver elite, duskiron, three gated modifiers (Stalwart, Devout, Bloodbound), a duskiron Salvage contract and Legacy +3 for the first Reaver defeat (Step 13.4).
 - 2026-11-08: Designed Grove and Bastion material drops (witherbark, oathsteel) and the pass-through rule: fights before a route's last node drop no materials (Step 13.2).
 - 2026-11-08: Designed the second zone, Drowned Causeway (levels 17-22): three new enemies, the Tidebound Colossus elite, riftglass, three gated modifiers (Hallowed, Rending, Siphoning), a Salvage contract and Legacy +3 for the first Colossus defeat (Step 13.1).
 - 2026-11-08: Thornbeast Bramble Slam and Hollow Sentry Shield Bash interrupt requirement raised from 10% to 25% of the enemy's maximum HP, so an ordinary hit no longer cancels the wind-up by accident. Other numbers unchanged.
