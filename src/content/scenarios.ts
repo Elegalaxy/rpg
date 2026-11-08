@@ -316,6 +316,7 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
       {
         skillId: 'mark-for-death',
         conditions: [{ kind: 'mark', operator: 'absent' }],
+        targetPriority: 'lowestArmor',
       },
       {
         skillId: 'execute',

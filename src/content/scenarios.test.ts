@@ -771,7 +771,7 @@ const referenceRows: { [classId in HeroClass]: readonly PriorityRow[] } = {
     { skillId: 'driving-blow', targetPriority: 'lowestArmor' },
   ],
   assassin: [
-    { skillId: 'mark-for-death', conditions: [{ kind: 'mark', operator: 'absent' }] },
+    { skillId: 'mark-for-death', conditions: [{ kind: 'mark', operator: 'absent' }], targetPriority: 'lowestArmor' },
     { skillId: 'execute', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 4 }], targetPriority: 'lowestArmor' },
     { skillId: 'execute', conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }], targetPriority: 'lowestArmor' },
     {

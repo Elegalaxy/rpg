@@ -1104,6 +1104,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Targeting fix (parts 1-4 of the corrected pass), which SUPERSEDES the Warrior (part 2), Cleric (part 3) and Warden 5.75 (part 5A) results above: Warrior and Cleric reference rules now target lowest Armor / Resistance (the Echoes were never being targeted); Warden `hpMultiplier` 7, pressure every 3 s up to 10 stacks; Second Wind 15%. Warden prepared Warrior 79, Assassin 18, Ranger 54, Mage 48, Cleric 45; over, causeway 100 and arrived 0 for all. Not met: Warrior prepared (9 over), Assassin prepared (12 under). Colossus/Reaver untouched (Warrior and Cleric 100 prepared). Parts 6 (telegraph check), 7 (crafted supply trim) and 8 (full re-measure) still pending; a Colossus/Reaver time-pressure ramp is a separate later step. See GAME_DESIGN §7 "Targeting fix".
 
   - 2026-11-09: Assassin rules fix, part 1 (docs): the Mark for Death reference row gets `targetPriority: 'lowestArmor'` (content) and the harness Smoke Step row becomes a last-placed filler; results follow in later parts.
+  - 2026-11-09: Assassin rules fix, part 2 (content): Mark for Death reference row targets lowest Armor; only Assassin bastion-mixed, grove-mixed and echo-knight reference rows moved; wins unchanged.
 
 ## 8. Risks, and what would reveal them early
 
