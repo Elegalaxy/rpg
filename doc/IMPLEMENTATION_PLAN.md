@@ -1031,13 +1031,17 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Part 9, browser check (fresh profile, preview): Map shows the Drowned Causeway node; Enchanter shows Hallowed and Siphoning (and Rending) with a red Locked tag and the reason; Weaponsmith Craft lists riftglass (range 102% to 112%, upgrade +3, cap note). Not exercised in a live run: entering the Causeway (gated behind both elites), a Colossus fight, Siphoning unlock, Salvage settle. Step done. Open from part 8: Assassin/Ranger/Mage still win the Colossus above the 85% band (94/98/100% prepared); Warrior 37%, Cleric 83% in band. The Warden prepared-tier figures in the 12.4 note (Ranger 26, Mage 77) predate the Ward Charm rule change in 12.5, which explains the later 35 and 98.
 
 ### Step 13.2: Grove and Bastion materials
-- Status: `in-progress`
+- Status: `done`
 - Depends on: 13.1
 - Design: GAME_DESIGN §6, "Grove and Bastion materials", decided 2026-11-08 (user approved; Q1 option A).
 - Goal: material drops for the Withered Grove (witherbark) and Fallen Bastion (oathsteel), copying the riftglass pattern, plus no materials from pass-through fights so the Road's fights stop filling the bag on longer routes.
 - Parts: (1) docs; (2) pass-through fights drop gold but no materials; (3) register the materials (no drops); (4) drops on six enemies and tests; (5) measure and browser check.
 - Progress:
   - 2026-11-08: Part 1, docs written (GAME_DESIGN §6 "Grove and Bastion materials", resource-node note, quality ranges, upgrade rules, drop rule, changelog; this step).
+  - 2026-11-08: Part 2, `toExpeditionEncounter(encounter, { drops })` and `routeOpeningPlan(route)` (content/world.ts); `blueprintForHero` and the harness `routeBlueprint` give fights before the route's last node gold but no materials. New `src/persist/expeditionSetup.test.ts`.
+  - 2026-11-08: Part 3, witherbark and oathsteel registered: `MATERIAL_QUALITY`, `UPGRADE_QUALITY_POINTS`, caps, `UPGRADE_MATERIAL_COST_BY_MATERIAL` and `upgradeMaterialCost` (witherbark 2), sell 4, `MATERIAL_RARITY`; Craft shows the per-material cost. Tests in crafting, town and expedition tests.
+  - 2026-11-08: Part 4, `drop` on Thornbeast, Blight Spider, Rootmaw Stalker, Hollow Sentry, Fallen Arbalist, Echo Knight. New `src/content/midzones.test.ts`; Spider and Arbalist bounties now pay witherbark and oathsteel (they used the zone resource before); one existing assertion in `content.test.ts` (Spider had no drop) updated. No snapshot changed.
+  - 2026-11-08: Part 5, measured (numbers in GAME_DESIGN under "Grove and Bastion materials"; no earlier Causeway loot number existed to re-measure) and browser-checked (fresh-ish profile, desktop and 375 px): Town KPIs show 6 materials and wrap inside the row on mobile, Craft lists witherbark and oathsteel with ranges 99-109% and 101-111%, the upgrade list shows 2 witherbark (3 for the others), no console errors. Not exercised in a live run: a real Grove or Bastion drop in the UI. Status `done`.
 
 ## 8. Risks, and what would reveal them early
 

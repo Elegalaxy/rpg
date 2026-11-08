@@ -876,6 +876,16 @@ None of these six drops anything today. Fracture Wisp, Oathbound Echo, summons a
 
 Pass-through rule (Q1, option A): every route plays the Road's 3 fixed fights first, and they drop 20 units, which fills the bag (20, 22 from level 10) so the zone's own loot would be lost. Fights at a node that is not the route's last node therefore drop gold but no materials. A Road-only run (the Road is the last node) is unchanged. On the Fracture Gate routes, the Grove or Bastion fights and the Road fights are all pass-through; only the Gate's own fights are the last node.
 
+Measured 2026-11-08 (Step 13.2 part 5). Reference Warrior at level 22, no retreat threshold, seed 1 (the loot is the same for seeds 1-3 and for Ranger, because drops do not depend on the fight's result). Cumulative units held after fight N (hide h, shard s, witherbark w, oathsteel o, riftglass r):
+
+| Route | Fight 3 (end of Road) | 4 | 5 | 6 | Bag (20) full |
+| --- | --- | --- | --- | --- | --- |
+| withered-grove | 0 | 7 (h5 w2) | 17 (h5 w12) | 20 (h8 w12) | after fight 6, the 3rd fight in the Grove (Rootmaw Stalker is fight 5) |
+| fallen-bastion | 0 | 7 (s5 o2) | 17 (s5 o12) | 20 (s8 o12) | after fight 6 |
+| sunken-causeway | 0 | 6 (h6) | 11 (h6 s5) | 16 (h6 s5 r5) | not reached before the Colossus (fight 7, the reference Warrior is defeated and the pouch keeps 5 riftglass) |
+
+Before this step the Road's three fights alone put 20 units in the bag (the intro rule above), so on every longer route the zone's own loot was lost. A Causeway run holds 5 riftglass at fight 6 and a Grove or Bastion run about 12 units of the zone material by the elite. No earlier Causeway loot number was recorded in this document, so none needed re-measuring. `npm run sim -- --expedition <route> --seed 1..3` (the level-5-style reference hero with a 40% retreat) stops at the first retreat and secured `hide 5 witherbark 2` (Grove seeds 3), `shard 5 oathsteel 2` (Bastion seeds 1-3), `hide 6 scrap 5` (Causeway seeds 1-3, retreat before riftglass); the Grove seeds 1-2 retreated in the first Grove fight and secured nothing.
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
