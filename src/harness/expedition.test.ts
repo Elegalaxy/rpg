@@ -80,7 +80,7 @@ describe('splintered road blueprint', () => {
       overflow: state.overflow,
       escapes: state.escapeLog.length,
     })
-    expect(state.history.map((entry) => entry.durationMs)).toEqual([7208, 15767, 10812, 19371])
+    expect(state.history.map((entry) => entry.durationMs)).toEqual([7208, 13965, 9010, 13965])
     expect(state.history.map((entry) => entry.outcome)).toEqual(['victory', 'victory', 'victory', 'victory'])
     expect(state.momentum).toBe(4)
     expect(state.unsecured).toEqual([

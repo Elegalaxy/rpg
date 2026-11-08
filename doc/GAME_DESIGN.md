@@ -1312,10 +1312,10 @@ Levers. Skill-definition and class constants only, no sim change. Start value, t
 
 | Id | Class | Lever | Now | Start | Range |
 | --- | --- | --- | --- | --- | --- |
-| W1 | Warrior | Driving Blow damage | 110% | 130% | 120-140% |
-| W2 | Warrior | Sundering Blow damage, Expose Armor reduction | 125%, 20% | 150%, 30% | 25-35% Armor |
-| W3 | Warrior | Second Wind heal | 15% max HP | 25% | 20-30% |
-| W4 | Warrior | Shield Brace reduction | 30% | 50% | 40-60% |
+| W1 | Warrior | Driving Blow damage | 110% | 130% (chosen 130%) | 120-140% |
+| W2 | Warrior | Sundering Blow damage, Expose Armor reduction | 125%, 20% | 150%, 30% (chosen 150%, 30%) | 25-35% Armor |
+| W3 | Warrior | Second Wind heal | 15% max HP | 25% (chosen 30%) | 20-30% |
+| W4 | Warrior | Shield Brace reduction | 30% | 50% (chosen 40%) | 40-60% |
 | C1 | Cleric | Smite damage; `SMITE_NODE_COEFFICIENT` | 100%; 1.2 | 130%; 1.5 | to be swept |
 | C2 | Cleric | Judgment damage and cost; `JUDGMENT_NODE_COEFFICIENT` | 200%, 50; 2.3 | 250%, 40; 2.8 | to be swept |
 | C3 | Cleric | `ZEAL_BASE`, only if C1 and C2 are not enough | 7 | 9 | |
@@ -1349,6 +1349,14 @@ Crafted supplies (3 Greater Draughts and a Riftglass Ward, rules mode), wins % p
 Echo-first diagnostic (Warrior and Cleric against the Warden, prepared, `targetPriority` `lowestHpPercent` on the whole hero): Warrior 0% wins, Warden 51% left (reference rules: 0%, 51%); Cleric 0% wins, Warden 71% left (reference rules: 0%, 71%). The targeting change moves nothing, so Echo-first targeting does not explain the gap and the reference rules are NOT changed. The gap is class damage and sustain, as diagnosed.
 
 Seeds stay within 8 points except three blind cells: Warrior Colossus prepared (21, 8, 10), Ranger Colossus prepared (55, 65, 62) and Mage Colossus arrived (67, 62, 75).
+
+Warrior result (Step 13.5 part 2, 2026-11-08). Chosen: Driving Blow 130%, Sundering Blow 150% with 30% Expose, Second Wind 30% max HP, Shield Brace 40%. Sweep (seed 1, 40-60 runs, Warden prepared / over / causeway Warden HP left, plus built 6-node Rootmaw and Echo Knight HP lost; baseline 49 / 21 / 28 left, 76 / 64 lost): W1 alone at 140% gave 45 / 15 / 22, 69 / 60; W2 alone at 150% and 35% gave 44 / 16 / 24, 69 / 62; W3 alone at 30% gave 39 / 80% wins / 15% wins, 44 / 42 (by far the strongest lever per guard point); W4 alone at 60% did nothing at the Warden (49 / 21 / 28) and cost 6 and 5 points on the guards, so it takes the range minimum 40%. Even the range maxima leave the Warden prepared tier at 0% wins (19% Warden HP left), so the 30-70% prepared band is NOT reached inside the allowed ranges; the Warden prepared tier needs about 45% more damage or sustain than the ranges allow (decision for the user, see the report). Ranges were not exceeded.
+
+Warrior after (seeds 1-3 x 100 runs, mean; wins % with mean HP lost % / elite HP left % in rules mode): Warden prepared 0 (100 / 23), over 99 (45 / 0), causeway 90 (50 / 0), prepared-crafted 2; Colossus arrived 23 (93 / 3), prepared 100 (44 / 0), over 100; Reaver prepared 100 (44 / 0), over 100. Blind: Warden over 98, causeway 82, Colossus prepared 100, Reaver 100 (rules beat blind by only 1-8 win points: the telegraph band is for part 6). Bands met: Warden over, Warden causeway. Not met: Warden prepared (0, band 30-70), Colossus and Reaver prepared (100, band 40-85; retuned in part 5).
+
+Guards (Warrior, seed 1, 100 runs): reference regulars 100% (the reference CSV Warrior rows above); Causeway and Hollows regular fights 100%. The built-matrix guard FAILS on HP lost: built 6-node Rootmaw 76 to 45% lost and Echo Knight 64 to 43% (down 31 and 21 points, limit 15), and the floor build now wins the Rootmaw and Echo Knight 100% (was 66% and 59%). W3 alone at 20% already costs more than 15 points on the Rootmaw (59), so no value that lifts the Warden also keeps this guard. Reported rather than forced.
+
+Reference CSV changes (Warrior rows, seed 1, 100 runs; before / after): win % rootmaw 66 / 100, echo-knight 59 / 100, every other regular 100 / 100 (warden 0 / 0); median victory time ms arbalist 8770 / 7016, bastion-mixed 31417 / 26107, deserter 10812 / 9010, echo-knight 116077 / 96079, grove-mixed 29343 / 26280, oathbound-echo 8770 / 7016, road-mixed 21173 / 19371, rootmaw 63280 / 51852, sentry 22771 / 18610, shardling 3636 / 3636, spider 8930 / 8144, thornbeast 20797 / 19027, wisp 10177 / 8948, wolf 7272 / 5454; mean HP attrition % rootmaw 80.9 / 49.0, echo-knight 83.6 / 43.3, deserter 11.1 / 9.5, bastion-mixed 49.2 / 44.2. Other classes' rows are unchanged. The golden duel-basic snapshot is unchanged (basic attacks only).
 
 ### Automation
 
@@ -1420,12 +1428,12 @@ These are a first broad roster for mechanical review. Names and effects are not 
 
 #### Warrior
 
-1. Driving Blow: 110% Physical Power; generates the ordinary 5 Fury plus 10 additional Fury; 3-second cooldown; 1.0× action time.
+1. Driving Blow: 130% Physical Power (Step 13.5, was 110%); generates the ordinary 5 Fury plus 10 additional Fury; 3-second cooldown; 1.0× action time.
 2. Cleave: costs 25 Fury; deals 80% Physical Power to every enemy; 5-second cooldown; 1.15× action time.
 3. Reckless Strike: requires a two-handed weapon; costs 40 Fury; deals 220% Physical Power; 8-second cooldown; 1.35× action time; increases incoming damage by 20% until the Warrior's next action.
-4. Shield Brace: requires a shield; no Fury cost; reduces incoming damage by 30% until the Warrior's next action; being struck during the effect generates 5 base Fury; 8-second cooldown; 0.75× action time.
-5. Second Wind: costs 50 Fury; heals 15% maximum HP plus 50% Healing Power; 15-second cooldown; 1.0× action time.
-6. Sundering Blow: costs 20 Fury; deals 125% Physical Power; applies 20% Armor Expose for 8 seconds; 6-second cooldown; 1.0× action time.
+4. Shield Brace: requires a shield; no Fury cost; reduces incoming damage by 40% (Step 13.5, was 30%) until the Warrior's next action; being struck during the effect generates 5 base Fury; 8-second cooldown; 0.75× action time.
+5. Second Wind: costs 50 Fury; heals 30% maximum HP (Step 13.5, was 15%) plus 50% Healing Power; 15-second cooldown; 1.0× action time.
+6. Sundering Blow: costs 20 Fury; deals 150% Physical Power (Step 13.5, was 125%); applies 30% Armor Expose (was 20%) for 8 seconds; 6-second cooldown; 1.0× action time.
 
 #### Assassin
 

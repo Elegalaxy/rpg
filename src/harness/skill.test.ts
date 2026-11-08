@@ -20,6 +20,16 @@ function winRate(setup: CombatSetup): number {
   return wins / RUNS
 }
 
+/** Mean fight time in ms over every run. */
+function meanTimeMs(setup: CombatSetup): number {
+  const defs = gameDefs()
+  let total = 0
+  for (let index = 0; index < RUNS; index += 1) {
+    total += runCombat(createCombat(setup, defs, deriveSeed(1, index)), defs, HARNESS_LIMIT_MS).timeMs
+  }
+  return total / RUNS
+}
+
 /** Same build, same enemy: only the priority rules differ. */
 describe('rule quality changes the result against an elite', () => {
   it('a Warrior who drops the wasteful Shield Brace rule and keeps Expose up beats the reference rules against the Rootmaw', () => {
@@ -32,10 +42,15 @@ describe('rule quality changes the result against an elite', () => {
       { skillId: 'driving-blow' },
     ]
     const tuned = { ...naive, hero: { ...naive.hero, priorityRows: tunedRows } }
+    // Step 13.5: the stronger Warrior kits win this fight with either rule set, so the difference now shows
+    // in how fast the fight ends rather than in the win rate.
     const before = winRate(naive)
     const after = winRate(tuned)
-    console.log('[sim]', 'warrior vs rootmaw, reference rules', before, 'tuned rules', after)
-    expect(after - before).toBeGreaterThanOrEqual(0.15)
+    const beforeMs = meanTimeMs(naive)
+    const afterMs = meanTimeMs(tuned)
+    console.log('[sim]', 'warrior vs rootmaw, reference rules', before, beforeMs, 'tuned rules', after, afterMs)
+    expect(after).toBeGreaterThanOrEqual(before)
+    expect(afterMs).toBeLessThanOrEqual(beforeMs * 0.8)
   }, 240_000)
 
   it('careless rules can lose a fight a nine-node Mage wins with the reference rules', () => {

@@ -14,7 +14,7 @@ const drivingBlow = {
   tags: ['physical', 'attack', FURY_GENERATOR_TAG],
   target: 'single',
   effects: [
-    { kind: 'damage', school: 'physical', coefficient: 1.1 },
+    { kind: 'damage', school: 'physical', coefficient: 1.3 },
     { kind: 'resource', base: 15 },
   ],
 } satisfies SkillDef
@@ -54,7 +54,7 @@ const shieldBrace = {
   tags: ['defense'],
   requires: { offHand: 'shield' },
   target: 'single',
-  effects: [{ kind: 'damageReduction', fraction: 0.3 }],
+  effects: [{ kind: 'damageReduction', fraction: 0.4 }],
 } satisfies SkillDef
 
 const secondWind = {
@@ -65,7 +65,7 @@ const secondWind = {
   actionTimeCoefficient: 1,
   tags: ['heal', FURY_SPENDER_TAG],
   target: 'single',
-  effects: [{ kind: 'heal', maxHpFraction: 0.15, healingCoefficient: 0.5 }],
+  effects: [{ kind: 'heal', maxHpFraction: 0.3, healingCoefficient: 0.5 }],
 } satisfies SkillDef
 
 const sunderingBlow = {
@@ -77,8 +77,8 @@ const sunderingBlow = {
   tags: ['physical', 'attack', FURY_SPENDER_TAG],
   target: 'single',
   effects: [
-    { kind: 'damage', school: 'physical', coefficient: 1.25 },
-    { kind: 'applyStatus', statusId: 'expose', baseChance: 1, armorMagnitude: 0.2 },
+    { kind: 'damage', school: 'physical', coefficient: 1.5 },
+    { kind: 'applyStatus', statusId: 'expose', baseChance: 1, armorMagnitude: 0.3 },
   ],
 } satisfies SkillDef
 

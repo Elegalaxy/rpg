@@ -248,16 +248,13 @@ describe('harness CLI', () => {
     const lines = stable.split('\n')
     expect(lines[0]).toBe(`[sim] expedition splintered-road seed 5 STEP_MS ${STEP_MS}`)
     const opening = ['shardling-pair', 'wolf-pair', 'deserter', 'wolf-pair']
-    const durations = [7208, 15767, 10812, 12760]
-    const expectedOutcomes = ['victory', 'victory', 'victory', 'retreat']
+    // Step 13.5 part 2: the stronger Warrior kit wins the fourth fight, so this seed no longer ends in a retreat.
+    const durations = [7208, 13965, 9010, 13965]
+    const expectedOutcomes = ['victory', 'victory', 'victory', 'victory']
     const summary =
-      '[sim] summary encounters 4 victories 3 defeats 0 timeouts 0 retreats 1 momentum 0 unsecured none secured shard 8 hide 8 scrap 4 overflow 0'
-    const escapeLine =
-      'At 12.760s, Warrior attempts escape (HP 81/215, threshold 40%): roll 0.1510189522523433 against 52% (base 50, Agility 11 adds 2, supplies 0, zone 0, momentum 0): success.'
+      '[sim] summary encounters 4 victories 4 defeats 0 timeouts 0 retreats 0 momentum 4 unsecured shard 8 hide 8 scrap 4 secured none overflow 10'
     expect(lines.at(-1)).toBe(summary)
-    const body = lines.slice(1, -1)
-    expect(body.at(-1)).toBe(escapeLine)
-    const encounterLines = body.slice(0, -1)
+    const encounterLines = lines.slice(1, -1)
     const outcomes = { victory: 0, defeat: 0, timeout: 0, retreat: 0 }
     expect(encounterLines).toHaveLength(4)
     for (let index = 0; index < encounterLines.length; index += 1) {
@@ -278,9 +275,8 @@ describe('harness CLI', () => {
       expect(match[2]).toBe(opening[index])
       console.log('[sim] expedition line', line)
     }
-    console.log('[sim] expedition escape', body.at(-1))
     console.log('[sim] expedition summary', lines.at(-1))
-    expect(outcomes).toEqual({ victory: 3, defeat: 0, timeout: 0, retreat: 1 })
+    expect(outcomes).toEqual({ victory: 4, defeat: 0, timeout: 0, retreat: 0 })
     expect(lines.at(-1)).toBe(summary)
   }, 180_000)
 })

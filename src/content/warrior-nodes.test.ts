@@ -378,7 +378,7 @@ describe('warrior nodes', () => {
     expect(progress.learnedSkillIds).toEqual([SUNDERING_BLOW_ID])
     expect(setLoadout(progress, [SUNDERING_BLOW_ID]).loadout).toEqual([SUNDERING_BLOW_ID])
     expect(authored(SUNDERING_BLOW_ID)).toMatchObject({ cost: 20, cooldownSeconds: 6, actionTimeCoefficient: 1 })
-    expect(authored(SUNDERING_BLOW_ID).effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.25 })
+    expect(authored(SUNDERING_BLOW_ID).effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.5 })
 
     const bare = open({ equipped: [SUNDERING_BLOW_ID], rows: [{ skillId: SUNDERING_BLOW_ID }] })
     bare.state.hero.classResource = 20
@@ -590,7 +590,7 @@ describe('warrior nodes', () => {
     const progress = learned([NODE_SHIELD_BRACE])
     expect(progress.learnedSkillIds).toEqual(['shield-brace'])
     expect(setLoadout(progress, ['shield-brace']).loadout).toEqual(['shield-brace'])
-    expect(authored('shield-brace').effects).toEqual([{ kind: 'damageReduction', fraction: 0.3 }])
+    expect(authored('shield-brace').effects).toEqual([{ kind: 'damageReduction', fraction: 0.4 }])
   })
 
   it('Shield Brace node: being struck during the brace generates 10 base Fury instead of 5', () => {

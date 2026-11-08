@@ -91,7 +91,7 @@ describe('content integrity', () => {
       kind: 'applyStatus',
       statusId: 'expose',
       baseChance: 1,
-      armorMagnitude: 0.2,
+      armorMagnitude: 0.3,
     })
     expect(skills['arcane-bolt']).toMatchObject({ cost: 5, cooldownSeconds: 0, actionTimeCoefficient: 0.8 })
     expect(skills.fireball?.effects[1]).toMatchObject({
@@ -117,7 +117,7 @@ describe('content integrity', () => {
       actionTimeCoefficient: 1,
       target: 'single',
     })
-    expect(skills['driving-blow']?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.1 })
+    expect(skills['driving-blow']?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.3 })
     expect(skills.cleave).toMatchObject({
       cost: 25,
       cooldownSeconds: 5,
@@ -135,7 +135,7 @@ describe('content integrity', () => {
       cooldownSeconds: 8,
       actionTimeCoefficient: 0.75,
       requires: { offHand: 'shield' },
-      effects: [{ kind: 'damageReduction', fraction: 0.3 }],
+      effects: [{ kind: 'damageReduction', fraction: 0.4 }],
     })
     expect(skills['shield-brace']?.tags).not.toContain('generator')
     expect(skills['second-wind']).toMatchObject({
@@ -143,14 +143,14 @@ describe('content integrity', () => {
       cooldownSeconds: 15,
       actionTimeCoefficient: 1,
       tags: expect.arrayContaining(['spender']),
-      effects: [{ kind: 'heal', maxHpFraction: 0.15, healingCoefficient: 0.5 }],
+      effects: [{ kind: 'heal', maxHpFraction: 0.3, healingCoefficient: 0.5 }],
     })
     expect(skills['sundering-blow']).toMatchObject({
       cost: 20,
       cooldownSeconds: 6,
       actionTimeCoefficient: 1,
     })
-    expect(skills['sundering-blow']?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.25 })
+    expect(skills['sundering-blow']?.effects[0]).toMatchObject({ kind: 'damage', coefficient: 1.5 })
     expect(skills.fireball).toMatchObject({
       cost: 30,
       cooldownSeconds: 6,

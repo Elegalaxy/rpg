@@ -1096,6 +1096,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-08: Part 0, docs written.
   - 2026-11-08: Part 1, `--matrix elites` (`src/harness/elites.ts`, test, CLI registration): Warden prepared/over/causeway, Colossus arrived/prepared/over, Reaver prepared/over, a crafted variant of each prepared tier, rules and blind, plus Warrior/Cleric `lowestHpPercent` diagnostic rows. Baselines (seeds 1-3 x 100) in GAME_DESIGN. Echo-first targeting changes nothing (Warrior 0% / Warden 51% left, Cleric 0% / 71% both ways), so the reference rules stay.
+  - 2026-11-08: Part 2, Warrior W1-W4 (Driving Blow 130%, Sundering Blow 150% and Expose 30%, Second Wind 30%, Shield Brace 40%; `src/content/skills.ts`). Warden over 99% and causeway 90% (bands met); Warden prepared still 0% (not reachable inside the ranges); Colossus/Reaver 100% (part 5). Built Rootmaw/Echo Knight guard fails on HP lost (-31/-21). Tests updated deliberately (content, warrior-nodes, scenarios durations, cli seed 5 no longer retreats, expedition durations, skill.test now compares fight time). Numbers in GAME_DESIGN.
 
 ## 8. Risks, and what would reveal them early
 

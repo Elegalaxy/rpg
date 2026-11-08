@@ -208,7 +208,7 @@ describe('driving-blow', () => {
     expect(heroHitOnBasic).toMatchObject({ type: 'hitRoll' })
     expect(enemyHit).toBeDefined()
     expect(state.outcome).toBe('victory')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 17_240 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 15_516 })
   })
 })
 
@@ -274,7 +274,7 @@ describe('priority-focus', () => {
     )
     expect(lines.some((line) => line.includes('selects row 2 Driving Blow (driving-blow)'))).toBe(true)
     expect(state.outcome).toBe('victory')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 17_240 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 15_516 })
   })
 })
 
@@ -283,7 +283,7 @@ describe('class reference fights', () => {
     const defs = gameDefs()
     const limit = 600_000
     const durationMs: { [id: string]: { [seed: number]: number } } = {
-      [WARRIOR_VS_STANDARD_ID]: { 1: 13_792, 42: 15_516 },
+      [WARRIOR_VS_STANDARD_ID]: { 1: 12_068, 42: 12_068 },
       [MAGE_VS_STANDARD_ID]: { 1: 9_309, 42: 9_309 },
     }
     for (const id of [WARRIOR_VS_STANDARD_ID, MAGE_VS_STANDARD_ID]) {
@@ -408,8 +408,8 @@ describe('held fury seed 42', () => {
     const defs = gameDefs()
     const cases = [
       { id: DUEL_BASIC_ID, durationMs: 20_688 },
-      { id: DRIVING_BLOW_ID, durationMs: 17_240 },
-      { id: PRIORITY_FOCUS_ID, durationMs: 17_240 },
+      { id: DRIVING_BLOW_ID, durationMs: 15_516 },
+      { id: PRIORITY_FOCUS_ID, durationMs: 15_516 },
     ]
     for (const entry of cases) {
       const state = runCombat(createCombat(setupForScenario(entry.id), defs, 42), defs, FIGHT_MS)
