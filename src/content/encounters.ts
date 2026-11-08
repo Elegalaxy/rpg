@@ -152,6 +152,51 @@ export const colossusEncounter: EncounterDef = {
   members: [{ enemyId: 'tidebound-colossus', slot: 0, level: 22 }],
 }
 
+/** Two level-22 Rift Shades. */
+export const shadePair: EncounterDef = {
+  id: 'shade-pair',
+  name: 'Rift Shade Pair',
+  members: [
+    { enemyId: 'rift-shade', slot: 0, level: 22 },
+    { enemyId: 'rift-shade', slot: 1, level: 22 },
+  ],
+}
+
+/** One level-23 Riftborn Brute. */
+export const bruteEncounter: EncounterDef = {
+  id: 'brute',
+  name: 'Riftborn Brute',
+  members: [{ enemyId: 'riftborn-brute', slot: 0, level: 23 }],
+}
+
+/** Level-23 Riftborn Brute and Hollow Channeler. */
+export const hollowsMixed: EncounterDef = {
+  id: 'hollows-mixed',
+  name: 'Rift Hollows Mixed',
+  members: [
+    { enemyId: 'riftborn-brute', slot: 0, level: 23 },
+    { enemyId: 'hollow-channeler', slot: 1, level: 23 },
+  ],
+}
+
+/** Level-25 Rift Shade, Riftborn Brute and Hollow Channeler. */
+export const hollowsDeep: EncounterDef = {
+  id: 'hollows-deep',
+  name: 'Rift Hollows Deep',
+  members: [
+    { enemyId: 'rift-shade', slot: 0, level: 25 },
+    { enemyId: 'riftborn-brute', slot: 1, level: 25 },
+    { enemyId: 'hollow-channeler', slot: 2, level: 25 },
+  ],
+}
+
+/** The Rift Hollows elite, level 26. */
+export const reaverEncounter: EncounterDef = {
+  id: 'hollowmaw-reaver',
+  name: 'Hollowmaw Reaver',
+  members: [{ enemyId: 'hollowmaw-reaver', slot: 0, level: 26 }],
+}
+
 export const encounters: { [id: string]: EncounterDef } = {
   [shardlingPair.id]: shardlingPair,
   [wolfPair.id]: wolfPair,
@@ -167,6 +212,11 @@ export const encounters: { [id: string]: EncounterDef } = {
   [causewayMixed.id]: causewayMixed,
   [causewayDeep.id]: causewayDeep,
   [colossusEncounter.id]: colossusEncounter,
+  [shadePair.id]: shadePair,
+  [bruteEncounter.id]: bruteEncounter,
+  [hollowsMixed.id]: hollowsMixed,
+  [hollowsDeep.id]: hollowsDeep,
+  [reaverEncounter.id]: reaverEncounter,
 }
 
 /** An encounter as an expedition fight list entry, with each enemy's drops copied from its definition. Gold is level × 2, or × 3 for an elite or the boss (G1). */

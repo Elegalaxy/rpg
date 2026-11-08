@@ -1066,6 +1066,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Parts: (1) docs; (2) enemies and encounters; (3) harness baseline (`--matrix hollows`), measurements only; (4) world (node, leg, route, gate, map); (5) duskiron material and crafting; (6) modifiers; (7) Salvage contract, Legacy +3 and browser check; (8) tuning (waits for a separate class-work decision).
 - Progress:
   - 2026-11-08: Part 1, docs written (GAME_DESIGN §6 "Third zone: Rift Hollows", changelog, this step).
+  - 2026-11-08: Part 2, enemies Rift Shade, Hollow Channeler, Riftborn Brute, Hollowmaw Reaver and encounters `shade-pair`, `brute`, `hollows-mixed`, `hollows-deep`, `hollowmaw-reaver` (content only, no sim change). New `src/content/hollows.test.ts`. No snapshot changed. 894 tests.
 
 ## 8. Risks, and what would reveal them early
 

@@ -823,6 +823,134 @@ export const tideboundColossus: EnemyDef = {
   drop: { materialId: 'riftglass', baseQuantity: 10 },
 }
 
+const shadeCut: EnemySkillDef = {
+  id: 'shade-cut',
+  name: 'Shade Cut',
+  coefficient: 1,
+  school: 'physical',
+  cooldownSeconds: 4,
+  tag: 'shade-cut',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 1 },
+    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.4, coefficient: 0.1, power: 'physical' },
+  ],
+}
+
+/** Levels 22-26. Skirmisher. Shade Cut bleeds. Drops 3 shard. */
+export const riftShade: EnemyDef = {
+  id: 'rift-shade',
+  name: 'Rift Shade',
+  level: 22,
+  levelMin: 22,
+  levelMax: 26,
+  archetype: 'skirmisher',
+  school: 'physical',
+  filler: { school: 'physical' },
+  skills: [shadeCut],
+  drop: { materialId: 'shard', baseQuantity: 3 },
+}
+
+const channelerMend: EnemySkillDef = {
+  id: 'channeler-mend',
+  name: 'Channel',
+  coefficient: 0,
+  school: 'magical',
+  cooldownSeconds: 10,
+  tag: 'mend',
+  tags: ['healing'],
+  canCrit: false,
+  allyTarget: 'woundedLowestHpPercent',
+  effects: [{ kind: 'heal', maxHpFraction: 0.06, healingCoefficient: 0 }],
+}
+
+const channelerBolt: EnemySkillDef = {
+  id: 'channeler-bolt',
+  name: 'Rift Bolt',
+  coefficient: 0.9,
+  school: 'magical',
+  cooldownSeconds: 0,
+  tag: 'rift-bolt',
+  tags: ['magical', 'attack'],
+  canCrit: false,
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 0.9 }],
+}
+
+/** Levels 22-27. Support. Heals an ally for 6% of its maximum HP every 10 s, then Rift Bolt. Drops 3 riftglass. */
+export const hollowChanneler: EnemyDef = {
+  id: 'hollow-channeler',
+  name: 'Hollow Channeler',
+  level: 22,
+  levelMin: 22,
+  levelMax: 27,
+  archetype: 'support',
+  school: 'magical',
+  filler: { school: 'magical' },
+  overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5 },
+  skills: [channelerMend, channelerBolt],
+  drop: { materialId: 'riftglass', baseQuantity: 3 },
+}
+
+const riftCleave: EnemySkillDef = {
+  id: 'rift-cleave',
+  name: 'Rift Cleave',
+  coefficient: 2.4,
+  school: 'physical',
+  cooldownSeconds: 10,
+  telegraphMs: 1800,
+  tag: 'rift-cleave',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  interruptMaxHpFraction: 0.25,
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 2.4 }],
+}
+
+/** Levels 23-28. Burst. Rift Cleave is a 1.8 s interruptible wind-up. Drops 3 duskiron. */
+export const riftbornBrute: EnemyDef = {
+  id: 'riftborn-brute',
+  name: 'Riftborn Brute',
+  level: 23,
+  levelMin: 23,
+  levelMax: 28,
+  archetype: 'burst',
+  school: 'physical',
+  filler: { school: 'physical' },
+  skills: [riftCleave],
+  drop: { materialId: 'duskiron', baseQuantity: 3 },
+}
+
+const riftSurge: EnemySkillDef = {
+  id: 'rift-surge',
+  name: 'Rift Surge',
+  coefficient: 3,
+  school: 'magical',
+  cooldownSeconds: 12,
+  telegraphMs: 2500,
+  tag: 'rift-surge',
+  tags: ['magical', 'attack'],
+  canCrit: true,
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 3 }],
+}
+
+/**
+ * Level 26 elite burst. Rift Surge cannot be interrupted. Reaver Strike (the 100% filler) fills ordinary actions.
+ * Guard and assault stances as the Echo Knight. No summons. Drops 10 duskiron.
+ */
+export const hollowmawReaver: EnemyDef = {
+  id: 'hollowmaw-reaver',
+  name: 'Hollowmaw Reaver',
+  level: 26,
+  archetype: 'burst',
+  elite: true,
+  school: 'physical',
+  filler: { school: 'physical', coefficient: 1 },
+  overrides: { maxHp: 3400, power: 40, consistency: 25 },
+  traitIds: [STANCE_TRAIT],
+  skills: [riftSurge],
+  drop: { materialId: 'duskiron', baseQuantity: 10 },
+}
+
 export const enemies: { [id: string]: EnemyDef } = {
   [standardDummy.id]: standardDummy,
   [fractureShardling.id]: fractureShardling,
@@ -843,4 +971,8 @@ export const enemies: { [id: string]: EnemyDef } = {
   [causewayRaider.id]: causewayRaider,
   [drownedBulwark.id]: drownedBulwark,
   [tideboundColossus.id]: tideboundColossus,
+  [riftShade.id]: riftShade,
+  [hollowChanneler.id]: hollowChanneler,
+  [riftbornBrute.id]: riftbornBrute,
+  [hollowmawReaver.id]: hollowmawReaver,
 }
