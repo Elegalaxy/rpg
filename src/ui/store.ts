@@ -13,7 +13,7 @@ import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
-import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
+import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
@@ -35,7 +35,9 @@ import type { CombatState } from '../sim/types.ts'
 import { debugLog } from './debug.ts'
 import { createGameLoop } from './loop.ts'
 
-export const PLAYBACK_SPEEDS = [1, 2, 4] as const
+export const PLAYBACK_SPEEDS = [1, 2, 4, 8] as const
+/** The playback speed only a mastered route allows. */
+export const MASTERED_SPEED = 8
 export type PlaybackSpeed = (typeof PLAYBACK_SPEEDS)[number]
 
 const SEED_MIN = -2147483648
@@ -69,8 +71,8 @@ function parseSeed(text: string): number | null {
 }
 
 function assertSpeed(speed: number): asserts speed is PlaybackSpeed {
-  if (speed !== 1 && speed !== 2 && speed !== 4) {
-    throw new Error(`speed must be 1, 2, or 4, received ${describeValue(speed)}`)
+  if (speed !== 1 && speed !== 2 && speed !== 4 && speed !== 8) {
+    throw new Error(`speed must be 1, 2, 4, or 8, received ${describeValue(speed)}`)
   }
 }
 
@@ -356,7 +358,7 @@ function applySteps(count: number): void {
 }
 
 const loop = createGameLoop({
-  getSpeed: () => snapshot.speed,
+  getSpeed: () => allowedSpeed(snapshot.speed),
   isPaused: () => snapshot.paused,
   applySteps,
   notify: () => {
@@ -452,7 +454,8 @@ export const TRAVEL_SPEEDUP = 4
 export function expeditionSpeed(): number {
   const expedition = saveStatus.save.expedition
   const walking = expedition !== null && expedition.phase === 'travel' && expedition.combat === null
-  return walking ? snapshot.speed * TRAVEL_SPEEDUP : snapshot.speed
+  const speed = allowedSpeed(snapshot.speed)
+  return walking ? speed * TRAVEL_SPEEDUP : speed
 }
 
 const expeditionLoop = createGameLoop({
@@ -465,6 +468,21 @@ const expeditionLoop = createGameLoop({
   },
   details: () => ({ scenarioId: 'expedition', seed: saveStatus.save.expedition?.seed ?? 0, speed: snapshot.speed, paused: snapshot.paused }),
 })
+
+/** The route whose mastery decides the x8 speed: the live run's, else the last one started. */
+function speedRouteId(): string | null {
+  return saveStatus.save.expedition?.id ?? lastRouteId
+}
+
+/** x8 is allowed on a route the selected hero has mastered (10 safe returns). */
+export function masteredSpeedAllowed(): boolean {
+  return routeMastery(selectedHero(saveStatus.save), speedRouteId()).mastered
+}
+
+/** The speed that really applies: x8 falls back to x4 when the route is not mastered. */
+function allowedSpeed(speed: number): number {
+  return speed === MASTERED_SPEED && !masteredSpeedAllowed() ? 4 : speed
+}
 
 /** Start the expedition clock when a run is on the save, such as after a reload. Returns the cleanup. */
 export function startExpeditionLoop(): () => void {
@@ -1050,6 +1068,7 @@ export function togglePause(): void {
 
 export function setSpeed(speed: PlaybackSpeed): void {
   assertSpeed(speed)
+  if (speed === MASTERED_SPEED && !masteredSpeedAllowed()) return
   const previous = snapshot.speed
   debugLog('[ui]', 'speed', { speed, previous })
   snapshot = { ...snapshot, speed }

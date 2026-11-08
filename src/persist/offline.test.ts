@@ -152,6 +152,7 @@ describe('an expedition while away', () => {
     expect(away.summary.heroes[0]!.gold).toBeGreaterThan(0)
     expect(Object.values(away.summary.heroes[0]!.materials).reduce((sum, n) => sum + n, 0)).toBeGreaterThan(0)
     expect(away.save.heroes[0]!.clearedNodeIds).toContain('splintered-road')
+    expect(away.save.heroes[0]!.routeReturns['splintered-road']).toBeGreaterThan(0)
   })
 
   it('stops after the first safe return when repeat is off, leaving the run to close on the Map', () => {

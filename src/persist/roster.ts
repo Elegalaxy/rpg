@@ -91,6 +91,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     bagFullOrder: DEFAULT_BAG_FULL_ORDER,
     awayRouteId: null,
     awayRun: null,
+    routeReturns: {},
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,

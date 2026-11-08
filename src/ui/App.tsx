@@ -29,7 +29,9 @@ import { ExpeditionPanel } from './map/ExpeditionPanel.tsx'
 import { MapView } from './map/MapView.tsx'
 import { OutcomeCard } from './log/OutcomeCard.tsx'
 import {
+  MASTERED_SPEED,
   PLAYBACK_SPEEDS,
+  masteredSpeedAllowed,
   restart,
   randomSeed,
   selectScenario,
@@ -268,16 +270,22 @@ export function CombatViewer() {
         <button type="button" onClick={togglePause}>
           {view.paused ? 'Resume' : 'Pause'}
         </button>{' '}
-        {PLAYBACK_SPEEDS.map((speed) => (
-          <button
-            key={speed}
-            type="button"
-            aria-pressed={view.speed === speed}
-            onClick={() => setSpeed(speed)}
-          >
-            {speed}×
-          </button>
-        ))}
+        {PLAYBACK_SPEEDS.map((speed) => {
+          const locked = speed === MASTERED_SPEED && !masteredSpeedAllowed()
+          return (
+            <button
+              key={speed}
+              type="button"
+              aria-pressed={view.speed === speed}
+              disabled={locked}
+              title={locked ? 'Return safely 10 times to unlock' : undefined}
+              onClick={() => setSpeed(speed)}
+            >
+              {speed}×
+            </button>
+          )
+        })}
+        {!masteredSpeedAllowed() ? <small className="muted-inline"> 8× unlocks after 10 safe returns on a route.</small> : null}
       </div>
       <CombatPanel combat={view.combat} queueError={view.queueError} />
       <OutcomeCard combat={view.combat} />

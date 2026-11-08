@@ -16,7 +16,9 @@ import {
   nodeStatus,
   recordProgress,
   routeInfo,
+  routeMastery,
   settleExpedition,
+  MASTERY_RETURNS,
 } from './world.ts'
 
 function withHero(): SaveData {
@@ -282,6 +284,24 @@ describe('settling an expedition', () => {
     expect(purseOf(settled).gold).toBe(5)
     expect(settled.account.slots).toBe(2)
     expect(settled.account.milestones).toEqual([])
+  })
+
+  it('counts a safe return on the route, not a defeat, and masters the route at ten', () => {
+    let save = withRun('splintered-road')
+    expect(routeMastery(selectedHero(save), 'splintered-road')).toEqual({ returns: 0, mastered: false })
+    for (let index = 0; index < MASTERY_RETURNS; index += 1) {
+      const hero = selectedHero(save)!
+      save = { ...save, expedition: startExpedition(hero, 'splintered-road', index + 1) }
+      save.expedition!.outcome = 'returned'
+      save = settleExpedition(save)
+      expect(routeMastery(selectedHero(save), 'splintered-road').returns).toBe(index + 1)
+    }
+    expect(routeMastery(selectedHero(save), 'splintered-road').mastered).toBe(true)
+    expect(routeMastery(selectedHero(save), 'withered-grove').mastered).toBe(false)
+    save = { ...save, expedition: startExpedition(selectedHero(save)!, 'splintered-road', 99) }
+    save.expedition!.outcome = 'defeat'
+    expect(selectedHero(settleExpedition(save))!.routeReturns).toEqual({ 'splintered-road': MASTERY_RETURNS })
+    expect(() => assertSaveData(settleExpedition(save))).not.toThrow()
   })
 
   it('plays a real road run to its end and settles it into a valid save', () => {

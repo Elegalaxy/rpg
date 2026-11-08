@@ -321,6 +321,15 @@ function unlockedRanks(hero: SavedHero, expedition: ExpeditionState): { echoRank
   return { echoRank, fightRank: echoRank > hero.echoRank ? echoRank : hero.fightRank }
 }
 
+/** Safe returns on one route that make it mastered for a hero (GAME_DESIGN §11). */
+export const MASTERY_RETURNS = 10
+
+/** Safe returns on a route, and whether the route is mastered. */
+export function routeMastery(hero: SavedHero | null, routeId: string | null): { returns: number; mastered: boolean } {
+  const returns = hero === null || routeId === null ? 0 : (hero.routeReturns[routeId] ?? 0)
+  return { returns, mastered: returns >= MASTERY_RETURNS }
+}
+
 export function settleExpedition(save: SaveData): SaveData {
   const expedition = save.expedition
   if (expedition === null || expedition.outcome === 'ongoing') return save
@@ -348,6 +357,8 @@ export function settleExpedition(save: SaveData): SaveData {
           progress: awardXp(hero.progress, expedition.xpEarned ?? 0),
           ...unlockedRanks(hero, expedition),
           bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
+          routeReturns:
+            expedition.outcome === 'returned' ? { ...hero.routeReturns, [expedition.id]: (hero.routeReturns[expedition.id] ?? 0) + 1 } : hero.routeReturns,
           purse,
         }
       : hero,

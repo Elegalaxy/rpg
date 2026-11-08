@@ -5,7 +5,9 @@ import {
   canStartRoute,
   markerPosition,
   nodeStatus,
+  MASTERY_RETURNS,
   routeInfo,
+  routeMastery,
   type MarkerPosition,
   type NodeState,
 } from '../../persist/world.ts'
@@ -46,6 +48,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const expedition = save.expedition
   const info = routeInfo(routeId, save)
   const start = canStartRoute(save, routeId)
+  const mastery = routeMastery(hero, routeId)
   const chosen = new Set(routes[routeId]?.nodeIds ?? [])
   const position = expedition === null ? null : markerPosition(expedition)
   const marker = position === null ? null : point(position)
@@ -113,6 +116,13 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
           <Kpi label="Level band" value={info.levels === null ? '—' : `${info.levels.min}–${info.levels.max}`} />
           <Kpi label="Fights" value={info.fights} />
           <Kpi label="One way" value={`${info.travelSeconds} s`} />
+          <Kpi
+            label="Mastery"
+            value={`${Math.min(mastery.returns, MASTERY_RETURNS)}/${MASTERY_RETURNS}`}
+            note={mastery.mastered ? '8× speed unlocked' : 'Safe returns'}
+            tone={mastery.mastered ? 'good' : undefined}
+            testId="route-mastery"
+          />
         </KpiRow>
         <dl className="route-facts">
           <dt>Path</dt>

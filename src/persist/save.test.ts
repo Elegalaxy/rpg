@@ -67,6 +67,7 @@ function withHero(): SaveData {
     repeatLimit: 0,
     awayRouteId: null,
     awayRun: null,
+    routeReturns: {},
     updates: [...HERO_UPDATES],
     craftXp: 0,
     legacy: 0,
