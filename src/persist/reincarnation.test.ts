@@ -380,3 +380,17 @@ describe('heirlooms keep up when the hero levels', () => {
     expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:tidebound-colossus')).toBe(false)
   })
 })
+
+describe('Hollowmaw Reaver Legacy bonus', () => {
+  it('pays 3 Legacy once for the first defeat of the Hollowmaw Reaver', () => {
+    const base = veteran()
+    const beaten = { ...base, heroes: base.heroes.map((h) => ({ ...h, defeatedEnemyIds: [...h.defeatedEnemyIds, 'hollowmaw-reaver'] })) }
+    const due = bonusesDue(hero(beaten)).find((bonus) => bonus.id === 'elite:hollowmaw-reaver')
+    expect(due).toMatchObject({ amount: 3, text: 'First defeat of the Hollowmaw Reaver' })
+    expect(bonusesDue(hero(base)).some((bonus) => bonus.id === 'elite:hollowmaw-reaver')).toBe(false)
+    const first = ok(reincarnate(beaten, 'hero-1', null))
+    expect(hero(first).claimedBonuses).toContain('elite:hollowmaw-reaver')
+    const again = { ...first, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true, defeatedEnemyIds: ['hollowmaw-reaver'] })) }
+    expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:hollowmaw-reaver')).toBe(false)
+  })
+})

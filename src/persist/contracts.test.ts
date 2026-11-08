@@ -463,3 +463,73 @@ function newSaveWithHero(): SaveData {
   if (!made.ok) throw new Error(made.reason)
   return made.save
 }
+
+describe('Rift Hollows Salvage', () => {
+  const found = [...newSave().account.discoveries, 'node:withered-grove', 'node:fallen-bastion', 'node:drowned-causeway', 'node:rift-hollows']
+  const colossus = { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight', 'tidebound-colossus'] }
+  const noColossus = { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] }
+
+  it('offers duskiron Salvage beside riftglass once the Hollows are discovered and the hero can enter', () => {
+    expect(boardPool(found).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass', 'secure:duskiron'])
+    expect(boardPool(found, colossus).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass', 'secure:duskiron'])
+    expect(boardPool(found, noColossus).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass'])
+    expect(boardPool([...newSave().account.discoveries, 'node:drowned-causeway']).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass'])
+    expect(targetKey({ kind: 'secure', materialId: 'duskiron' })).toBe('secure:duskiron')
+  })
+
+  it('offers no Hollows contract to a hero who has not beaten the Colossus', () => {
+    const keys = (record: { defeatedEnemyIds: string[] }) =>
+      Object.values(boardPool(found, record))
+        .flat()
+        .filter((entry) => entry.zoneName === 'Rift Hollows')
+        .map((entry) => entry.key)
+    expect(keys(noColossus)).toEqual([])
+    expect(keys(colossus)).toEqual(expect.arrayContaining(['secure:duskiron', 'encounter:hollowmaw-reaver', 'fights:rift-hollows']))
+  })
+
+  it('rolls 5 to 10 duskiron paying rewardFor(ceil(N / 3), 25, riftglass) with the usual roll', () => {
+    const seen: ContractDef[] = []
+    for (let seed = 1; seed <= 1500 && seen.length < 12; seed += 1) {
+      const rng = createRng(seed)
+      const offer = rollContract(`h-${seed}`, found, () => nextFloat(rng), [], colossus)
+      if (offer?.target.kind === 'secure' && offer.target.materialId === 'duskiron') seen.push(offer)
+    }
+    expect(seen.length).toBeGreaterThan(0)
+    for (const offer of seen) {
+      expect(offer.count).toBeGreaterThanOrEqual(5)
+      expect(offer.count).toBeLessThanOrEqual(10)
+      expect(offer.level).toBe(25)
+      expect(offer.name).toBe('Salvage: Duskiron')
+      expect(offer.description).toBe(`Salvage: bring home ${offer.count} duskiron (Rift Hollows).`)
+      const base = rewardFor(Math.ceil(offer.count / 3), 25, 'riftglass')
+      expect(offer.reward.materialId).toBe('riftglass')
+      expect(offer.reward.gold).toBeGreaterThanOrEqual(Math.floor(base.gold * 0.8))
+      expect(offer.reward.gold).toBeLessThanOrEqual(Math.ceil(base.gold * 1.3))
+    }
+    expect(rewardFor(Math.ceil(7 / 3), 25, 'riftglass')).toEqual({ xp: 99, gold: 75, materialId: 'riftglass', materialQuantity: 2 })
+  })
+
+  it('rolls Causeway-only boards exactly as before', () => {
+    const early = [...newSave().account.discoveries, 'node:drowned-causeway']
+    const withHollows = [...early, 'node:rift-hollows']
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const a = createRng(seed)
+      const b = createRng(seed)
+      expect(rollContract('x', withHollows, () => nextFloat(a), [], noColossus)).toEqual(rollContract('x', early, () => nextFloat(b), [], noColossus))
+    }
+  })
+
+  it('counts duskiron secured at settlement, never unsecured', () => {
+    let def: ContractDef | undefined
+    for (let seed = 1; seed <= 1500 && def === undefined; seed += 1) {
+      const rng = createRng(seed)
+      const offer = rollContract('d-1', found, () => nextFloat(rng), [], colossus)
+      if (offer?.target.kind === 'secure' && offer.target.materialId === 'duskiron') def = offer
+    }
+    if (def === undefined) throw new Error('no duskiron offer rolled')
+    const run = (secured: { materialId: string; quantity: number }[], unsecured: { materialId: string; quantity: number }[]) =>
+      ({ history: [], secured, unsecured, id: 'rift-hollows' }) as never
+    expect(unitsFrom(run([{ materialId: 'duskiron', quantity: 6 }, { materialId: 'riftglass', quantity: 9 }], [{ materialId: 'duskiron', quantity: 5 }]), def)).toBe(6)
+    expect(unitsFrom(run([], [{ materialId: 'duskiron', quantity: 5 }]), def)).toBe(0)
+  })
+})

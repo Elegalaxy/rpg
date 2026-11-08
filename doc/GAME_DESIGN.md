@@ -924,6 +924,8 @@ Modifiers (one modifier per item; the stack cap is 2 across worn gear). A recipe
 
 Contracts and Legacy: the Salvage contract becomes zone-aware. A duskiron Salvage is "bring home N duskiron", N from 5 to 10, reward `rewardFor(ceil(N / 3), 25, 'riftglass')`, then the usual roll; it is offered once the Hollows are discovered. Existing riftglass Salvage boards roll as before. The first defeat of the Hollowmaw Reaver gives 3 Legacy once (`elite:hollowmaw-reaver`).
 
+Built in Step 13.4 part 7: Salvage is table-driven by the zone's resource material (`SALVAGE_BY_MATERIAL`): riftglass 6-12 at level 20 paying scrap, duskiron 5-10 at level 25 paying riftglass. A board offers a zone's Salvage only to a hero who can enter that zone, so a hero who has not beaten the Colossus never sees duskiron Salvage. Boards with only the Causeway discovered roll exactly as before.
+
 Compatibility: no save version bump. Older saves load unchanged: the node is undiscovered and the material counts as 0.
 
 Measurement targets (for the later tuning step; part 3 records numbers and changes nothing). Tiers: Arrived (level 22, 8 nodes, quality 112%, Siphoning, 3 Draughts), Prepared (level 24, quality 116%, plus Stalwart and Devout), Over-levelled (level 27).

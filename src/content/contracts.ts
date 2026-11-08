@@ -100,12 +100,34 @@ const PAIRED_ENEMIES = ['fracture-shardling']
 export const SALVAGE_COUNT = { min: 6, max: 12 } as const
 export const SALVAGE_MATERIAL = 'riftglass'
 export const SALVAGE_LEVEL = 20
+
+/**
+ * Salvage by the zone's resource material (Step 13.4): how many units, the contract level, and the material the
+ * reward pays. The Causeway's entry is the original numbers.
+ */
+export const SALVAGE_BY_MATERIAL: {
+  readonly [materialId: string]: { count: { readonly min: number; readonly max: number }; level: number; rewardMaterialId: string; name: string }
+} = {
+  [SALVAGE_MATERIAL]: { count: SALVAGE_COUNT, level: SALVAGE_LEVEL, rewardMaterialId: 'scrap', name: 'Salvage: Riftglass' },
+  duskiron: { count: { min: 5, max: 10 }, level: 25, rewardMaterialId: 'riftglass', name: 'Salvage: Duskiron' },
+}
 export const SALVAGE_CHANCE = 1 / 6
 export const REWARD_ROLL = { min: 0.8, max: 1.3 } as const
 export const ELITE_CHANCE = 1 / 8
 export const PATROL_CHANCE = 1 / 4
 
-type Pick = { kind: 'bounty' | 'patrol' | 'elite' | 'salvage'; key: string; level: number; materialId: string; zoneName: string; target: ContractTarget; name: string; noun: string }
+type Pick = {
+  kind: 'bounty' | 'patrol' | 'elite' | 'salvage'
+  key: string
+  level: number
+  materialId: string
+  zoneName: string
+  target: ContractTarget
+  name: string
+  noun: string
+  /** Salvage only: the units range for this zone's material. */
+  countRange?: { readonly min: number; readonly max: number }
+}
 
 function plural(name: string): string {
   if (name.endsWith('f')) return `${name.slice(0, -1)}ves`
@@ -171,16 +193,18 @@ export function boardPool(
         noun: 'fights',
       })
     }
-    if (node.resource?.materialId === SALVAGE_MATERIAL) {
+    const salvageRule = node.resource === undefined ? undefined : SALVAGE_BY_MATERIAL[node.resource.materialId]
+    if (node.resource !== undefined && salvageRule !== undefined) {
       salvage.push({
         kind: 'salvage',
-        key: `secure:${SALVAGE_MATERIAL}`,
-        level: SALVAGE_LEVEL,
-        materialId: 'scrap',
+        key: `secure:${node.resource.materialId}`,
+        level: salvageRule.level,
+        materialId: salvageRule.rewardMaterialId,
         zoneName: node.name,
-        target: { kind: 'secure', materialId: SALVAGE_MATERIAL },
-        name: 'Salvage: Riftglass',
-        noun: SALVAGE_MATERIAL,
+        target: { kind: 'secure', materialId: node.resource.materialId },
+        name: salvageRule.name,
+        noun: node.resource.materialId,
+        countRange: salvageRule.count,
       })
     }
     const eliteId = node.eliteEnemyId
@@ -252,7 +276,8 @@ export function rollContract(
   } else if (pick.kind === 'patrol') {
     count = between(next, PATROL_COUNT.min, PATROL_COUNT.max)
   } else if (pick.kind === 'salvage') {
-    count = between(next, SALVAGE_COUNT.min, SALVAGE_COUNT.max)
+    const range = pick.countRange ?? SALVAGE_COUNT
+    count = between(next, range.min, range.max)
   }
   const factor = REWARD_ROLL.min + next() * (REWARD_ROLL.max - REWARD_ROLL.min)
   const base = rewardFor(pick.kind === 'salvage' ? Math.ceil(count / 3) : count, pick.level, pick.materialId)
