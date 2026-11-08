@@ -15,6 +15,7 @@ import {
 } from '../../persist/preparation.ts'
 import type { SavedHero } from '../../persist/save.ts'
 import { routes } from '../../content/world.ts'
+import { supplyLock } from '../../persist/crafting.ts'
 import { countNames } from '../town/groupItems.ts'
 import { outcomeStats } from '../../persist/world.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
@@ -48,6 +49,7 @@ const CURSE_LABELS: { [curse: string]: string } = {
 }
 
 function PreparationForm({ hero }: { hero: SavedHero }) {
+  const status = useSaveStatus()
   const [draft, setDraft] = useState<PreparationDraft>(() => {
     const start = draftFor(hero)
     return { ...start, supplies: clampToStash(start.supplies, hero.purse.supplies) }
@@ -242,7 +244,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           Backpack: <strong data-testid="pack-used">{packedTotal}</strong> of {SUPPLY_SLOT_COUNT} slots.
         </p>
         <ul className="rows">
-          {SUPPLIES.map((supply) => {
+          {SUPPLIES.filter((supply) => (hero.purse.supplies[supply.id] ?? 0) > 0 || supplyLock(status.save, supply.id) === null).map((supply) => {
             const owned = hero.purse.supplies[supply.id] ?? 0
             const count = counts[supply.id] ?? 0
             return (
@@ -273,7 +275,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
                 }
               >
                 <strong>{supply.name}</strong> — {supply.effect}
-                <small className="row-note">{owned === 0 ? 'None in your stash. Buy some at the Potion Shop.' : `${owned} in your stash.`}</small>
+                <small className="row-note">{owned === 0 ? (supply.price === null ? 'None in your stash. Brew some at the Potion Shop.' : 'None in your stash. Buy some at the Potion Shop.') : `${owned} in your stash.`}</small>
               </Row>
             )
           })}

@@ -5,7 +5,7 @@ import { PLACES, dealsIn, placeTable, type PlaceDef, type PlaceId } from '../../
 import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { selectedHero } from '../../persist/character.ts'
-import { recipePrice, recipesForSale } from '../../persist/crafting.ts'
+import { recipePrice, recipesForSale, supplyLock } from '../../persist/crafting.ts'
 import { purseOf, type SaveData } from '../../persist/save.ts'
 import { previewEquip, wearerOf } from '../../persist/equipment.ts'
 import { previewBuy, repairAllCost } from '../../persist/town.ts'
@@ -14,7 +14,7 @@ import { groupItems } from './groupItems.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { Help } from '../Help.tsx'
-import { CostPill, Kpi, KpiRow, Pill, ShopRow, Tag } from '../Kit.tsx'
+import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
 import {
   buyItemFromUi,
   equipFromUi,
@@ -31,6 +31,7 @@ import {
 } from '../store.ts'
 import { Contracts } from './Contracts.tsx'
 import { Craft } from './Craft.tsx'
+import { SupplyCard } from './SupplyCard.tsx'
 
 export { PLACES, type PlaceId }
 
@@ -220,90 +221,24 @@ function PotionShop() {
         "Pack up to {SUPPLY_SLOT_COUNT} before you set out. Whatever you don't use, you bring home."
       </p>
       <ul className="supply-cards">
-        {SUPPLIES.map((supply) => {
-          const owned = purse.supplies[supply.id] ?? 0
-          const haveMaterial = purse.materials[supply.brew.materialId] ?? 0
-          const missingMaterial = Math.max(0, supply.brew.quantity - haveMaterial)
-          const missingBrewGold = Math.max(0, supply.brew.gold - gold)
-          const brewShort =
-            missingMaterial > 0
-              ? `Need ${missingMaterial} more ${supply.brew.materialId}`
-              : missingBrewGold > 0
-                ? `Need ${missingBrewGold} more gold`
-                : null
-          const price = supply.price ?? 0
-          const buyShort = gold < price ? `Need ${price - gold} more gold` : null
-          return (
-            <ShopCardRow key={supply.id}>
-              <div className="supply-head">
-                <strong>{supply.name}</strong>
-                <Pill kind="owned" title="You own this many">
-                  ×<span data-testid={`stash-${supply.id}`}>{owned}</span> owned
-                </Pill>
-                <span className="supply-effect">{supply.effect}</span>
-              </div>
-              <div className="supply-options">
-                <div className="supply-option">
-                  <span className="supply-option-title">Buy with gold</span>
-                  <span className="supply-option-cost">
-                    <CostPill cost={{ kind: 'gold', amount: price }} /> each
-                  </span>
-                  <span className="button-row">
-                    <button
-                      type="button"
-                      className="btn-primary"
-                      disabled={closed || hero === null || gold < price}
-                      aria-label={`Buy 1 ${supply.name}`}
-                      onClick={() => run(buySupplyFromUi(supply.id, 1), `Bought 1 ${supply.name}.`)}
-                    >
-                      Buy 1
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-primary"
-                      disabled={closed || hero === null || gold < price * SUPPLY_SLOT_COUNT}
-                      aria-label={`Buy ${SUPPLY_SLOT_COUNT} ${supply.name}`}
-                      onClick={() => run(buySupplyFromUi(supply.id, SUPPLY_SLOT_COUNT), `Bought ${SUPPLY_SLOT_COUNT} ${supply.name}s.`)}
-                    >
-                      Buy {SUPPLY_SLOT_COUNT} <small>({price * SUPPLY_SLOT_COUNT} gold)</small>
-                    </button>
-                  </span>
-                  {buyShort !== null ? <small className="supply-option-note">{buyShort}</small> : null}
-                </div>
-                <div className="supply-option">
-                  <span className="supply-option-title">Brew from materials</span>
-                  <span className="supply-option-cost">
-                    <Tag kind={missingMaterial > 0 ? 'bad' : 'mat'} title={`You have ${haveMaterial}`}>
-                      {supply.brew.quantity} {supply.brew.materialId} <small>(have {haveMaterial})</small>
-                    </Tag>
-                    +
-                    <CostPill cost={{ kind: 'gold', amount: supply.brew.gold }} />
-                  </span>
-                  <span className="button-row">
-                    <button
-                      type="button"
-                      className="btn-good"
-                      disabled={closed || hero === null || brewShort !== null}
-                      aria-label={`Brew 1 ${supply.name}`}
-                      onClick={() => run(brewSupplyFromUi(supply.id, 1), `Brewed 1 ${supply.name}.`)}
-                    >
-                      Brew 1
-                    </button>
-                  </span>
-                  {brewShort !== null ? <small className="supply-option-note">{brewShort}</small> : null}
-                </div>
-              </div>
-            </ShopCardRow>
-          )
-        })}
+        {SUPPLIES.map((supply) => (
+          <SupplyCard
+            key={supply.id}
+            supply={supply}
+            owned={purse.supplies[supply.id] ?? 0}
+            haveMaterial={purse.materials[supply.brew.materialId] ?? 0}
+            gold={gold}
+            closed={closed}
+            heroSelected={hero !== null}
+            lock={supplyLock(save, supply.id)}
+            onBuy={(quantity) => run(buySupplyFromUi(supply.id, quantity), quantity === 1 ? `Bought 1 ${supply.name}.` : `Bought ${quantity} ${supply.name}s.`)}
+            onBrew={() => run(brewSupplyFromUi(supply.id, 1), `Brewed 1 ${supply.name}.`)}
+          />
+        ))}
       </ul>
       {messages}
     </>
   )
-}
-
-function ShopCardRow({ children }: { children: ReactNode }) {
-  return <li className="supply-card">{children}</li>
 }
 
 function TradingPost() {
