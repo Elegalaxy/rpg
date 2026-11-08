@@ -196,6 +196,17 @@ describe('harness CLI', () => {
     expect(both.stderr).toContain('choose either --matrix or --scenario')
   })
 
+  it('filters the elites matrix and rejects an unknown filter value', () => {
+    const bad = runCli(['--matrix', 'elites', '--seed', '1', '--runs', '1', '--classes', 'bard'])
+    expect(bad.status).toBe(1)
+    expect(bad.stderr).toContain('unknown --classes value "bard"')
+
+    const ok = runCli(['--matrix', 'elites', '--seed', '1', '--runs', '1', '--classes', 'mage', '--elites', 'reaver', '--tiers', 'prepared', '--modes', 'rules'])
+    expect(ok.status).toBe(0)
+    expect(ok.stdout).toContain('mage reaver prepared rules:')
+    expect(ok.stdout).not.toContain('mage reaver over')
+  }, 60_000)
+
   it('prints a one-run reference matrix twice, stable apart from the timing line', () => {
     const first = runCli(['--matrix', 'reference', '--runs', '1', '--seed', '1'])
     const second = runCli(['--matrix', 'reference', '--runs', '1', '--seed', '1'])

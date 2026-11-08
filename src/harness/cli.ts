@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 
 import { gameDefs } from '../content/scenarios.ts'
-import { STEP_MS } from '../sim/constants.ts'
+import { HERO_CLASSES, STEP_MS } from '../sim/constants.ts'
 import { createExpedition, EXPEDITION_IDS, isExpeditionId, runExpedition } from '../sim/expedition.ts'
 import type { ExpeditionEncounterRecord } from '../sim/expedition.ts'
 import { formatEvent } from '../sim/log.ts'
@@ -17,7 +17,7 @@ import { runComboMatrix } from './combos.ts'
 import { formatTelegraphTable, runTelegraphMatrix } from './telegraph.ts'
 import { formatCausewayTable, runCausewayMatrix } from './causeway.ts'
 import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
-import { formatElitesTable, runElitesMatrix } from './elites.ts'
+import { ELITE_CELLS, ELITE_IDS, ELITE_MODES, formatElitesTable, runElitesMatrix, type EliteFilter } from './elites.ts'
 import { formatWardenTable, runWardenMatrix } from './warden.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
@@ -43,6 +43,10 @@ type ParsedArgs = {
   runs?: string
   matrix?: string
   expedition?: string
+  classes?: string
+  elites?: string
+  tiers?: string
+  modes?: string
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -75,7 +79,11 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       name !== '--seed' &&
       name !== '--runs' &&
       name !== '--matrix' &&
-      name !== '--expedition'
+      name !== '--expedition' &&
+      name !== '--classes' &&
+      name !== '--elites' &&
+      name !== '--tiers' &&
+      name !== '--modes'
     ) {
       throw new CliError(`unknown argument ${JSON.stringify(token)}`)
     }
@@ -93,6 +101,10 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     else if (name === '--seed') parsed.seed = value
     else if (name === '--runs') parsed.runs = value
     else if (name === '--expedition') parsed.expedition = value
+    else if (name === '--classes') parsed.classes = value
+    else if (name === '--elites') parsed.elites = value
+    else if (name === '--tiers') parsed.tiers = value
+    else if (name === '--modes') parsed.modes = value
     else parsed.matrix = value
   }
   return parsed
@@ -123,6 +135,33 @@ function parseRuns(token: string): number {
     throw new CliError(`runs must be an integer of at most ${MAX_BATCH_RUNS}, received ${runs}`)
   }
   return runs
+}
+
+function parseList<T extends string>(flag: string, token: string | undefined, valid: readonly T[]): T[] | undefined {
+  if (token === undefined) return undefined
+  const items = token.split(',')
+  for (const item of items) {
+    if (!(valid as readonly string[]).includes(item)) {
+      throw new CliError(`unknown ${flag} value ${JSON.stringify(item)}
+valid values: ${valid.join(', ')}`)
+    }
+  }
+  return items as T[]
+}
+
+/** The optional row filter of `--matrix elites`: `--classes`, `--elites`, `--tiers`, `--modes` (comma lists). Any filter drops the diagnostic rows. */
+function parseElitesFilter(args: ParsedArgs): EliteFilter {
+  const filter: EliteFilter = {}
+  const classes = parseList('--classes', args.classes, HERO_CLASSES)
+  const elites = parseList('--elites', args.elites, ELITE_IDS)
+  const tiers = parseList('--tiers', args.tiers, [...new Set(ELITE_CELLS.map((cell) => cell.tier))])
+  const modes = parseList('--modes', args.modes, ELITE_MODES)
+  if (classes !== undefined) filter.classes = classes
+  if (elites !== undefined) filter.elites = elites
+  if (tiers !== undefined) filter.tiers = tiers
+  if (modes !== undefined) filter.modes = modes
+  if (Object.keys(filter).length > 0) filter.noDiagnostic = true
+  return filter
 }
 
 function formatOutcome(state: CombatState): string {
@@ -259,7 +298,7 @@ function printMatrix(args: ParsedArgs): void {
   if (args.matrix === 'elites') {
     console.log(`[sim] matrix elites seed ${seed} runs ${runs}`)
     const started = performance.now()
-    const rows = runElitesMatrix(seed, runs)
+    const rows = runElitesMatrix(seed, runs, parseElitesFilter(args))
     const elapsedMs = performance.now() - started
     process.stdout.write(formatElitesTable(rows))
     printTiming(rows.length * runs, elapsedMs)

@@ -45,4 +45,9 @@ describe('elites matrix', () => {
     expect(table).toContain('cleric reaver over blind:')
     expect(table).toContain('[target lowestHpPercent]')
   }, 300_000)
+
+  it('filters by class, elite, tier and mode', () => {
+    const rows = runElitesMatrix(1, 1, { classes: ['mage'], elites: ['colossus'], tiers: ['prepared', 'over'], modes: ['rules'], noDiagnostic: true })
+    expect(rows.map((row) => `${row.classId}:${row.elite}:${row.tier}:${row.mode}`)).toEqual(['mage:colossus:prepared:rules', 'mage:colossus:over:rules'])
+  }, 300_000)
 })

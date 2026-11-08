@@ -88,6 +88,8 @@ export type EliteFilter = {
   classes?: readonly HeroClass[]
   elites?: readonly EliteId[]
   modes?: readonly EliteMode[]
+  /** Tier ids as in `ELITE_CELLS` (for example `prepared`, `over`, `prepared-crafted`). */
+  tiers?: readonly string[]
   /** Skip the Warrior and Cleric diagnostic rows. */
   noDiagnostic?: boolean
 }
@@ -100,6 +102,7 @@ export function runElitesMatrix(seed: number, runs: number, filter: EliteFilter 
     if (filter.classes !== undefined && !filter.classes.includes(classId)) continue
     for (const cell of ELITE_CELLS) {
       if (filter.elites !== undefined && !filter.elites.includes(cell.elite)) continue
+      if (filter.tiers !== undefined && !filter.tiers.includes(cell.tier)) continue
       for (const mode of ELITE_MODES) {
         if (filter.modes !== undefined && !filter.modes.includes(mode)) continue
         rows.push({ classId, elite: cell.elite, tier: cell.tier, mode, targeting: null, ...measure(eliteSetup(classId, cell, mode), seed, runs) })
