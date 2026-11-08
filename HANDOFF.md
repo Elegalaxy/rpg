@@ -1,18 +1,17 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-09)
-- **Current Goal:** Step 13.5 class balance pass, Assassin rules fix done (commits 29e610c docs, 74d52c0 content, part 3 harness). Remaining Step 13.5: part 6 telegraph check, part 7 crafted supplies trim, part 8 full re-measure and close; then a separate Colossus/Reaver time-pressure ramp step.
-- **Recent Changes & Files Touched (Assassin rules fix):**
-  - `src/content/scenarios.ts` (+ `scenarios.test.ts`): Assassin reference `mark-for-death` row has `targetPriority: 'lowestArmor'` (Mark was landing on the Warden while damage hit the Echo). New heroes only; existing saves keep the untargeted row.
-  - `src/harness/builds.ts`: `UNLOCKED_ROWS` values are `{ row, place: 'first' | 'last' }`; Assassin Smoke Step is a no-condition row placed last (active skills never roll to hit, so the old `telegraph present` row did nothing).
-  - Docs: GAME_DESIGN §7 "Assassin rules fix (Step 13.5)" (diagnosis, results, guards); IMPLEMENTATION_PLAN Step 13.5 Progress.
-  - Results (seeds 1-3 x 100): Assassin Warden prepared 18 to 42, Colossus prepared 33 to 53 (both in band), Reaver prepared 100 (above band, unchanged); over/causeway 100; other classes unchanged. Reference CSV: only Assassin bastion-mixed, grove-mixed, echo-knight rows moved (win % unchanged).
-  - Earlier in Step 13.5: targeting fix (Warrior/Cleric lowestArmor/lowestResistance rows), Warden HP x7, pressure every 3 s up to 10 stacks, Second Wind 10% (Warrior Warden prepared 52%).
+- **Current Goal:** Step 13.5 class balance pass. Part 7 (crafted supplies trim) is done. Parts 6 (telegraph check) and 8 (full re-measure and close), and the Colossus/Reaver time-pressure step, remain. Step 13.5 stays in-progress.
+- **Recent Changes & Files Touched (Part 7):**
+  - Greater Draught heal 50% to 35%, Riftglass Ward barrier 30% to 25% (`src/content/skills.ts`, effect text in `src/content/supplies.ts`, `src/content/supplies.test.ts`). Warming Tonic unchanged. No snapshot changed; 941 tests pass.
+  - Docs first: GAME_DESIGN §9 table, and §7 "Crafted supplies trim" (sweep table, finding, after-table); IMPLEMENTATION_PLAN Step 13.5 progress line.
+  - Sweep (seed 1, 60 runs, in-memory patches): the planned 40 / 25 left Assassin Warden +51 and Colossus +30; 35 / 25 chosen (30 equals the Healing Draught, Ward 20 equals the Ward Charm).
+  - After (seeds 1-3 x 100, plain prepared > crafted prepared, gap): Warden Warrior 52 > 99 (+47), Assassin 42 > 72 (+30), Ranger 54 > 85 (+31), Mage 48 > 72 (+24), Cleric 45 > 83 (+38); Colossus gaps Warrior 0, Assassin +20, Ranger +8, Mage -3, Cleric 0; Reaver all 100. Causeway-crafted Warden tier 99-100 everywhere.
+- **Key finding:** Warrior (+47) and Cleric (+38) remain over the +30 band at the Warden because of the Greater Draught default RULE threshold (hero HP at most 30%, Healing Draught row 40%), not the heal or Ward number. At heal 30 / Ward 20 with the rule at 40% the gap is exactly 0; with heal 30 / Ward 20 and the rule at 30% it is already +42 for Warrior. Option (not applied, needs user OK): Greater Draught rule to hero HP at most 40% (35 / 25 at 40%, seed 1 x 60: Warden gaps +22 / +36 / +29 / +20 / +23 for W/A/R/M/C, Colossus Assassin +24). Existing heroes keep their own rules. Brew cost 2 to 3 riftglass is an economy-only option (does not change win rates), not applied.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - One commit per finished part, pushed to `origin/main`, no force-push. No shared vault between heroes.
-  - Crafted supplies lift prepared tiers by 45-58 points for the Assassin (and 45-52 for Ranger, Mage, Cleric), beyond the 30-point ceiling: part 7, not touched yet.
-  - The game UI ships no Smoke Step row; the harness filler row is harness-only.
-  - Matrix runs are slow with several in parallel (8 jobs took about 25 min); run them in the background and filter with `--classes` where supported (`elites` only).
-- **Still out of band:** Colossus and Reaver prepared are above the 40-85 band for Warrior, Cleric and Mage, and Reaver prepared for every class (needs time pressure or class power); mixed fights mostly outside 15-40 (GAME_DESIGN §7).
-- **Exact Next Step:** (1) Part 6 telegraph check. (2) Part 7 crafted supplies trim. (3) Part 8 full re-measure and close Step 13.5. (4) Then the Colossus/Reaver time-pressure ramp as its own step. (5) User still to playtest the Causeway and check offline, away route, Save panel, Wear button, Going in with.
+  - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
+  - "Skill is ready" ignores resource cost and target availability. Reference loadouts carry no supplies.
+  - Bands: Warden prepared 30-70, Colossus/Reaver prepared 40-85, crafted prepared at most +30 over plain prepared.
+- **Still open:** Reaver prepared 100% for all classes (needs class power or a new mechanic); Colossus easy for Mage/Cleric/Warrior; Warrior/Cleric Warden prepared; user playtest of the Causeway; user checks of offline, away route, Save panel, Wear button, Going in with.
+- **Exact Next Step:** (1) Ask the user whether to raise the Greater Draught default rule to HP at most 40% (this is what brings Warrior and Cleric near the band). (2) Part 6 telegraph check, then part 8 full re-measure and close. (3) Colossus/Reaver time-pressure step. (4) Later: Grove/Bastion material drops, post-Warden zone (Rift Hollows L22-28).

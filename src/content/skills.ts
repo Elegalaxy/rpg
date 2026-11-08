@@ -565,7 +565,7 @@ const greaterDraught = {
   tags: ['supply'],
   target: 'single',
   supply: true,
-  effects: [{ kind: 'heal', maxHpFraction: 0.5, healingCoefficient: 0 }],
+  effects: [{ kind: 'heal', maxHpFraction: 0.35, healingCoefficient: 0 }],
 } satisfies SkillDef
 
 const riftglassWard = {
@@ -577,7 +577,7 @@ const riftglassWard = {
   tags: ['supply'],
   target: 'single',
   supply: true,
-  effects: [{ kind: 'barrier', source: 'anchorMaxHp', coefficient: 0.3, durationSeconds: 8 }],
+  effects: [{ kind: 'barrier', source: 'anchorMaxHp', coefficient: 0.25, durationSeconds: 8 }],
 } satisfies SkillDef
 
 export const skills: { [id: string]: SkillDef } = {

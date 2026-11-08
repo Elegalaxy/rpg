@@ -117,17 +117,17 @@ describe('the Warming Tonic', () => {
 })
 
 describe('crafted supplies', () => {
-  it('heals 50% with the Greater Draught and raises a 30% barrier with the Riftglass Ward', () => {
+  it('heals 35% with the Greater Draught and raises a 25% barrier with the Riftglass Ward', () => {
     const defs = gameDefs()
     const draught = createCombat(withSupplies(DUEL_BASIC_ID, ['greater-draught'], [{ skillId: 'greater-draught', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 30 }] }], 10), defs, 42)
     const maxHp = draught.hero.maxHp
     while (!draught.log.some((event) => event.type === 'supplyUse')) stepCombat(draught, defs)
-    expect(firstOf(draught.log, 'heal', () => true)?.amount).toBe(Math.round(maxHp * 0.5))
+    expect(firstOf(draught.log, 'heal', () => true)?.amount).toBe(Math.round(maxHp * 0.35))
     const row: PriorityRow = { skillId: 'riftglass-ward', conditions: [{ kind: 'telegraph', operator: 'present' }] }
     const ward = runCombat(createCombat(withSupplies(ROOTMAW_ID, ['riftglass-ward'], [row]), defs, 4), defs, 300_000)
     const used = firstOf(ward.log, 'supplyUse', (event) => event.supplyId === 'riftglass-ward')
     const barrier = ward.log.find((event) => event.type === 'barrier' && event.timeMs === used!.timeMs)
-    expect(barrier).toMatchObject({ amount: ward.hero.maxHp * 0.3 })
+    expect(barrier).toMatchObject({ amount: ward.hero.maxHp * 0.25 })
   })
 })
 

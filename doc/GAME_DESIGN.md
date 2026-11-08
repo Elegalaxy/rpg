@@ -1355,7 +1355,7 @@ If Echo-first targeting (Q5) explains most of the Warrior and Cleric Warden gap 
 
 Guards after each class part: the built matrix (Rootmaw and Echo Knight at 6 nodes) is not trivialised (Warrior and Cleric HP lost not down more than 15 points); reference regular fights at least 95% wins; Causeway and Hollows regular fights at least 95%; Mage over-levelled Warden at least 85%. Acceptance: seeds 1, 2 and 3 at 100 runs, mean of the seeds, seeds within 8 points of each other.
 
-Later parts: 5 elite retune (Colossus HP 3,600 to 4,200 and Breaker Wave 230% to 320%; Reaver HP 3,400 to 4,400, Power 40 to 44, Rift Surge 300% to 400%; Warden unchanged unless Warrior or Cleric is below 30% prepared, then the HP multiplier 8 to 7); 6 telegraph check (an optional single-action interrupt mechanic only with user approval); 7 crafted supplies (Greater Draught 50% to 40%, Riftglass Ward 30% to 25%); 8 full re-measure and close.
+Later parts: 5 elite retune (Colossus HP 3,600 to 4,200 and Breaker Wave 230% to 320%; Reaver HP 3,400 to 4,400, Power 40 to 44, Rift Surge 300% to 400%; Warden unchanged unless Warrior or Cleric is below 30% prepared, then the HP multiplier 8 to 7); 6 telegraph check (an optional single-action interrupt mechanic only with user approval); 7 crafted supplies (planned Greater Draught 50% to 40%, Riftglass Ward 30% to 25%; the sweep chose 35% and 25%, see "Crafted supplies trim"); 8 full re-measure and close.
 
 Baselines and results are recorded below as each part is measured.
 
@@ -1504,6 +1504,42 @@ Mixed fights (seed 1, 100 runs, rules mode, HP lost %; band 15-40): Warrior caus
 Elites after the targeting fix (seeds 1-3 x 100 runs, mean, rules mode; wins % with HP lost % / elite HP left %): Warrior Colossus arrived 2 (100 / 25), prepared 100 (57 / 0), over 100; Reaver prepared 100 (43 / 0), over 100. Cleric Colossus arrived 85 (54 / 4; 85, 84, 87), prepared 100 (43 / 0), over 100; Reaver prepared 100 (39 / 0), over 100. Colossus and Reaver prepared 100 for Warrior and Cleric are above the 40-85 band (before the targeting fix: Warrior 100 and Cleric 54 for the Colossus); the Colossus Assassin (33), Ranger (87) and Mage (100) cells and the Reaver cells for those classes are unchanged from part 5B (their rules and levers did not change). The Colossus and Reaver numbers are unchanged, as instructed; a time-pressure ramp for them is a separate later step.
 
 Before / after summary of this fix (Warden prepared, over, causeway wins %; part 5A values with the untargeted rules and Warden 5.75, then now): Warrior 40 / 100 / 100 to 79 / 100 / 100; Cleric 0 / 8 / 64 to 45 / 100 / 100; Assassin 86 / 100 / 100 to 18 / 100 / 100; Ranger 99 / 100 / 100 to 54 / 100 / 100; Mage 100 / 100 / 100 to 48 / 100 / 100. Colossus prepared Warrior 100 to 100, Cleric 54 to 100.
+
+#### Crafted supplies trim (Step 13.5 part 7, 2026-11-09, user approved option (a))
+
+Band: the crafted prepared tier wins at most 30 points more than the plain prepared tier. Constraints: the Greater Draught must heal more than the Healing Draught (30%), the Riftglass Ward must be at least the Ward Charm (20%), plain tiers do not change. Only the two skill definitions in `src/content/skills.ts` are levers. Warming Tonic is unchanged.
+
+Sweep (seed 1, 60 runs, `--matrix elites` rules mode, Warden and Colossus prepared vs prepared-crafted; in-memory patches). Cells are plain > crafted wins % (gap). Plain: Warden Warrior 55, Assassin 42, Ranger 53, Mage 47, Cleric 40; Colossus 98, 53, 83, 100, 100.
+
+| Heal / Ward | Warden W | A | R | M | C | Colossus W | A | R | M | C |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 50 / 30 (now) | +45 | +58 | +45 | +48 | +57 | +2 | +45 | +17 | -2 | 0 |
+| 50 / 20 | +45 | +58 | +47 | +48 | +57 | +2 | +45 | +17 | -2 | 0 |
+| 40 / 30 | +45 | +50 | +44 | +38 | +45 | +2 | +29 | +15 | -3 | 0 |
+| 40 / 25 | +45 | +51 | +42 | +41 | +47 | +2 | +30 | +15 | -3 | 0 |
+| 40 / 20 | +45 | +43 | +42 | +35 | +47 | +2 | +19 | +15 | -7 | 0 |
+| 35 / 30 | +45 | +26 | +40 | +26 | +43 | +2 | +22 | +9 | -3 | 0 |
+| 35 / 25 | +43 | +26 | +32 | +28 | +45 | +2 | +17 | +9 | -5 | 0 |
+| 35 / 20 | +45 | +18 | +20 | +16 | +43 | +2 | +20 | +9 | -5 | 0 |
+| 30 / 30 | +45 | +11 | +9 | +5 | +17 | +2 | +9 | +4 | -3 | 0 |
+| 30 / 25 | +43 | +5 | +9 | +3 | +17 | +2 | -5 | +4 | -3 | 0 |
+| 30 / 20 | +42 | -2 | +2 | +1 | +18 | +2 | -10 | +4 | -3 | 0 |
+
+Chosen: Greater Draught 35%, Riftglass Ward 25%. 30% equals the Healing Draught (not allowed), 35 is the lowest heal that is still better; 20% for the Ward equals the Ward Charm and would make the Riftglass Ward pointless. 35 / 25 puts the Colossus inside the band for every class and the Warden for Assassin and Mage; Ranger is +32 (2 over, inside seed noise of about 6). Warrior (+43) and Cleric (+45) stay over at the Warden whatever heal and Ward are used.
+
+Finding: the Warrior and Cleric excess is NOT the heal or Ward number. At Greater Draught 30% and Ward 20% (the same values as the Healing Draught and Ward Charm) the crafted Warrior still wins 97 against 55 plain. The cause is the Greater Draught default rule: it drinks at hero HP at most 30%, the Healing Draught rule at 40%. With the Greater Draught rule also at 40% the 30 / 20 gap is exactly 0 for every class and elite. So the later, riskier trigger is worth about +40 points to Warrior and about +20 to Cleric. Option for the user, NOT applied (rule thresholds are outside the approved levers): raise the Greater Draught rule to hero HP at most 40%. Measured with that rule (seed 1, 60 runs, Warden gap W / A / R / M / C, Colossus A): 35 / 25 at 40% gives +22 / +36 / +29 / +20 / +23, Colossus Assassin +24; at 35% rule gives +45 / +28 / +27 / +23 / +35.
+
+Applied 2026-11-09: Greater Draught 35%, Riftglass Ward 25% (`src/content/skills.ts`, `src/content/supplies.ts` text, `supplies.test.ts`). Measured after (seeds 1-3 x 100 runs, mean; plain prepared > crafted prepared wins %, gap; before-gaps from the baseline and the Assassin fix: Warden W +21 (older), A +58, R +45, M +50, C +52; Colossus A +45):
+
+| Elite | Warrior | Assassin | Ranger | Mage | Cleric |
+| --- | --- | --- | --- | --- | --- |
+| Warden | 52 > 99 (+47) | 42 > 72 (+30) | 54 > 85 (+31) | 48 > 72 (+24) | 45 > 83 (+38) |
+| Colossus | 100 > 100 (0) | 53 > 73 (+20) | 87 > 95 (+8) | 100 > 97 (-3) | 100 > 100 (0) |
+| Reaver | 100 > 100 | 100 > 99 | 100 > 100 | 100 > 100 | 100 > 100 |
+
+Causeway-geared crafted tier (`--matrix warden`, seeds 1-3, wins): every class 100 except Mage 99 in two seeds (plain causeway tier 100). Band met for Colossus (all classes), Warden Assassin (+30, at the limit), Mage (+24); Ranger +31 is at the limit within noise. NOT met: Warden Warrior (+47) and Cleric (+38), caused by the Greater Draught rule threshold (30 against the Healing Draught 40), not by the heal or Ward value; see the finding above. Plain prepared tiers did not change.
+
+Brew cost option (economy only, no effect on win rates): Greater Draught and Riftglass Ward cost 2 riftglass each; 3 riftglass would make a full crafted pack (3 Greater Draughts and a Ward) cost 12 riftglass instead of 8. Not applied.
 
 ### Automation
 
@@ -1929,8 +1965,8 @@ First-playable supplies, decided 2026-11-03:
 | Supply | Effect | Shop price | Brew | Unlock | Default rule |
 |---|---|---|---|---|---|
 | Warming Tonic | Removes all Chill and Burn from the hero and restores 10% of maximum HP. | 12 gold | 2 hide + 4 gold | none | Hero Chill at least 2 stacks |
-| Greater Draught | Restores 50% of maximum HP. | not sold | 2 riftglass + 10 gold | Drowned Causeway discovered | Hero HP at most 30%, placed above the Healing Draught row |
-| Riftglass Ward | A barrier of 30% of maximum HP for 8 seconds. | not sold | 2 riftglass + 12 gold | Any hero has beaten the Tidebound Colossus | Same conditions as the Ward Charm row, placed above it |
+| Greater Draught | Restores 35% of maximum HP (50% until Step 13.5 part 7). | not sold | 2 riftglass + 10 gold | Drowned Causeway discovered | Hero HP at most 30%, placed above the Healing Draught row |
+| Riftglass Ward | A barrier of 25% of maximum HP for 8 seconds (30% until Step 13.5 part 7). | not sold | 2 riftglass + 12 gold | Any hero has beaten the Tidebound Colossus | Same conditions as the Ward Charm row, placed above it |
 
   - A locked supply cannot be brewed and shows its lock reason, the same way a locked recipe does. A supply with no shop price cannot be bought.
   - Existing heroes get each new default row once, unless a rule already names that supply; one the player removes later does not come back.
