@@ -191,7 +191,7 @@ describe('cleric nodes', () => {
     cast(plain.state, plain.defs, 'smite')
     const noded = open({ nodes: [NODE_SMITE] })
     cast(noded.state, noded.defs, 'smite')
-    expect(lastHit(plain.state).coefficient).toBe(1)
+    expect(lastHit(plain.state).coefficient).toBe(1.3)
     expect(lastHit(noded.state).coefficient).toBe(SMITE_NODE_COEFFICIENT)
     expect(noded.state.hero.statusPotency).toBe(plain.state.hero.statusPotency)
     expect(noded.state.hero.pendingCoefficient).toBeNull()
@@ -408,11 +408,11 @@ describe('cleric nodes', () => {
     expect(classSkillBlock(late.state.hero, strike, 9000)).toBe('no stored Sanctuary')
   })
 
-  it('Judgment: unlocks the high-cost skill and raises its damage to 230%', () => {
+  it('Judgment: unlocks the high-cost skill and raises its damage to 280%', () => {
     expectUnlock('Judgment', NODE_JUDGMENT, 'judgment')
     const { state, defs } = open({ nodes: [NODE_JUDGMENT] })
     cast(state, defs, 'judgment', 100)
-    expect(lastHit(state).coefficient).toBe(2.3)
+    expect(lastHit(state).coefficient).toBe(2.8)
     expect(lastHit(state).outgoingModifier).toBe(1)
   })
 
@@ -441,7 +441,7 @@ describe('cleric nodes', () => {
     expect(resourceEvents(state, 'payment').at(-1)?.generated).toBe(-25)
     cast(state, defs, 'mend', 100)
     cast(state, defs, 'judgment', 100)
-    expect(resourceEvents(state, 'payment').at(-1)?.generated).toBeCloseTo(-50 * RECIPROCAL_FACTOR, 10)
+    expect(resourceEvents(state, 'payment').at(-1)?.generated).toBeCloseTo(-40 * RECIPROCAL_FACTOR, 10)
     const plain = open()
     cast(plain.state, plain.defs, 'smite')
     cast(plain.state, plain.defs, 'mend', 100)

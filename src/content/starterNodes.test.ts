@@ -66,8 +66,8 @@ describe('starting-skill node bonuses', () => {
       node: 'cleric-judgment',
       skillId: 'judgment',
       check: (d) => (firstEffect(d, 'damage') as { coefficient: number }).coefficient,
-      plain: 2,
-      noded: 2.3,
+      plain: 2.5,
+      noded: 2.8,
     },
   ]
 

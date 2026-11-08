@@ -369,7 +369,7 @@ describe('class reference fights', () => {
   it('runs cleric-vs-standard to a victory inside 10 minutes', () => {
     const defs = gameDefs()
     const limit = 600_000
-    const durationMs: { [seed: number]: number } = { 1: 14_032, 42: 21_048 }
+    const durationMs: { [seed: number]: number } = { 1: 12_278, 42: 17_540 }
     const scenario = scenarios[CLERIC_VS_STANDARD_ID]
     expect(scenario?.equippedSkillIds).toEqual(['smite', 'mend', 'ward', 'judgment'])
     expect(scenario?.vow).toBe('zeal')

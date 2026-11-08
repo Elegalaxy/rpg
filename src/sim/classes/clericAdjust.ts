@@ -26,7 +26,7 @@ export const RELEASE_HEAL_ID = 'sanctuary-release-heal'
 export const RELEASE_STRIKE_ID = 'sanctuary-release-strike'
 export const RELEASE_IDS: readonly string[] = [RELEASE_HEAL_ID, RELEASE_STRIKE_ID]
 
-export const SMITE_NODE_COEFFICIENT = 1.2
+export const SMITE_NODE_COEFFICIENT = 1.5
 export const MEND_NODE_COEFFICIENT = 1.4
 export const VOWKEEPER_FACTOR = 1.2
 export const EXALTED_FACTOR = 1.5

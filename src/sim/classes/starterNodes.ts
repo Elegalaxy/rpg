@@ -27,7 +27,7 @@ export const FIREBALL_NODE_COST = 25
 export const FROST_LANCE_NODE_COEFFICIENT = 1.3
 export const MANA_WARD_NODE_COEFFICIENT = 1.25
 export const WARD_NODE_DURATION = 10
-export const JUDGMENT_NODE_COEFFICIENT = 2.3
+export const JUDGMENT_NODE_COEFFICIENT = 2.8
 
 type Bonus = {
   nodeId: string

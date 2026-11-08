@@ -256,7 +256,7 @@ Each class has:
 - The Cleric leaves town at 0 Faith.
 - Faith persists between encounters for the expedition and does not naturally decay.
 - The three base vows are available at character creation; the skill web improves them. The Cleric equips one vow before leaving town and cannot change it during that expedition.
-- Vow of Zeal generates 7 base Faith when a hero action deals direct HP damage, at most once per hero action. It was 5 until 2026-11-03: Zeal was the weakest vow against the Rootmaw (built Cleric, 30 runs, 0/3/6/9 nodes: Zeal 0/0/50/50%, Endurance 0/7/100/100%, Temperance 0/10/93/93%). At 7 Zeal is 0/17/93/93%, and the 0-node Cleric beats the Echo Knight 87% (was 0%).
+- Vow of Zeal generates 9 base Faith (Step 13.5, was 7) when a hero action deals direct HP damage, at most once per hero action. It was 5 until 2026-11-03: Zeal was the weakest vow against the Rootmaw (built Cleric, 30 runs, 0/3/6/9 nodes: Zeal 0/0/50/50%, Endurance 0/7/100/100%, Temperance 0/10/93/93%). At 7 Zeal is 0/17/93/93%, and the 0-node Cleric beats the Echo Knight 87% (was 0%).
 - Vow of Endurance generates 1 base Faith per 1% of maximum HP lost or barrier damage absorbed, capped at 10 per enemy action.
 - Vow of Temperance generates 5 base Faith after an action ends at 40%-80% HP without overhealing or resource overcap.
 - Failing an ordinary vow condition only stops generation. Exalted Vow adds an actual break penalty.
@@ -475,7 +475,7 @@ The MVP Cleric web has fifteen nodes: five per cluster. Connections follow the f
 
 #### Devotion cluster
 
-1. Smite: increase damage from 100% to 120% Magical Power and add 5 Status Potency to vow-related effects.
+1. Smite: increase damage from 130% to 150% Magical Power (Step 13.5; was 100% to 120%) and add 5 Status Potency to vow-related effects.
 2. Vowkeeper: increase base Faith generation from Zeal, Endurance, and Temperance by 20%.
 3. Penance: unlock the health-for-Faith active skill.
 4. Steadfast Spirit: fulfilling a vow condition below 50% HP or while an enemy heavy action is telegraphed generates 5 additional base Faith, at most once per hero action.
@@ -491,7 +491,7 @@ The MVP Cleric web has fifteen nodes: five per cluster. Connections follow the f
 
 #### Judgment cluster
 
-1. Judgment: unlock the high-cost magical damage active skill. Judgment deals 230% Magical Power instead of 200%.
+1. Judgment: unlock the high-cost magical damage active skill. Judgment deals 280% Magical Power instead of 250% (Step 13.5; was 230% instead of 200%).
 2. Righteous Force: Faith-spending offensive skills gain +15% damage and +10 percentage points of magical penetration.
 3. Reciprocal Purpose: alternating between offensive and defensive Cleric skills reduces the second skill's Faith cost by 20%.
 4. Final Mercy: an effective Mend or Ward empowers the next Smite or Judgment by 25%; killing an enemy empowers the next Mend or Ward by 25%. Each side stores at most one charge.
@@ -1316,9 +1316,9 @@ Levers. Skill-definition and class constants only, no sim change. Start value, t
 | W2 | Warrior | Sundering Blow damage, Expose Armor reduction | 125%, 20% | 150%, 30% (chosen 150%, 30%) | 25-35% Armor |
 | W3 | Warrior | Second Wind heal | 15% max HP | 25% (chosen 30%) | 20-30% |
 | W4 | Warrior | Shield Brace reduction | 30% | 50% (chosen 40%) | 40-60% |
-| C1 | Cleric | Smite damage; `SMITE_NODE_COEFFICIENT` | 100%; 1.2 | 130%; 1.5 | to be swept |
-| C2 | Cleric | Judgment damage and cost; `JUDGMENT_NODE_COEFFICIENT` | 200%, 50; 2.3 | 250%, 40; 2.8 | to be swept |
-| C3 | Cleric | `ZEAL_BASE`, only if C1 and C2 are not enough | 7 | 9 | |
+| C1 | Cleric | Smite damage; `SMITE_NODE_COEFFICIENT` | 100%; 1.2 | 130%; 1.5 (chosen 130%; 1.5) | sweep 130-160% |
+| C2 | Cleric | Judgment damage and cost; `JUDGMENT_NODE_COEFFICIENT` | 200%, 50; 2.3 | 250%, 40; 2.8 (chosen 250%, 40; 2.8) | sweep 250-300% |
+| C3 | Cleric | `ZEAL_BASE`, only if C1 and C2 are not enough | 7 | 9 (chosen 9) | |
 | M1 | Mage | Mana Ward barrier; `MANA_WARD_NODE_COEFFICIENT` | 100%; 1.25 | 70%; 0.9 | 60-90%; 0.8-1.0 |
 
 If Echo-first targeting (Q5) explains most of the Warrior and Cleric Warden gap (the `lowestHpPercent` diagnostic row of `--matrix elites`), their reference rules change for multi-enemy rows only, which moves the reference CSV; that is recorded here when done.
@@ -1357,6 +1357,14 @@ Warrior after (seeds 1-3 x 100 runs, mean; wins % with mean HP lost % / elite HP
 Guards (Warrior, seed 1, 100 runs): reference regulars 100% (the reference CSV Warrior rows above); Causeway and Hollows regular fights 100%. The built-matrix guard FAILS on HP lost: built 6-node Rootmaw 76 to 45% lost and Echo Knight 64 to 43% (down 31 and 21 points, limit 15), and the floor build now wins the Rootmaw and Echo Knight 100% (was 66% and 59%). W3 alone at 20% already costs more than 15 points on the Rootmaw (59), so no value that lifts the Warden also keeps this guard. Reported rather than forced.
 
 Reference CSV changes (Warrior rows, seed 1, 100 runs; before / after): win % rootmaw 66 / 100, echo-knight 59 / 100, every other regular 100 / 100 (warden 0 / 0); median victory time ms arbalist 8770 / 7016, bastion-mixed 31417 / 26107, deserter 10812 / 9010, echo-knight 116077 / 96079, grove-mixed 29343 / 26280, oathbound-echo 8770 / 7016, road-mixed 21173 / 19371, rootmaw 63280 / 51852, sentry 22771 / 18610, shardling 3636 / 3636, spider 8930 / 8144, thornbeast 20797 / 19027, wisp 10177 / 8948, wolf 7272 / 5454; mean HP attrition % rootmaw 80.9 / 49.0, echo-knight 83.6 / 43.3, deserter 11.1 / 9.5, bastion-mixed 49.2 / 44.2. Other classes' rows are unchanged. The golden duel-basic snapshot is unchanged (basic attacks only).
+
+Cleric result (Step 13.5 part 3, 2026-11-08). Chosen: Smite 130% (node 150%), Judgment 250% at 40 Faith (node 280%), Zeal 9 base Faith per damaging action (C3 applied because C1 and C2 were not enough). Sweep (seed 1, 40 runs, Warden prepared / over / causeway Warden HP left; baseline 71 / 59 / 62): the start values gave 66 / 43 / 34; with Zeal 9, 65 / 43 / 31; a doubled-damage probe (Smite 160% node 190%, Judgment 300% node 340%) gave only 56 / 23 / 13 with 5% causeway wins. Built 6-node Rootmaw and Echo Knight HP lost did not move (43 / 42 before, 42 / 41 after). The Cleric's damage per second is so low that no tested lever reaches the Warden bands: Warden prepared, over and causeway stay at 0% wins, and the 30-70% prepared and at-least-85% over bands are NOT met. The Cleric needs a different kind of lever (a new damage source or much less Warden pressure), which is a decision for the user.
+
+Cleric after (seeds 1-3 x 100 runs, mean; wins % with HP lost % / elite HP left %, rules mode): Warden prepared 0 (100 / 66), over 0 (100 / 42), causeway 0 (100 / 30), prepared-crafted 0; Colossus arrived 1 (100 / 11), prepared 99 (45 / 0), over 100; Reaver prepared 100 (38 / 0), over 100. Blind: Colossus prepared 95 (rules beat blind by 4 win points), Warden 0, Reaver 100. Bands met: none of the Warden bands. Colossus prepared 99 (was 83) and Reaver 100 are above the 40-85% band and are retuned in part 5.
+
+Guards (Cleric, seed 1, 100 runs): reference regulars 100% wins; Causeway and Hollows regular fights 100%; built 6-node Rootmaw 42% lost and Echo Knight 41% (before 43 and 42, not trivialised by more than 15 points). The floor (0-node) build now wins the Rootmaw 100% (was 3%) and the Echo Knight 100% (was 91%), HP lost 99 / 57 before, 50 / 44 after; this is the Cleric's floor build, not a guard.
+
+Reference CSV changes (Cleric rows, seed 1, 100 runs; before / after): win % echo-knight 91 / 100, rootmaw 3 / 100, every other regular 100 / 100; median victory time ms arbalist 12502 / 10716, bastion-mixed 47489 / 38433, deserter 14680 / 12845, echo-knight 212665 / 172485, grove-mixed 62015 / 43855, oathbound-echo 14288 / 12502, road-mixed 32571 / 26057, rootmaw 201454 / 146313, sentry 29881 / 23335, shardling 5505 / 3670, spider 11908 / 10090, thornbeast 38742 / 26939, wisp 15278 / 13294, wolf 9175 / 9175; mean HP attrition % rootmaw 83.1 / 49.5, echo-knight 52.6 / 43.6, deserter 16.3 / 13.9, wisp 22.9 / 18.4, arbalist 17.4 / 15.3, spider 15.4 / 12.2. The Zeal change affects every Cleric using the Vow of Zeal. The golden duel-basic snapshot is unchanged.
 
 ### Automation
 
@@ -1467,11 +1475,11 @@ Elemental-charge and prepared-casting keystones modify how this base kit is paid
 
 #### Cleric
 
-1. Smite: no Faith cost; deals 100% Magical Power; 3-second cooldown; 1.0× action time.
+1. Smite: no Faith cost; deals 130% Magical Power (Step 13.5, was 100%); 3-second cooldown; 1.0× action time.
 2. Mend: costs 25 Faith; heals 120% Healing Power; 5-second cooldown; 1.0× action time. Since 2026-11-04 it also removes one Poison or Bleed from the hero, every stack of it, Bleed first. Measured the same day (built Cleric, 40 runs, 0/3/6/9 nodes): Rootmaw 3/100/100/100% (was 0/0/93/93%), Echo Knight 90/100/100/100% (was 87/100/100/100%). The user kept it as is (2026-11-06): the Cleric's answer to Poison and Bleed is part of its identity.
 3. Ward: costs 30 Faith; creates a pre-mitigation barrier equal to 150% Healing Power for up to 8 seconds; 10-second cooldown; 0.75× action time.
 4. Consecration: costs 40 Faith; creates one 8-second field that ticks every 2 seconds for 35% Magical Power damage and 25% Healing Power recovery; 15-second cooldown; 1.2× action time. Recasting replaces and refreshes the existing field.
-5. Judgment: costs 50 Faith; deals 200% Magical Power; 10-second cooldown; 1.2× action time.
+5. Judgment: costs 40 Faith (Step 13.5, was 50); deals 250% Magical Power (was 200%); 10-second cooldown; 1.2× action time.
 6. Penance: directly consumes 10% maximum HP, bypassing barriers and Defense, to generate 25 base Faith; cannot be fatal; 10-second cooldown; 1.0× action time.
 
 The Grace/Wrath keystone changes the costs and payoffs of this base kit.
@@ -1580,7 +1588,7 @@ Starting-skill node bonuses (each node keeps its unlock and gains one small bonu
 - Assassin: Venom Edge poison tick 12% to 15%. Mark for Death grants 1 Advantage when applied. Execute base damage 100% to 120%.
 - Ranger: Piercing Arrow cost 20 to 15. Snare Trap cooldown 8 to 6 s.
 - Mage: Fireball cost 30 to 25. Frost Lance damage 110% to 130%. Mana Ward barrier 100% to 125%.
-- Cleric: Ward duration 8 to 10 s. Judgment damage 200% to 230%.
+- Cleric: Ward duration 8 to 10 s. Judgment damage 250% to 280% (Step 13.5, was 200% to 230%).
 - Check with `npm run sim -- --matrix built --seed 1 --runs 40` before and after; report the change per class.
 - `bossLossThisLife` is set only when a non-summon enemy in that fight is a boss. Splintered Road enemies are not bosses.
 

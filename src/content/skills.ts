@@ -316,7 +316,7 @@ const smite = {
   actionTimeCoefficient: 1,
   tags: ['magical', 'attack'],
   target: 'single',
-  effects: [{ kind: 'damage', school: 'magical', coefficient: 1 }],
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 1.3 }],
 } satisfies SkillDef
 
 const mend = {
@@ -347,12 +347,12 @@ const ward = {
 const judgment = {
   id: 'judgment',
   name: 'Judgment',
-  cost: 50,
+  cost: 40,
   cooldownSeconds: 10,
   actionTimeCoefficient: 1.2,
   tags: ['magical', 'attack'],
   target: 'single',
-  effects: [{ kind: 'damage', school: 'magical', coefficient: 2 }],
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 2.5 }],
 } satisfies SkillDef
 
 const consecration = {

@@ -254,7 +254,7 @@ describe('content integrity', () => {
       cost: 0,
       cooldownSeconds: 3,
       actionTimeCoefficient: 1,
-      effects: [{ kind: 'damage', school: 'magical', coefficient: 1 }],
+      effects: [{ kind: 'damage', school: 'magical', coefficient: 1.3 }],
     })
     expect(skills.mend).toMatchObject({
       cost: 25,
@@ -287,10 +287,10 @@ describe('content integrity', () => {
       ],
     })
     expect(skills.judgment).toMatchObject({
-      cost: 50,
+      cost: 40,
       cooldownSeconds: 10,
       actionTimeCoefficient: 1.2,
-      effects: [{ kind: 'damage', school: 'magical', coefficient: 2 }],
+      effects: [{ kind: 'damage', school: 'magical', coefficient: 2.5 }],
     })
     expect(skills.penance).toMatchObject({
       cost: 0,
