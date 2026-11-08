@@ -1095,6 +1095,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Parts: (0) docs; (1) harness `--matrix elites` and baselines; (2) Warrior W1-W4; (3) Cleric C1-C2 (C3 if needed); (4) Mage M1; (5) elite retune (Colossus, Reaver, Warden if needed; closes Step 13.4 part 8); (6) telegraph check; (7) crafted supplies trim; (8) full re-measure and close.
 - Progress:
   - 2026-11-08: Part 0, docs written.
+  - 2026-11-08: Part 1, `--matrix elites` (`src/harness/elites.ts`, test, CLI registration): Warden prepared/over/causeway, Colossus arrived/prepared/over, Reaver prepared/over, a crafted variant of each prepared tier, rules and blind, plus Warrior/Cleric `lowestHpPercent` diagnostic rows. Baselines (seeds 1-3 x 100) in GAME_DESIGN. Echo-first targeting changes nothing (Warrior 0% / Warden 51% left, Cleric 0% / 71% both ways), so the reference rules stay.
 
 ## 8. Risks, and what would reveal them early
 

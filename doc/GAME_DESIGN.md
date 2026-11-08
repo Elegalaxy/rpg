@@ -1329,6 +1329,27 @@ Later parts: 5 elite retune (Colossus HP 3,600 to 4,200 and Breaker Wave 230% to
 
 Baselines and results are recorded below as each part is measured.
 
+Baseline measured 2026-11-08 (Step 13.5 part 1, `npm run sim -- --matrix elites`, seeds 1-3 x 100 runs, mean of the three seeds; nothing tuned). Cells are wins % (mean HP lost % / elite HP left %). Tiers come from `--matrix warden`, `causeway` and `hollows` (Colossus level 22, Reaver level 26). "rules" is the class reference rules; "blind" removes the telegraph and interrupt rows.
+
+| Class | Mode | warden prepared | warden over | warden causeway | colossus arrived | colossus prepared | colossus over | reaver prepared | reaver over |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Warrior | rules | 0 (100 / 51) | 0 (100 / 25) | 0 (100 / 32) | 0 (100 / 22) | 37 (92 / 1) | 100 (52 / 0) | 100 (47 / 0) | 100 (46 / 0) |
+| Warrior | blind | 0 (100 / 49) | 0 (100 / 23) | 0 (100 / 29) | 0 (100 / 23) | 13 (98 / 3) | 100 (52 / 0) | 100 (43 / 0) | 100 (42 / 0) |
+| Assassin | rules | 3 (100 / 30) | 100 (54 / 0) | 100 (47 / 0) | 0 (100 / 28) | 94 (69 / 0) | 100 (45 / 0) | 100 (41 / 0) | 100 (35 / 0) |
+| Assassin | blind | 1 (100 / 37) | 100 (61 / 0) | 100 (50 / 0) | 2 (100 / 26) | 87 (69 / 1) | 100 (46 / 0) | 100 (42 / 0) | 100 (36 / 0) |
+| Ranger | rules | 35 (95 / 12) | 100 (48 / 0) | 100 (45 / 0) | 3 (100 / 21) | 98 (54 / 0) | 100 (47 / 0) | 100 (20 / 0) | 100 (15 / 0) |
+| Ranger | blind | 0 (100 / 44) | 93 (76 / 0) | 92 (72 / 1) | 0 (100 / 30) | 61 (88 / 4) | 100 (49 / 0) | 100 (44 / 0) | 100 (40 / 0) |
+| Mage | rules | 99 (66 / 0) | 100 (49 / 0) | 100 (42 / 0) | 99 (55 / 0) | 100 (48 / 0) | 100 (39 / 0) | 100 (32 / 0) | 100 (22 / 0) |
+| Mage | blind | 52 (92 / 14) | 99 (60 / 0) | 100 (56 / 0) | 68 (84 / 6) | 100 (57 / 0) | 100 (50 / 0) | 100 (47 / 0) | 100 (48 / 0) |
+| Cleric | rules | 0 (100 / 71) | 0 (100 / 59) | 0 (100 / 62) | 0 (100 / 18) | 83 (56 / 1) | 100 (43 / 0) | 100 (39 / 0) | 100 (39 / 0) |
+| Cleric | blind | 0 (100 / 71) | 0 (100 / 60) | 0 (100 / 60) | 0 (100 / 20) | 59 (71 / 2) | 100 (43 / 0) | 100 (40 / 0) | 100 (40 / 0) |
+
+Crafted supplies (3 Greater Draughts and a Riftglass Ward, rules mode), wins % plain prepared tier then crafted prepared tier: Warden Warrior 0 / 0, Assassin 3 / 86, Ranger 35 / 99, Mage 99 / 100, Cleric 0 / 0; Colossus Warrior 37 / 100, Assassin 94 / 100, Ranger 98 / 100, Mage 100 / 100, Cleric 83 / 100; Reaver 100 / 100 for every class.
+
+Echo-first diagnostic (Warrior and Cleric against the Warden, prepared, `targetPriority` `lowestHpPercent` on the whole hero): Warrior 0% wins, Warden 51% left (reference rules: 0%, 51%); Cleric 0% wins, Warden 71% left (reference rules: 0%, 71%). The targeting change moves nothing, so Echo-first targeting does not explain the gap and the reference rules are NOT changed. The gap is class damage and sustain, as diagnosed.
+
+Seeds stay within 8 points except three blind cells: Warrior Colossus prepared (21, 8, 10), Ranger Colossus prepared (55, 65, 62) and Mage Colossus arrived (67, 62, 75).
+
 ### Automation
 
 Each loadout supports up to 12 ordered priority rows for its four equipped active skills.

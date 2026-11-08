@@ -17,6 +17,7 @@ import { runComboMatrix } from './combos.ts'
 import { formatTelegraphTable, runTelegraphMatrix } from './telegraph.ts'
 import { formatCausewayTable, runCausewayMatrix } from './causeway.ts'
 import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
+import { formatElitesTable, runElitesMatrix } from './elites.ts'
 import { formatWardenTable, runWardenMatrix } from './warden.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
@@ -230,8 +231,8 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'elites') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, elites`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
@@ -252,6 +253,15 @@ function printMatrix(args: ParsedArgs): void {
     const rows = runTelegraphMatrix(seed, runs)
     const elapsedMs = performance.now() - started
     process.stdout.write(formatTelegraphTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
+  if (args.matrix === 'elites') {
+    console.log(`[sim] matrix elites seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const rows = runElitesMatrix(seed, runs)
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatElitesTable(rows))
     printTiming(rows.length * runs, elapsedMs)
     return
   }
