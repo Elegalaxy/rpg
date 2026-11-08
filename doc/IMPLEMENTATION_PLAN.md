@@ -1013,6 +1013,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
     B, C and E tie within noise on wins. B was chosen: it reads plainly ("Use Ward Charm when Enemy telegraph is present and Hero HP % is at most 70."), keeps a margin before the Draught rule at 40%, and 80% (H) gave the Ranger less. G changes nothing because the Charm is never up twice in these fights. Rootmaw and Echo Knight stay at 100% wins for every class with the Charm packed under A and B (mean HP lost differs: the Charm is now held back, for example Warrior vs Rootmaw 24% to 41%, Mage vs Echo Knight 50% to 38%); the reference matrix rows (zone 1 and the built matrix) carry no supplies, so they are unchanged. The Assassin prepared tier stays walled (3-5%): the Charm is not its gap.
   - 2026-11-08: Decision recorded in GAME_DESIGN Supplies first, then `WARD_CHARM_ROW` in `src/content/supplies.ts` changed. Existing heroes keep the rows in their saves; no hero update was added. `addWardCharmRule` and `addSupplyRules` insert `WARD_CHARM_ROW`, so a legacy hero that never got the rule now receives the new row; a hero whose `updates` already lists `ward-charm-rule` is untouched. New test in `src/persist/supplies.test.ts`. 813 tests. Not checked in the browser.
 
+### Step 12.6: Offline extras
+- Status: `in-progress`
+- Depends on: 12.1
+- Design: GAME_DESIGN §11, "Offline extras", decided 2026-11-08 (user approved). Notifications are deferred.
+- Parts: (1) docs; (2) per-hero run limit; (3) other heroes progress while away (persist, `SavedHero.awayRun`, lanes in `offline.ts`); (4) away panel with one row per hero and Roster badges; (5) background heroes tick while the page is open; (6) mastered routes (x8 speed).
+- Progress:
+  - 2026-11-08: Part 1, docs written (GAME_DESIGN §11 and Roster rules, this step).
+
 ### Step 13.1: Drowned Causeway
 - Status: `done`
 - Depends on: 12.5

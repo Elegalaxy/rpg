@@ -59,7 +59,7 @@ A sufficiently brutal defeat by a superior boss, combined with the hero's extrao
 - First-playable slots, decided 2026-10-31: the account starts with 2 slots and can reach 5. The extra slots unlock once each, for the whole account, the first time any hero reaches the milestone. Slot 3: the first safe return to town from an expedition. Slot 4: the first boss defeat that sends a hero to reincarnation. Slot 5: the first defeat of the Fractured Warden. A slot never relocks, and a slot is not tied to the hero that earned it.
 - Duplicate race/class heroes are allowed, decided 2026-10-31. Each hero has its own id, so two Human Warriors keep separate progress, gear, and mastery. Hero names are trimmed, 1 to 24 characters, and must be unique in the roster when compared without case.
 - The first playable has no way to delete or retire a hero, so a slot stays in use. Retiring heroes is left for later.
-- Only one selected hero makes active or offline progress at a time.
+- The selected hero plays the live screen. Other heroes with an away route also progress while the page is open or closed (GAME_DESIGN §11, "Offline extras"); heroes without an away route rest.
 - World-map discoveries are shared, but each hero must clear personal combat gates.
 - Recipes and world discoveries are shared. Decided 2026-11-03: gold, materials, unequipped items (the archive), contracts, the crafting queue, and defeat debt belong to each hero. Shared wealth let a grown hero fund a new one and skip the early game. A shared vault for sending gold or items between heroes was considered and rejected for the same reason. Saves from before this change give everything to the selected hero (or the first hero), each queued craft job goes to the hero who queued it, and the other heroes start empty. Every hero's crafting queue advances (since 2026-11-04).
 - Equipped gear is bound to its hero.
@@ -1795,7 +1795,7 @@ First-playable reincarnation numbers, decided 2026-11-01:
 
 - Target rhythm: 5-15 minute strategic check-ins around longer automated expeditions.
 - Initial full-vision offline-combat cap: eight hours.
-- Only the selected hero progresses.
+- The selected hero plays live. Other heroes progress only on their away route (see "Offline extras" below); heroes without an away route rest.
 - Offline retreat and defeat use the same simulation rules as active play.
 - Previously proven zones can be run offline; exact proof requirements remain open.
 - Mastered zones unlock faster simulation speeds.
@@ -1819,7 +1819,16 @@ Offline catch-up, decided 2026-11-04 (user approved; not built yet):
 - Measured 2026-11-04 (headless, level 40 Warrior on the Splintered Road, 8 hours): 338 runs and 1,017 fights in 2.2 seconds. The same hero returned about 2,500 materials from 3 hours, which would swamp the economy.
 - Decided 2026-11-04 (user): fights won while away drop half the loot and gold of a live fight. For each won fight the material quantity and the gold gained are halved, rounded half up, so a drop of 1 stays 1. XP, contracts, and discoveries are not reduced. Live play is unchanged.
 - Decided 2026-11-07 (user): away runs can start on their own. In the expedition preparation the player picks an away route, or none (the default). If the hero has no run when the player leaves (page closed or tab hidden for at least 5 seconds), the catch-up starts that route first, using the packed supplies and the carried gold from the preparation, and then follows the push-on and repeat orders. It does not start when the route is not cleared by the hero, when the packed supplies are not in the stash, or when a run already exists; the summary says why.
-- Later: faster simulation speeds for mastered zones, offline progress for heroes that are not selected, and notifications while the page is closed.
+- Later: notifications while the page is closed (deferred, not planned).
+
+Offline extras, decided 2026-11-08 (user approved; Step 12.6):
+
+- Run limit: each hero has a repeat limit of 0 (no limit, the default), 1, 3, 5, 10 or 25 runs, set next to Repeat in the preparation. Offline, once that many runs have ended in one catch-up, no new run starts and the summary says "Run limit reached". 0 behaves as before.
+- Other heroes: every hero that has an away route (not only the selected one) runs it while the player is away, with the same rules as the selected hero (push-on HP, bag-full order, repeat, run limit, half loot, defeat costs). Heroes without an away route rest. The same applies while the page is open: heroes that are not selected keep running their away route in the background, with no summary; their state shows as a badge on the Roster. Crafting counts once per catch-up for every hero, as before.
+- Selecting a hero who has a background run brings that run onto the live screen. A run that has ended (returned or defeated) waits for the player on the Map. A hero with a background run cannot be deleted.
+- The away summary is one row per hero (runs, fights won, gold, XP and levels, why it stopped), with the shared crafts and discoveries below.
+- Mastered routes: each hero counts safe returns per route. At 10 safe returns the route is mastered for that hero and the live screen offers x8 playback speed on it. Live only: offline loot and the 0.5 rate do not change.
+- Unchanged: the 8-hour cap, the 0.5 loot rate, the 5-slot roster, no shared vault. The first run of each other hero's catch-up uses its own seed, so heroes do not replay identical fights.
 
 ## 12. Presentation
 
