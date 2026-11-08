@@ -693,7 +693,7 @@ Echo Knight:
 - A former protector fused with the spreading fracture.
 - Rank-0 level: 20.
 - Rank-0 stats from the Standard baseline:
-  - 5.75× HP: 2,760 (Step 13.5 part 5; was 8×, 3,840)
+  - 7× HP: 3,360 (Step 13.5 targeting fix part 2; was 8×, then 5.75× in part 5A)
   - 1.3× Power: 36
   - 1.5× Armor and Resistance: 68 each
   - Accuracy: 40
@@ -719,7 +719,7 @@ Echo Knight:
      - The Warden remains active, making target priority part of the phase.
      - Fracture Hammer remains available, but Warden's Guard does not.
   3. Shattered Warden, below 35% HP:
-     - Every 8 seconds, gain one stack granting +10% Power and +5% action speed while reducing Armor and Resistance by 5%; maximum 5 stacks.
+     - Every 3 seconds, gain one stack granting +10% Power and +5% action speed while reducing Armor and Resistance by 5%; maximum 10 stacks (was every 8 seconds and 5 stacks until Step 13.5 part 2).
      - Rift Pulse has a 1.5-second telegraph, deals 120% Magical Power, applies one Chill on a successful status roll, and has a 6-second cooldown.
      - Fracture Hammer remains available.
      - Surviving Blade and Ward Echoes remain until killed.
@@ -1439,6 +1439,19 @@ Part 1 result (seed 1, 60 runs, rules mode, Warden multiplier still 5.75, Warrio
 Reference CSV changes (Warrior and Cleric rows, seed 1, 100 runs; before / after; only these rows changed, every other class is unchanged): Warrior warden win % 0 / 100 (median victory 95302 ms, attrition 47.2%), bastion-mixed median ms 26107 / 27877 and attrition 44.2 / 32.6, grove-mixed 26280 / 24218 and 46.0 / 31.5, echo-knight 96079 / 93470 and 43.4 / 42.2; Cleric bastion-mixed 38433 / 35344 and attrition 42.9 / 36.5, echo-knight 172485 / 152882 (43.7 / 43.6), grove-mixed 43855 / 38751 (42.6 / 41.4). Single-target rows are unchanged. The `ref-warrior-warden` row now wins, so the report test uses `ref-assassin-warden` for its losing-Warden check. The golden duel-basic snapshot is unchanged.
 
 Part 2 (Warden retune): `hpMultiplier` 5.75 to 7, `pressureIntervalMs` 8000 to 3000, `pressureMaxStacks` 5 to 10 as the start, sweep multiplier 6.5, 6.75, 7 by interval 3000, 4000 (seed 1, 60 runs, all five classes). Bands as above; arrived at most 20% (`--matrix warden`). If the Assassin stays under 30% prepared that is reported, not tuned.
+
+Part 2 result (2026-11-08). Chosen: `hpMultiplier` 7 (Warden HP 3,360), `pressureIntervalMs` 3000, `pressureMaxStacks` 10 (the plan start values; the targeted reference rules from part 1 are in force). Sweep (seed 1, 60 runs, rules mode, Warden prepared wins % for Warrior / Assassin / Ranger / Mage / Cleric; over-levelled and Causeway-geared were 100% for every class in every cell, so only prepared is listed), with Second Wind still 30%:
+
+| Multiplier / interval | Warrior | Assassin | Ranger | Mage | Cleric |
+| --- | --- | --- | --- | --- | --- |
+| 6.5 / 3000 | 100 | 42 | 78 | 87 | 68 |
+| 6.5 / 4000 | 100 | 48 | 85 | 97 | 93 |
+| 6.75 / 3000 | 100 | 37 | 63 | 73 | 55 |
+| 6.75 / 4000 | 100 | 42 | 67 | 92 | 67 |
+| 7 / 3000 | 100 | 18 | 53 | 47 | 40 |
+| 7 / 4000 | 100 | 27 | 67 | 75 | 75 |
+
+With Second Wind trimmed to 15% (part 3, same seed and runs): 7 / 3000 gives Warrior 75, Assassin 18, Ranger 53, Mage 47, Cleric 40; 6.85 / 3000 gives 90 / 38 / 62 / 70 / 48; 6.75 / 3000 gives 90 / 37 / 63 / 73 / 55; 7 / 4000 gives 98 / 27 / 67 / 75 / 75; 6.75 / 4000 gives 100 / 42 / 67 / 92 / 92. 7 / 3000 was chosen because it puts three classes (Ranger, Mage, Cleric) squarely in 30-70% and has the smallest total distance outside the band (Warrior 5 over, Assassin 12 under); 6.85 and 6.75 put the Warrior 20 over and the Mage at the ceiling. The Assassin stays below 30% prepared at the chosen value; it was not buffed or nerfed, as instructed.
 
 Part 3 (Warrior trim): Second Wind `maxHpFraction` 0.30 to 0.15 (the part 2 value of 0.30 was a lever against the wrong cause); re-check the built guard (Rootmaw about 76 and Echo Knight about 64 HP lost within 15 points) and the Warden bands. Cleric Smite, Judgment and Zeal buffs stay unless the Cleric ends above 70% prepared (then Zeal 9 to 7 is suggested, not applied). Colossus and Reaver numbers are unchanged.
 

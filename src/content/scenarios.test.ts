@@ -662,10 +662,10 @@ describe('warrior-vs-warden', () => {
     })
     expect(state.hero.equippedSkillIds).toEqual([])
     expect(state.outcome).toBe('defeat')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 38_800 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'defeat', timeMs: 43_006 })
     expect(phases.map((event) => (event.type === 'phase' ? { phase: event.phase, name: event.name, timeMs: event.timeMs } : null))).toEqual([
       { phase: 1, name: "Warden's Guard", timeMs: 0 },
-      { phase: 2, name: "Warden's Echoes", timeMs: 27_584 },
+      { phase: 2, name: "Warden's Echoes", timeMs: 32_756 },
     ])
     expect(lines.some((line) => line.includes('summons level 20 Blade Echo'))).toBe(true)
     expect(lines.some((line) => line.includes('summons level 20 Ward Echo'))).toBe(true)
