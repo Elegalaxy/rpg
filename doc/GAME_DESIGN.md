@@ -759,9 +759,9 @@ The Leech's regeneration is the `REGENERATION_TRAIT` with a per-enemy multiplier
 
 Elite Tidebound Colossus:
 
-- Level 22 Tank elite. Stats: 3,600 HP (about the Echo Knight x 1.12), 35 Power (31 in the proposal, raised in tuning, Step 13.1 part 8); Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25.
+- Level 22 Tank elite. Stats: 4,000 HP (Step 13.5 part 5B; was 3,600, about the Echo Knight x 1.12), 35 Power (31 in the proposal, raised in tuning, Step 13.1 part 8); Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25.
 - Tide cycle uses the existing stance trait (10-second switch, the same constants as the Echo Knight): Ebb is the Guard stance (+30% Armor and Resistance), Flood is the Assault stance (+25% Power, -40% Armor and Resistance). It starts in Ebb. The sim keeps the names guard and assault; the Tide names are display text for later.
-- Breaker Wave: 2.5 s telegraph, 230% Physical Power, can critically hit, interruptible at 8% of max HP, 10 s cooldown.
+- Breaker Wave: 2.5 s telegraph, 300% Physical Power (Step 13.5 part 5B; was 230%), can critically hit, interruptible at 8% of max HP, 10 s cooldown.
 - At 35% HP (50% in the proposal, lowered in tuning, Step 13.1 part 8) it uses a 2-second telegraph to summon 2 Mire Leeches (level 18), through the HP summon trait. Summons award no XP.
 - Drops 10 riftglass. Gold is the elite rate, level x 3.
 - Its first defeat by any hero unlocks the Siphoning modifier recipe (account-wide).
@@ -907,8 +907,8 @@ Regular enemies (a Standard enemy at level 24 has 560 HP and 32 Power):
 
 Elite Hollowmaw Reaver:
 
-- Level 26 Burst elite. 3,400 HP, 40 Power, Consistency 25; the other stats come from the elite Burst line.
-- Rift Surge: 2.5 s telegraph, 300% Magical Power, can critically hit, NOT interruptible, 12 s cooldown. Reaver Strike fills ordinary actions at 100% Physical Power.
+- Level 26 Burst elite. 4,400 HP, 44 Power (Step 13.5 part 5B; were 3,400 and 40), Consistency 25; the other stats come from the elite Burst line.
+- Rift Surge: 2.5 s telegraph, 400% Magical Power (Step 13.5 part 5B; was 300%), can critically hit, NOT interruptible, 12 s cooldown. Reaver Strike fills ordinary actions at 100% Physical Power.
 - Uses the stance trait (10 seconds, guard and assault, as the Echo Knight and the Colossus). No summons.
 - Drops 10 duskiron. Gold is the elite rate. Its first defeat by any hero records `defeated:hollowmaw-reaver` and unlocks Bloodbound.
 
@@ -1405,6 +1405,24 @@ Confirmation (seeds 1-3 x 100 runs, mean, seeds listed; wins % with HP lost % / 
 | Ranger, Mage | over / causeway | 100 / 100 | 100 / 100 | 100 / 100 |
 
 Bands met: Warrior prepared (30-70), Warrior over and causeway (at least 85), Assassin, Ranger and Mage over and causeway. NOT met: Cleric prepared (0%, band 30-70), Cleric over (8%) and causeway (64%) at least 85; Assassin (86), Ranger (99) and Mage (100) prepared are above the 70% ceiling. Class nerfs were not applied, per the instruction. What else the Cleric would need: it removes about 57% of a 5.75-multiplier Warden (about 3.3 multiplier-units) before dying, so a multiplier of about 3 would be needed, which would make every other class win 100% at every tier; so the Warden number is not the right lever for the Cleric. A Cleric damage-source or sustain lever is. A smaller Warden Power or a longer-cooldown telegraph would not be a better single extra lever: the Cleric dies 100% of runs at the prepared tier with 39-43% of the Warden left, so it needs damage, not just survival.
+
+Elite retune result (Step 13.5 part 5B, 2026-11-08). Chosen: Colossus HP 4,000 and Breaker Wave 300% (plan start 4,200 and 320%, range 3,800-4,600 and 280-360); Reaver HP 4,400, Power 44, Rift Surge 400% (the plan start values; nothing in range changes the result).
+
+Colossus sweep (seed 1, 60 runs, rules mode, prepared tier wins % Warrior / Assassin / Ranger / Mage / Cleric; baseline 100 / 94 / 98 / 100 / 99): 3800 and 280% 100 / 62 / 92 / 100 / 73; 3900 and 290% 100 / 37 / 92 / 100 / 63; 4000 and 280% 100 / 37 / 92 / 100 / 60; 4000 and 300% 100 / 32 / 83 / 100 / 53; 4200 and 320% (plan start) 98 / 15 / 70 / 97 / 37; 4400 and 280% 98 / 20 / 87 / 98 / 45; 4600 and 280% 92 / 5 / 68 / 98 / 38; 4200 and 360% 88 / 8 / 60 / 68 / 2; 4600 and 320% 92 / 0 / 48 / 83 / 25; 4600 and 360% 70 / 0 / 43 / 53 / 3. Breaker Wave burst and fight length punish the Assassin and Cleric; the Warrior and Mage only come into the band where the Assassin and Cleric are walled at 0-8%. No point in the ranges puts all five classes in 40-85%. 4000 and 300% was chosen because it has the smallest total distance outside the band of the points that keep the Cleric and Ranger near it (Cleric 53 in band, Ranger 83-87, Assassin 33, Mage and Warrior 100).
+
+Reaver sweep (seed 1, 60 runs, prepared tier): every point in the ranges (HP 4,000-4,800, Surge 350-450, Power 44) gives 100% wins for all five classes; the fight is not dangerous enough in range. Out-of-range probes (HP / Power / Surge, wins % Warrior / Assassin / Ranger / Mage / Cleric): 6,000 / 50 / 500 95 / 88 / 100 / 68 / 98; 7,000 / 50 / 500 95 / 52 / 100 / 32 / 98; 6,500 / 55 / 550 85 / 22 / 98 / 0 / 95; 8,000 / 60 / 600 28 / 0 / 88 / 0 / 58. The Reaver kills the Assassin and Mage (low HP, burst) long before it troubles the Warrior, Cleric and Ranger, so one HP/Power/Surge point cannot reach 40-85% for all five either.
+
+After (seeds 1-3 x 100 runs, mean, rules mode; wins % with HP lost % / elite HP left %; before is part 4):
+
+| Class | Colossus arrived | Colossus prepared | Colossus over | Reaver prepared | Reaver over |
+| --- | --- | --- | --- | --- | --- |
+| Warrior | 1 (99 / 9) | 100 (48 / 0); was 100 | 100 (43 / 0) | 100 (43 / 0) | 100 (42 / 0) |
+| Assassin | 0 (100 / 38) | 33 (94 / 10; 31, 31, 37); was 94 | 100 (47 / 0) | 100 (43 / 0) | 100 (44 / 0) |
+| Ranger | 0 (100 / 29) | 87 (74 / 1; 85, 91, 86); was 98 | 100 (47 / 0) | 100 (30 / 0) | 100 (22 / 0) |
+| Mage | 5 (99 / 25) | 100 (58 / 0); was 100 | 100 (49 / 0) | 100 (45 / 0) | 100 (47 / 0) |
+| Cleric | 0 (100 / 21) | 54 (74 / 3; 58, 50, 55); was 99 | 100 (43 / 0) | 100 (39 / 0) | 100 (39 / 0) |
+
+Bands met: Colossus prepared Cleric (54); Colossus over-levelled for all five (at least 85). NOT met: Colossus prepared Warrior and Mage (100, band 40-85), Ranger (87, 2 points over), Assassin (33, 7 under); Reaver prepared 100 for all five (band 40-85). To reach the Reaver band the Assassin and Mage would be walled well before the other three, so the needed lever is class power or a new mechanic, not the Reaver numbers; this is reported, not forced.
 
 ### Automation
 

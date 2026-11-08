@@ -115,11 +115,11 @@ describe('Rift Hollows enemies', () => {
       level: 26,
       archetype: 'burst',
       elite: true,
-      overrides: { maxHp: 3400, power: 40, consistency: 25 },
+      overrides: { maxHp: 4400, power: 44, consistency: 25 },
     })
-    expect(stats).toMatchObject({ maxHp: 3400, power: 40, consistency: 25 })
+    expect(stats).toMatchObject({ maxHp: 4400, power: 44, consistency: 25 })
     expect(reaver.level).toBe(26)
-    expect(reaver.maxHp).toBe(3400)
+    expect(reaver.maxHp).toBe(4400)
     expect(reaver.elite).toBe(true)
     expect(reaver.stance).toBe('guard')
     expect(hollowmawReaver.skills).toHaveLength(1)
@@ -128,11 +128,11 @@ describe('Rift Hollows enemies', () => {
     console.log('[enemy] reaver stats', stats)
   })
 
-  it('defines Rift Surge: 2.5 s, 300% Magical, can crit, not interruptible, 12 s cooldown', () => {
+  it('defines Rift Surge: 2.5 s, 400% Magical, can crit, not interruptible, 12 s cooldown', () => {
     const surge = hollowmawReaver.skills?.[0]
     expect(surge).toMatchObject({
       id: 'rift-surge',
-      coefficient: 3,
+      coefficient: 4,
       school: 'magical',
       telegraphMs: 2500,
       canCrit: true,

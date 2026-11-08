@@ -168,11 +168,11 @@ describe('Drowned Causeway enemies', () => {
       level: 22,
       archetype: 'tank',
       elite: true,
-      overrides: { maxHp: 3600, power: 35, consistency: 25 },
+      overrides: { maxHp: 4000, power: 35, consistency: 25 },
     })
-    expect(stats).toMatchObject({ maxHp: 3600, power: 35, consistency: 25 })
+    expect(stats).toMatchObject({ maxHp: 4000, power: 35, consistency: 25 })
     expect(colossus.level).toBe(22)
-    expect(colossus.maxHp).toBe(3600)
+    expect(colossus.maxHp).toBe(4000)
     expect(colossus.elite).toBe(true)
     expect(colossus.stance).toBe('guard')
     expect(colossus.armor).toBeCloseTo(stats.armor * 1.3, 8)
@@ -196,10 +196,10 @@ describe('Drowned Causeway enemies', () => {
     expect(colossus.resistance).toBeCloseTo(baseArmor * 0.6, 8)
   })
 
-  it('defines Breaker Wave: 2.5 s, 230%, can crit, interrupt at 8%, 10 s cooldown', () => {
+  it('defines Breaker Wave: 2.5 s, 300%, can crit, interrupt at 8%, 10 s cooldown', () => {
     expect(tideboundColossus.skills?.[0]).toMatchObject({
       id: 'breaker-wave',
-      coefficient: 2.3,
+      coefficient: 3,
       telegraphMs: 2500,
       canCrit: true,
       interruptMaxHpFraction: 0.08,

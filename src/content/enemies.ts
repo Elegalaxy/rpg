@@ -776,7 +776,7 @@ export const drownedBulwark: EnemyDef = {
 const breakerWave: EnemySkillDef = {
   id: 'breaker-wave',
   name: 'Breaker Wave',
-  coefficient: 2.3,
+  coefficient: 3,
   school: 'physical',
   cooldownSeconds: 10,
   telegraphMs: 2500,
@@ -784,7 +784,7 @@ const breakerWave: EnemySkillDef = {
   tags: ['physical', 'attack'],
   canCrit: true,
   interruptMaxHpFraction: 0.08,
-  effects: [{ kind: 'damage', school: 'physical', coefficient: 2.3 }],
+  effects: [{ kind: 'damage', school: 'physical', coefficient: 3 }],
 }
 
 const summonMireLeeches: EnemySkillDef = {
@@ -807,7 +807,7 @@ const summonMireLeeches: EnemySkillDef = {
 
 /**
  * Level 22 elite tank. Ebb is the Guard stance and Flood is the Assault stance (the stance trait keeps its
- * sim names). HP 3,600 is about the Echo Knight x 1.12.
+ * sim names). HP 4,000 (Step 13.5 part 5B; the first version was 3,600, about the Echo Knight x 1.12).
  */
 export const tideboundColossus: EnemyDef = {
   id: 'tidebound-colossus',
@@ -817,7 +817,7 @@ export const tideboundColossus: EnemyDef = {
   elite: true,
   school: 'physical',
   filler: { school: 'physical' },
-  overrides: { maxHp: 3600, power: 35, consistency: 25 },
+  overrides: { maxHp: 4000, power: 35, consistency: 25 },
   traitIds: [STANCE_TRAIT, HP_SUMMON_TRAIT],
   skills: [breakerWave, summonMireLeeches],
   drop: { materialId: 'riftglass', baseQuantity: 10 },
@@ -923,14 +923,14 @@ export const riftbornBrute: EnemyDef = {
 const riftSurge: EnemySkillDef = {
   id: 'rift-surge',
   name: 'Rift Surge',
-  coefficient: 3,
+  coefficient: 4,
   school: 'magical',
   cooldownSeconds: 12,
   telegraphMs: 2500,
   tag: 'rift-surge',
   tags: ['magical', 'attack'],
   canCrit: true,
-  effects: [{ kind: 'damage', school: 'magical', coefficient: 3 }],
+  effects: [{ kind: 'damage', school: 'magical', coefficient: 4 }],
 }
 
 /**
@@ -945,7 +945,7 @@ export const hollowmawReaver: EnemyDef = {
   elite: true,
   school: 'physical',
   filler: { school: 'physical', coefficient: 1 },
-  overrides: { maxHp: 3400, power: 40, consistency: 25 },
+  overrides: { maxHp: 4400, power: 44, consistency: 25 },
   traitIds: [STANCE_TRAIT],
   skills: [riftSurge],
   drop: { materialId: 'duskiron', baseQuantity: 10 },
