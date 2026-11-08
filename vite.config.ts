@@ -7,5 +7,7 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   test: {
     environment: 'node',
+    // Several sim-heavy tests exceed the 5 s default when the whole suite runs in parallel.
+    testTimeout: 30_000,
   },
 }))
