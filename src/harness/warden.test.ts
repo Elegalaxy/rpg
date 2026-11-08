@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { HERO_CLASSES } from '../sim/constants.ts'
 
-import { WARDEN_TIERS, formatWardenTable, runWardenMatrix, wardenSetup } from './warden.ts'
+import { WARDEN_TIERS, WARDEN_VARIANTS, formatWardenTable, runWardenMatrix, wardenSetup } from './warden.ts'
 
 describe('warden matrix', () => {
   it('builds a full-gear hero with supplies and supply rules for every class and tier', () => {
@@ -40,9 +40,17 @@ describe('warden matrix', () => {
     expect(wardenSetup('cleric', tier).hero.statBonuses?.equipmentHealingPower).toBe(20)
   })
 
+  it('adds crafted-supply and Warming Tonic variants beside the tiers', () => {
+    expect(WARDEN_VARIANTS.map((tier) => [tier.id, tier.supplies])).toEqual([
+      ['prepared-crafted', ['greater-draught', 'greater-draught', 'greater-draught', 'riftglass-ward']],
+      ['causeway-crafted', ['greater-draught', 'greater-draught', 'greater-draught', 'riftglass-ward']],
+      ['prepared-tonic', ['warming-tonic', 'healing-draught', 'healing-draught', 'ward-charm']],
+    ])
+  })
+
   it('runs every class and tier', () => {
     const rows = runWardenMatrix(1, 1)
-    expect(rows).toHaveLength(HERO_CLASSES.length * WARDEN_TIERS.length)
+    expect(rows).toHaveLength(HERO_CLASSES.length * (WARDEN_TIERS.length + WARDEN_VARIANTS.length))
     const table = formatWardenTable(rows)
     expect(table.split('\n').filter((line) => line.length > 0)).toHaveLength(rows.length)
     expect(table).toContain('warrior arrived')

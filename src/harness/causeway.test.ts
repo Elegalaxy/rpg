@@ -6,6 +6,7 @@ import { HERO_CLASSES } from '../sim/constants.ts'
 import {
   CAUSEWAY_FIGHTS,
   CAUSEWAY_TIERS,
+  CAUSEWAY_VARIANTS,
   causewaySetup,
   formatCausewayTable,
   runCausewayMatrix,
@@ -61,7 +62,7 @@ describe('causeway matrix', () => {
   it('runs every class, tier and fight', () => {
     const rows = runCausewayMatrix(1, 1)
     const blindFights = CAUSEWAY_FIGHTS.filter((fight) => fight.blind).length
-    expect(rows).toHaveLength(HERO_CLASSES.length * CAUSEWAY_TIERS.length * (CAUSEWAY_FIGHTS.length + blindFights))
+    expect(rows).toHaveLength(HERO_CLASSES.length * (CAUSEWAY_TIERS.length + CAUSEWAY_VARIANTS.length) * (CAUSEWAY_FIGHTS.length + blindFights))
     const table = formatCausewayTable(rows)
     expect(table).toContain('warrior arrived rules:')
     expect(table).toContain('warrior arrived blind:')

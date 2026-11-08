@@ -1044,7 +1044,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Part 5, measured (numbers in GAME_DESIGN under "Grove and Bastion materials"; no earlier Causeway loot number existed to re-measure) and browser-checked (fresh-ish profile, desktop and 375 px): Town KPIs show 6 materials and wrap inside the row on mobile, Craft lists witherbark and oathsteel with ranges 99-109% and 101-111%, the upgrade list shows 2 witherbark (3 for the others), no console errors. Not exercised in a live run: a real Grove or Bastion drop in the UI. Status `done`.
 
 ### Step 13.3: Supplies expansion
-- Status: `in-progress`
+- Status: `done`
 - Depends on: 13.2
 - Design: GAME_DESIGN §9 Inventory, "Crafted supplies", decided 2026-11-08 (user approved).
 - Goal: Warming Tonic (shop and brew, cleanses Chill and Burn), Greater Draught and Riftglass Ward (brew only, unlocked by Causeway discovery and the Colossus). Stun cleanse dropped.
@@ -1052,6 +1052,11 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Acceptance: locked supplies cannot be brewed, unsold supplies cannot be bought, saves holding the new ids validate, the reference matrix and golden snapshot are unchanged, tests, typecheck, lint and the architecture test pass.
 - Progress:
   - 2026-11-08: Part 1, docs written.
+  - 2026-11-08: Part 2, `SupplyDef.price` is `number | null`, `requires?: ModifierRequirement`; `requirementLock` / `supplyLock` in `src/persist/crafting.ts`; `buySupply` rejects an unsold supply, `brewSupply` returns the lock reason. Tests use a stand-in supply. `Town.tsx` took a temporary `price ?? 0` so it type-checked (replaced in part 6).
+  - 2026-11-08: Part 3, Warming Tonic (`warmingTonic` skill, `WARMING_TONIC_ROW`, hero update `warming-tonic-rule`). The two-effect supply test is in `src/content/supplies.test.ts` (it needs the real content), not `combat.test.ts`.
+  - 2026-11-08: Part 4, Greater Draught and Riftglass Ward (`GREATER_DRAUGHT_ROW`, `RIFTGLASS_WARD_ROW`, hero update `crafted-supply-rules`). `DEFAULT_SUPPLY_ROWS` is now 6 rows, so new and legacy heroes' supply rows, and four existing tests' expected row lists, changed. No snapshot changed.
+  - 2026-11-08: Part 5, harness only: `craftedVariant` and `tonicVariant` in `src/harness/warden.ts`, `WARDEN_VARIANTS` (prepared-crafted, causeway-crafted, prepared-tonic) and `CAUSEWAY_VARIANTS` (prepared-crafted) run beside the tiers in `--matrix warden` and `--matrix causeway`. Numbers in GAME_DESIGN under "Crafted supplies". Existing tier rows verified identical against a checkout of the commit before Step 13.3. Crafted supplies make the Colossus a 100% win for every class; Warrior and Cleric still 0% at the Warden.
+  - 2026-11-08: Part 6, `SupplyCard` (`src/ui/town/SupplyCard.tsx`, with test) replaces the inline Potion Shop card: unsold supplies show a "Brew only" tag, locked ones a Locked tag with the reason and Brew disabled. The Going-in pack list hides a locked supply the stash has none of. Browser-checked (Potion Shop at desktop width, pack list, Rules editor options, no console errors); the fight bar was not exercised live. Step 13.3 done.
 
 ## 8. Risks, and what would reveal them early
 

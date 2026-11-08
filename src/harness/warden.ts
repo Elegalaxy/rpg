@@ -101,6 +101,36 @@ export const WARDEN_TIERS: readonly WardenTier[] = [
   },
 ]
 
+/** The tier with its backpack swapped for 3 Greater Draughts and a Riftglass Ward (Step 13.3 part 5). */
+export function craftedVariant(tier: WardenTier): WardenTier {
+  return {
+    ...tier,
+    id: `${tier.id}-crafted`,
+    label: `${tier.label}, crafted supplies`,
+    supplies: ['greater-draught', 'greater-draught', 'greater-draught', 'riftglass-ward'],
+  }
+}
+
+/** The tier with one Healing Draught swapped for a Warming Tonic (Step 13.3 part 5). */
+export function tonicVariant(tier: WardenTier): WardenTier {
+  const at = tier.supplies.indexOf('healing-draught')
+  return {
+    ...tier,
+    id: `${tier.id}-tonic`,
+    label: `${tier.label}, one Warming Tonic`,
+    supplies: tier.supplies.map((id, index) => (index === at ? 'warming-tonic' : id)),
+  }
+}
+
+const tierById = (id: string): WardenTier => WARDEN_TIERS.find((tier) => tier.id === id)!
+
+/** Measured beside the tiers, never instead of them. The reference matrix carries no supplies and is untouched. */
+export const WARDEN_VARIANTS: readonly WardenTier[] = [
+  craftedVariant(tierById('prepared')),
+  craftedVariant(tierById('causeway')),
+  tonicVariant(tierById('prepared')),
+]
+
 export type WardenRow = {
   classId: HeroClass
   tier: string
@@ -172,7 +202,7 @@ export function runWardenMatrix(seed: number, runs: number): WardenRow[] {
   const defs = gameDefs()
   const rows: WardenRow[] = []
   for (const classId of HERO_CLASSES) {
-    for (const tier of WARDEN_TIERS) {
+    for (const tier of [...WARDEN_TIERS, ...WARDEN_VARIANTS]) {
       const setup = wardenSetup(classId, tier)
       let wins = 0
       let lost = 0

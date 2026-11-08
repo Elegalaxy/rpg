@@ -6,7 +6,7 @@ import type { CombatSetup } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 import { blindSetup } from './telegraph.ts'
-import { PREPARED_MODIFIERS, STARTER_MODIFIERS, wardenSetup, type WardenTier } from './warden.ts'
+import { PREPARED_MODIFIERS, STARTER_MODIFIERS, craftedVariant, wardenSetup, type WardenTier } from './warden.ts'
 
 /**
  * Realistic heroes at the Drowned Causeway (Step 13.1 part 3). Same construction as the Warden tiers
@@ -42,6 +42,11 @@ export const CAUSEWAY_TIERS: readonly WardenTier[] = [
     supplies: ['healing-draught', 'healing-draught', 'healing-draught', 'ward-charm'],
   },
 ]
+
+/** Measured beside the tiers (Step 13.3 part 5): the prepared hero with crafted supplies packed. */
+export const CAUSEWAY_VARIANTS: readonly WardenTier[] = [craftedVariant(CAUSEWAY_TIERS[1]!)]
+
+const ALL_CAUSEWAY_TIERS: readonly WardenTier[] = [...CAUSEWAY_TIERS, ...CAUSEWAY_VARIANTS]
 
 export type CausewayFight = {
   id: string
@@ -110,7 +115,7 @@ export function runCausewayMatrix(seed: number, runs: number): CausewayRow[] {
   const defs = gameDefs()
   const rows: CausewayRow[] = []
   for (const classId of HERO_CLASSES) {
-    for (const tier of CAUSEWAY_TIERS) {
+    for (const tier of ALL_CAUSEWAY_TIERS) {
       for (const fight of CAUSEWAY_FIGHTS) {
         for (const mode of CAUSEWAY_MODES) {
           if (mode === 'blind' && !fight.blind) continue
@@ -145,7 +150,7 @@ export function runCausewayMatrix(seed: number, runs: number): CausewayRow[] {
 export function formatCausewayTable(rows: readonly CausewayRow[]): string {
   const lines: string[] = []
   for (const classId of HERO_CLASSES) {
-    for (const tier of CAUSEWAY_TIERS) {
+    for (const tier of ALL_CAUSEWAY_TIERS) {
       for (const mode of CAUSEWAY_MODES) {
         const cells: string[] = []
         for (const fight of CAUSEWAY_FIGHTS) {
