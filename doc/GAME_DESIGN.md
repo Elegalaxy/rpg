@@ -453,7 +453,7 @@ Initial invocation recipes:
 #### Arcane cluster
 
 1. Arcane Bolt: reduce Mana cost from 5 to 3 and increase damage from 90% to 100% Magical Power.
-2. Mana Ward: unlock the Mana-spending defensive active skill. Its barrier is 125% Magical Power instead of 100%.
+2. Mana Ward: unlock the Mana-spending defensive active skill. Its barrier is 85% Magical Power instead of 65% (Step 13.5; was 125% instead of 100%).
 3. Arcane Recovery: increase restoration from 30 to 40 base Mana and reduce base cooldown from 10 to 8 seconds.
 4. Efficient Channeling: reduce Mana costs by 10% and increase passive Mana regeneration by 20%.
 5. Overcast, major keystone: when Mana is insufficient, each missing Mana costs 0.25% maximum HP. The spell gains +1% damage per missing Mana, capped at +30%. Overcast is ineligible if its health cost would be fatal.
@@ -1319,7 +1319,7 @@ Levers. Skill-definition and class constants only, no sim change. Start value, t
 | C1 | Cleric | Smite damage; `SMITE_NODE_COEFFICIENT` | 100%; 1.2 | 130%; 1.5 (chosen 130%; 1.5) | sweep 130-160% |
 | C2 | Cleric | Judgment damage and cost; `JUDGMENT_NODE_COEFFICIENT` | 200%, 50; 2.3 | 250%, 40; 2.8 (chosen 250%, 40; 2.8) | sweep 250-300% |
 | C3 | Cleric | `ZEAL_BASE`, only if C1 and C2 are not enough | 7 | 9 (chosen 9) | |
-| M1 | Mage | Mana Ward barrier; `MANA_WARD_NODE_COEFFICIENT` | 100%; 1.25 | 70%; 0.9 | 60-90%; 0.8-1.0 |
+| M1 | Mage | Mana Ward barrier; `MANA_WARD_NODE_COEFFICIENT` | 100%; 1.25 | 70%; 0.9 (chosen 65%; 0.85) | 60-90%; 0.8-1.0 |
 
 If Echo-first targeting (Q5) explains most of the Warrior and Cleric Warden gap (the `lowestHpPercent` diagnostic row of `--matrix elites`), their reference rules change for multi-enemy rows only, which moves the reference CSV; that is recorded here when done.
 
@@ -1365,6 +1365,14 @@ Cleric after (seeds 1-3 x 100 runs, mean; wins % with HP lost % / elite HP left 
 Guards (Cleric, seed 1, 100 runs): reference regulars 100% wins; Causeway and Hollows regular fights 100%; built 6-node Rootmaw 42% lost and Echo Knight 41% (before 43 and 42, not trivialised by more than 15 points). The floor (0-node) build now wins the Rootmaw 100% (was 3%) and the Echo Knight 100% (was 91%), HP lost 99 / 57 before, 50 / 44 after; this is the Cleric's floor build, not a guard.
 
 Reference CSV changes (Cleric rows, seed 1, 100 runs; before / after): win % echo-knight 91 / 100, rootmaw 3 / 100, every other regular 100 / 100; median victory time ms arbalist 12502 / 10716, bastion-mixed 47489 / 38433, deserter 14680 / 12845, echo-knight 212665 / 172485, grove-mixed 62015 / 43855, oathbound-echo 14288 / 12502, road-mixed 32571 / 26057, rootmaw 201454 / 146313, sentry 29881 / 23335, shardling 5505 / 3670, spider 11908 / 10090, thornbeast 38742 / 26939, wisp 15278 / 13294, wolf 9175 / 9175; mean HP attrition % rootmaw 83.1 / 49.5, echo-knight 52.6 / 43.6, deserter 16.3 / 13.9, wisp 22.9 / 18.4, arbalist 17.4 / 15.3, spider 15.4 / 12.2. The Zeal change affects every Cleric using the Vow of Zeal. The golden duel-basic snapshot is unchanged.
+
+Mage result (Step 13.5 part 4, 2026-11-08). Chosen: Mana Ward 65% Magical Power, node 85% (was 100% and 125%). Sweep (seed 1, 60 runs, Warden prepared wins / over / causeway; baseline 99 / 100 / 100): 70% with node 90% gave 68 / 100 / 100; 65% with node 85% gave 53 / 100 / 100; 60% with node 80% gave 40 / 100 / 100. The middle was chosen so the prepared tier sits inside 30-70% with room either side.
+
+Mage after (seeds 1-3 x 100 runs, mean; wins % with HP lost % / elite HP left %, rules mode): Warden prepared 48 (93 / 8; seeds 51, 45, 49), over 100 (56 / 0), causeway 100 (50 / 0), prepared-crafted 100; Colossus arrived 82 (77 / 3), prepared 100 (49 / 0), over 100; Reaver prepared 100 (43 / 0), over 100 (30 / 0). Blind: Warden prepared 1 (rules beat blind by 47 win points), Colossus arrived 14 (rules +68), Colossus prepared 99, Reaver 100. Bands met: Warden prepared (30-70), Warden over and causeway (at least 85). Colossus and Reaver prepared 100 are above 40-85 (part 5). Crafted supplies lift the Warden prepared tier by 52 points, more than the 30-point ceiling (part 7 trims them).
+
+Guards (Mage, seed 1, 100 runs): Mage over-levelled Warden 100% (at least 85); reference regulars 100% wins; Causeway and Hollows regular fights 100%; built 6-node Rootmaw 69 / 70% lost and Echo Knight 63 / 65% lost (unchanged, not a Warrior/Cleric guard but not trivialised). The floor builds are weaker: Rootmaw 69 / 52% wins, Echo Knight 54 / 1% wins.
+
+Reference CSV changes (Mage rows, seed 1, 100 runs; before / after): win % rootmaw 69 / 52, echo-knight 54 / 1; median victory time ms rootmaw 53372 / 52416, echo-knight 119494 / 113616; mean HP attrition % arbalist 0 / 0.9, bastion-mixed 48.0 / 48.3, echo-knight 90.5 / 96.0, grove-mixed 41.8 / 44.3, rootmaw 86.1 / 87.2. Every other Mage row is unchanged. The golden duel-basic snapshot is unchanged.
 
 ### Automation
 
@@ -1468,7 +1476,7 @@ These are a first broad roster for mechanical review. Names and effects are not 
 2. Fireball: costs 30 Mana; deals 100% Magical Power as Fire damage to every enemy; applies one Burn intensity whose tick deals 12% of snapshotted Magical Power; 6-second cooldown; 1.2× action time.
 3. Frost Lance: costs 20 Mana; deals 110% Magical Power as Frost damage; applies one Chill; 4-second cooldown; 1.0× action time.
 4. Chain Lightning: costs 25 Mana; deals 120% Magical Power to the first target and each jump deals 75% of the previous hit, up to four targets; each hit pushes that target's next action 0.25 seconds later; 6-second cooldown; 1.1× action time.
-5. Mana Ward: costs 30 Mana; creates a pre-mitigation barrier equal to 100% Magical Power for up to 8 seconds; 10-second cooldown; 0.75× action time.
+5. Mana Ward: costs 30 Mana; creates a pre-mitigation barrier equal to 65% Magical Power (Step 13.5, was 100%) for up to 8 seconds; 10-second cooldown; 0.75× action time.
 6. Arcane Recovery: restores 30 base Mana before Spirit; 10-second cooldown; 1.0× action time; may use a configurable Mana threshold.
 
 Elemental-charge and prepared-casting keystones modify how this base kit is paid for and sequenced.
@@ -1587,7 +1595,7 @@ Starting-skill node bonuses (each node keeps its unlock and gains one small bonu
 - Warrior: Sundering Blow cooldown 6 to 5 s. Shield Brace Fury on hit 5 to 10. Second Wind cooldown 15 to 12 s.
 - Assassin: Venom Edge poison tick 12% to 15%. Mark for Death grants 1 Advantage when applied. Execute base damage 100% to 120%.
 - Ranger: Piercing Arrow cost 20 to 15. Snare Trap cooldown 8 to 6 s.
-- Mage: Fireball cost 30 to 25. Frost Lance damage 110% to 130%. Mana Ward barrier 100% to 125%.
+- Mage: Fireball cost 30 to 25. Frost Lance damage 110% to 130%. Mana Ward barrier 65% to 85% (Step 13.5; was 100% to 125%).
 - Cleric: Ward duration 8 to 10 s. Judgment damage 250% to 280% (Step 13.5, was 200% to 230%).
 - Check with `npm run sim -- --matrix built --seed 1 --runs 40` before and after; report the change per class.
 - `bossLossThisLife` is set only when a non-summon enemy in that fight is a boss. Splintered Road enemies are not bosses.

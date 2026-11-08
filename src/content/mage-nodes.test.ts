@@ -462,12 +462,12 @@ describe('mage nodes', () => {
     expect(noded.state.hero.pendingCoefficient).toBeNull()
   })
 
-  it('Mana Ward: unlocks the defensive skill and raises its barrier to 125% Magical Power', () => {
+  it('Mana Ward: unlocks the defensive skill and raises its barrier to 85% Magical Power', () => {
     expectUnlock('Mana Ward', NODE_MANA_WARD, WARD)
     const { state, defs } = open({ nodes: [NODE_MANA_WARD], equipped: [WARD] })
     const power = state.hero.magicalPower
     cast(state, defs, WARD, 100)
-    expect(state.hero.barrier).toBeCloseTo(power * 1.25, 6)
+    expect(state.hero.barrier).toBeCloseTo(power * 0.85, 6)
     expect(100 - state.hero.classResource).toBeGreaterThanOrEqual(30)
   })
 

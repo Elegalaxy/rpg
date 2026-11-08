@@ -294,7 +294,7 @@ const manaWard = {
   actionTimeCoefficient: 0.75,
   tags: ['defense', 'magical', 'arcane'],
   target: 'single',
-  effects: [{ kind: 'barrier', source: 'magical', coefficient: 1, durationSeconds: 8 }],
+  effects: [{ kind: 'barrier', source: 'magical', coefficient: 0.65, durationSeconds: 8 }],
 } satisfies SkillDef
 
 const arcaneRecovery = {

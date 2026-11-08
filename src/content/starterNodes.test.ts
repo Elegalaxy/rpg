@@ -52,8 +52,8 @@ describe('starting-skill node bonuses', () => {
       node: 'mage-mana-ward',
       skillId: 'mana-ward',
       check: (d) => (firstEffect(d, 'barrier') as { coefficient: number }).coefficient,
-      plain: 1,
-      noded: 1.25,
+      plain: 0.65,
+      noded: 0.85,
     },
     {
       node: 'cleric-ward',

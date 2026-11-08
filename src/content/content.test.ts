@@ -169,7 +169,7 @@ describe('content integrity', () => {
       cost: 30,
       cooldownSeconds: 10,
       actionTimeCoefficient: 0.75,
-      effects: [{ kind: 'barrier', source: 'magical', coefficient: 1, durationSeconds: 8 }],
+      effects: [{ kind: 'barrier', source: 'magical', coefficient: 0.65, durationSeconds: 8 }],
     })
     expect(skills['arcane-recovery']).toMatchObject({ cost: 0, cooldownSeconds: 10, actionTimeCoefficient: 1 })
     expect(skills['arcane-bolt']?.effects[0]).toMatchObject({ kind: 'damage', school: 'magical', coefficient: 0.9 })
