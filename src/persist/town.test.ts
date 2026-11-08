@@ -33,7 +33,7 @@ function ok(result: { ok: true; save: SaveData } | { ok: false; reason: string }
 
 describe('prices', () => {
   it('follows the decided formulas', () => {
-    expect(MATERIAL_SELL_PRICE).toEqual({ shard: 3, hide: 3, scrap: 2, riftglass: 5 })
+    expect(MATERIAL_SELL_PRICE).toEqual({ shard: 3, hide: 3, scrap: 2, witherbark: 4, oathsteel: 4, riftglass: 5 })
     expect(itemSellPrice(newItem('a', 'weapon-bow', 1))).toBe(5)
     expect(itemSellPrice(newItem('a', 'weapon-bow', 3, 1.1))).toBe(17)
     expect(itemSellPrice(newItem('a', 'weapon-bow', 1, 0.9))).toBe(5)
@@ -65,6 +65,11 @@ describe('selling and buying', () => {
     const glass = ok(sellMaterial(updatePurse(heroSave(), { materials: { riftglass: 3 } }), 'riftglass', 2))
     expect(purseOf(glass).gold).toBe(10)
     expect(purseOf(glass).materials).toEqual({ riftglass: 1 })
+    for (const id of ['witherbark', 'oathsteel']) {
+      const sold = ok(sellMaterial(updatePurse(heroSave(), { materials: { [id]: 3 } }), id, 2))
+      expect(purseOf(sold).gold).toBe(8)
+      expect(purseOf(sold).materials).toEqual({ [id]: 1 })
+    }
     expect(sellMaterial(save, 'shard', 0).ok).toBe(false)
     expect(sellMaterial(save, 'shard', 1.5).ok).toBe(false)
   })

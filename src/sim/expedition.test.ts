@@ -1297,6 +1297,17 @@ describe('splintered road expedition', () => {
       { materialId: 'riftglass', quantity: 2 },
       { materialId: 'shard', quantity: 3 },
     ])
+    expect(
+      safePouch([
+        { materialId: 'shard', quantity: 9 },
+        { materialId: 'oathsteel', quantity: 2 },
+        { materialId: 'witherbark', quantity: 2 },
+      ]),
+    ).toEqual([
+      { materialId: 'oathsteel', quantity: 2 },
+      { materialId: 'witherbark', quantity: 2 },
+      { materialId: 'shard', quantity: 1 },
+    ])
     expect(safePouch([{ materialId: 'scrap', quantity: 3 }, { materialId: 'hide', quantity: 1 }])).toEqual([
       { materialId: 'hide', quantity: 1 },
       { materialId: 'scrap', quantity: 3 },

@@ -7,6 +7,8 @@ export const MATERIAL_SELL_PRICE: { readonly [materialId: string]: number } = {
   shard: 3,
   hide: 3,
   scrap: 2,
+  witherbark: 4,
+  oathsteel: 4,
   riftglass: 5,
 }
 

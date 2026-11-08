@@ -25,6 +25,7 @@ import {
   pickMaterialText,
   recipeLock,
   upgradeCapFor,
+  upgradeMaterialCost,
   MATERIAL_QUALITY,
   UPGRADE_QUALITY_POINTS,
 } from './crafting.ts'
@@ -379,7 +380,7 @@ describe('riftglass', () => {
     expect(qualityRange('riftglass', 5)?.low).toBeCloseTo(1.07, 10)
     expect(qualityRange('riftglass', 10)?.low).toBeCloseTo(1.12, 10)
     expect(qualityRange('riftglass', 10)?.high).toBe(1.12)
-    expect(Object.keys(MATERIAL_QUALITY)).toEqual(['scrap', 'hide', 'shard', 'riftglass'])
+    expect(Object.keys(MATERIAL_QUALITY)).toEqual(['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass'])
   })
 
   it('adds 3 upgrade points up to 112%, while other materials keep 110% and never lower quality', () => {
@@ -394,7 +395,7 @@ describe('riftglass', () => {
   })
 
   it('lists every material in the pick-a-material message, from the table', () => {
-    expect(pickMaterialText()).toBe('Pick scrap, hide, shard, or riftglass.')
+    expect(pickMaterialText()).toBe('Pick scrap, hide, shard, witherbark, oathsteel, or riftglass.')
     const save = stocked()
     expect(craftCheck(save, hero(save), { ...bow, materialId: 'iron' })).toBe(pickMaterialText())
     expect(upgradeCheckText(save)).toBe(pickMaterialText())
@@ -409,6 +410,42 @@ describe('riftglass', () => {
     const none = updatePurse(stocked(), { materials: { shard: 20 } })
     expect(purseOf(none).materials.riftglass ?? 0).toBe(0)
     expect(craftCheck(none, hero(none), { ...bow, materialId: 'riftglass' })).toBe('That needs 6 riftglass. You have 0.')
+  })
+})
+
+describe('witherbark and oathsteel', () => {
+  it('roll 99% to 109% and 101% to 111% before rank', () => {
+    expect(qualityRange('witherbark', 0)).toEqual({ low: 0.99, high: 1.09 })
+    expect(qualityRange('oathsteel', 0)).toEqual({ low: 1.01, high: 1.11 })
+    expect(qualityRange('oathsteel', 10)?.high).toBe(1.11)
+  })
+
+  it('add 2 upgrade points with caps of 110% and 111%, and keep a higher quality', () => {
+    expect(UPGRADE_QUALITY_POINTS.witherbark).toBe(2)
+    expect(UPGRADE_QUALITY_POINTS.oathsteel).toBe(2)
+    expect(upgradedQuality(1.09, 'oathsteel')).toBe(1.11)
+    expect(upgradedQuality(1.11, 'oathsteel')).toBe(1.11)
+    expect(upgradedQuality(1.09, 'witherbark')).toBe(1.1)
+    expect(upgradedQuality(1.115, 'oathsteel')).toBe(1.115)
+    expect(upgradeCapFor('witherbark')).toBe(1.1)
+    expect(upgradeCapFor('oathsteel')).toBe(1.11)
+  })
+
+  it('charge 2 witherbark per upgrade and 3 of the others', () => {
+    expect(upgradeMaterialCost('witherbark')).toBe(2)
+    expect(['scrap', 'hide', 'shard', 'oathsteel', 'riftglass'].map(upgradeMaterialCost)).toEqual([3, 3, 3, 3, 3])
+    const wood = ok(queueUpgrade(updatePurse(stocked(5), { craftCounter: 0, archive: [newItem('old', 'weapon-bow', 2, 1.05)] }), 'hero-1', 'old', 'witherbark'))
+    expect(purseOf(wood).materials.witherbark).toBe(28)
+    const steel = ok(queueUpgrade(updatePurse(stocked(5), { craftCounter: 0, archive: [newItem('old', 'weapon-bow', 2, 1.05)] }), 'hero-1', 'old', 'oathsteel'))
+    expect(purseOf(steel).materials.oathsteel).toBe(27)
+  })
+
+  it('need 2 witherbark to upgrade and 6 to craft', () => {
+    const base = stocked(5)
+    const one = updatePurse(base, { materials: { witherbark: 1 }, craftCounter: 0, archive: [newItem('old', 'weapon-bow', 2, 1.05)] })
+    const item = purseOf(one).archive[0]
+    expect(upgradeCheck(one, hero(one), item, 'witherbark')).toBe('That needs 2 witherbark. You have 1.')
+    expect(craftCheck(one, hero(one), { ...bow, materialId: 'oathsteel' })).toBe('That needs 6 oathsteel. You have 0.')
   })
 })
 

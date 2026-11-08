@@ -11,15 +11,22 @@ import { purseOf, updatePurse, withPurse, type CraftJob, type Purse, type SaveDa
 
 export const CRAFT_MATERIAL_COST = 6
 export const UPGRADE_MATERIAL_COST = 3
+/** Materials whose upgrade costs a different number of units than `UPGRADE_MATERIAL_COST`. */
+export const UPGRADE_MATERIAL_COST_BY_MATERIAL: { readonly [materialId: string]: number } = { witherbark: 2 }
+
+/** Units of this material one upgrade costs. */
+export function upgradeMaterialCost(materialId: string): number {
+  return UPGRADE_MATERIAL_COST_BY_MATERIAL[materialId] ?? UPGRADE_MATERIAL_COST
+}
 export const CRAFT_MS = 30_000
 export const QUEUE_MAX = 3
 export const MAX_RANK = 10
 /** Percentage points of quality an upgrade adds, by the material spent (GAME_DESIGN crafting). */
-export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, riftglass: 3 }
+export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, witherbark: 2, oathsteel: 2, riftglass: 3 }
 /** An upgrade never lifts quality above this, except with a material that has its own cap. */
 export const UPGRADE_QUALITY_CAP = 1.1
 /** Materials whose upgrades may go higher than `UPGRADE_QUALITY_CAP`. */
-export const UPGRADE_QUALITY_CAP_BY_MATERIAL: { readonly [materialId: string]: number } = { riftglass: 1.12 }
+export const UPGRADE_QUALITY_CAP_BY_MATERIAL: { readonly [materialId: string]: number } = { witherbark: 1.1, oathsteel: 1.11, riftglass: 1.12 }
 
 /** The highest quality an upgrade with this material can reach. */
 export function upgradeCapFor(materialId: string): number {
@@ -38,7 +45,7 @@ export function materialIds(): string[] {
   return Object.keys(MATERIAL_QUALITY)
 }
 
-/** "Pick scrap, hide, shard, or riftglass.", built from the table. */
+/** "Pick scrap, hide, shard, witherbark, oathsteel, or riftglass.", built from the table. */
 export function pickMaterialText(): string {
   const ids = materialIds()
   return `Pick ${ids.slice(0, -1).join(', ')}, or ${ids[ids.length - 1]}.`
@@ -51,6 +58,8 @@ export const MATERIAL_QUALITY: { readonly [materialId: string]: { low: number; h
   scrap: { low: 0.9, high: 1.0 },
   hide: { low: 0.95, high: 1.05 },
   shard: { low: 1.0, high: 1.1 },
+  witherbark: { low: 0.99, high: 1.09 },
+  oathsteel: { low: 1.01, high: 1.11 },
   riftglass: { low: 1.02, high: 1.12 },
 }
 
@@ -236,7 +245,7 @@ export function upgradeCheck(save: SaveData, hero: SavedHero, item: ItemInstance
   if (item === undefined) return 'That item is not in the archive or worn by this hero.'
   if (item.itemLevel >= hero.progress.level) return `This hero is level ${hero.progress.level}. An item cannot go above the hero's level.`
   if (MATERIAL_QUALITY[materialId] === undefined) return pickMaterialText()
-  return spend(hero.purse, materialId, UPGRADE_MATERIAL_COST, upgradeGold(item.itemLevel))
+  return spend(hero.purse, materialId, upgradeMaterialCost(materialId), upgradeGold(item.itemLevel))
 }
 
 /** Pay for an upgrade and queue it. The item leaves the archive until the job ends. */
@@ -259,7 +268,7 @@ export function queueUpgrade(save: SaveData, heroId: string, itemId: string, mat
     seedIndex: hero.purse.craftCounter,
     rank: proficiencyRank(hero.craftXp),
   }
-  const paid = charge(hero.purse, materialId, UPGRADE_MATERIAL_COST, upgradeGold(item.itemLevel))
+  const paid = charge(hero.purse, materialId, upgradeMaterialCost(materialId), upgradeGold(item.itemLevel))
   const purse: Purse = {
     ...paid,
     craftCounter: paid.craftCounter + 1,

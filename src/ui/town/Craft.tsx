@@ -10,10 +10,10 @@ import {
   CRAFT_MS,
   MATERIAL_QUALITY,
   QUEUE_MAX,
-  UPGRADE_MATERIAL_COST,
   UPGRADE_QUALITY_CAP,
   UPGRADE_QUALITY_POINTS,
   upgradeCapFor,
+  upgradeMaterialCost,
   craftCheck,
   craftGold,
   proficiencyRank,
@@ -207,7 +207,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         <select aria-label="Upgrade material" value={upgradeMaterial} onChange={(event) => setUpgradeMaterial(event.target.value)}>
           {MATERIALS.map((id) => (
             <option key={id} value={id}>
-              {id}: +{UPGRADE_QUALITY_POINTS[id] ?? 0} quality (have {purseOf(save).materials[id] ?? 0})
+              {id}: +{UPGRADE_QUALITY_POINTS[id] ?? 0} quality, {upgradeMaterialCost(id)} per upgrade (have {purseOf(save).materials[id] ?? 0})
             </option>
           ))}
         </select>
@@ -228,7 +228,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
               }
               costs={[
                 [
-                  { kind: 'mat', amount: UPGRADE_MATERIAL_COST, label: upgradeMaterial },
+                  { kind: 'mat', amount: upgradeMaterialCost(upgradeMaterial), label: upgradeMaterial },
                   { kind: 'gold', amount: upgradeGold(item.itemLevel) },
                 ],
               ]}
