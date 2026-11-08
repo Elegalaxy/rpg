@@ -549,7 +549,7 @@ First-playable layout, decided 2026-10-31 (the contract list is still open for S
 
 - Nodes: Greyhaven (town), Splintered Road, Withered Grove, Fallen Bastion, and the Fracture Gate, where the Fractured Warden waits. The Road leads to a branch. The Grove and the Bastion each lead on to the Fracture Gate.
 - Every leg takes 20 seconds, the same as the road's ordinary journey, and a return walk takes the same. These are simulated seconds. The UI plays the walk 4× faster than the chosen speed (about 5 real seconds at 1×), so regeneration, Readiness, and Fury drain keep their ratios to the walk. Fights are not sped up.
-- Each zone has one resource node that gives the hero 4 of a material on a visit, using the existing materials: a Scrap Heap on the Road (scrap), a Hollow Thicket in the Grove (hide), and a Shard Seam in the Bastion (shard). New materials wait for crafting (G8).
+- Each zone has one resource node that gives the hero 4 of a material on a visit, using the existing materials: a Scrap Heap on the Road (scrap), a Hollow Thicket in the Grove (hide), and a Shard Seam in the Bastion (shard). New materials wait for crafting (G8). Resource nodes do not change when the Grove and Bastion get their own materials (Step 13.2); those two materials come from enemy drops only.
 - Each branch ends in its elite: the Rootmaw Stalker in the Grove and the Echo Knight in the Bastion.
 - The Fracture Gate is a personal gate. It opens for a hero once that hero has defeated both elites at least once. The boss is revealed to the hero on arrival at the gate, not before.
 - Discovering a node is shared across the account. Defeating the elites is personal to each hero.
@@ -849,6 +849,32 @@ Final measurements (seeds 1, 2, 3 at 100 runs, `npm run sim -- --matrix causeway
 - Reference matrix (`--matrix reference`, seed 1, 100 runs): the tracked CSV is byte-identical. Telegraph and built matrices run and match the earlier numbers within seed noise (telegraph seed 1, 40 runs: Cleric Thornbeast 18 / 34; built: Rootmaw, Echo Knight rows as before). Note: the Warden numbers recorded earlier for the prepared tier (Ranger 26, Mage 77) are older than the rows now measured (Ranger 35, Mage 98) and are not caused by this part (no Warden code path changed); they were not re-investigated.
 - Offline-style expeditions (reference heroes, level 19, 40 seeds, defeat % of runs with at least one defeat), `sunken-causeway`: Warrior 0, Assassin 5, Ranger 10, Mage 5, Cleric 0 (before tuning 0 / 3 / 13 / 5 / 0). Same method for the baselines: Grove 8 / 38 / 28 / 8 / 0, Bastion 0 / 18 / 15 / 5 / 0. The Causeway is no harsher than the Grove or Bastion. `npm run sim -- --expedition sunken-causeway --seed 1..5` (Warrior only): all five seeds win five fights and retreat in `causeway-mixed` with no defeat.
 - XP: from the real formula (`xpFromEnemies`, enemy XP from the combat state, level-18 hero, Spirit 9-21), a causeway-mixed win gives 96-98 XP and a level costs 3,818 XP at level 18, so 39 to 40 fights per level (the design estimated 87 XP and 44). causeway-deep gives 147-149 XP (26 per level), a raider 42 (91), a leech-swarm 33 (116). The estimate in "XP intent" is updated below.
+
+### Grove and Bastion materials
+
+Decided 2026-11-08 (user approved), Step 13.2. Today no enemy in the Withered Grove or the Fallen Bastion drops a material. Each zone gets its own material in the middle tier, copying the riftglass pattern (Step 13.1). Resource nodes, brewing, modifier recipes and Salvage are unchanged.
+
+| Material | Sell | Craft quality | Upgrade | Upgrade cost | Safe-pouch rank (rarest last) |
+| --- | --- | --- | --- | --- | --- |
+| witherbark (Grove) | 4 | 99% to 109% | +2 points, cap 110% | 2 units (other materials 3) | after shard |
+| oathsteel (Bastion) | 4 | 101% to 111% | +2 points, cap 111% | 3 | after witherbark, before riftglass |
+
+`MATERIAL_RARITY` becomes scrap, hide, shard, witherbark, oathsteel, riftglass. Material ids stay raw ids, as riftglass does. They are not brewing inputs. The craft quality roll, proficiency bonus and range maximum work as for the other materials.
+
+Drops (the quantity rules of §9 apply, momentum bonus included):
+
+| Enemy | Zone | Drop |
+| --- | --- | --- |
+| Thornbeast | Grove | 4 hide |
+| Blight Spider | Grove | 2 witherbark |
+| Rootmaw Stalker | Grove elite | 8 witherbark |
+| Hollow Sentry | Bastion | 4 shard |
+| Fallen Arbalist | Bastion | 2 oathsteel |
+| Echo Knight | Bastion elite | 8 oathsteel |
+
+None of these six drops anything today. Fracture Wisp, Oathbound Echo, summons and the Fractured Warden still drop nothing.
+
+Pass-through rule (Q1, option A): every route plays the Road's 3 fixed fights first, and they drop 20 units, which fills the bag (20, 22 from level 10) so the zone's own loot would be lost. Fights at a node that is not the route's last node therefore drop gold but no materials. A Road-only run (the Road is the last node) is unchanged. On the Fracture Gate routes, the Grove or Bastion fights and the Road fights are all pass-through; only the Gate's own fights are the last node.
 
 ### Events
 
@@ -1441,11 +1467,11 @@ First-playable town numbers, decided 2026-10-31:
 First-playable crafting numbers, decided 2026-10-31:
 
 - Recipes: every base item can be made from the start. The account also knows two modifier recipes at the start (Keen and Precise). Later recipes add more modifiers. Decided 2026-11-02: the other four are bought in Greyhaven's shop for 25 gold per level the modifier needs (Nimble 75, Piercing 150, Mending 150, Quick 225). A recipe is learned once for the whole account and kept through reincarnation. Modifiers are limited by item type (decided 2026-11-02): Keen on weapons and accessories, Precise on weapons, off-hand items, and accessories, Nimble on armor and accessories, Piercing on weapons, Mending on off-hand items and accessories, Quick on weapons and accessories. Items already made keep their modifier. Upgrades work on an archive item or on an item the selected hero wears; a worn item leaves its slot for the job and returns to the same slot when the job ends (to the archive if the slot was filled meanwhile).
-- Materials set the visible quality range: scrap 90% to 100%, hide 95% to 105%, shard 100% to 110%. The quality roll is the average of two uniform rolls in that range. The rolls are seeded, and the seed is saved.
+- Materials set the visible quality range: scrap 90% to 100%, hide 95% to 105%, shard 100% to 110%, witherbark 99% to 109%, oathsteel 101% to 111% (Step 13.2), riftglass 102% to 112% (Step 13.1). The quality roll is the average of two uniform rolls in that range. The rolls are seeded, and the seed is saved.
 - Proficiency is personal to the hero and survives reincarnation. Each craft or upgrade attempt adds 1 XP. Rank is `floor(√XP)`, up to 10, and each rank raises the range's minimum by 1 percentage point, never above its maximum.
 - A craft costs 6 of the chosen material plus `item level × 5` gold. The item level is at most the hero's level. It takes 30 seconds, and the queue holds 3 jobs. Only the first job advances. Time passes in town and on expeditions alike, for every hero's queue (changed 2026-11-04; before, only the selected hero's queue moved and only while no expedition ran). Crafting counts real time, so it does not depend on the combat viewer's speed or pause, and a tab in the background catches up when it returns. A closed page does not craft (offline progress is deferred).
 - One modifier per craft, from the recipes the account knows, and the hero's level must reach its minimum: Keen +2 points critical chance (level 1), Precise +3 Accuracy (level 1), Nimble +3 Evasion (level 3), Piercing +3 points Armor and magical penetration (level 6), Mending +5 Healing Power (level 6), Quick +2 points cooldown reduction (level 9). Modifiers on every equipped item add together, except that the same modifier counts at most twice (Batch C, §8). Batch C adds Vicious, Sturdy, and Hauler's (their numbers are under §8).
-- An upgrade raises the level of an item the hero owns (worn or in the archive) by 1, up to the hero's level, for 3 of a chosen material plus `item level × 3` gold, in the same queue and time. It always succeeds, and the item keeps its modifier, quality, and durability. Decided 2026-11-07 (user): the material spent on an upgrade adds quality: scrap +0, hide +1, shard +2 percentage points, never above 110% (the best a craft can roll). Quality only ever rises through an upgrade, and an item already at 110% gains nothing from the material. Decided 2026-11-04 (user): upgrading is the cheap, safe way to keep a good item current, while crafting is for a new item or a different modifier. Cost of one more level against crafting a new item at the next level (6 materials plus `5 × (L + 1)` gold): L = 1, 3 materials and 3 gold against 6 and 10; L = 10, 3 materials and 30 gold against 6 and 55. Before this change the cost was 4 materials plus `5 × L` gold with chance `85% − 5 × L`, and a failure lost the cost.
+- An upgrade raises the level of an item the hero owns (worn or in the archive) by 1, up to the hero's level, for 3 of a chosen material (2 of witherbark, Step 13.2) plus `item level × 3` gold, in the same queue and time. It always succeeds, and the item keeps its modifier, quality, and durability. Decided 2026-11-07 (user): the material spent on an upgrade adds quality: scrap +0, hide +1, shard +2 percentage points, never above 110% (the best a craft can roll). Step 13.1 added riftglass (+3, cap 112%). Step 13.2 adds witherbark (+2, cap 110%, costs 2 units per upgrade) and oathsteel (+2, cap 111%, costs 3). Quality only ever rises through an upgrade, and an item already at 110% gains nothing from the material. Decided 2026-11-04 (user): upgrading is the cheap, safe way to keep a good item current, while crafting is for a new item or a different modifier. Cost of one more level against crafting a new item at the next level (6 materials plus `5 × (L + 1)` gold): L = 1, 3 materials and 3 gold against 6 and 10; L = 10, 3 materials and 30 gold against 6 and 55. Before this change the cost was 4 materials plus `5 × L` gold with chance `85% − 5 × L`, and a failure lost the cost.
 
 ### Equipment math
 
@@ -1603,6 +1629,7 @@ First-playable supplies, decided 2026-11-03:
 - The drop uses the momentum already held when the fight is won. The victory then adds its stack. Quantity is `4 × (1 + 5% × stacks)`, rounded half-up. Three stacks turn 4 into 5. One stack does not change a drop of 4, because 4.2 rounds to 4.
 - Drops are added in slot order. When the bag is full, older materials stay and the newest quantity that does not fit is lost.
 - The scripted intro fills the bag exactly: Shardling pair 8, wolf pair 8, Deserter 4. The next fight is where extra loot is lost.
+- Changed 2026-11-08 (user approved, Step 13.2): on a route whose last node is not the Road, the fights at earlier nodes (the Road's 3 fixed fights) drop gold but no materials, so they no longer fill the bag before the zone's own loot. A Road-only run is unchanged. See "Grove and Bastion materials" in §6.
 
 ## 10. Reincarnation and Long-Term Progression
 
@@ -1868,6 +1895,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-08: Designed Grove and Bastion material drops (witherbark, oathsteel) and the pass-through rule: fights before a route's last node drop no materials (Step 13.2).
 - 2026-11-08: Designed the second zone, Drowned Causeway (levels 17-22): three new enemies, the Tidebound Colossus elite, riftglass, three gated modifiers (Hallowed, Rending, Siphoning), a Salvage contract and Legacy +3 for the first Colossus defeat (Step 13.1).
 - 2026-11-08: Thornbeast Bramble Slam and Hollow Sentry Shield Bash interrupt requirement raised from 10% to 25% of the enemy's maximum HP, so an ordinary hit no longer cancels the wind-up by accident. Other numbers unchanged.
 - 2026-11-07: Mid-game heavy telegraphs: Thornbeast Bramble Slam (1.8 s wind-up, 220%, 9 s cooldown, interrupt at 10% max HP) and Hollow Sentry Shield Bash (1.8 s wind-up, 220%, 10 s cooldown, interrupt at 10% max HP). Telegraph and interruptible rule conditions now look at every enemy.

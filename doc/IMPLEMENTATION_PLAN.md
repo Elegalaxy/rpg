@@ -1030,6 +1030,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Part 8, tuning. Done. Colossus Power 31 to 35 and the Leech summon at 35% HP (was 50%); no other number changed (recorded in GAME_DESIGN first). Colossus prepared (3 seeds x 100 runs): Warrior 37, Assassin 94, Ranger 98, Mage 100, Cleric 83; over-levelled 100 for all; regular fights 100%. Bands not met and reported: Assassin, Ranger, Mage Colossus above 85; Warrior and Cleric mixed HP lost above 35; Ranger and Mage causeway-mixed below 15. Warden matrix gains a fourth tier `causeway` (`classModifiers` in `WardenTier`), the first three tiers unchanged. Expedition defeats and XP per level recorded in GAME_DESIGN. Part 9 (browser check) remains, so the step stays in-progress.
   - 2026-11-08: Part 9, browser check (fresh profile, preview): Map shows the Drowned Causeway node; Enchanter shows Hallowed and Siphoning (and Rending) with a red Locked tag and the reason; Weaponsmith Craft lists riftglass (range 102% to 112%, upgrade +3, cap note). Not exercised in a live run: entering the Causeway (gated behind both elites), a Colossus fight, Siphoning unlock, Salvage settle. Step done. Open from part 8: Assassin/Ranger/Mage still win the Colossus above the 85% band (94/98/100% prepared); Warrior 37%, Cleric 83% in band. The Warden prepared-tier figures in the 12.4 note (Ranger 26, Mage 77) predate the Ward Charm rule change in 12.5, which explains the later 35 and 98.
 
+### Step 13.2: Grove and Bastion materials
+- Status: `in-progress`
+- Depends on: 13.1
+- Design: GAME_DESIGN §6, "Grove and Bastion materials", decided 2026-11-08 (user approved; Q1 option A).
+- Goal: material drops for the Withered Grove (witherbark) and Fallen Bastion (oathsteel), copying the riftglass pattern, plus no materials from pass-through fights so the Road's fights stop filling the bag on longer routes.
+- Parts: (1) docs; (2) pass-through fights drop gold but no materials; (3) register the materials (no drops); (4) drops on six enemies and tests; (5) measure and browser check.
+- Progress:
+  - 2026-11-08: Part 1, docs written (GAME_DESIGN §6 "Grove and Bastion materials", resource-node note, quality ranges, upgrade rules, drop rule, changelog; this step).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
