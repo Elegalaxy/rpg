@@ -381,7 +381,7 @@ describe('riftglass', () => {
     expect(qualityRange('riftglass', 5)?.low).toBeCloseTo(1.07, 10)
     expect(qualityRange('riftglass', 10)?.low).toBeCloseTo(1.12, 10)
     expect(qualityRange('riftglass', 10)?.high).toBe(1.12)
-    expect(Object.keys(MATERIAL_QUALITY)).toEqual(['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass'])
+    expect(Object.keys(MATERIAL_QUALITY)).toEqual(['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron'])
   })
 
   it('adds 3 upgrade points up to 112%, while other materials keep 110% and never lower quality', () => {
@@ -396,7 +396,7 @@ describe('riftglass', () => {
   })
 
   it('lists every material in the pick-a-material message, from the table', () => {
-    expect(pickMaterialText()).toBe('Pick scrap, hide, shard, witherbark, oathsteel, or riftglass.')
+    expect(pickMaterialText()).toBe('Pick scrap, hide, shard, witherbark, oathsteel, riftglass, or duskiron.')
     const save = stocked()
     expect(craftCheck(save, hero(save), { ...bow, materialId: 'iron' })).toBe(pickMaterialText())
     expect(upgradeCheckText(save)).toBe(pickMaterialText())
@@ -447,6 +447,36 @@ describe('witherbark and oathsteel', () => {
     const item = purseOf(one).archive[0]
     expect(upgradeCheck(one, hero(one), item, 'witherbark')).toBe('That needs 2 witherbark. You have 1.')
     expect(craftCheck(one, hero(one), { ...bow, materialId: 'oathsteel' })).toBe('That needs 6 oathsteel. You have 0.')
+  })
+})
+
+describe('duskiron', () => {
+  it('is the best craft material: 106% to 116%, rank raises the minimum up to the maximum', () => {
+    expect(qualityRange('duskiron', 0)).toEqual({ low: 1.06, high: 1.16 })
+    expect(qualityRange('duskiron', 5)?.low).toBeCloseTo(1.11, 10)
+    expect(qualityRange('duskiron', 10)?.low).toBeCloseTo(1.16, 10)
+    expect(qualityRange('duskiron', 10)?.high).toBe(1.16)
+  })
+
+  it('adds 4 upgrade points up to 116%, and costs 3 like most materials', () => {
+    expect(UPGRADE_QUALITY_POINTS.duskiron).toBe(4)
+    expect(upgradedQuality(1, 'duskiron')).toBeCloseTo(1.04)
+    expect(upgradedQuality(1.14, 'duskiron')).toBe(1.16)
+    expect(upgradedQuality(1.16, 'duskiron')).toBe(1.16)
+    expect(upgradedQuality(1.17, 'duskiron')).toBe(1.17)
+    expect(upgradeCapFor('duskiron')).toBe(1.16)
+    expect(upgradeMaterialCost('duskiron')).toBe(3)
+  })
+
+  it('crafts with duskiron, and a hero with none sees it as 0 and cannot craft', () => {
+    const save = updatePurse(stocked(), { materials: { duskiron: 6 } })
+    const done = finish(ok(queueCraft(save, 'hero-1', { ...bow, materialId: 'duskiron' })))
+    const made = purseOf(done).archive.at(-1)
+    expect(made?.quality).toBeGreaterThanOrEqual(1.06)
+    expect(made?.quality).toBeLessThanOrEqual(1.16)
+    const none = updatePurse(stocked(), { materials: { shard: 20 } })
+    expect(purseOf(none).materials.duskiron ?? 0).toBe(0)
+    expect(craftCheck(none, hero(none), { ...bow, materialId: 'duskiron' })).toBe('That needs 6 duskiron. You have 0.')
   })
 })
 

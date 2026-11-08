@@ -138,7 +138,7 @@ export const SAFE_POUCH_ROOM = 5
 /** The bag counts as full when fewer than this much room is free. */
 export const BAG_FULL_ROOM = 4
 /** Material value order for the safe pouch, rarest last. A material not listed ranks below all of these. */
-export const MATERIAL_RARITY: readonly string[] = ['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass']
+export const MATERIAL_RARITY: readonly string[] = ['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron']
 export const SUPPLY_SLOT_COUNT = 4
 /** Stored rare-node chance, in percentage points. The road does not roll or spawn a node. */
 export const RARE_NODE_CHANCE_PER_STACK = 2

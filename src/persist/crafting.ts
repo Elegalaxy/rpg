@@ -23,11 +23,11 @@ export const CRAFT_MS = 30_000
 export const QUEUE_MAX = 3
 export const MAX_RANK = 10
 /** Percentage points of quality an upgrade adds, by the material spent (GAME_DESIGN crafting). */
-export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, witherbark: 2, oathsteel: 2, riftglass: 3 }
+export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, witherbark: 2, oathsteel: 2, riftglass: 3, duskiron: 4 }
 /** An upgrade never lifts quality above this, except with a material that has its own cap. */
 export const UPGRADE_QUALITY_CAP = 1.1
 /** Materials whose upgrades may go higher than `UPGRADE_QUALITY_CAP`. */
-export const UPGRADE_QUALITY_CAP_BY_MATERIAL: { readonly [materialId: string]: number } = { witherbark: 1.1, oathsteel: 1.11, riftglass: 1.12 }
+export const UPGRADE_QUALITY_CAP_BY_MATERIAL: { readonly [materialId: string]: number } = { witherbark: 1.1, oathsteel: 1.11, riftglass: 1.12, duskiron: 1.16 }
 
 /** The highest quality an upgrade with this material can reach. */
 export function upgradeCapFor(materialId: string): number {
@@ -46,7 +46,7 @@ export function materialIds(): string[] {
   return Object.keys(MATERIAL_QUALITY)
 }
 
-/** "Pick scrap, hide, shard, witherbark, oathsteel, or riftglass.", built from the table. */
+/** "Pick scrap, hide, shard, witherbark, oathsteel, riftglass, or duskiron.", built from the table. */
 export function pickMaterialText(): string {
   const ids = materialIds()
   return `Pick ${ids.slice(0, -1).join(', ')}, or ${ids[ids.length - 1]}.`
@@ -62,6 +62,7 @@ export const MATERIAL_QUALITY: { readonly [materialId: string]: { low: number; h
   witherbark: { low: 0.99, high: 1.09 },
   oathsteel: { low: 1.01, high: 1.11 },
   riftglass: { low: 1.02, high: 1.12 },
+  duskiron: { low: 1.06, high: 1.16 },
 }
 
 export function proficiencyRank(xp: number): number {
