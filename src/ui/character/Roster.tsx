@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import { classIdentity, raceIdentity } from '../../content/heroes.ts'
+import { awayStatusOf } from '../../persist/awayStatus.ts'
+import { Tag } from '../Kit.tsx'
 import { Row } from '../Row.tsx'
 import { MAX_SLOTS } from '../../persist/save.ts'
 import { xpToNextLevel } from '../../sim/stats.ts'
@@ -29,6 +31,7 @@ export function Roster() {
       <ul className="rows">
         {save.heroes.map((hero) => {
           const selected = hero.id === save.selectedHeroId
+          const away = awayStatusOf(hero)
           return (
             <Row
               key={hero.id}
@@ -62,8 +65,8 @@ export function Roster() {
                     <button
                       type="button"
                       className="btn-danger"
-                      disabled={save.expedition !== null}
-                      title={save.expedition !== null ? 'Finish the expedition first' : undefined}
+                      disabled={save.expedition !== null || away !== null}
+                      title={save.expedition !== null ? 'Finish the expedition first' : away !== null ? 'Close its away run first' : undefined}
                       aria-label={`Delete ${hero.name}`}
                       onClick={() => setConfirmingId(hero.id)}
                     >
@@ -77,6 +80,14 @@ export function Roster() {
               <span className="row-note">
                 {hero.progress.xp} / {xpToNextLevel(hero.progress.level)} XP to level {hero.progress.level + 1}
               </span>
+              {away === null ? null : (
+                <span className="row-note">
+                  <Tag kind={away.kind === 'running' ? 'good' : away.kind === 'defeat' ? 'bad' : 'info'} testId={`away-status-${hero.id}`}>
+                    {away.kind === 'defeat' ? '✖ ' : ''}
+                    {away.text}
+                  </Tag>
+                </span>
+              )}
             </Row>
           )
         })}

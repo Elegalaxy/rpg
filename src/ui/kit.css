@@ -799,3 +799,29 @@ dl.node-facts dd {
   display: block;
   margin-top: var(--s1);
 }
+
+/* ---- Away report: one row per hero ---- */
+
+table.away-table {
+  border-collapse: collapse;
+  margin: var(--s2) 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.away-table th,
+.away-table td {
+  padding: var(--s1) var(--s3);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.away-table thead th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.away-table .num {
+  text-align: right;
+}

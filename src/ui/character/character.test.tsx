@@ -3,8 +3,12 @@ import { describe, expect, it } from 'vitest'
 
 import { classIdentity, raceIdentity } from '../../content/heroes.ts'
 import { selectedHero } from '../../persist/character.ts'
+import { withView } from '../../persist/offline.ts'
 import { createHero } from '../../persist/roster.ts'
 import { newSave } from '../../persist/save.ts'
+import { beginExpedition } from '../../persist/world.ts'
+import { commitSave } from '../store.ts'
+import { AwayReportView } from '../AwayPanel.tsx'
 
 import { Attributes } from './Attributes.tsx'
 import { CreateHero } from './CreateHero.tsx'
@@ -52,5 +56,65 @@ describe('rules screen telegraph hint', () => {
     if (hero === null) throw new Error('no hero')
     const html = renderToStaticMarkup(<RulesForm hero={hero} />)
     expect(html).toContain('Watches every enemy. Answer with Shield Brace, Ward, Mana Ward, Fade Back or Ward Charm.')
+  })
+})
+
+describe('roster away badges', () => {
+  it('shows a background run on the hero card, with the route, fights and bag', () => {
+    let save = newSave()
+    for (const name of ['Ash', 'Brin']) {
+      const made = createHero(save, { name, race: 'human', classId: 'warrior' })
+      if (!made.ok) throw new Error(made.reason)
+      save = made.save
+    }
+    save = withView({ ...save, selectedHeroId: 'hero-1' }, 'hero-2', (view) => {
+      const begun = beginExpedition(view, 'splintered-road', 3)
+      if (!begun.ok) throw new Error(begun.reason)
+      return begun.save
+    })
+    commitSave(save, 'test', false)
+    const html = renderToStaticMarkup(<Roster />)
+    expect(html).toContain('Away: Splintered Road, 0 fights, bag 0/20')
+    expect(html).toContain('away-status-hero-2')
+    expect(html).not.toContain('away-status-hero-1')
+  })
+})
+
+describe('away report table', () => {
+  it('has one row per hero and the shared crafts and discoveries below', () => {
+    const hero = {
+      heroId: 'hero-1',
+      heroName: 'Ash',
+      runs: 4,
+      fightsWon: 12,
+      retreats: 0,
+      defeated: false,
+      xp: 340,
+      levelsGained: 1,
+      gold: 95,
+      materials: { shard: 6 },
+      contractsFinished: 0,
+      stopped: 'runLimit' as const,
+      note: null,
+    }
+    const html = renderToStaticMarkup(
+      <AwayReportView
+        report={{
+          awayMs: 3_600_000,
+          replayedMs: 3_600_000,
+          crafts: ['Brin finished a sword.'],
+          craftBaseIds: [],
+          discovered: ['Withered Grove'],
+          heroes: [hero, { ...hero, heroId: 'hero-2', heroName: 'Brin', stopped: 'defeat', defeated: true, materials: {} }],
+        }}
+      />,
+    )
+    expect(html).toContain('away-row-hero-1')
+    expect(html).toContain('away-row-hero-2')
+    expect(html).toContain('Run limit reached')
+    expect(html).toContain('Defeated')
+    expect(html).toContain('Brin finished a sword.')
+    expect(html).toContain('Discovered: Withered Grove.')
+    expect(html).toContain('Materials brought home by Ash (6)')
   })
 })

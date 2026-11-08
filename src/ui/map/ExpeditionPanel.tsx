@@ -228,7 +228,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           <li>Your retreat setting still applies in every fight.</li>
           <li>It stops for good on a defeat, when the packed supplies run out, or after 8 hours.</li>
           <li>Fights won while away give half the loot and gold. XP, contracts and discoveries are not reduced.</li>
-          <li>Only the selected hero runs. Other heroes rest, but every hero keeps crafting.</li>
+          <li>Heroes you did not select run their own away route too, and heroes without one rest. Every hero keeps crafting.</li>
         </ul>
       </fieldset>
       {hero.echoRank > 0 ? (

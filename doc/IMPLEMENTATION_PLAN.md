@@ -1022,6 +1022,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-08: Part 1, docs written (GAME_DESIGN §11 and Roster rules, this step).
   - 2026-11-08: Part 2, `SavedHero.repeatLimit` (0, 1, 3, 5, 10, 25; `REPEAT_LIMITS`), stop reason `runLimit` in `afterReturn`, a Run limit select next to Repeat in `ExpeditionPanel.tsx`, stop text in `AwayPanel.tsx`.
   - 2026-11-08: Part 3, `SavedHero.awayRun`; `offline.ts` runs lanes (selected hero first, then heroes with an away route) through `withView`, which swaps a hero's `awayRun` in as the selected hero's expedition and back; crafting runs once per chunk; `AwayReport` has one `HeroAwaySummary` row per lane. `selectHero` promotes a background run; `deleteHero` refuses while a hero has one. The Away panel is only bridged to the new report here (part 4 does the table).
+  - 2026-11-08: Part 4, `AwayReportView` in `src/ui/AwayPanel.tsx` (one table row per hero, Tag status, shared crafts and discoveries, materials per hero in a details block), Roster status badge from `awayStatusOf` (`src/persist/awayStatus.ts`), delete disabled while a hero has an away run.
 
 ### Step 13.1: Drowned Causeway
 - Status: `done`

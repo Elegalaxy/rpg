@@ -1,4 +1,5 @@
 import type { AwayReport, HeroAwaySummary } from '../persist/offline.ts'
+import { Tag } from './Kit.tsx'
 import { dismissAway, getAwayView, useSaveStatus } from './store.ts'
 
 function duration(ms: number): string {
@@ -8,50 +9,101 @@ function duration(ms: number): string {
   return minutes % 60 === 0 ? `${hours} h` : `${hours} h ${minutes % 60} min`
 }
 
-const EMPTY: HeroAwaySummary = {
-  heroId: '',
-  heroName: '',
-  runs: 0,
-  fightsWon: 0,
-  retreats: 0,
-  defeated: false,
-  xp: 0,
-  levelsGained: 0,
-  gold: 0,
-  materials: {},
-  contractsFinished: 0,
-  stopped: null,
-  note: null,
-}
-
 const STOP_TEXT: { [reason: string]: string } = {
-  returned: 'Your hero is back in Greyhaven. Close the run on the Map.',
-  uncleared: 'The hero stopped: this route is not cleared yet, so it was not run again.',
-  supplies: 'The hero stopped: the packed supplies are not in the stash any more.',
-  bagFull: 'The hero stopped: the bag is nearly full and your order is to ask. The run waits for you on the Map.',
-  runLimit: 'The hero stopped: the run limit you set was reached.',
-  defeat: 'The hero fell. Close the run on the Map to pay the rescue fee.',
+  returned: 'is back in Greyhaven. Close the run on the Map.',
+  uncleared: 'stopped: this route is not cleared yet, so it was not run again.',
+  supplies: 'stopped: the packed supplies are not in the stash any more.',
+  bagFull: 'stopped: the bag is nearly full and your order is to ask. The run waits for you on the Map.',
+  runLimit: 'stopped: the run limit you set was reached.',
+  defeat: 'fell. Select the hero and close the run on the Map to pay the rescue fee.',
 }
 
-function lines(report: AwayReport): string[] {
-  const summary = { ...report, ...(report.heroes[0] ?? EMPTY) }
-  const out: string[] = []
-  out.push(
-    summary.awayMs > summary.replayedMs
-      ? `You were away ${duration(summary.awayMs)}. Only the first ${duration(summary.replayedMs)} count.`
-      : `You were away ${duration(summary.awayMs)}.`,
+const STOP_LABEL: { [reason: string]: { kind: 'bad' | 'info'; text: string } } = {
+  returned: { kind: 'info', text: 'Back in town' },
+  uncleared: { kind: 'bad', text: 'Route not cleared' },
+  supplies: { kind: 'bad', text: 'Out of supplies' },
+  blocked: { kind: 'bad', text: 'Could not start' },
+  bagFull: { kind: 'info', text: 'Bag full, waiting' },
+  runLimit: { kind: 'info', text: 'Run limit reached' },
+  defeat: { kind: 'bad', text: 'Defeated' },
+}
+
+function stopLine(hero: HeroAwaySummary): string {
+  if (hero.stopped === null) return ''
+  if (hero.stopped === 'blocked') return `${hero.heroName} stopped: ${hero.note ?? 'the next run could not start.'}`
+  return `${hero.heroName} ${STOP_TEXT[hero.stopped] ?? ''}`
+}
+
+function materialList(hero: HeroAwaySummary): string {
+  return Object.entries(hero.materials)
+    .map(([id, amount]) => `${amount} ${id}`)
+    .join(', ')
+}
+
+/** The report itself, with no store behind it. One table row per hero, then what is shared. */
+export function AwayReportView({ report }: { report: AwayReport }) {
+  const intro =
+    report.awayMs > report.replayedMs
+      ? `You were away ${duration(report.awayMs)}. Only the first ${duration(report.replayedMs)} count.`
+      : `You were away ${duration(report.awayMs)}.`
+  const withMaterials = report.heroes.filter((hero) => Object.keys(hero.materials).length > 0)
+  const contracts = report.heroes.reduce((sum, hero) => sum + hero.contractsFinished, 0)
+  const stops = report.heroes.map(stopLine).filter((line) => line !== '')
+  return (
+    <>
+      <p>{intro}</p>
+      {report.heroes.length > 0 ? (
+        <table className="away-table" aria-label="What each hero did">
+          <thead>
+            <tr>
+              <th scope="col">Hero</th>
+              <th scope="col" className="num">Runs</th>
+              <th scope="col" className="num">Fights won</th>
+              <th scope="col" className="num">Gold</th>
+              <th scope="col" className="num">XP</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.heroes.map((hero) => {
+              const label = hero.stopped === null ? null : (STOP_LABEL[hero.stopped] ?? { kind: 'bad' as const, text: 'Stopped' })
+              return (
+                <tr key={hero.heroId} data-testid={`away-row-${hero.heroId}`}>
+                  <th scope="row">{hero.heroName}</th>
+                  <td className="num">{hero.runs}</td>
+                  <td className="num">{hero.fightsWon}</td>
+                  <td className="num">{hero.gold}</td>
+                  <td className="num">
+                    {hero.xp}
+                    {hero.levelsGained > 0 ? <Tag kind="good"> ▲ {hero.levelsGained} {hero.levelsGained === 1 ? 'level' : 'levels'}</Tag> : null}
+                  </td>
+                  <td>{label === null ? <Tag kind="good">Still running</Tag> : <Tag kind={label.kind}>{label.text}</Tag>}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      ) : null}
+      <ul data-testid="away-lines">
+        {stops.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+        {report.crafts.map((craft, index) => (
+          <li key={`${index}-${craft}`}>{craft}</li>
+        ))}
+        {contracts > 0 ? <li>Contracts finished: {contracts}. Collect them at the Contract Board.</li> : null}
+        {report.discovered.length > 0 ? <li>Discovered: {report.discovered.join(', ')}.</li> : null}
+      </ul>
+      {withMaterials.map((hero) => (
+        <details key={hero.heroId}>
+          <summary>
+            Materials brought home by {hero.heroName} ({Object.values(hero.materials).reduce((sum, n) => sum + n, 0)})
+          </summary>
+          <p>{materialList(hero)}</p>
+        </details>
+      ))}
+    </>
   )
-  if (summary.runs > 0 || summary.fightsWon > 0 || summary.retreats > 0) {
-    out.push(`Runs finished: ${summary.runs}. Fights won: ${summary.fightsWon}. Retreats: ${summary.retreats}.`)
-  }
-  const materials = Object.entries(summary.materials).map(([id, amount]) => `${amount} ${id}`)
-  if (summary.gold > 0 || materials.length > 0) out.push(`Brought home: ${[summary.gold > 0 ? `${summary.gold} gold` : '', ...materials].filter(Boolean).join(', ')}.`)
-  if (summary.xp > 0) out.push(`Experience earned: ${summary.xp}.${summary.levelsGained > 0 ? ` Gained ${summary.levelsGained} ${summary.levelsGained === 1 ? 'level' : 'levels'}.` : ''}`)
-  for (const craft of summary.crafts) out.push(craft)
-  if (summary.contractsFinished > 0) out.push(`Contracts finished: ${summary.contractsFinished}. Collect them at the Contract Board.`)
-  if (summary.discovered.length > 0) out.push(`Discovered: ${summary.discovered.join(', ')}.`)
-  if (summary.stopped !== null) out.push(summary.stopped === 'blocked' ? `The hero stopped: ${summary.note ?? 'the next run could not start.'}` : (STOP_TEXT[summary.stopped] ?? ''))
-  return out
 }
 
 /** The catch-up bar while time away is replayed, then the "while you were away" summary. */
@@ -71,11 +123,7 @@ export function AwayPanel() {
   return (
     <section aria-label="While you were away">
       <h2>While you were away</h2>
-      <ul data-testid="away-lines">
-        {lines(view.summary!).map((line, index) => (
-          <li key={`${index}-${line}`}>{line}</li>
-        ))}
-      </ul>
+      <AwayReportView report={view.summary!} />
       <button type="button" className="btn-primary" onClick={dismissAway}>
         Continue
       </button>
