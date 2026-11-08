@@ -293,6 +293,8 @@ export type ItemModifier = {
    * that any hero has defeated. Crafting and wearing are unaffected once the recipe is known.
    */
   requires?: ModifierRequirement
+  /** Recipe price in gold when it is not 25 per level the modifier needs. */
+  recipeGold?: number
 }
 
 export type ModifierRequirement = { discoveryId: string } | { enemyId: string }
@@ -322,7 +324,7 @@ export function modifierFits(modifier: ItemModifier, base: ItemBase): boolean {
   return true
 }
 
-/** The twelve modifiers: six first-playable (G8), three from Batch C and three gated ones from the Drowned Causeway. Percent values are fractions: 0.02 is 2 points. */
+/** The fifteen modifiers: six first-playable (G8), three from Batch C, three gated ones from the Drowned Causeway and three from the Rift Hollows. Percent values are fractions: 0.02 is 2 points. */
 export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
   keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance', appliesTo: ['weapon', 'accessory'] },
   precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy', appliesTo: ['weapon', 'offHand', 'accessory'] },
@@ -375,6 +377,34 @@ export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
     text: 'Heals 3% of damage dealt',
     appliesTo: ['weapon'],
     requires: { enemyId: 'tidebound-colossus' },
+  },
+  stalwart: {
+    id: 'stalwart',
+    name: 'Stalwart',
+    minLevel: 22,
+    bonus: { maxHpBonus: 0.06 },
+    text: '+6% maximum HP',
+    appliesTo: ['armor'],
+    requires: { discoveryId: 'node:rift-hollows' },
+  },
+  devout: {
+    id: 'devout',
+    name: 'Devout',
+    minLevel: 22,
+    bonus: { equipmentHealingPower: 12 },
+    text: '+12 Healing Power',
+    appliesTo: ['offHand', 'accessory'],
+    requires: { discoveryId: 'node:rift-hollows' },
+  },
+  bloodbound: {
+    id: 'bloodbound',
+    name: 'Bloodbound',
+    minLevel: 24,
+    bonus: { lifestealFraction: 0.05 },
+    text: 'Heals 5% of damage dealt',
+    appliesTo: ['weapon'],
+    recipeGold: 650,
+    requires: { enemyId: 'hollowmaw-reaver' },
   },
 }
 

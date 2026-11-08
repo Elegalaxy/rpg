@@ -126,7 +126,7 @@ describe('queueing a craft', () => {
     expect(craftCheck(learned, hero(learned), { ...bow, modifierId: 'nimble' })).toBe('Nimble needs level 3. This hero is level 2.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, modifierId: 'nimble' })).toBe('Nimble can only go on armor and accessories.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, baseId: 'armor-heavy-chest', modifierId: 'nimble' })).toBeNull()
-    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(12)
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(15)
   })
 
   it('is closed while an expedition runs', () => {
@@ -337,7 +337,7 @@ describe('worn items and recipes', () => {
     const base = levelled()
     const grown = { ...base, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 12 } })) }
     const save = { ...updatePurse(grown, { gold: 300 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] } }
-    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['hallowed', 'hauler', 'mending', 'nimble', 'piercing', 'quick', 'rending', 'siphoning', 'sturdy', 'vicious'])
+    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['bloodbound', 'devout', 'hallowed', 'hauler', 'mending', 'nimble', 'piercing', 'quick', 'rending', 'siphoning', 'stalwart', 'sturdy', 'vicious'])
     expect(recipePrice('nimble')).toBe(75)
     expect(recipePrice('quick')).toBe(225)
     expect(recipePrice('vicious')).toBe(75)
@@ -525,5 +525,50 @@ describe('gated recipes', () => {
   it('still needs the hero level once unlocked', () => {
     const save = withGold(15, ['node:drowned-causeway'])
     expect(buyRecipe(save, 'hallowed')).toEqual({ ok: false, reason: 'The Hallowed recipe needs level 16. This hero is level 15.' })
+  })
+})
+
+describe('Rift Hollows recipes', () => {
+  function withGold(level: number, discoveries: string[] = [], defeated: string[] = []): SaveData {
+    const base = stocked()
+    const grown = {
+      ...base,
+      account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES], discoveries: [...base.account.discoveries, ...discoveries] },
+      heroes: base.heroes.map((h) => ({ ...h, defeatedEnemyIds: defeated, progress: { ...h.progress, level } })),
+    }
+    return updatePurse(grown, { gold: 5000 })
+  }
+
+  it('prices the three at 550, 550 and 650 gold', () => {
+    expect([recipePrice('stalwart'), recipePrice('devout'), recipePrice('bloodbound')]).toEqual([550, 550, 650])
+  })
+
+  it('locks Stalwart and Devout until the Hollows are discovered, with the reason shown', () => {
+    const save = withGold(28)
+    const rows = recipesForSale(save)
+    expect(rows.find((row) => row.modifierId === 'stalwart')?.locked).toBe('Discover Rift Hollows first.')
+    expect(rows.find((row) => row.modifierId === 'devout')?.locked).toBe('Discover Rift Hollows first.')
+    expect(buyRecipe(save, 'stalwart')).toEqual({ ok: false, reason: 'The Stalwart recipe is locked. Discover Rift Hollows first.' })
+    const found = withGold(28, ['node:rift-hollows'])
+    expect(recipeLock(found, 'devout')).toBeNull()
+    expect(purseOf(ok(buyRecipe(found, 'stalwart'))).gold).toBe(5000 - 550)
+    expect(ok(buyRecipe(found, 'devout')).account.recipes).toContain('devout')
+  })
+
+  it('locks Bloodbound until any hero has defeated the Hollowmaw Reaver', () => {
+    const save = withGold(28, ['node:rift-hollows'])
+    expect(buyRecipe(save, 'bloodbound')).toEqual({ ok: false, reason: 'The Bloodbound recipe is locked. Defeat Hollowmaw Reaver with any hero first.' })
+    const bought = ok(buyRecipe(withGold(28, ['node:rift-hollows'], ['hollowmaw-reaver']), 'bloodbound'))
+    expect(bought.account.recipes).toContain('bloodbound')
+    expect(purseOf(bought).gold).toBe(5000 - 650)
+    expect(recipeLock(withGold(28, [], []), 'bloodbound')).toBe('Defeat Hollowmaw Reaver with any hero first.')
+    expect(recipeLock(withGold(28, ['defeated:hollowmaw-reaver']), 'bloodbound')).toBeNull()
+  })
+
+  it('still needs the hero level once unlocked', () => {
+    const save = withGold(21, ['node:rift-hollows'])
+    expect(buyRecipe(save, 'stalwart')).toEqual({ ok: false, reason: 'The Stalwart recipe needs level 22. This hero is level 21.' })
+    const mid = withGold(23, ['node:rift-hollows'], ['hollowmaw-reaver'])
+    expect(buyRecipe(mid, 'bloodbound')).toEqual({ ok: false, reason: 'The Bloodbound recipe needs level 24. This hero is level 23.' })
   })
 })

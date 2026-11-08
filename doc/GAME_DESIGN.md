@@ -914,7 +914,7 @@ Elite Hollowmaw Reaver:
 
 Duskiron (new material): sells for 8 gold. A craft rolls quality 106% to 116% (average of two rolls, plus proficiency bonus, never above the range maximum). As an upgrade material it adds +4 points, up to 116%. It is last in `MATERIAL_RARITY` (the safe pouch keeps it first), after riftglass.
 
-Modifiers (one modifier per item; the stack cap is 2 across worn gear):
+Modifiers (one modifier per item; the stack cap is 2 across worn gear). A recipe costs 25 gold per level the modifier needs, except Bloodbound, whose 650 gold is set on the modifier (a level-24 recipe would be 600). Stalwart fits any armor piece, as Sturdy does:
 
 | Modifier | Effect | Min level | Slots | Recipe | Unlock |
 | --- | --- | --- | --- | --- | --- |
@@ -932,7 +932,7 @@ Measurement targets (for the later tuning step; part 3 records numbers and chang
 - Hollowmaw Reaver: prepared 40-85% wins (Warrior and Cleric at least 30%), over-levelled at least 85%.
 - About 35-45 fights per level at level 24.
 
-Measured 2026-11-08 (Step 13.4 part 3, `npm run sim -- --matrix hollows`, seeds 1-3 x 100 runs, mean over the three seeds, wins % / mean HP lost %; nothing tuned). Tiers: Arrived (level 22, 8 nodes, quality 112%, Siphoning on the weapon, 3 Draughts), Prepared (level 24, 8 nodes, 116%, Stalwart on head and chest, a Cleric adds Devout on the off-hand and one accessory, 3 Draughts and a Ward Charm), Over-levelled (level 27, 9 nodes, same gear). Stalwart and Devout are applied by the harness itself until part 6 defines them. Every cell is a 100% win, so only the HP lost differs:
+Measured 2026-11-08 (Step 13.4 part 3, `npm run sim -- --matrix hollows`, seeds 1-3 x 100 runs, mean over the three seeds, wins % / mean HP lost %; nothing tuned). Tiers: Arrived (level 22, 8 nodes, quality 112%, Siphoning on the weapon, 3 Draughts), Prepared (level 24, 8 nodes, 116%, Stalwart on head and chest, a Cleric adds Devout on the off-hand and one accessory, 3 Draughts and a Ward Charm), Over-levelled (level 27, 9 nodes, same gear). Stalwart and Devout were applied by the harness itself until part 6 defined them (same numbers; seed 1 re-run identical). Every cell is a 100% win, so only the HP lost differs:
 
 | Class | Tier | shade | brute | channeler | shade-pair | hollows-mixed | hollows-deep | Reaver |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

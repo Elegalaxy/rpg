@@ -1,7 +1,6 @@
 import { gameDefs } from '../content/scenarios.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
-import { ITEM_MODIFIERS, type EquipmentSlotId, type StatBonuses } from '../sim/economy.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import type { CombatSetup } from '../sim/types.ts'
 
@@ -55,32 +54,6 @@ export const HOLLOWS_TIERS: readonly WardenTier[] = [
     classModifiers: { cleric: { offHand: 'devout', accessory1: 'devout' } },
   },
 ]
-
-/**
- * Bonuses of the Hollows modifiers while they are not yet in `ITEM_MODIFIERS` (part 6). Once an id is defined
- * there, that definition is used and this entry is ignored, so the numbers do not change.
- */
-const PENDING_BONUSES: { readonly [id: string]: StatBonuses } = {
-  stalwart: { maxHpBonus: 0.06 },
-  devout: { equipmentHealingPower: 12 },
-}
-
-const MODIFIER_STACK = 2
-
-function pendingBonuses(modifiers: WardenTier['modifiers']): StatBonuses {
-  const total: { [key in keyof StatBonuses]: number } = {}
-  const seen: { [id: string]: number } = {}
-  for (const slot of Object.keys(modifiers) as EquipmentSlotId[]) {
-    const id = modifiers[slot]
-    if (id === null || ITEM_MODIFIERS[id] !== undefined) continue
-    const pending = PENDING_BONUSES[id]
-    if (pending === undefined) continue
-    seen[id] = (seen[id] ?? 0) + 1
-    if (seen[id] > MODIFIER_STACK) continue
-    for (const key of Object.keys(pending) as (keyof StatBonuses)[]) total[key] = (total[key] ?? 0) + (pending[key] ?? 0)
-  }
-  return total
-}
 
 export type HollowsFight = {
   id: string
@@ -138,11 +111,7 @@ export type HollowsRow = {
 
 /** The fight for a class at a tier: the Warden-style hero against the fight's enemies. */
 export function hollowsSetup(classId: HeroClass, tier: WardenTier, fight: HollowsFight, mode: HollowsMode = 'rules'): CombatSetup {
-  const warden = wardenSetup(classId, tier)
-  const merged: { [key in keyof StatBonuses]: number } = { ...(warden.hero.statBonuses ?? {}) }
-  const extra = pendingBonuses({ ...tier.modifiers, ...(tier.classModifiers?.[classId] ?? {}) })
-  for (const key of Object.keys(extra) as (keyof StatBonuses)[]) merged[key] = (merged[key] ?? 0) + (extra[key] ?? 0)
-  const base = { ...warden, hero: { ...warden.hero, statBonuses: merged }, enemies: fight.enemies }
+  const base = { ...wardenSetup(classId, tier), enemies: fight.enemies }
   return mode === 'blind' ? blindSetup(base) : base
 }
 

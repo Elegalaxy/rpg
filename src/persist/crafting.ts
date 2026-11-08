@@ -178,9 +178,10 @@ export function queueCraft(save: SaveData, heroId: string, request: CraftRequest
   }
 }
 
-/** Gold a modifier recipe costs in Greyhaven: 25 per level the modifier needs. */
+/** Gold a modifier recipe costs in Greyhaven: 25 per level the modifier needs, unless the modifier sets its own price. */
 export function recipePrice(modifierId: string): number {
-  return (ITEM_MODIFIERS[modifierId]?.minLevel ?? 1) * 25
+  const modifier = ITEM_MODIFIERS[modifierId]
+  return modifier?.recipeGold ?? (modifier?.minLevel ?? 1) * 25
 }
 
 /** The account-wide record of a defeated enemy, kept in `discoveries` so it survives a hero's reincarnation. */

@@ -126,7 +126,7 @@ describe('the Causeway modifiers', () => {
     expect(ITEM_MODIFIERS.hallowed).toMatchObject({ minLevel: 16, bonus: { equipmentHealingPower: 10 }, requires: { discoveryId: 'node:drowned-causeway' } })
     expect(ITEM_MODIFIERS.rending).toMatchObject({ minLevel: 18, bonus: { armorPenetrationBonus: 0.06, magicalPenetrationBonus: 0.06 }, requires: { discoveryId: 'node:drowned-causeway' } })
     expect(ITEM_MODIFIERS.siphoning).toMatchObject({ minLevel: 20, bonus: { lifestealFraction: 0.03 }, requires: { enemyId: 'tidebound-colossus' } })
-    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(12)
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(15)
     const hallowed = ITEM_MODIFIERS.hallowed!
     const rending = ITEM_MODIFIERS.rending!
     const siphoning = ITEM_MODIFIERS.siphoning!
@@ -151,5 +151,55 @@ describe('the Causeway modifiers', () => {
     expect(bonus.equipmentHealingPower).toBe(20)
     expect(bonus.lifestealFraction).toBeCloseTo(0.03, 10)
     expect(modifierCapNotes(worn({ offHand: ['hallowed'], accessory0: ['hallowed'], accessory1: ['hallowed'] }))).toEqual(['Hallowed is on 3 pieces, but only 2 count.'])
+  })
+})
+
+describe('the Rift Hollows modifiers', () => {
+  const input = {
+    level: 24,
+    classId: 'warrior',
+    attributes: { strength: 10, vitality: 10, agility: 10, intellect: 10, spirit: 10 },
+    gear: {
+      mainHand: { id: 'w', kind: 'oneHanded', itemLevel: 1, quality: 1 },
+      offHand: { id: 'o', kind: 'shield', itemLevel: 1, quality: 1 },
+      head: { id: 'a', slot: 'head', category: 'heavy', itemLevel: 1, quality: 1 },
+      chest: { id: 'b', slot: 'chest', category: 'heavy', itemLevel: 1, quality: 1 },
+      hands: { id: 'c', slot: 'hands', category: 'heavy', itemLevel: 1, quality: 1 },
+      feet: { id: 'd', slot: 'feet', category: 'heavy', itemLevel: 1, quality: 1 },
+      accessories: [
+        { id: 'e', itemLevel: 1, quality: 1 },
+        { id: 'f', itemLevel: 1, quality: 1 },
+      ],
+    },
+  } as HeroStatInput
+
+  it('have the decided levels, numbers, fits and unlocks', () => {
+    expect(ITEM_MODIFIERS.stalwart).toMatchObject({ minLevel: 22, bonus: { maxHpBonus: 0.06 }, requires: { discoveryId: 'node:rift-hollows' } })
+    expect(ITEM_MODIFIERS.devout).toMatchObject({ minLevel: 22, bonus: { equipmentHealingPower: 12 }, requires: { discoveryId: 'node:rift-hollows' } })
+    expect(ITEM_MODIFIERS.bloodbound).toMatchObject({ minLevel: 24, bonus: { lifestealFraction: 0.05 }, requires: { enemyId: 'hollowmaw-reaver' } })
+    const stalwart = ITEM_MODIFIERS.stalwart!
+    const devout = ITEM_MODIFIERS.devout!
+    const bloodbound = ITEM_MODIFIERS.bloodbound!
+    expect([chest, shield, ring, sword].map((base) => modifierFits(stalwart, base))).toEqual([true, false, false, false])
+    expect([shield, ring, sword, chest].map((base) => modifierFits(devout, base))).toEqual([true, true, false, false])
+    expect([sword, shield, ring, chest].map((base) => modifierFits(bloodbound, base))).toEqual([true, false, false, false])
+  })
+
+  it('add their bonuses to the derived stats', () => {
+    const plain = deriveHeroStats(input)
+    const stalwart = deriveHeroStats({ ...input, ...statBonusesFor(worn({ chest: ['stalwart'], head: ['stalwart'] })) })
+    expect(stalwart.maxHp).toBeGreaterThan(plain.maxHp)
+    expect(stalwart.maxHp / plain.maxHp).toBeGreaterThan(1.1)
+    const devout = deriveHeroStats({ ...input, ...statBonusesFor(worn({ offHand: ['devout'] })) })
+    expect(devout.healingPower).toBeCloseTo(plain.healingPower + 12, 10)
+    const blood = deriveHeroStats({ ...input, ...statBonusesFor(worn({ mainHand: ['bloodbound'] })) })
+    expect(blood.lifestealFraction).toBeCloseTo(0.05, 10)
+  })
+
+  it('respect the two-piece stack cap, one modifier per item', () => {
+    const bonus = statBonusesFor(worn({ head: ['stalwart'], chest: ['stalwart'], hands: ['stalwart'], mainHand: ['bloodbound'] }))
+    expect(bonus.maxHpBonus).toBeCloseTo(0.12, 10)
+    expect(bonus.lifestealFraction).toBeCloseTo(0.05, 10)
+    expect(modifierCapNotes(worn({ head: ['stalwart'], chest: ['stalwart'], hands: ['stalwart'] }))).toEqual(['Stalwart is on 3 pieces, but only 2 count.'])
   })
 })
