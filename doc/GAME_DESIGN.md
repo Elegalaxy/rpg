@@ -1549,7 +1549,7 @@ These are a first broad roster for mechanical review. Names and effects are not 
 2. Cleave: costs 25 Fury; deals 80% Physical Power to every enemy; 5-second cooldown; 1.15× action time.
 3. Reckless Strike: requires a two-handed weapon; costs 40 Fury; deals 220% Physical Power; 8-second cooldown; 1.35× action time; increases incoming damage by 20% until the Warrior's next action.
 4. Shield Brace: requires a shield; no Fury cost; reduces incoming damage by 40% (Step 13.5, was 30%) until the Warrior's next action; being struck during the effect generates 5 base Fury; 8-second cooldown; 0.75× action time.
-5. Second Wind: costs 50 Fury; heals 15% maximum HP (Step 13.5 targeting fix part 3; briefly 30% in the superseded part 2) plus 50% Healing Power; 15-second cooldown; 1.0× action time.
+5. Second Wind: costs 50 Fury; heals 10% maximum HP (Step 13.5 targeting fix part 5; 15% in part 3 and briefly 30% in the superseded part 2) plus 50% Healing Power; 15-second cooldown; 1.0× action time.
 6. Sundering Blow: costs 20 Fury; deals 150% Physical Power (Step 13.5, was 125%); applies 30% Armor Expose (was 20%) for 8 seconds; 6-second cooldown; 1.0× action time.
 
 #### Assassin
@@ -1606,6 +1606,9 @@ The filterable log should expose:
 - Resource changes
 - Retreat attempts
 - The sequence of causes leading to defeat
+
+Part 5 (user decision 2026-11-08): Second Wind `maxHpFraction` 0.15 to 0.10, because the Warrior's Warden prepared win rate was 79% (band 30-70%). The planner/implementer measured 10% at seed 1, 60 runs: Warden prepared 55%, over-levelled and Causeway-geared 100%. Result (seeds 1-3 x 100, rules mode, Warrior): Warden prepared 47 / 51 / 58 (mean 52, in the 30-70 band; seed span 11, over the 8-point limit), over-levelled 100 / 100 / 100, Causeway-geared 100 / 100 / 100. Built-matrix guard (seed 1, 100 runs, 6 nodes, HP lost %): Warrior Rootmaw 75 (wins 95) and Echo Knight 64 (wins 100), back to the pre-Step-13.5 values of about 76 and 64, so the guard holds; Cleric unchanged at 42 and 42. The Assassin (18% prepared) is not changed by this part.
+
 
 ## 8. Expedition Risk, Retreat, and Defeat
 
