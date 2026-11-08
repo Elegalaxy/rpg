@@ -63,6 +63,7 @@ export const WITHERED_GROVE_NODE = 'withered-grove'
 export const FALLEN_BASTION_NODE = 'fallen-bastion'
 export const FRACTURE_GATE_NODE = 'fracture-gate'
 export const DROWNED_CAUSEWAY_NODE = 'drowned-causeway'
+export const RIFT_HOLLOWS_NODE = 'rift-hollows'
 
 export const nodes: { readonly [id: string]: WorldNode } = {
   [GREYHAVEN_ID]: {
@@ -116,6 +117,18 @@ export const nodes: { readonly [id: string]: WorldNode } = {
     gate: { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] },
     discoveryId: 'node:drowned-causeway',
   },
+  [RIFT_HOLLOWS_NODE]: {
+    id: RIFT_HOLLOWS_NODE,
+    name: 'Rift Hollows',
+    kind: 'zone',
+    levels: { min: 22, max: 28 },
+    encounterIds: ['shade-pair', 'brute', 'hollows-mixed', 'hollowmaw-reaver'],
+    drawEncounterIds: ['hollows-mixed', 'hollows-deep', 'shade-pair'],
+    resource: { id: 'dusk-vein', name: 'Dusk Vein', materialId: 'duskiron', quantity: 3 },
+    eliteEnemyId: 'hollowmaw-reaver',
+    gate: { defeatedEnemyIds: ['tidebound-colossus'] },
+    discoveryId: 'node:rift-hollows',
+  },
   [FRACTURE_GATE_NODE]: {
     id: FRACTURE_GATE_NODE,
     name: 'Fracture Gate',
@@ -135,6 +148,7 @@ export const legs: readonly Leg[] = [
   { from: WITHERED_GROVE_NODE, to: FRACTURE_GATE_NODE, travelMs: LEG_TRAVEL_MS },
   { from: FALLEN_BASTION_NODE, to: FRACTURE_GATE_NODE, travelMs: LEG_TRAVEL_MS },
   { from: SPLINTERED_ROAD_NODE, to: DROWNED_CAUSEWAY_NODE, travelMs: LEG_TRAVEL_MS },
+  { from: SPLINTERED_ROAD_NODE, to: RIFT_HOLLOWS_NODE, travelMs: LEG_TRAVEL_MS },
 ]
 
 /** Route ids match the expedition ids the simulation accepts. */
@@ -168,6 +182,11 @@ export const routes: { readonly [id: string]: Route } = {
     id: 'sunken-causeway',
     name: 'Road to the Drowned Causeway',
     nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, DROWNED_CAUSEWAY_NODE],
+  },
+  'rift-hollows': {
+    id: 'rift-hollows',
+    name: 'Road to the Rift Hollows',
+    nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, RIFT_HOLLOWS_NODE],
   },
 }
 

@@ -17,12 +17,12 @@ import {
 } from './world.ts'
 
 describe('Fractured Frontier content', () => {
-  it('has the six decided nodes and no others', () => {
-    expect(Object.keys(nodes).sort()).toEqual(['drowned-causeway', 'fallen-bastion', 'fracture-gate', 'greyhaven', 'splintered-road', 'withered-grove'])
+  it('has the seven decided nodes and no others', () => {
+    expect(Object.keys(nodes).sort()).toEqual(['drowned-causeway', 'fallen-bastion', 'fracture-gate', 'greyhaven', 'rift-hollows', 'splintered-road', 'withered-grove'])
     for (const [id, node] of Object.entries(nodes)) expect(node.id).toBe(id)
     expect(nodes[GREYHAVEN_ID]?.kind).toBe('town')
     expect(nodes[FRACTURE_GATE_NODE]?.kind).toBe('fracture')
-    expect(new Set(Object.values(nodes).map((node) => node.discoveryId)).size).toBe(6)
+    expect(new Set(Object.values(nodes).map((node) => node.discoveryId)).size).toBe(7)
   })
 
   it('resolves every reference: legs, routes, encounters, enemies, and materials', () => {
@@ -43,9 +43,9 @@ describe('Fractured Frontier content', () => {
     for (const node of Object.values(nodes)) {
       if (node.resource === undefined) continue
       expect(dropped.has(node.resource.materialId), node.resource.id).toBe(true)
-      expect(node.resource.quantity).toBe(node.id === 'drowned-causeway' ? 3 : 4)
+      expect(node.resource.quantity).toBe(['drowned-causeway', 'rift-hollows'].includes(node.id) ? 3 : 4)
     }
-    expect(Object.values(nodes).filter((node) => node.resource !== undefined)).toHaveLength(4)
+    expect(Object.values(nodes).filter((node) => node.resource !== undefined)).toHaveLength(5)
   })
 
   it('walks each route over real legs, and matches the expedition ids', () => {
@@ -123,5 +123,42 @@ describe('Drowned Causeway', () => {
     expect(gateBlock(node, { defeatedEnemyIds: [] })).toBe('Defeat Rootmaw Stalker and Echo Knight first.')
     expect(gateBlock(node, { defeatedEnemyIds: ['echo-knight'] })).toBe('Defeat Rootmaw Stalker first.')
     expect(gateBlock(node, { defeatedEnemyIds: ['echo-knight', 'rootmaw-stalker'] })).toBeNull()
+  })
+})
+
+describe('Rift Hollows', () => {
+  it('is a gated zone reached by a leg from the Splintered Road, ending in the Reaver', () => {
+    const node = nodes['rift-hollows']
+    if (node === undefined) throw new Error('no hollows')
+    expect(node).toMatchObject({
+      name: 'Rift Hollows',
+      kind: 'zone',
+      levels: { min: 22, max: 28 },
+      encounterIds: ['shade-pair', 'brute', 'hollows-mixed', 'hollowmaw-reaver'],
+      drawEncounterIds: ['hollows-mixed', 'hollows-deep', 'shade-pair'],
+      eliteEnemyId: 'hollowmaw-reaver',
+      resource: { id: 'dusk-vein', name: 'Dusk Vein', materialId: 'duskiron', quantity: 3 },
+      discoveryId: 'node:rift-hollows',
+    })
+    expect(node.gate?.defeatedEnemyIds).toEqual(['tidebound-colossus'])
+    expect(legs.some((leg) => leg.from === 'splintered-road' && leg.to === 'rift-hollows' && leg.travelMs === LEG_TRAVEL_MS)).toBe(true)
+    expect(legs.some((leg) => leg.to === 'rift-hollows' && leg.from === 'drowned-causeway')).toBe(false)
+    expect(routes['rift-hollows']?.nodeIds).toEqual(['greyhaven', 'splintered-road', 'rift-hollows'])
+    expect(routeEncounterIds(routes['rift-hollows']!)).toEqual([
+      'shardling-pair',
+      'wolf-pair',
+      'deserter',
+      'shade-pair',
+      'brute',
+      'hollows-mixed',
+      'hollowmaw-reaver',
+    ])
+  })
+
+  it('names the Colossus, not its id, in the gate message', () => {
+    const node = nodes['rift-hollows']!
+    expect(gateBlock(node, { defeatedEnemyIds: [] })).toBe('Defeat Tidebound Colossus first.')
+    expect(gateBlock(node, { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] })).toBe('Defeat Tidebound Colossus first.')
+    expect(gateBlock(node, { defeatedEnemyIds: ['tidebound-colossus'] })).toBeNull()
   })
 })

@@ -26,3 +26,11 @@ describe('world map with the Drowned Causeway', () => {
     expect(html).toContain('aria-label="Drowned Causeway, locked. Not discovered yet."')
   })
 })
+
+describe('world map with the Rift Hollows', () => {
+  it('shows the Hollows node as undiscovered', () => {
+    const html = renderToStaticMarkup(<MapView />)
+    expect(html).toContain('Rift Hollows')
+    expect(html).toContain('aria-label="Rift Hollows, locked. Not discovered yet."')
+  })
+})

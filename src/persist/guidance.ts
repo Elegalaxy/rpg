@@ -16,7 +16,7 @@ export type Hint = { tab: Tab; text: string }
 function nextRouteId(save: SaveData): string | null {
   const hero = selectedHero(save)
   if (hero === null) return null
-  const order = ['splintered-road', 'withered-grove', 'fallen-bastion', 'fracture-via-grove', 'fracture-via-bastion', 'sunken-causeway']
+  const order = ['splintered-road', 'withered-grove', 'fallen-bastion', 'fracture-via-grove', 'fracture-via-bastion', 'sunken-causeway', 'rift-hollows']
   for (const id of order) {
     if (routes[id] === undefined) continue
     if (!canStartRoute(save, id).ok) continue

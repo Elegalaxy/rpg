@@ -361,3 +361,50 @@ describe('Drowned Causeway in the save', () => {
     expect(info.fights).toBe(7)
   })
 })
+
+describe('Rift Hollows in the save', () => {
+  it('is discovered when the Splintered Road is cleared, and stays gated on the Colossus', () => {
+    const save = withRun('rift-hollows')
+    expect(fightNodeIds(routes['rift-hollows']!)).toEqual([
+      'splintered-road',
+      'splintered-road',
+      'splintered-road',
+      'rift-hollows',
+      'rift-hollows',
+      'rift-hollows',
+      'rift-hollows',
+    ])
+    victoryFor(save.expedition!, 3)
+    const next = recordProgress(save)
+    expect(next.account.discoveries).toContain('node:rift-hollows')
+    const hero = selectedHero(next)!
+    expect(nodeStatus(node('rift-hollows'), next, hero)).toEqual({
+      state: 'locked',
+      reason: 'Defeat Tidebound Colossus first.',
+    })
+    expect(canStartRoute({ ...next, expedition: null }, 'rift-hollows')).toEqual({
+      ok: false,
+      reason: 'Rift Hollows: Defeat Tidebound Colossus first.',
+    })
+    const warden = { ...next, expedition: null, heroes: next.heroes.map((h) => ({ ...h, defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] })) }
+    expect(nodeStatus(node('rift-hollows'), warden, selectedHero(warden)!).state).toBe('locked')
+    const ready = { ...next, expedition: null, heroes: next.heroes.map((h) => ({ ...h, defeatedEnemyIds: ['tidebound-colossus'] })) }
+    expect(nodeStatus(node('rift-hollows'), ready, selectedHero(ready)!).state).toBe('discovered')
+    expect(canStartRoute(ready, 'rift-hollows').ok).toBe(true)
+  })
+
+  it('records the Reaver as a defeated elite and lists the route info with its enemies', () => {
+    let save = withRun('rift-hollows')
+    victoryFor(save.expedition!, 7)
+    save = recordProgress(save)
+    const hero = selectedHero(save)!
+    expect(hero.defeatedEnemyIds).toEqual(['hollowmaw-reaver'])
+    expect(hero.clearedNodeIds).toEqual(['splintered-road', 'rift-hollows'])
+    expect(save.account.discoveries).toContain('defeated:hollowmaw-reaver')
+    const info = routeInfo('rift-hollows', save)
+    expect(info.enemyNames).toEqual(expect.arrayContaining(['Rift Shade', 'Riftborn Brute', 'Hollow Channeler', 'Hollowmaw Reaver']))
+    expect(info.levels).toEqual({ min: 1, max: 28 })
+    expect(info.resources.map((entry) => entry.materialId)).toEqual(['scrap', 'duskiron'])
+    expect(info.fights).toBe(7)
+  })
+})
