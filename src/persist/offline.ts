@@ -438,3 +438,37 @@ export function runOffline(save: SaveData, awayMs: number, crafting: boolean): {
   advanceOffline(state, state.stepsLeft)
   return finishOffline(state)
 }
+
+/**
+ * Background heroes while the page is open (GAME_DESIGN §11, "Offline extras"): run every hero that is not
+ * selected and has an away route for `steps` simulation steps, with the same orders and rules as a catch-up
+ * and no summary. `lanes` carries each hero's replay state from one call to the next and is returned
+ * updated. Heroes that were selected, or lost their away route, drop out. The runs of the given save are
+ * not changed; the returned save holds new ones.
+ */
+export function advanceBackground(save: SaveData, lanes: readonly Lane[], steps: number): { save: SaveData; lanes: Lane[] } {
+  const ids = laneHeroIds(save)
+  if (ids.length < 2 || !(steps > 0)) return { save, lanes: lanes.filter((lane) => ids.includes(lane.heroId) && lane.heroId !== save.selectedHeroId) }
+  let current: SaveData = {
+    ...save,
+    heroes: save.heroes.map((hero) => (hero.awayRun !== null ? { ...hero, awayRun: structuredClone(hero.awayRun) } : hero)),
+  }
+  const next: Lane[] = []
+  ids.forEach((heroId, index) => {
+    if (heroId === current.selectedHeroId) return
+    let lane = lanes.find((entry) => entry.heroId === heroId)
+    current = withView(current, heroId, (view) => {
+      let result = view
+      if (lane === undefined) {
+        const away = startAwayRun(view, laneSeed(current.lastSeenAt, index))
+        lane = newLane(away.save, heroId, away.note, away.stopped)
+        result = away.save
+      }
+      const ctx: Ctx = { save: result, lane }
+      runLane(ctx, Math.floor(steps))
+      return ctx.save
+    })
+    if (lane !== undefined) next.push(lane)
+  })
+  return { save: current, lanes: next }
+}

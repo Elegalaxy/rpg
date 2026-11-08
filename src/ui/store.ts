@@ -11,11 +11,12 @@ import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, queueCraft, 
 import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
+import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, settleExpedition, shouldHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
-import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceOffline, createOffline, finishOffline, offlineDone, type AwayReport, type OfflineState } from '../persist/offline.ts'
+import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
 import { createHero, deleteHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
@@ -168,7 +169,18 @@ export function createHeroFromUi(request: NewHero): string | null {
 export function chooseHero(heroId: string): string | null {
   const result = selectHero(saveStatus.save, heroId)
   if (!result.ok) return result.reason
+  backgroundLanes = backgroundLanes.filter((lane) => lane.heroId !== heroId)
+  const promoted = result.save.expedition !== null && saveStatus.save.expedition === null
+  if (promoted) {
+    // A run the hero kept going in the background is now the live one.
+    pushedAt = null
+    finishedFights = []
+  }
   commitSave(result.save, 'hero selected')
+  if (promoted && result.save.expedition?.outcome === 'ongoing') {
+    expeditionLoop.resetClock()
+    if (!snapshot.paused) expeditionLoop.start()
+  }
   return null
 }
 
@@ -725,6 +737,8 @@ function finishCatchUp(): void {
   }
   unseenCrafts = [...unseenCrafts, ...summary.craftBaseIds]
   lastCraftTickAt = Date.now()
+  lastBackgroundAt = Date.now()
+  backgroundLanes = []
   awayView = summary.replayedMs >= OFFLINE_SUMMARY_MIN_MS ? { phase: 'summary', progress: 1, summary } : { phase: 'idle', progress: 0, summary: null }
   const running = saveStatus.save.expedition
   if (running !== null && running.outcome === 'ongoing') {
@@ -769,6 +783,30 @@ function beginCatchUp(awayMs: number, crafting: boolean): void {
 
 const HEARTBEAT_MS = 10_000
 
+/** Replay state of the heroes that run in the background while the page is open. */
+let backgroundLanes: Lane[] = []
+/** Wall-clock time the background heroes have been advanced to. Null until the watch starts. */
+let lastBackgroundAt: number | null = null
+
+/**
+ * Advance the heroes that are not selected by the time since the last tick. Every save stamps `lastSeenAt` at
+ * or after the time ticked here, so a later catch-up never replays time this has already played.
+ */
+function tickBackground(): void {
+  if (catchingUp) return
+  const now = Date.now()
+  if (lastBackgroundAt === null || now < lastBackgroundAt) {
+    lastBackgroundAt = now
+    return
+  }
+  const steps = Math.min(Math.floor((now - lastBackgroundAt) / STEP_MS), Math.floor(OFFLINE_CAP_MS / STEP_MS))
+  if (steps < 1) return
+  lastBackgroundAt = now - lastBackgroundAt > OFFLINE_CAP_MS ? now : lastBackgroundAt + steps * STEP_MS
+  const result = advanceBackground(saveStatus.save, backgroundLanes, steps)
+  backgroundLanes = result.lanes
+  saveStatus = { ...saveStatus, save: result.save }
+}
+
 /**
  * Watch for time away. On start it replays the time since the game last saw the player. While the
  * game runs it stamps the save every few seconds and when the tab hides, and replays the hidden time
@@ -777,8 +815,11 @@ const HEARTBEAT_MS = 10_000
 export function startOfflineWatch(): () => void {
   const last = saveStatus.save.lastSeenAt
   if (last !== null) beginCatchUp(Date.now() - last, true)
+  lastBackgroundAt = Date.now()
   const stamp = () => {
-    if (!catchingUp && saveStatus.save.heroes.length > 0) commitSave(saveStatus.save, 'seen', false)
+    if (catchingUp || saveStatus.save.heroes.length === 0) return
+    tickBackground()
+    commitSave(saveStatus.save, 'seen')
   }
   const onVisibility = () => {
     if (document.hidden) {

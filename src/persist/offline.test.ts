@@ -9,6 +9,7 @@ import {
   OFFLINE_CAP_MS,
   OFFLINE_LOOT_RATE,
   OFFLINE_MIN_MS,
+  advanceBackground,
   advanceOffline,
   createOffline,
   finishOffline,
@@ -376,5 +377,61 @@ describe('other heroes while away', () => {
     expect(away.save.heroes[1]!.awayRun?.outcome).toBe('defeat')
     expect(first!.defeated).toBe(false)
     expect(first!.runs).toBeGreaterThan(0)
+  })
+})
+
+describe('background heroes while the page is open', () => {
+  function awayOnly(): SaveData {
+    const made = createHero(strongHero(), { name: 'Brin', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    const attributes = { strength: 400, vitality: 400, agility: 100, intellect: 10, spirit: 100 }
+    return {
+      ...made.save,
+      selectedHeroId: 'hero-1',
+      lastSeenAt: 1_000,
+      heroes: made.save.heroes.map((entry, index) => ({
+        ...entry,
+        awayRouteId: index === 1 ? 'splintered-road' : null,
+        clearedNodeIds: ['splintered-road'],
+        progress: { ...entry.progress, level: 40, attributes },
+      })),
+    }
+  }
+
+  it('advances only the hero who is not selected, and gives the same result in any split', () => {
+    const save = awayOnly()
+    const whole = advanceBackground(save, [], 6_000)
+    expect(whole.save.expedition).toBeNull()
+    expect(whole.save.heroes[0]!.awayRun).toBeNull()
+    expect(whole.save.heroes[1]!.awayRun!.history.length).toBeGreaterThan(0)
+    let split = { save, lanes: [] as ReturnType<typeof advanceBackground>['lanes'] }
+    for (let index = 0; index < 6; index += 1) split = advanceBackground(split.save, split.lanes, 1_000)
+    expect(serializeSave(split.save)).toBe(serializeSave(whole.save))
+  })
+
+  it('does not change the save it is given', () => {
+    const save = awayOnly()
+    const text = serializeSave(save)
+    advanceBackground(save, [], 3_000)
+    expect(serializeSave(save)).toBe(text)
+  })
+
+  it('does not count time twice when a catch-up follows the ticks', () => {
+    const save = awayOnly()
+    const half = 15 * MINUTE
+    const ticked = advanceBackground(save, [], half / STEP_MS)
+    const later = runOffline(ticked.save, half, true)
+    const direct = runOffline(save, 2 * half, true)
+    expect(serializeSave(later.save)).toBe(serializeSave(direct.save))
+  })
+
+  it('stops running a hero who is selected, and keeps a parked run parked', () => {
+    const save = awayOnly()
+    const first = advanceBackground(withHero(save, { repeatRoute: false }), [], 60 * MINUTE / STEP_MS)
+    expect(first.lanes[0]!.stopped).toBe('returned')
+    const again = advanceBackground(first.save, first.lanes, 60 * MINUTE / STEP_MS)
+    expect(serializeSave(again.save)).toBe(serializeSave(first.save))
+    const selected = advanceBackground({ ...first.save, selectedHeroId: 'hero-2' }, first.lanes, 1_000)
+    expect(selected.lanes).toEqual([])
   })
 })
