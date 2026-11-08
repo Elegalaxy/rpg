@@ -1067,6 +1067,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-08: Part 1, docs written (GAME_DESIGN §6 "Third zone: Rift Hollows", changelog, this step).
   - 2026-11-08: Part 2, enemies Rift Shade, Hollow Channeler, Riftborn Brute, Hollowmaw Reaver and encounters `shade-pair`, `brute`, `hollows-mixed`, `hollows-deep`, `hollowmaw-reaver` (content only, no sim change). New `src/content/hollows.test.ts`. No snapshot changed. 894 tests.
+  - 2026-11-08: Part 3, `--matrix hollows` (`src/harness/hollows.ts`, test, CLI registration). Tiers Arrived/Prepared/Over (L22/24/27); Stalwart and Devout are applied by the harness until part 6 defines them. Measured seeds 1-3 x 100 runs, numbers in GAME_DESIGN: every class wins every fight 100% at every tier, so the Reaver (target 40-85%) is far too easy and blind equals rules; tuning waits for part 8. No tuning in this part.
 
 ## 8. Risks, and what would reveal them early
 

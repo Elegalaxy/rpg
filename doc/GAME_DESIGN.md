@@ -932,6 +932,30 @@ Measurement targets (for the later tuning step; part 3 records numbers and chang
 - Hollowmaw Reaver: prepared 40-85% wins (Warrior and Cleric at least 30%), over-levelled at least 85%.
 - About 35-45 fights per level at level 24.
 
+Measured 2026-11-08 (Step 13.4 part 3, `npm run sim -- --matrix hollows`, seeds 1-3 x 100 runs, mean over the three seeds, wins % / mean HP lost %; nothing tuned). Tiers: Arrived (level 22, 8 nodes, quality 112%, Siphoning on the weapon, 3 Draughts), Prepared (level 24, 8 nodes, 116%, Stalwart on head and chest, a Cleric adds Devout on the off-hand and one accessory, 3 Draughts and a Ward Charm), Over-levelled (level 27, 9 nodes, same gear). Stalwart and Devout are applied by the harness itself until part 6 defines them. Every cell is a 100% win, so only the HP lost differs:
+
+| Class | Tier | shade | brute | channeler | shade-pair | hollows-mixed | hollows-deep | Reaver |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Warrior | Arrived | 12 | 10 | 6 | 28 | 24 | 44 | 46 |
+| Warrior | Prepared | 8 | 6 | 5 | 22 | 17 | 45 | 47 |
+| Warrior | Over | 6 | 2 | 4 | 15 | 10 | 34 | 46 |
+| Assassin | Arrived | 8 | 12 | 4 | 24 | 23 | 43 | 43 |
+| Assassin | Prepared | 7 | 9 | 3 | 19 | 18 | 43 | 41 |
+| Assassin | Over | 5 | 4 | 2 | 14 | 14 | 39 | 35 |
+| Ranger | Arrived | 8 | 0 | 1 | 19 | 15 | 40 | 31 |
+| Ranger | Prepared | 5 | 0 | 1 | 14 | 11 | 33 | 20 |
+| Ranger | Over | 4 | 0 | 1 | 11 | 10 | 28 | 15 |
+| Mage | Arrived | 13 | 12 | 4 | 31 | 1 | 23 | 37 |
+| Mage | Prepared | 10 | 7 | 3 | 25 | 0 | 15 | 32 |
+| Mage | Over | 9 | 3 | 2 | 22 | 0 | 7 | 22 |
+| Cleric | Arrived | 19 | 17 | 11 | 40 | 34 | 43 | 42 |
+| Cleric | Prepared | 15 | 14 | 8 | 34 | 27 | 39 | 39 |
+| Cleric | Over | 11 | 11 | 6 | 27 | 21 | 39 | 39 |
+
+Blind runs (the same hero with its telegraph and interrupt rows removed) were also 100% wins in every cell of the Brute and the Reaver, and the HP lost is within a few points of the rules run (for example Ranger Reaver Arrived 45 blind against 31, Assassin Over 36 against 35, Warrior Brute Arrived 10 against 10).
+
+Reading against the targets: regular fights meet the 95% win band at every tier. The mixed fights lose 15-40% only for some classes (Mage loses 0-1% in `hollows-mixed`, Ranger Brute 0%, below band; Warrior and Cleric lose 10-34%). The Reaver is far above its 40-85% band: every class wins 100% at every tier, losing 15-47% of its HP, so it needs hardening in part 8. The Brute's Rift Cleave is not dangerous enough to make interrupts matter (blind equals rules). No number was changed.
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
