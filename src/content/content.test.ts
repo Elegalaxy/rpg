@@ -368,7 +368,7 @@ describe('content integrity', () => {
     expect(fractureShardling.drop).toEqual({ materialId: 'shard', baseQuantity: 4 })
     expect(starvedWolf.drop).toEqual({ materialId: 'hide', baseQuantity: 4 })
     expect(deserter.drop).toEqual({ materialId: 'scrap', baseQuantity: 4 })
-    expect(blightSpider.drop).toBeUndefined()
+    expect(blightSpider.drop).toEqual({ materialId: 'witherbark', baseQuantity: 2 })
     expect(standardDummy.drop).toBeUndefined()
     expect(blightSpider).toMatchObject({
       levelMin: 6,

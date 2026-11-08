@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { enemies } from '../content/enemies.ts'
+import { referenceHeroAtLevel } from '../content/heroes.ts'
+import { gameDefs } from '../content/scenarios.ts'
 import { routeEncounterIds, routes } from '../content/world.ts'
+import { createExpedition, runExpedition } from '../sim/expedition.ts'
 
 import { selectedHero } from './character.ts'
 import { blueprintForHero } from './expeditionSetup.ts'
@@ -46,5 +49,20 @@ describe('blueprintForHero pass-through fights', () => {
     const blueprint = blueprintForHero(hero(), 'splintered-road')
     const dropping = blueprint.opening.flatMap((encounter) => encounter.enemies).filter((enemy) => enemy.materialId !== undefined)
     expect(dropping.length).toBe(blueprint.opening.flatMap((encounter) => encounter.enemies).length)
+  })
+})
+
+describe('Grove run', () => {
+  it('secures witherbark from the Grove fights but nothing from the Road fights', () => {
+    const blueprint = blueprintForHero(hero(), 'withered-grove')
+    const reference = referenceHeroAtLevel('warrior', 16)
+    blueprint.hero = { ...blueprint.hero, level: reference.level, attributes: reference.attributes, gear: reference.gear }
+    blueprint.retreatThresholds = []
+    const state = runExpedition(createExpedition(blueprint, 3), gameDefs(), 6, 600_000)
+    const held = [...state.secured, ...state.unsecured]
+    const units = (id: string) => held.filter((stack) => stack.materialId === id).reduce((sum, stack) => sum + stack.quantity, 0)
+    expect(state.history.length).toBeGreaterThanOrEqual(4)
+    expect(units('witherbark')).toBeGreaterThan(0)
+    expect(units('scrap')).toBe(0)
   })
 })

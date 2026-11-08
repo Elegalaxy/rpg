@@ -155,7 +155,7 @@ const webSnare: EnemySkillDef = {
   ],
 }
 
-/** Levels 6–10. Skirmisher. Venom Bite is listed before Web Snare. The filler is a physical basic attack. */
+/** Levels 6–10. Skirmisher. Venom Bite is listed before Web Snare. Drops 2 witherbark. The filler is a physical basic attack. */
 export const blightSpider: EnemyDef = {
   id: 'blight-spider',
   name: 'Blight Spider',
@@ -166,6 +166,7 @@ export const blightSpider: EnemyDef = {
   school: 'physical',
   filler: { school: 'physical' },
   skills: [venomBite, webSnare],
+  drop: { materialId: 'witherbark', baseQuantity: 2 },
 }
 
 const brambleSlam: EnemySkillDef = {
@@ -182,7 +183,7 @@ const brambleSlam: EnemySkillDef = {
   effects: [{ kind: 'damage', school: 'physical', coefficient: 2.2 }],
 }
 
-/** Levels 8–13. Tank. Regenerates during combat. The filler is a physical basic attack. */
+/** Levels 8–13. Tank. Regenerates during combat. Drops 4 hide. The filler is a physical basic attack. */
 export const thornbeast: EnemyDef = {
   id: 'thornbeast',
   name: 'Thornbeast',
@@ -194,6 +195,7 @@ export const thornbeast: EnemyDef = {
   filler: { school: 'physical' },
   traitIds: [REGENERATION_TRAIT],
   skills: [brambleSlam],
+  drop: { materialId: 'hide', baseQuantity: 4 },
 }
 
 const coldSpark: EnemySkillDef = {
@@ -269,7 +271,7 @@ const shieldBash: EnemySkillDef = {
   ],
 }
 
-/** Levels 8–12. Tank defense is replaced by 1.75× Armor and 1.0× Resistance. Shield Wall is listed first. */
+/** Levels 8–12. Tank defense is replaced by 1.75× Armor and 1.0× Resistance. Shield Wall is listed first. Drops 4 shard. */
 export const hollowSentry: EnemyDef = {
   id: 'hollow-sentry',
   name: 'Hollow Sentry',
@@ -281,6 +283,7 @@ export const hollowSentry: EnemyDef = {
   filler: { school: 'physical' },
   overrides: { armorMultiplier: 1.75, resistanceMultiplier: 1 },
   skills: [shieldWall, shieldBash],
+  drop: { materialId: 'shard', baseQuantity: 4 },
 }
 
 const aimedBolt: EnemySkillDef = {
@@ -297,7 +300,7 @@ const aimedBolt: EnemySkillDef = {
   effects: [{ kind: 'damage', school: 'physical', coefficient: 2.2 }],
 }
 
-/** Levels 11–14. Burst. Aimed Bolt is followed by Reload instead of the normal recovery. */
+/** Levels 11–14. Burst. Aimed Bolt is followed by Reload instead of the normal recovery. Drops 2 oathsteel. */
 export const fallenArbalist: EnemyDef = {
   id: 'fallen-arbalist',
   name: 'Fallen Arbalist',
@@ -308,6 +311,7 @@ export const fallenArbalist: EnemyDef = {
   school: 'physical',
   filler: { school: 'physical' },
   skills: [aimedBolt],
+  drop: { materialId: 'oathsteel', baseQuantity: 2 },
 }
 
 const echoWard: EnemySkillDef = {
@@ -397,7 +401,7 @@ const graspingRoots: EnemySkillDef = {
 
 /**
  * Level 14 elite skirmisher. The generic elite line misses HP, Power, Armor, Resistance, and action time,
- * so those are absolute overrides. Accuracy 24 and Evasion 26 already match that line.
+ * so those are absolute overrides. Accuracy 24 and Evasion 26 already match that line. Drops 8 witherbark.
  */
 export const rootmawStalker: EnemyDef = {
   id: 'rootmaw-stalker',
@@ -417,6 +421,7 @@ export const rootmawStalker: EnemyDef = {
   },
   traitIds: [REGENERATION_TRAIT],
   skills: [venomousRend, graspingRoots],
+  drop: { materialId: 'witherbark', baseQuantity: 8 },
 }
 
 const fracturedCharge: EnemySkillDef = {
@@ -447,7 +452,7 @@ const summonOathboundEcho: EnemySkillDef = {
   effects: [{ kind: 'summon', enemyId: 'oathbound-echo', level: 16 }],
 }
 
-/** Level 16 elite tank. The normal elite multipliers already hit the published line. Consistency is 25. */
+/** Level 16 elite tank. The normal elite multipliers already hit the published line. Consistency is 25. Drops 8 oathsteel. */
 export const echoKnight: EnemyDef = {
   id: 'echo-knight',
   name: 'Echo Knight',
@@ -459,6 +464,7 @@ export const echoKnight: EnemyDef = {
   overrides: { maxHp: 3200, power: 26, consistency: 25 },
   traitIds: [STANCE_TRAIT, HP_SUMMON_TRAIT],
   skills: [fracturedCharge, summonOathboundEcho],
+  drop: { materialId: 'oathsteel', baseQuantity: 8 },
 }
 
 const fractureHammer: EnemySkillDef = {
