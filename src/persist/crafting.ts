@@ -1,7 +1,8 @@
 import { enemies } from '../content/enemies.ts'
 import { itemBase } from '../content/items.ts'
+import { supplyTable } from '../content/supplies.ts'
 import { nodes } from '../content/world.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { selectedHero } from './character.ts'
@@ -191,9 +192,8 @@ export function enemyDefeatedByAnyHero(save: SaveData, enemyId: string): boolean
   return save.account.discoveries.includes(defeatRecordId(enemyId)) || save.heroes.some((hero) => hero.defeatedEnemyIds.includes(enemyId))
 }
 
-/** Why a recipe cannot be learned yet, in the words the screen shows, or null when it is open. */
-export function recipeLock(save: SaveData, modifierId: string): string | null {
-  const requires = ITEM_MODIFIERS[modifierId]?.requires
+/** Why an unlock requirement is not met yet, in the words the screen shows, or null when it is met. */
+export function requirementLock(save: SaveData, requires: ModifierRequirement | undefined): string | null {
   if (requires === undefined) return null
   if ('discoveryId' in requires) {
     if (save.account.discoveries.includes(requires.discoveryId)) return null
@@ -202,6 +202,16 @@ export function recipeLock(save: SaveData, modifierId: string): string | null {
   }
   if (enemyDefeatedByAnyHero(save, requires.enemyId)) return null
   return `Defeat ${enemies[requires.enemyId]?.name ?? requires.enemyId} with any hero first.`
+}
+
+/** Why a recipe cannot be learned yet, in the words the screen shows, or null when it is open. */
+export function recipeLock(save: SaveData, modifierId: string): string | null {
+  return requirementLock(save, ITEM_MODIFIERS[modifierId]?.requires)
+}
+
+/** Why a supply cannot be brewed yet, or null when it is open. */
+export function supplyLock(save: SaveData, supplyId: string): string | null {
+  return requirementLock(save, supplyTable[supplyId]?.requires)
 }
 
 /** The recipes the account has not learned yet, with their prices and the reason one is still locked. */

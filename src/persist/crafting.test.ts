@@ -24,6 +24,7 @@ import {
   upgradeCheck,
   pickMaterialText,
   recipeLock,
+  requirementLock,
   upgradeCapFor,
   upgradeMaterialCost,
   MATERIAL_QUALITY,
@@ -482,6 +483,13 @@ describe('gated recipes', () => {
     expect(ok(buyRecipe(withGold(25, ['node:drowned-causeway'], ['tidebound-colossus']), 'siphoning')).account.recipes).toContain('siphoning')
     const kept = withGold(25, ['node:drowned-causeway', 'defeated:tidebound-colossus'])
     expect(recipeLock(kept, 'siphoning')).toBeNull()
+  })
+
+  it('requirementLock is open with no requirement and explains discovery and defeat locks', () => {
+    const save = withGold(25)
+    expect(requirementLock(save, undefined)).toBeNull()
+    expect(requirementLock(save, { discoveryId: 'node:drowned-causeway' })).toBe('Discover Drowned Causeway first.')
+    expect(requirementLock(save, { enemyId: 'tidebound-colossus' })).toBe('Defeat Tidebound Colossus with any hero first.')
   })
 
   it('still needs the hero level once unlocked', () => {

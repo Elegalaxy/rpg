@@ -231,7 +231,8 @@ function PotionShop() {
               : missingBrewGold > 0
                 ? `Need ${missingBrewGold} more gold`
                 : null
-          const buyShort = gold < supply.price ? `Need ${supply.price - gold} more gold` : null
+          const price = supply.price ?? 0
+          const buyShort = gold < price ? `Need ${price - gold} more gold` : null
           return (
             <ShopCardRow key={supply.id}>
               <div className="supply-head">
@@ -245,13 +246,13 @@ function PotionShop() {
                 <div className="supply-option">
                   <span className="supply-option-title">Buy with gold</span>
                   <span className="supply-option-cost">
-                    <CostPill cost={{ kind: 'gold', amount: supply.price }} /> each
+                    <CostPill cost={{ kind: 'gold', amount: price }} /> each
                   </span>
                   <span className="button-row">
                     <button
                       type="button"
                       className="btn-primary"
-                      disabled={closed || hero === null || gold < supply.price}
+                      disabled={closed || hero === null || gold < price}
                       aria-label={`Buy 1 ${supply.name}`}
                       onClick={() => run(buySupplyFromUi(supply.id, 1), `Bought 1 ${supply.name}.`)}
                     >
@@ -260,11 +261,11 @@ function PotionShop() {
                     <button
                       type="button"
                       className="btn-primary"
-                      disabled={closed || hero === null || gold < supply.price * SUPPLY_SLOT_COUNT}
+                      disabled={closed || hero === null || gold < price * SUPPLY_SLOT_COUNT}
                       aria-label={`Buy ${SUPPLY_SLOT_COUNT} ${supply.name}`}
                       onClick={() => run(buySupplyFromUi(supply.id, SUPPLY_SLOT_COUNT), `Bought ${SUPPLY_SLOT_COUNT} ${supply.name}s.`)}
                     >
-                      Buy {SUPPLY_SLOT_COUNT} <small>({supply.price * SUPPLY_SLOT_COUNT} gold)</small>
+                      Buy {SUPPLY_SLOT_COUNT} <small>({price * SUPPLY_SLOT_COUNT} gold)</small>
                     </button>
                   </span>
                   {buyShort !== null ? <small className="supply-option-note">{buyShort}</small> : null}

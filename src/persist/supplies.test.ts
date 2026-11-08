@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_SUPPLY_ROWS, WARD_CHARM_ROW } from '../content/supplies.ts'
+import { DEFAULT_SUPPLY_ROWS, WARD_CHARM_ROW, supplyTable, type SupplyDef } from '../content/supplies.ts'
 import { SMOKE_BOMB_ID, SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
 
 import { buildCondition, draftsFromRows, describeCondition, summarizeRule } from './loadout.ts'
 import { checkPreparation, draftFor, packFromStash, packedCounts, clampToStash, savePreparation, stepPacked } from './preparation.ts'
 import { createHero, selectHero } from './roster.ts'
 import { newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
+import { supplyLock } from './crafting.ts'
 import { brewSupply, buySupply } from './town.ts'
 import { beginExpedition, settleExpedition } from './world.ts'
 
@@ -158,5 +159,49 @@ describe('brewing supplies', () => {
     expect(brewSupply(updatePurse(poor, { gold: 50 }), 'antidote')).toEqual({ ok: false, reason: 'That needs 2 shard. You have 0.' })
     expect(brewSupply(poor, 'elixir')).toEqual({ ok: false, reason: 'The Potion Shop cannot brew that.' })
     expect(brewSupply(poor, 'antidote', 0)).toEqual({ ok: false, reason: 'Brew at least 1.' })
+  })
+})
+
+describe('brew-only and locked supplies (stand-in supply)', () => {
+  const standIn: SupplyDef = {
+    id: 'stand-in',
+    name: 'Stand-in',
+    price: null,
+    effect: 'Test only.',
+    ruleUsed: false,
+    brew: { materialId: 'hide', quantity: 1, gold: 1 },
+    requires: { discoveryId: 'node:drowned-causeway' },
+  }
+  const table = supplyTable as { [id: string]: SupplyDef }
+
+  function withStandIn(run: () => void): void {
+    table[standIn.id] = standIn
+    try {
+      run()
+    } finally {
+      delete table[standIn.id]
+    }
+  }
+
+  it('cannot be bought', () => {
+    withStandIn(() => {
+      const save = updatePurse(heroSave(), { gold: 100 })
+      expect(buySupply(save, 'stand-in')).toEqual({ ok: false, reason: 'Greyhaven does not sell that. Brew it at the Potion Shop.' })
+    })
+  })
+
+  it('cannot be brewed while locked, and can once the requirement is met', () => {
+    withStandIn(() => {
+      const save = updatePurse(heroSave(), { gold: 100, materials: { hide: 3 } })
+      expect(supplyLock(save, 'stand-in')).toBe('Discover Drowned Causeway first.')
+      expect(brewSupply(save, 'stand-in')).toEqual({ ok: false, reason: 'The Stand-in is locked. Discover Drowned Causeway first.' })
+      const found = { ...save, account: { ...save.account, discoveries: [...save.account.discoveries, 'node:drowned-causeway'] } }
+      expect(supplyLock(found, 'stand-in')).toBeNull()
+      expect(purseOf(ok(brewSupply(found, 'stand-in'))).supplies['stand-in']).toBe(1)
+    })
+  })
+
+  it('leaves supplies with no requirement open', () => {
+    expect(supplyLock(heroSave(), 'healing-draught')).toBeNull()
   })
 })

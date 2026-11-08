@@ -1,18 +1,21 @@
 import { SMOKE_BOMB_ID } from '../sim/expedition.ts'
+import type { ModifierRequirement } from '../sim/economy.ts'
 import type { PriorityRow } from '../sim/types.ts'
 
 /** One supply Greyhaven sells. A rule supply is also a skill with `supply: true`. */
 export type SupplyDef = {
   id: string
   name: string
-  /** Gold for one, paid from the hero's purse. */
-  price: number
+  /** Gold for one, paid from the hero's purse. Null when Greyhaven does not sell it (brew only). */
+  price: number | null
   /** Short text for the shop and the packing screen. */
   effect: string
   /** True when a priority rule uses it. False when the expedition uses it by itself. */
   ruleUsed: boolean
   /** Brewing one at the Potion Shop from the hero's own materials (decided 2026-11-04). */
   brew: { materialId: string; quantity: number; gold: number }
+  /** What the account must have done before this can be brewed. Absent means open. */
+  requires?: ModifierRequirement
 }
 
 /** The first-playable supplies (GAME_DESIGN §9 Inventory, decided 2026-11-03), in shop order. */

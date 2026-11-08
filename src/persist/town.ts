@@ -4,6 +4,7 @@ import { supplyTable } from '../content/supplies.ts'
 import { EQUIPMENT_SLOT_IDS, classBlock, type Equipment, type ItemInstance } from '../sim/economy.ts'
 
 import { selectedHero } from './character.ts'
+import { supplyLock } from './crafting.ts'
 import { previewEquip, wearerOf, type EquipPreview } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import { purseOf, updatePurse, type SaveData, type SavedHero } from './save.ts'
@@ -100,6 +101,7 @@ export function buySupply(save: SaveData, supplyId: string, quantity = 1): Roste
   if (shut !== null) return { ok: false, reason: shut }
   const supply = supplyTable[supplyId]
   if (supply === undefined) return { ok: false, reason: 'Greyhaven does not sell that.' }
+  if (supply.price === null) return { ok: false, reason: 'Greyhaven does not sell that. Brew it at the Potion Shop.' }
   if (!Number.isInteger(quantity) || quantity < 1) return { ok: false, reason: 'Buy at least 1.' }
   if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero first.' }
   const purse = purseOf(save)
@@ -115,6 +117,8 @@ export function brewSupply(save: SaveData, supplyId: string, quantity = 1): Rost
   if (shut !== null) return { ok: false, reason: shut }
   const supply = supplyTable[supplyId]
   if (supply === undefined) return { ok: false, reason: 'The Potion Shop cannot brew that.' }
+  const locked = supplyLock(save, supplyId)
+  if (locked !== null) return { ok: false, reason: `The ${supply.name} is locked. ${locked}` }
   if (!Number.isInteger(quantity) || quantity < 1) return { ok: false, reason: 'Brew at least 1.' }
   if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero first.' }
   const purse = purseOf(save)
