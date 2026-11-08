@@ -1,5 +1,23 @@
 
 
+Part 3 (harness, done 2026-11-09): `UNLOCKED_ROWS` in `src/harness/builds.ts` now maps a skill id to `{ row, place: 'first' | 'last' }`; the Assassin Smoke Step entry is `{ row: { skillId: 'smoke-step' }, place: 'last' }`, and `builtSetup` builds `priorityRows` as first rows, reference rows, last rows (`wardenSetup` still puts supply rows first through `startingRules`). Only the Assassin has an unlocked row, so the other four classes are unchanged (confirmed: built, causeway, hollows and warden matrices differ only on Assassin lines). Results with parts 2 and 3 together (rules mode, wins % with HP lost % / elite left %; seed means over seeds 1-3 x 100 runs, seeds in brackets):
+
+| Assassin cell | Before | After |
+| --- | --- | --- |
+| Warden prepared (band 30-70) | 18 (98 / 16; 18, 16, 20) | 42 (94 / 6; 42, 40, 45) |
+| Colossus prepared (band 40-85) | 33 (94 / 10; 31, 31, 37) | 53 (88 / 6; 52, 55, 51) |
+| Reaver prepared (band 40-85) | 100 (43 / 0; 100, 100, 99) | 100 (41 / 0; 100, 100, 99) |
+| Warden / Colossus / Reaver over-levelled | 100 / 100 / 100 | 100 / 100 / 100 |
+| Warden causeway-geared | 100 | 100 |
+| Colossus arrived | 0 | 0 |
+| Prepared-crafted Warden / Colossus / Reaver | 98 / 97 / 99 (seed 1) | 100 / 98 / 100 (seed 1; seeds 2-3: 99, 100 / 98, 98 / 99, 99) |
+
+Bands met: Warden prepared (42, seeds 40-45, within 5) and Colossus prepared (53, seeds 51-55, within 4). NOT met: Reaver prepared 100 (band 40-85; unchanged, needs class power or a new mechanic, left for the time-pressure step). Crafted supplies still lift the Assassin by 58 (Warden) and 45 (Colossus) points, beyond the 30-point ceiling (part 7, untouched). `--matrix warden` (seed 1, 100 runs) Assassin: arrived 0 (Warden left 68 / 63), prepared 18 / 42, over 100 / 100 (median 53 s / 50 s), causeway 100 / 100, prepared-crafted 98 / 100, causeway-crafted 100 / 100, prepared-tonic 1 / 1.
+
+Guards (seed 1, 100 runs, Assassin; before / after). Built matrix wins % (enemy HP left %): 0 nodes Deserter 100 / 100, Rootmaw 59 / 59, Echo Knight 5 / 5, Warden 0 / 0; 6 nodes Rootmaw 98 (0) / 95 (0), Echo Knight 19 (16) / 25 (11), Warden 0 / 0; 9 nodes Rootmaw 100 / 100, Echo Knight 42 (9) / 65 (4), Warden 0 / 0. The built table reports wins and enemy HP left, not HP lost; no Rootmaw or Echo Knight cell moved against the Assassin by more than 3 points of wins. Causeway regular fights are 100% in every tier; Hollows regular fights 100%. Mixed-fight HP lost (arrived / prepared / over): causeway-mixed 41 / 29 / 24 to 40 / 28 / 15, hollows-mixed 24 / 19 / 14 to 21 / 21 / 14. Causeway-mixed over-levelled at 15 sits at the bottom edge of the 15-40 band; hollows-mixed over 14 was already just below it. Reference-matrix and golden duel-basic snapshots are unchanged apart from the part 2 rows.
+
+
+
 Part 2 (content, done 2026-11-09): the Assassin `mark-for-death` reference row now has `targetPriority: 'lowestArmor'` (`referenceLoadouts.assassin` in `src/content/scenarios.ts`; `src/content/scenarios.test.ts` updated). Reference matrix (seed 1, 100 runs) before / after: only three Assassin multi-enemy rows moved, every other row (all classes, single-target rows, road-mixed, warden) is byte-identical. Assassin bastion-mixed median ms 22080 / 22440, attrition 38.9 / 39.1, wins 100 / 100; grove-mixed 19957 / 20396, attrition 40.5 / 39.3, wins 100 / 100; echo-knight median 60968 / 58110, attrition 92.2 / 96.1, wins 5 / 5 (the Mark does not change the Echo Knight win rate; with lowest-Armor Mark targeting it can land on the summoned Oathbound Echo, which is the same enemy the damage rows hit). The golden duel-basic snapshot is unchanged. 941 tests pass.
 
 #### Assassin rules fix (Step 13.5, 2026-11-09, user accepted all recommendations)

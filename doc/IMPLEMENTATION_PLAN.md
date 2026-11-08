@@ -1105,6 +1105,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 
   - 2026-11-09: Assassin rules fix, part 1 (docs): the Mark for Death reference row gets `targetPriority: 'lowestArmor'` (content) and the harness Smoke Step row becomes a last-placed filler; results follow in later parts.
   - 2026-11-09: Assassin rules fix, part 2 (content): Mark for Death reference row targets lowest Armor; only Assassin bastion-mixed, grove-mixed and echo-knight reference rows moved; wins unchanged.
+  - 2026-11-09: Assassin rules fix, part 3 (harness): Smoke Step becomes a last-placed filler row (`UNLOCKED_ROWS` with `place`). Assassin Warden prepared 18 to 42 and Colossus prepared 33 to 53 (seeds 1-3 x 100; both in band); Reaver prepared still 100; other classes unchanged. Parts 6 (telegraph check), 7 (crafted supplies trim) and 8 (full re-measure) remain.
 
 ## 8. Risks, and what would reveal them early
 

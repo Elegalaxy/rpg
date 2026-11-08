@@ -1,19 +1,18 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code (implementer, 2026-11-08)
-- **Current Goal:** Step 13.5 class balance pass, corrected "targeting fix" (GAME_DESIGN §7 "Targeting fix"). Done: parts 1-4 of the fix. Pending: Step 13.5 parts 6 (telegraph check), 7 (crafted supplies trim), 8 (full re-measure and close).
-- **Recent Changes & Files Touched (commits 95ae8cc, 818d9e2, e03afa2 + docs commit):**
-  - Diagnosis corrected: Warrior/Cleric lost the Warden because their reference rules never targeted the Echoes (Ward Echo kept healing the Warden). The old `lowestHpPercent` Echo-first check was invalid. Older Step 13.5 parts 2/3/5A results are marked superseded in the doc (kept).
-  - Part 1: `referenceLoadouts` in `src/content/scenarios.ts`: Warrior driving/sundering rows `lowestArmor`, Cleric smite/judgment rows `lowestResistance` (existing saves keep their rows). `src/harness/elites.ts` diagnostic row is now "untargeted". Tests updated (scenarios.test, elites.test, report.test uses `ref-assassin-warden`).
-  - Part 2: Warden (`src/content/enemies.ts`) `hpMultiplier` 7 (3,360 HP), `pressureIntervalMs` 3000, `pressureMaxStacks` 10; enemies.test and content.test updated.
-  - Part 3/5: Second Wind `maxHpFraction` 0.10 (was 0.15, user decision; `src/content/skills.ts`, content.test). Node text unchanged.
-  - Results (seeds 1-3 x 100): Warden prepared Warrior 79, Assassin 18, Ranger 54, Mage 48, Cleric 45; over/causeway 100; arrived 0 for all. 941 tests pass; snapshots and duel-basic golden unchanged.
+- **Last Updated By:** Claude Code (2026-11-09)
+- **Current Goal:** Step 13.5 class balance pass, Assassin rules fix done (commits 29e610c docs, 74d52c0 content, part 3 harness). Remaining Step 13.5: part 6 telegraph check, part 7 crafted supplies trim, part 8 full re-measure and close; then a separate Colossus/Reaver time-pressure ramp step.
+- **Recent Changes & Files Touched (Assassin rules fix):**
+  - `src/content/scenarios.ts` (+ `scenarios.test.ts`): Assassin reference `mark-for-death` row has `targetPriority: 'lowestArmor'` (Mark was landing on the Warden while damage hit the Echo). New heroes only; existing saves keep the untargeted row.
+  - `src/harness/builds.ts`: `UNLOCKED_ROWS` values are `{ row, place: 'first' | 'last' }`; Assassin Smoke Step is a no-condition row placed last (active skills never roll to hit, so the old `telegraph present` row did nothing).
+  - Docs: GAME_DESIGN §7 "Assassin rules fix (Step 13.5)" (diagnosis, results, guards); IMPLEMENTATION_PLAN Step 13.5 Progress.
+  - Results (seeds 1-3 x 100): Assassin Warden prepared 18 to 42, Colossus prepared 33 to 53 (both in band), Reaver prepared 100 (above band, unchanged); over/causeway 100; other classes unchanged. Reference CSV: only Assassin bastion-mixed, grove-mixed, echo-knight rows moved (win % unchanged).
+  - Earlier in Step 13.5: targeting fix (Warrior/Cleric lowestArmor/lowestResistance rows), Warden HP x7, pressure every 3 s up to 10 stacks, Second Wind 10% (Warrior Warden prepared 52%).
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
   - One commit per finished part, pushed to `origin/main`, no force-push. No shared vault between heroes.
-  - Colossus/Reaver numbers were not changed in this fix; a time-pressure ramp is a separate later step.
-- **Open Items:**
-  - Warrior Warden prepared is 52 after Second Wind 10% (seeds 47/51/58; built guard Rootmaw 75, Echo Knight 64 holds). Assassin prepared 18 (band 30+), no class change made.
-  - Colossus prepared: Warrior/Cleric/Mage 100, Ranger 87, Assassin 33; Reaver prepared 100 for all (band 40-85). Crafted supplies lift the Warden prepared tier by 21-80 points (ceiling 30).
-  - Mixed fights HP lost mostly outside 15-40. Built matrix does not report HP lost (scratch script used).
-- **Exact Next Step:** Decide with the user: the Assassin (18% Warden prepared), then Step 13.5 part 7 (crafted supplies 40%/25%), part 6, and the Colossus/Reaver time-pressure ramp. User still to playtest: Causeway, offline, away route, Save panel, Wear button, Going in with.
+  - Crafted supplies lift prepared tiers by 45-58 points for the Assassin (and 45-52 for Ranger, Mage, Cleric), beyond the 30-point ceiling: part 7, not touched yet.
+  - The game UI ships no Smoke Step row; the harness filler row is harness-only.
+  - Matrix runs are slow with several in parallel (8 jobs took about 25 min); run them in the background and filter with `--classes` where supported (`elites` only).
+- **Still out of band:** Colossus and Reaver prepared are above the 40-85 band for Warrior, Cleric and Mage, and Reaver prepared for every class (needs time pressure or class power); mixed fights mostly outside 15-40 (GAME_DESIGN §7).
+- **Exact Next Step:** (1) Part 6 telegraph check. (2) Part 7 crafted supplies trim. (3) Part 8 full re-measure and close Step 13.5. (4) Then the Colossus/Reaver time-pressure ramp as its own step. (5) User still to playtest the Causeway and check offline, away route, Save panel, Wear button, Going in with.

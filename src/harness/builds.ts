@@ -34,23 +34,28 @@ export function builtNodeIds(classId: HeroClass, points: number): string[] {
 
 /**
  * A rule a built hero adds once a node unlocks its skill. The reference loadouts only use the four
- * starting skills, so a hero who has taken the node would also equip and use the new skill.
+ * starting skills, so a hero who has taken the node would also equip and use the new skill. `place`
+ * puts the row before the reference rows ('first') or after them ('last', a filler that fires only
+ * when no reference row is eligible). Smoke Step is a last filler row: active skills never roll to
+ * hit, so its evasion cannot dodge a telegraphed hit, and a telegraph condition did nothing useful.
  */
-const UNLOCKED_ROWS: { readonly [classId in HeroClass]?: { readonly [skillId: string]: PriorityRow } } = {
-  assassin: { 'smoke-step': { skillId: 'smoke-step', conditions: [{ kind: 'telegraph', operator: 'present' }] } },
+type UnlockedRow = { readonly row: PriorityRow; readonly place: 'first' | 'last' }
+const UNLOCKED_ROWS: { readonly [classId in HeroClass]?: { readonly [skillId: string]: UnlockedRow } } = {
+  assassin: { 'smoke-step': { row: { skillId: 'smoke-step' }, place: 'last' } },
 }
 
 /** A reference scenario with the class's build of `points` nodes allocated. Zero points is the floor build. */
 export function builtSetup(scenarioId: string, classId: HeroClass, points: number): CombatSetup {
   const setup = setupForScenario(scenarioId)
   const web = classWebs[classId]
-  const rows: PriorityRow[] = []
+  const first: PriorityRow[] = []
+  const last: PriorityRow[] = []
   const skills: string[] = []
   for (const id of builtNodeIds(classId, points)) {
     const skillId = web.nodes.find((node) => node.id === id)?.unlocksSkillId ?? null
-    const row = skillId === null ? undefined : UNLOCKED_ROWS[classId]?.[skillId]
-    if (skillId === null || row === undefined || (setup.hero.equippedSkillIds ?? []).includes(skillId)) continue
-    rows.push(row)
+    const unlocked = skillId === null ? undefined : UNLOCKED_ROWS[classId]?.[skillId]
+    if (skillId === null || unlocked === undefined || (setup.hero.equippedSkillIds ?? []).includes(skillId)) continue
+    ;(unlocked.place === 'first' ? first : last).push(unlocked.row)
     skills.push(skillId)
   }
   return {
@@ -59,7 +64,7 @@ export function builtSetup(scenarioId: string, classId: HeroClass, points: numbe
       ...setup.hero,
       allocatedNodeIds: builtNodeIds(classId, points),
       equippedSkillIds: [...(setup.hero.equippedSkillIds ?? []), ...skills],
-      priorityRows: [...rows, ...(setup.hero.priorityRows ?? [])],
+      priorityRows: [...first, ...(setup.hero.priorityRows ?? []), ...last],
     },
   }
 }
