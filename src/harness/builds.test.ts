@@ -6,10 +6,10 @@ import { HERO_CLASSES } from '../sim/constants.ts'
 import { BUILD_ORDER, BUILT_ENEMIES, builtNodeIds, builtSetup, formatBuiltTable, runBuiltMatrix } from './builds.ts'
 
 describe('reference builds', () => {
-  it('give every class nine real nodes in a legal order, with no keystone', () => {
+  it('give every class eleven real nodes in a legal order, with no keystone', () => {
     for (const classId of HERO_CLASSES) {
-      expect(BUILD_ORDER[classId]).toHaveLength(9)
-      const ids = builtNodeIds(classId, 9)
+      expect(BUILD_ORDER[classId]).toHaveLength(11)
+      const ids = builtNodeIds(classId, 11)
       const web = classWebs[classId]
       ids.forEach((id, position) => {
         const node = web.nodes.find((entry) => entry.id === id)

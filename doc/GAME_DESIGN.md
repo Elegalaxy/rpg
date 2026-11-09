@@ -1042,6 +1042,29 @@ Acceptance bands (mean of seeds 1-3 x 100 runs, rules mode):
 - Guards: the reference CSV and the earlier matrices stay byte-identical apart from new rows.
 Tuning knobs: the Tyrant ranges above; only if needed the Golem and Imp Burn coefficients (0.10-0.15). If the bands cannot be reached, stop and report; do not loosen them.
 
+Measured 2026-11-09 (Step 13.6 part 3, `npm run sim -- --matrix cinder` and `--matrix elites --elites tyrant`, seeds 1-3 x 100 runs, mean over the three seeds; nothing tuned). Tiers as decided above, with these harness notes: Tempered and Kindled were applied by the harness itself until part 6 defined them (same numbers); Emberward had no stat yet, so it counted as nothing and the Burn resistance is not in these numbers; the default supply rules have no Burn row yet (part 7), so the Warming Tonic fires only on its existing rule. The Prepared tier replaces the Arrived tier's Bloodbound and Stalwart with Tempered and Emberward, so it carries less life steal and max HP than Arrived. Tyrant wins % (rules / blind):
+
+| Class | Arrived | Prepared | Over | Prepared no Tonic |
+| --- | --- | --- | --- | --- |
+| Warrior | 7 / 11 | 1 / 3 | 15 / 34 | 1 / 8 |
+| Assassin | 55 / 55 | 23 / 19 | 62 / 69 | 38 / 41 |
+| Ranger | 53 / 4 | 7 / 0 | 47 / 28 | 21 / 3 |
+| Mage | 78 / 72 | 19 / 20 | 59 / 64 | 44 / 47 |
+| Cleric | 70 / 94 | 63 / 62 | 100 / 98 | 79 / 85 |
+
+Regular fights, prepared tier (wins % / mean HP lost %):
+
+| Class | imp | golem | acolyte | imp-swarm | cinder-mixed | cinder-deep |
+| --- | --- | --- | --- | --- | --- | --- |
+| Warrior | 100 / 6 | 100 / 13 | 100 / 8 | 100 / 35 | 100 / 25 | 100 / 46 |
+| Assassin | 100 / 5 | 100 / 3 | 100 / 6 | 100 / 29 | 100 / 30 | 100 / 45 |
+| Ranger | 100 / 0 | 100 / 2 | 100 / 2 | 100 / 17 | 100 / 11 | 100 / 29 |
+| Mage | 100 / 5 | 100 / 4 | 100 / 7 | 100 / 21 | 100 / 11 | 100 / 29 |
+| Cleric | 100 / 7 | 100 / 23 | 100 / 11 | 100 / 35 | 100 / 39 | 100 / 41 |
+
+
+Reading against the bands: regular fights meet the 95% win band for every class and tier (all 100%). The mixed fights lose 15-40% of maximum HP only for some classes at prepared (Assassin 30 and 45, Warrior 25 and 46, Cleric 39 and 41; Ranger 11 and 29 and Mage 11 and 29 are low in cinder-mixed, and cinder-deep is above 40 for Warrior and Assassin). The Tyrant is far from the bands in the other direction for several classes: the Warrior is at 1-15% (prepared band 40-85, Warrior at least 30), the Cleric is at or above band at over (100) and prepared 63, and arrived is far above 20 for Assassin, Ranger, Mage and Cleric (55, 53, 78 and 70). The Prepared tier is weaker than Arrived against the Tyrant for every class but the Cleric, because it carries no Bloodbound or Stalwart. The no-Tonic variant wins more than Prepared at the Tyrant (Assassin 38 against 23, Mage 44 against 19, Cleric 79 against 63), because the Tonic takes the place of a Draught and the existing rule rarely uses it well; the Burn check (prepared minus no-Tonic of at least +10) is not met by any class, and needs the Burn row (part 7) and Emberward (part 6) first. Blind equals rules within seed noise except Ranger (arrived 53 against 4) and Warrior over (15 against 34). Part 9 tunes.
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.

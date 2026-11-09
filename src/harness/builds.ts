@@ -9,17 +9,17 @@ import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 
 /**
  * The order each class's reference build spends skill points, by node name. A first life reaches
- * level 20 with six points (one every third level), and three Skill Point Seeds make it nine. A build
+ * level 20 with six points (one every third level), and three Skill Point Seeds make it nine. The Cinder Scar tiers (Step 13.6) take up to eleven; the two extra nodes per class are appended, so every earlier prefix is unchanged. A build
  * with N points is the first N names, so every prefix is a legal build (each node follows its own
  * cluster's earlier nodes). No keystone is taken. The nodes follow the reference loadouts: they
  * improve the four skills that loadout already uses, plus the class resource and survival.
  */
 export const BUILD_ORDER: { readonly [classId in HeroClass]: readonly string[] } = {
-  warrior: ['Driving Blow', 'Rising Heat', 'Sundering Blow', 'Weapon Discipline', 'Shield Brace', 'Second Wind', 'Cleave', 'Defiance', 'Bloodletting'],
-  assassin: ['Shadow Cut', 'Smoke Step', 'Elusive Footwork', 'Venom Edge', 'Potent Toxins', 'Mark for Death', 'Exploit Weakness', 'Execute', 'Relentless'],
-  ranger: ['Aimed Shot', 'Steady Hands', 'Piercing Arrow', 'Patient Shot', 'Snare Trap', 'Reinforced Snare', "Hunter's Mark", 'Trail Sense', 'Flame Arrow'],
-  mage: ['Fireball', 'Frost Lance', 'Arcane Bolt', 'Mana Ward', 'Arcane Recovery', 'Efficient Channeling', 'Chain Lightning', 'Elemental Affinity', 'Spell Memory'],
-  cleric: ['Smite', 'Vowkeeper', 'Mend', 'Penance', 'Ward', 'Steadfast Spirit', 'Judgment', 'Righteous Force', 'Consecration'],
+  warrior: ['Driving Blow', 'Rising Heat', 'Sundering Blow', 'Weapon Discipline', 'Shield Brace', 'Second Wind', 'Cleave', 'Defiance', 'Bloodletting', 'Shield Impact', 'Reckless Strike'],
+  assassin: ['Shadow Cut', 'Smoke Step', 'Elusive Footwork', 'Venom Edge', 'Potent Toxins', 'Mark for Death', 'Exploit Weakness', 'Execute', 'Relentless', 'Ambush', 'Fan of Knives'],
+  ranger: ['Aimed Shot', 'Steady Hands', 'Piercing Arrow', 'Patient Shot', 'Snare Trap', 'Reinforced Snare', "Hunter's Mark", 'Trail Sense', 'Flame Arrow', 'Efficient Quiver', 'Volley'],
+  mage: ['Fireball', 'Frost Lance', 'Arcane Bolt', 'Mana Ward', 'Arcane Recovery', 'Efficient Channeling', 'Chain Lightning', 'Elemental Affinity', 'Spell Memory', 'Quick Study', 'Defensive Preparation'],
+  cleric: ['Smite', 'Vowkeeper', 'Mend', 'Penance', 'Ward', 'Steadfast Spirit', 'Judgment', 'Righteous Force', 'Consecration', 'Safeguard', 'Reciprocal Purpose'],
 }
 
 /** The node ids of the first `points` nodes of a class's reference build. */

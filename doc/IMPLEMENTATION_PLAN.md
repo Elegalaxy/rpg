@@ -1120,6 +1120,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-09: Part 1, docs written (GAME_DESIGN §6 "Fourth zone: Cinder Scar", changelog, this step).
   - 2026-11-09: Part 2, enemies Cinder Imp, Slag Golem, Pyre Acolyte, Emberwrought Tyrant (with Ember Spit, Magma Slam, Kindle, Fire Bolt, Searing Brand, Pyre Wave, Summon Cinder Imps) and encounters `imp-swarm`, `golem`, `cinder-mixed`, `cinder-deep`, `emberwrought-tyrant`; content only, no sim change. New `src/content/cinder.test.ts`, including the first test of an enemy skill applying Burn to a hero and the burn ticking.
+  - 2026-11-09: Part 3, harness: `--matrix cinder` (`src/harness/cinder.ts`, test, CLI registration), Tyrant cells (arrived, prepared, over, prepared-crafted) in `--matrix elites`, the `prepared-notonic` variant, and `BUILD_ORDER` extended to eleven nodes per class (existing prefixes unchanged). Measured seeds 1-3 x 100 (GAME_DESIGN §6): regular fights 100% wins; Tyrant far from the bands (Warrior 1-15, arrived 55/53/78/70 for Assassin/Ranger/Mage/Cleric); the Burn check is not met before parts 6-7. No tuning in this part.
 
 ## 8. Risks, and what would reveal them early
 
