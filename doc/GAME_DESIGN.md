@@ -1359,22 +1359,52 @@ Later parts: 5 elite retune (Colossus HP 3,600 to 4,200 and Breaker Wave 230% to
 
 Baselines and results are recorded below as each part is measured.
 
-Baseline measured 2026-11-08 (Step 13.5 part 1, `npm run sim -- --matrix elites`, seeds 1-3 x 100 runs, mean of the three seeds; nothing tuned). Cells are wins % (mean HP lost % / elite HP left %). Tiers come from `--matrix warden`, `causeway` and `hollows` (Colossus level 22, Reaver level 26). "rules" is the class reference rules; "blind" removes the telegraph and interrupt rows.
+Final measurement (Step 13.5 part 8, 2026-11-09; replaces the part 1 baseline, which is superseded by every part below). Code and content as of commit d9c4ccf plus the part 8a record; nothing tuned in part 8. Seeds 1-3 x 100 runs, rules mode, mean of the three seeds. Cells are wins % (mean HP lost % / elite HP left %). Tiers: Warden, Colossus and Reaver prepared / over come from `--matrix elites`; Warden arrived from `--matrix warden`; Reaver arrived from `--matrix hollows` (Colossus arrived from `--matrix elites`).
 
-| Class | Mode | warden prepared | warden over | warden causeway | colossus arrived | colossus prepared | colossus over | reaver prepared | reaver over |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Warrior | rules | 0 (100 / 51) | 0 (100 / 25) | 0 (100 / 32) | 0 (100 / 22) | 37 (92 / 1) | 100 (52 / 0) | 100 (47 / 0) | 100 (46 / 0) |
-| Warrior | blind | 0 (100 / 49) | 0 (100 / 23) | 0 (100 / 29) | 0 (100 / 23) | 13 (98 / 3) | 100 (52 / 0) | 100 (43 / 0) | 100 (42 / 0) |
-| Assassin | rules | 3 (100 / 30) | 100 (54 / 0) | 100 (47 / 0) | 0 (100 / 28) | 94 (69 / 0) | 100 (45 / 0) | 100 (41 / 0) | 100 (35 / 0) |
-| Assassin | blind | 1 (100 / 37) | 100 (61 / 0) | 100 (50 / 0) | 2 (100 / 26) | 87 (69 / 1) | 100 (46 / 0) | 100 (42 / 0) | 100 (36 / 0) |
-| Ranger | rules | 35 (95 / 12) | 100 (48 / 0) | 100 (45 / 0) | 3 (100 / 21) | 98 (54 / 0) | 100 (47 / 0) | 100 (20 / 0) | 100 (15 / 0) |
-| Ranger | blind | 0 (100 / 44) | 93 (76 / 0) | 92 (72 / 1) | 0 (100 / 30) | 61 (88 / 4) | 100 (49 / 0) | 100 (44 / 0) | 100 (40 / 0) |
-| Mage | rules | 99 (66 / 0) | 100 (49 / 0) | 100 (42 / 0) | 99 (55 / 0) | 100 (48 / 0) | 100 (39 / 0) | 100 (32 / 0) | 100 (22 / 0) |
-| Mage | blind | 52 (92 / 14) | 99 (60 / 0) | 100 (56 / 0) | 68 (84 / 6) | 100 (57 / 0) | 100 (50 / 0) | 100 (47 / 0) | 100 (48 / 0) |
-| Cleric | rules | 0 (100 / 71) | 0 (100 / 59) | 0 (100 / 62) | 0 (100 / 18) | 83 (56 / 1) | 100 (43 / 0) | 100 (39 / 0) | 100 (39 / 0) |
-| Cleric | blind | 0 (100 / 71) | 0 (100 / 60) | 0 (100 / 60) | 0 (100 / 20) | 59 (71 / 2) | 100 (43 / 0) | 100 (40 / 0) | 100 (40 / 0) |
+| Class | Warden arrived | Warden prepared (30-70) | Warden over (85+) | Warden causeway (85+) | Colossus arrived | Colossus prepared (40-85) | Colossus over (85+) | Reaver arrived | Reaver prepared (40-85) | Reaver over (85+) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Warrior | 0 | 52 (94 / 2) | 100 (47 / 0) | 100 (47 / 0) | 0 (100 / 34) | 74 (88 / 2) | 100 (56 / 0) | 0 | 42 (91 / 5) | 100 (52 / 0) |
+| Assassin | 0 | 42 (94 / 6) | 100 (46 / 0) | 100 (44 / 0) | 0 (100 / 33) | 57 (86 / 5) | 100 (46 / 0) | 15 | 76 (72 / 5) | 94 (50 / 2) |
+| Ranger | 0 | 54 (88 / 4) | 100 (47 / 0) | 100 (46 / 0) | 0 (100 / 31) | 65 (83 / 5) | 100 (48 / 0) | 84 | 99 (47 / 0) | 100 (42 / 0) |
+| Mage | 0 | 48 (93 / 2) | 100 (51 / 0) | 100 (57 / 0) | 0 (100 / 35) | 67 (87 / 5) | 100 (54 / 0) | 1 | 45 (92 / 6) | 96 (65 / 0) |
+| Cleric | 0 | 45 (89 / 2) | 100 (43 / 0) | 100 (41 / 0) | 0 (100 / 30) | 59 (79 / 2) | 100 (43 / 0) | 0 | 57 (74 / 3) | 100 (41 / 0) |
 
-Crafted supplies (3 Greater Draughts and a Riftglass Ward, rules mode), wins % plain prepared tier then crafted prepared tier: Warden Warrior 0 / 0, Assassin 3 / 86, Ranger 35 / 99, Mage 99 / 100, Cleric 0 / 0; Colossus Warrior 37 / 100, Assassin 94 / 100, Ranger 98 / 100, Mage 100 / 100, Cleric 83 / 100; Reaver 100 / 100 for every class.
+Seeds (wins % per seed, prepared tier): Warrior Warden 47,51,58, Colossus 80,74,69, Reaver 48,38,40; Assassin Warden 42,40,45, Colossus 50,63,59, Reaver 76,79,72; Ranger Warden 59,54,49, Colossus 58,69,67, Reaver 99,100,98; Mage Warden 45,45,53, Colossus 75,68,59, Reaver 49,40,46; Cleric Warden 47,42,45, Colossus 62,56,59, Reaver 62,53,57.
+
+Crafted supplies (3 Greater Draughts and a Riftglass Ward), wins % plain prepared / crafted prepared / difference (band: at most +30):
+
+| Class | Warden | Colossus | Reaver |
+| --- | --- | --- | --- |
+| Warrior | 52 / 77 / +25 | 74 / 97 / +23 | 42 / 68 / +26 |
+| Assassin | 42 / 79 / +37 | 57 / 76 / +19 | 76 / 85 / +9 |
+| Ranger | 54 / 81 / +27 | 65 / 85 / +21 | 99 / 99 / +0 |
+| Mage | 48 / 69 / +21 | 67 / 85 / +17 | 45 / 73 / +28 |
+| Cleric | 45 / 64 / +19 | 59 / 73 / +14 | 57 / 70 / +12 |
+
+Telegraph check, rules minus blind at the prepared tier (win points / HP-lost points saved; band: at least +10 wins and 8 HP points for every class with an answer skill):
+
+| Class | Warden | Colossus | Reaver |
+| --- | --- | --- | --- |
+| Warrior | +33 / +4 | +37 / +7 | +41 / +9 |
+| Assassin | +26 / +4 | -7 / -2 | +25 / +14 |
+| Ranger | +53 / +12 | +52 / +15 | +85 / +50 |
+| Mage | +47 / +7 | +18 / +4 | +19 / +5 |
+| Cleric | -3 / -1 | -30 / -16 | -33 / -17 |
+
+Mixed fights (`--matrix telegraph`, rules, HP lost %, band 15-40): Warrior road 37 / grove 32 / bastion 33; Assassin road 46 / grove 39 / bastion 38; Ranger road 34 / grove 21 / bastion 14; Mage road 34 / grove 44 / bastion 48; Cleric road 41 / grove 41 / bastion 37.
+
+Regular fights (`--matrix telegraph`, `causeway`, `hollows`, every tier and class, rules and blind, seeds 1-3): every non-elite fight is won 100% (band: at least 95%). Reference CSV (`--matrix reference --seed 1 --runs 100`): byte-identical to the committed `reports/2026-10-23-reference.csv`. Built matrix (seeds 1-3, wins %): Warrior 6 nodes Rootmaw 96 / Echo Knight 100, 0 nodes 86 / 100; Assassin 6 nodes 96 / 22; Ranger 94 / 38; Mage 100 / 100 (0 nodes 46 / 0); Cleric 100 / 100 (0 nodes 100 / 100); identical to the part 8a build matrix at seed 1. Offline and expedition (`--expedition`, seeds 1-5): Splintered Road 5 of 5 runs 4 victories, 0 defeats; Sunken Causeway 0 defeats in 5 runs (5-6 victories and one retreat each); Rift Hollows 0 defeats in 5 runs (3-6 victories and one retreat each).
+
+Band misses and open items (all accepted unless marked open; no number was changed in part 8):
+
+- Seed spread above 8 points in mid-band cells (up to 16: Mage Colossus prepared 75, 68, 59; also Assassin Colossus 13, Warrior Warden 11, Warrior Colossus 11, Warrior Reaver 10, Ranger Warden 10, Ranger Colossus 11, Mage Reaver 9, Cleric Reaver 9; blind cells up to 16). Accepted; the 100-run seeds are noisy at 40-70% wins.
+- Assassin Warden crafted minus plain +37 (Warrior +25, Ranger +27, Mage +21, Cleric +19 are inside +30; Mage Reaver +28 inside). Assassin Warden prepared 42 sits in its band, but its crafted tier is 79. Accepted.
+- Mixed fights HP lost mostly outside 15-40: Assassin road-mixed 46, Mage grove and bastion 44 and 48, Cleric road and grove 41, Ranger bastion 14. Accepted (the band predates the stat changes; the fights are won 100%).
+- Telegraph check not met: Cleric (all three elites; the blind Cleric wins as often or more, Warden -3, Colossus -30, Reaver -33), Assassin at the Colossus (-7). Cleric rules were left unchanged by decision (part 8a). Accepted.
+- Ranger Reaver prepared 99 (band 40-85), approved; blind Ranger 14.
+- Cleric Colossus enrage start is a cliff (130 s: 20%, 140 s: 68%, 150 s: 90%); retune with care. Accepted.
+- Warrior Reaver over 100, Assassin 94, Mage 96, all at least 85. Met.
+- OPEN (new in part 8, not retuned): Ranger arrived at the Reaver wins 84% (band for an arrived hero: at most 20%). The other four classes are at 0-15%. Cause not investigated (measure-only part). Needs a decision: accept (the Ranger's ranged kit trivialises an under-geared Reaver, as it does at the prepared tier) or retune.
 
 Echo-first diagnostic (Warrior and Cleric against the Warden, prepared, `targetPriority` `lowestHpPercent` on the whole hero): Warrior 0% wins, Warden 51% left (reference rules: 0%, 51%); Cleric 0% wins, Warden 71% left (reference rules: 0%, 71%). The targeting change moves nothing, so Echo-first targeting does not explain the gap and the reference rules are NOT changed. The gap is class damage and sustain, as diagnosed.
 
