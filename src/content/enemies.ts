@@ -6,7 +6,7 @@ import {
   REGENERATION_TRAIT,
   STANCE_TRAIT,
 } from '../sim/enemyAi.ts'
-import type { EnemyDef, EnemySkillDef } from '../sim/types.ts'
+import type { EnemyDef, EnemySkillDef, TimePressureDef } from '../sim/types.ts'
 
 /** Level-20 standard enemy with no overrides. Basic attacks are physical. */
 export const standardDummy: EnemyDef = {
@@ -773,6 +773,14 @@ export const drownedBulwark: EnemyDef = {
   drop: { materialId: 'riftglass', baseQuantity: 4 },
 }
 
+/**
+ * The late elites' enrage (Step 13.5 part 8a): the Fractured Warden's per-stack numbers (every 3 s up to 10 stacks,
+ * x1.1 Power, x0.95 Armor and Resistance, x1.05 action speed), starting `startMs` after the fight begins.
+ */
+function eliteEnrage(startMs: number): TimePressureDef {
+  return { startMs, intervalMs: 3000, maxStacks: 10, power: 1.1, defense: 0.95, actionSpeed: 1.05 }
+}
+
 const breakerWave: EnemySkillDef = {
   id: 'breaker-wave',
   name: 'Breaker Wave',
@@ -783,7 +791,7 @@ const breakerWave: EnemySkillDef = {
   tag: 'breaker-wave',
   tags: ['physical', 'attack'],
   canCrit: true,
-  interruptMaxHpFraction: 0.08,
+  interruptMaxHpFraction: 0.05,
   effects: [{ kind: 'damage', school: 'physical', coefficient: 3 }],
 }
 
@@ -817,7 +825,8 @@ export const tideboundColossus: EnemyDef = {
   elite: true,
   school: 'physical',
   filler: { school: 'physical' },
-  overrides: { maxHp: 4000, power: 35, consistency: 25 },
+  overrides: { maxHp: 4000, power: 35, consistency: 25, actionTime: 2.2 },
+  timePressure: eliteEnrage(140_000),
   traitIds: [STANCE_TRAIT, HP_SUMMON_TRAIT],
   skills: [breakerWave, summonMireLeeches],
   drop: { materialId: 'riftglass', baseQuantity: 10 },

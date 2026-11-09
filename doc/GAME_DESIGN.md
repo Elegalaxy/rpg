@@ -1564,6 +1564,56 @@ The Ranger at the Reaver is accepted at about 100% (the blind Ranger there is ab
 
 Sweeps (seed 1 x 60) and results are recorded below as each part is measured.
 
+Colossus sweep (2026-11-09, seed 1 x 60, rules mode, enrage from 140 s, `timePressure` patched in memory). Cells are prepared wins % for Warrior / Assassin / Ranger / Mage / Cleric. Over-levelled was 100 for every class in every row (band: at least 85).
+
+| Action time | Interrupt | Prepared W / A / R / M / C |
+| --- | --- | --- |
+| 2.1 s | 4% | 65 / 57 / 88 / 55 / 47 |
+| 2.1 s | 5% | 63 / 37 / 78 / 45 / 48 |
+| 2.2 s | 4% | 82 / 57 / 65 / 85 / 67 |
+| 2.2 s | 5% | 80 / 52 / 53 / 83 / 68 |
+| 2.3 s | 4% | 92 / 82 / 82 / 80 / 68 |
+| 2.3 s | 5% | 92 / 58 / 70 / 70 / 68 |
+
+Enrage start at 2.2 s and 5% (prepared W / A / R / M / C): 130 s 80 / 52 / 53 / 83 / 20; 140 s 80 / 52 / 53 / 83 / 68; 150 s 80 / 52 / 53 / 83 / 90. Only the Cleric (fights of about 160 s) moves with the start, and steeply: 130 s is a wall, 150 s is above the band.
+
+Chosen for the Colossus: action time 2.2 s, Breaker Wave interrupt 5% of max HP, enrage from 140 s. Every class is inside 40-85 prepared with the most margin (2.2 s and 4% leaves the Mage on the 85 edge; 2.1 s lets the Ranger reach 88). Applied 2026-11-09 (`src/content/enemies.ts`: `overrides.actionTime` 2.2, `interruptMaxHpFraction` 0.05, `timePressure` via `eliteEnrage(140_000)`).
+
+Colossus acceptance (`--matrix elites`, seeds 1-3 x 100, rules mode; mean of the seeds, individual seeds in brackets):
+
+| Class | Arrived | Prepared (band 40-85) | Over-levelled (at least 85) | Prepared crafted (gap) | Prepared blind |
+| --- | --- | --- | --- | --- | --- |
+| Warrior | 0 | 74 (80, 74, 69) | 100 | 97 (+23) | 37 |
+| Assassin | 0 | 57 (50, 63, 59) | 100 | 76 (+19) | 64 |
+| Ranger | 0 | 65 (58, 69, 67) | 100 | 85 (+20) | 12 |
+| Mage | 0 | 67 (75, 68, 59) | 100 | 85 (+18) | 49 |
+| Cleric | 0 | 59 (62, 56, 59) | 100 | 73 (+14) | 89 |
+
+Bands met for every class: prepared inside 40-85, over-levelled 100, arrived 0, crafted minus plain at most +30. Seeds differ by up to 16 points in mid-band cells (Warrior 11, Assassin 13, Ranger 11, Mage 16, Cleric 6): with 100 runs and a win rate near 60% the binomial spread of three seeds is about 8-10 points, so the "within 8 points" check is met only for the Cleric; the mean of three seeds stays in band for all five. The blind Cleric (89) beats the rules Cleric (59) under the enrage; see the telegraph record.
+
+Colossus guards (seed 1): `--matrix causeway` (60 runs) differs from before only in the Colossus column (every regular fight stays 100% and every mixed-fight HP-lost value is identical); `--matrix warden` (40 runs) and the reference CSV (100 runs) are byte-identical to before (apart from the runs/sec line); `--matrix elites` differs only in Colossus rows. Crafted minus plain stays at most +30 (see the table).
+
+Reaver sweep (2026-11-09, seed 1 x 60, rules mode, `timePressure` patched in memory; the Reaver action time is unchanged). Cells are prepared wins % for Warrior / Assassin / Ranger / Mage / Cleric. Over-levelled was at least 93 for every class in every row. Band: 40-85 prepared (Ranger accepted at about 100), over-levelled at least 85.
+
+| Power | Rift Surge cooldown | Enrage | Prepared W / A / R / M / C |
+| --- | --- | --- | --- |
+| 58 | 8 s | 90 s | 63 / 85 / 97 / 98 / 87 |
+| 58 | 9 s | 90 s | 88 / 97 / 100 / 98 / 78 |
+| 60 | 8 s | 90 s | 38 / 87 / 95 / 88 / 75 |
+| 60 | 9 s | 90 s | 70 / 95 / 100 / 88 / 70 |
+| 62 | 8 s | 90 s | 35 / 68 / 98 / 72 / 73 |
+| 62 | 9 s | 90 s | 52 / 88 / 100 / 70 / 63 |
+| 62 | 8 s | 85 / 95 / 100 s | 35 / 68 / 98 / 72 / 58, 80, 93 |
+| 62 | 9 s | 85 / 80 s | 52 / 88 / 100 / 70 / 45, 18 |
+| 63 | 9 s | 90 s | 55 / 87 / 100 / 68 / 67 |
+| 64 | 9 s | 90 s | 47 / 85 / 100 / 63 / 73 |
+| 65 | 9 s | 90 s | 47 / 72 / 100 / 50 / 63 |
+| 64 | 10 s | 90 s | 47 / 85 / 100 / 67 / 73 |
+| 66 | 10 s | 90 s | 30 / 78 / 100 / 52 / 48 |
+
+Reading: the Assassin and Warrior fights end before the enrage (about 37 s and 70 s), so only Power and the cooldown move them; the enrage start moves only the Cleric (fights of about 105 s), steeply (80 s: 18, 90 s: 63-73, 100 s: 93). Inside the planned range (Power 58-62, cooldown 8-9 s) no row puts the Assassin and the Warrior in band together (62 / 8 s: Warrior 35; 62 / 9 s: Assassin 88). Power 65 with a 9 s cooldown and the enrage at 90 s does (outside the planned Power range, reported): Warrior 47, Assassin 72, Ranger 100, Mage 50, Cleric 63.
+
+
 ### Automation
 
 Each loadout supports up to 12 ordered priority rows for its four equipped active skills.
