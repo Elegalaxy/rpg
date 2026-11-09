@@ -11,6 +11,7 @@ export const MATERIAL_SELL_PRICE: { readonly [materialId: string]: number } = {
   oathsteel: 4,
   riftglass: 5,
   duskiron: 8,
+  cinderite: 10,
 }
 
 /** Half up, so 2.5 pays 3. */
