@@ -731,7 +731,7 @@ Echo Knight:
   - Consistency: 50
   - Base action time: 2.2 seconds
 - Target successful-fight duration: 60-90 simulated seconds.
-- The same floor builds lost every rank-0 fight in that matrix: 0% wins, about 50 seconds to defeat, and no timeouts. That loss is accepted. The duration band remains the target for a successful fight, not a requirement that the floor build win. Enemy stacking pressure after the expected duration stays undesigned, and the harness still ends a fight at 10 simulated minutes.
+- The same floor builds lost every rank-0 fight in that matrix: 0% wins, about 50 seconds to defeat, and no timeouts. That loss is accepted. The duration band remains the target for a successful fight, not a requirement that the floor build win. Enemy stacking pressure after the expected duration stays undesigned (the two late elites, Colossus and Reaver, are the exception: they get a `timePressure` enrage, Step 13.5 part 8a, §7 "Elite pressure"), and the harness still ends a fight at 10 simulated minutes.
 - Warden Strike fills ordinary action gaps and deals 100% Physical Power.
 - Three telegraphed phases:
   1. Warden's Guard, from 100%-70% HP:
@@ -789,9 +789,9 @@ The Leech's regeneration is the `REGENERATION_TRAIT` with a per-enemy multiplier
 
 Elite Tidebound Colossus:
 
-- Level 22 Tank elite. Stats: 4,000 HP (Step 13.5 part 5B; was 3,600, about the Echo Knight x 1.12), 35 Power (31 in the proposal, raised in tuning, Step 13.1 part 8); Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25.
+- Level 22 Tank elite. Stats: 4,000 HP (Step 13.5 part 5B; was 3,600, about the Echo Knight x 1.12), 35 Power (31 in the proposal, raised in tuning, Step 13.1 part 8); Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25. Step 13.5 part 8a start values: action time 2.2 s (from the Tank line's 2.64 s) and a `timePressure` enrage from 140 s (§7 "Elite pressure"); final values are recorded there.
 - Tide cycle uses the existing stance trait (10-second switch, the same constants as the Echo Knight): Ebb is the Guard stance (+30% Armor and Resistance), Flood is the Assault stance (+25% Power, -40% Armor and Resistance). It starts in Ebb. The sim keeps the names guard and assault; the Tide names are display text for later.
-- Breaker Wave: 2.5 s telegraph, 300% Physical Power (Step 13.5 part 5B; was 230%), can critically hit, interruptible at 8% of max HP, 10 s cooldown.
+- Breaker Wave: 2.5 s telegraph, 300% Physical Power (Step 13.5 part 5B; was 230%), can critically hit, interruptible at 8% of max HP (4% in the Step 13.5 part 8a start values), 10 s cooldown.
 - At 35% HP (50% in the proposal, lowered in tuning, Step 13.1 part 8) it uses a 2-second telegraph to summon 2 Mire Leeches (level 18), through the HP summon trait. Summons award no XP.
 - Drops 10 riftglass. Gold is the elite rate, level x 3.
 - Its first defeat by any hero unlocks the Siphoning modifier recipe (account-wide).
@@ -937,8 +937,8 @@ Regular enemies (a Standard enemy at level 24 has 560 HP and 32 Power):
 
 Elite Hollowmaw Reaver:
 
-- Level 26 Burst elite. 4,400 HP, 44 Power (Step 13.5 part 5B; were 3,400 and 40), Consistency 25; the other stats come from the elite Burst line.
-- Rift Surge: 2.5 s telegraph, 400% Magical Power (Step 13.5 part 5B; was 300%), can critically hit, NOT interruptible, 12 s cooldown. Reaver Strike fills ordinary actions at 100% Physical Power.
+- Level 26 Burst elite. 4,400 HP, 44 Power (Step 13.5 part 5B; were 3,400 and 40), Consistency 25; the other stats come from the elite Burst line. Step 13.5 part 8a start values: Power 60-62 and a `timePressure` enrage from 90 s (§7 "Elite pressure"); final values are recorded there.
+- Rift Surge: 2.5 s telegraph, 400% Magical Power (Step 13.5 part 5B; was 300%), can critically hit, NOT interruptible, 12 s cooldown (8 s in the Step 13.5 part 8a start values). Reaver Strike fills ordinary actions at 100% Physical Power.
 - Uses the stance trait (10 seconds, guard and assault, as the Echo Knight and the Colossus). No summons.
 - Drops 10 duskiron. Gold is the elite rate. Its first defeat by any hero records `defeated:hollowmaw-reaver` and unlocks Bloodbound.
 
@@ -1542,6 +1542,27 @@ Applied 2026-11-09: Greater Draught 35%, Riftglass Ward 25% (`src/content/skills
 Causeway-geared crafted tier (`--matrix warden`, seeds 1-3, wins): every class 100 except Mage 99 in two seeds (plain causeway tier 100). Band met for Colossus (all classes), Warden Assassin (+30, at the limit), Mage (+24); Ranger +31 is at the limit within noise. NOT met: Warden Warrior (+47) and Cleric (+38), caused by the Greater Draught rule threshold (30 against the Healing Draught 40), not by the heal or Ward value; see the finding above. Plain prepared tiers did not change.
 
 Brew cost option (economy only, no effect on win rates): Greater Draught and Riftglass Ward cost 2 riftglass each; 3 riftglass would make a full crafted pack (3 Greater Draughts and a Ward) cost 12 riftglass instead of 8. Not applied.
+
+### Elite pressure (Step 13.5 part 8a)
+
+Decided 2026-11-09 (user accepted the planner's four recommendations). After parts 5B and 7 the Assassin sits at 33-53% at the Colossus and the Ranger, Mage and Cleric at 87-100%; at the Reaver every class wins 100%.
+
+Diagnosis. A plain ramp (higher Power, shorter cooldown, more HP) cannot reach the Assassin and the Ranger without walling the Cleric, Warrior and Mage: the Assassin and Ranger kill the elite fast with little damage taken, so any number large enough to hurt them in a 50-70 second fight kills the sustain classes in the same fight (Reaver Warrior 45% at Power 60 but 10% at Power 64). What separates the classes is fight length: Assassin and Ranger finish in 40-70 s, Warrior, Cleric and Mage in 90-160 s. A late enrage punishes only the slow fights, so it is the lever that lifts the fast classes' loss without moving the slow classes much.
+
+Rule: `timePressure` (new optional field on an enemy definition, `{ startMs, intervalMs, maxStacks, power, defense, actionSpeed }`). It reuses the pressure stacks of boss phases (§7 Fractured Warden): the first stack lands at `startMs` after the enemy spawns, then one every `intervalMs` up to `maxStacks`. Each stack multiplies Power by `power`, Armor and Resistance by `defense` and the action-speed bonus by `actionSpeed`, on top of stances. An enemy with boss phases that define pressure cannot also have `timePressure`. Stances previously dropped pressure stacks on every switch (and a stack dropped the stance); the stance numbers now take the pressure scales, so Power during Assault is base x 1.25 x power^stacks. A scale of 1 multiplies exactly, so the Echo Knight, Warden and the other stance enemies are unchanged.
+
+Enrage numbers for both elites are the Warden's per-stack numbers: every 3 s, up to 10 stacks, x1.1 Power, x0.95 Armor and Resistance, x1.05 action speed. Only the start differs.
+
+Start numbers (planner scratch emulation, seed 1 x 40-60, prepared tier):
+
+| Elite | Change | Prepared W / A / R / M / C (approx.) | Over-levelled |
+| --- | --- | --- | --- |
+| Colossus | action time 2.64 to 2.2 s, Breaker Wave interrupt 8% to 4% of max HP, enrage from 140 s | 57-85 | at least 85 |
+| Reaver | Power 44 to 60-62, Rift Surge cooldown 12 to 8 s, enrage from 90 s | W 33-45, A 75-88, R about 100, M 65-90, C 65-75 | 93-100 |
+
+The Ranger at the Reaver is accepted at about 100% (the blind Ranger there is about 10%, so Fade Back and the interrupt rules still matter). Cliffs are steep, so the sweeps below re-tune once if the acceptance misses.
+
+Sweeps (seed 1 x 60) and results are recorded below as each part is measured.
 
 ### Automation
 
