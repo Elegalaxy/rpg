@@ -1010,10 +1010,10 @@ Regular enemies (framework stats: a Standard enemy at level 31 has 700 HP and 39
 
 Elite Emberwrought Tyrant (starting values; ranges are the tuning space):
 
-- Level 32 Standard elite. 5,000 HP (range 4,600-5,400), Power 55 (50-62), Consistency 25, action time 2.2 s. No stance.
+- Level 32 Standard elite. 5,000 HP (range 4,600-5,400; tuned to 5,200 in part 9), Power 55 (50-62; tuned to 50), Consistency 25, action time 2.2 s. No stance.
 - Searing Brand: 110% Physical Power, 75% base chance to apply Burn (coefficient 0.15), 6 s cooldown. Pyre Wave: 2.5 s telegraph, 260% Magical Power, can critically hit, two Burn applications, interruptible at 5% of max HP (4-8%), 10 s cooldown.
 - At 40% HP a 2 s telegraph summons 2 Cinder Imps (level 28) through the HP summon trait (as the Mire Leech summon).
-- Late enrage `timePressure: eliteEnrage(120_000)` (start range 100-140 s): the Warden per-stack numbers from Step 13.5 part 8a.
+- Late enrage `timePressure: eliteEnrage(120_000)` (start range 100-140 s; tuned to 100 s in part 9): the Warden per-stack numbers from Step 13.5 part 8a.
 - Drops 10 cinderite. Gold is the elite rate. Its first defeat by any hero records `defeated:emberwrought-tyrant` and unlocks Kindled.
 
 Cinderite (new material): sells for 10 gold. A craft rolls quality 110% to 120%. As an upgrade material it adds +5 points, up to 120%, cost 3. It is last in `MATERIAL_RARITY`, after duskiron.
@@ -1064,6 +1064,58 @@ Regular fights, prepared tier (wins % / mean HP lost %):
 
 
 Reading against the bands: regular fights meet the 95% win band for every class and tier (all 100%). The mixed fights lose 15-40% of maximum HP only for some classes at prepared (Assassin 30 and 45, Warrior 25 and 46, Cleric 39 and 41; Ranger 11 and 29 and Mage 11 and 29 are low in cinder-mixed, and cinder-deep is above 40 for Warrior and Assassin). The Tyrant is far from the bands in the other direction for several classes: the Warrior is at 1-15% (prepared band 40-85, Warrior at least 30), the Cleric is at or above band at over (100) and prepared 63, and arrived is far above 20 for Assassin, Ranger, Mage and Cleric (55, 53, 78 and 70). The Prepared tier is weaker than Arrived against the Tyrant for every class but the Cleric, because it carries no Bloodbound or Stalwart. The no-Tonic variant wins more than Prepared at the Tyrant (Assassin 38 against 23, Mage 44 against 19, Cleric 79 against 63), because the Tonic takes the place of a Draught and the existing rule rarely uses it well; the Burn check (prepared minus no-Tonic of at least +10) is not met by any class, and needs the Burn row (part 7) and Emberward (part 6) first. Blind equals rules within seed noise except Ranger (arrived 53 against 4) and Warrior over (15 against 34). Part 9 tunes.
+
+Tuned and re-measured 2026-11-09 (Step 13.6 part 9; `--matrix cinder` and `--matrix elites --elites tyrant`, seeds 1-3 x 100 runs, rules mode unless stated, mean of the three seeds). Tyrant values after the sweep (all inside the decided ranges): 5,200 HP (from 5,000), Power 50 (from 55), enrage start 100 s (from 120 s), Pyre Wave interrupt 5% (unchanged, 4% and 8% were swept), Burn coefficients unchanged (Imp and Golem 0.12 were swept at 0.10 and 0.15). The sweep (seed 1, 100 runs, prepared wins % for Warrior / Assassin / Ranger / Mage / Cleric):
+
+| HP / Power / enrage / interrupt | Prepared W / A / R / M / C | Arrived W / A / R / M / C |
+| --- | --- | --- |
+| 4,600 / 50 / 120 s / 5% | 73 / 90 / 70 / 95 / 100 | 46 / 91 / 76 / 99 / 99 |
+| 4,600 / 55 / 120 s / 5% | 41 / 77 / 45 / 91 / 99 | 15 / 74 / 50 / 92 / 93 |
+| 5,000 / 55 / 120 s / 5% (start) | 24 / 57 / 34 / 70 / 99 | 8 / 55 / 55 / 83 / 73 |
+| 5,400 / 50 / 120 s / 5% | 35 / 64 / 41 / 79 / 97 | 11 / 63 / 61 / 86 / 65 |
+| 5,400 / 62 / 120 s / 5% | 2 / 18 / 6 / 15 / 48 | 1 / 18 / 11 / 17 / 9 |
+| 5,000 / 55 / 120 s / interrupt 4% | 32 / 74 / 40 / 80 / 99 | 12 / 74 / 58 / 92 / 73 |
+| 5,000 / 55 / 120 s / interrupt 8% | 18 / 28 / 26 / 37 / 98 | 7 / 21 / 40 / 54 / 72 |
+| 5,400 / 50 / 100 s / 5% | 35 / 64 / 41 / 79 / 54 | 11 / 63 / 61 / 86 / 15 |
+| 5,200 / 50 / 100 s / 5% (chosen, seeds 1-3) | 44 / 66 / 41 / 86 / 75 | 18 / 66 / 66 / 93 / 22 |
+
+The enrage start is the only lever that separates the Cleric (its fights run 100-140 s) from the other classes: at 120 s the Cleric wins 84-100% prepared unless HP and Power are both near the top (5,400 / 62: 48), and at 100 s it falls to 54-89%. Power 62 walls the Warrior and Ranger (2-20% prepared) at every HP; Power 50 with HP 4,600 is too easy (Warrior 73, Mage 95, Cleric 100). The Burn coefficients barely move anything: a Burn tick is about 3-8 HP against 4,000-5,000 maximum, and the Emberward (+20 magical status resistance counted) plus Spirit cut the Burn chance on a prepared hero to about 0.3-0.5 (Imp 60% base), so a prepared hero takes 8-29 Burn HP per cinder-deep fight and 110-360 per Tyrant fight (an arrived hero 15-81 and 280-920).
+
+Final numbers (seeds 1-3 x 100, Tyrant wins %, rules / blind; the seed spread is the largest difference between the three seeds, rules):
+
+| Class | Arrived | Prepared | Over | Prepared crafted | Spread (prepared) |
+| --- | --- | --- | --- | --- | --- |
+| Warrior | 18 / 26 | 44 / 29 | 93 / 90 | 80 / 66 | 15 |
+| Assassin | 66 / 66 | 66 / 56 | 97 / 97 | 92 / 85 | 10 |
+| Ranger | 66 / 5 | 41 / 9 | 96 / 79 | 71 / 47 | 13 |
+| Mage | 93 / 92 | 86 / 83 | 98 / 98 | 96 / 97 | 8 |
+| Cleric | 22 / 75 | 75 / 97 | 100 / 100 | 90 / 98 | 13 |
+
+Regular fights, prepared tier (wins % / mean HP lost %): all 100% for every class.
+
+| Class | imp | golem | acolyte | imp-swarm | cinder-mixed | cinder-deep |
+| --- | --- | --- | --- | --- | --- | --- |
+| Warrior | 100 / 6 | 100 / 12 | 100 / 7 | 100 / 31 | 100 / 22 | 100 / 42 |
+| Assassin | 100 / 4 | 100 / 3 | 100 / 6 | 100 / 25 | 100 / 26 | 100 / 40 |
+| Ranger | 100 / 0 | 100 / 2 | 100 / 2 | 100 / 16 | 100 / 10 | 100 / 27 |
+| Mage | 100 / 5 | 100 / 4 | 100 / 6 | 100 / 19 | 100 / 6 | 100 / 20 |
+| Cleric | 100 / 7 | 100 / 22 | 100 / 10 | 100 / 33 | 100 / 35 | 100 / 41 |
+
+Checks (prepared tier):
+
+| Class | Crafted minus plain (Tyrant wins) | Prepared minus no-Tonic, Tyrant wins | Prepared minus no-Tonic, cinder-deep HP lost saved | Rules minus blind, Tyrant wins | Rules minus blind, Golem HP lost saved |
+| --- | --- | --- | --- | --- | --- |
+| Warrior | +36 | -9 | +3 | +15 | +1 |
+| Assassin | +26 | -16 | +4 | +10 | 0 |
+| Ranger | +30 | -13 | 0 | +32 | 0 |
+| Mage | +10 | -7 | +4 | +3 | +15 |
+| Cleric | +15 | -2 | 0 | -22 | 0 |
+
+Against the bands:
+
+- Met: regular fights 100% wins for every class (band 95%); Tyrant over-levelled 93-100% (band 85% or more); Tyrant prepared in 40-85% for the Warrior (44, at least 30), Assassin (66), Ranger (41) and Cleric (75, at least 30); crafted minus plain at most +30 for the Assassin, Ranger (+30), Mage and Cleric; rules minus blind at least +10 at the Tyrant for the Warrior (+15), Assassin (+10) and Ranger (+32); the Cleric exception stands (-22: the Cleric does better blind, as at the Colossus and Reaver); `--expedition cinder-scar` seeds 1-5 (level-5 reference Warrior, 40% retreat): 0 defeats, every run retreats in the Imp swarm or the Golem, nothing to compare for the Tyrant.
+- Not met, and not reachable inside the decided ranges: (1) Tyrant arrived at most 20%: Assassin 66, Ranger 66 and Mage 93 (Warrior 18 met, Cleric 22 misses by 2). The Arrived tier is not weaker than the Prepared tier for these three classes (Bloodbound life steal and Stalwart HP against Tempered and Emberward), so any change that lowers Arrived lowers Prepared by the same amount; the 8% interrupt sweep separates them for the Assassin (arrived 21, prepared 28) only by dropping every Prepared cell except the Cleric's to 26-37. (2) Tyrant prepared Mage 86 (1 over; Ranger 41 sits at the bottom of its band at the same setting, so the two trade off). (3) Crafted minus plain for the Warrior +36 (the Greater Draught raises a class that is a few hits short). (4) Burn check: prepared minus no-Tonic is negative at the Tyrant for every class (-2 to -16) and saves 0 to 4 HP points in cinder-deep (band 8 points): the Tonic takes the place of a Healing Draught and Burn is too weak to repay it. Only the Imp and Golem Burn coefficients (0.10-0.15) were allowed; they change cinder-deep HP by at most 2 points. (5) Telegraph check at the Tyrant for the Mage (+3), and the Golem is a 100% win for every class with and without telegraph rules (the Mage saves 15 HP points with them, the other classes 0 to 1). (6) Mixed-fight HP lost outside 15-40%: cinder-mixed Ranger 10 and Mage 6 (too little); cinder-deep Warrior 42 and Cleric 41 (just over; Assassin 40 on the edge). (7) XP: the framework enemy XP gives a level-30 hero 92 XP for cinder-mixed (89 fights per level; a level costs 8,216 XP), 156 for cinder-deep (53 per level), 37 for imp-swarm (222), 72 for a Golem (114), 234 for the Tyrant (35); the 35-45 fights per level band is met only by the Tyrant, and no lever was allowed. (8) Seed spread up to 15 points in the mid-band cells. No band was loosened.
+- Guards: `--matrix reference` (seed 1, 100 runs; the tracked CSV is byte-identical), `--matrix warden`, `causeway`, `hollows`, `built` and `telegraph` (seed 1, 100 runs) are byte-identical to the baseline captured before the first sim edit (the timing line aside); `--matrix elites` is identical apart from the new Tyrant rows.
 
 ### Events
 

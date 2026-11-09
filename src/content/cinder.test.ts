@@ -102,16 +102,16 @@ describe('Cinder Scar enemies', () => {
     expect(stats.power).toBe(39)
   })
 
-  it('spawns the Tyrant as a level-32 standard elite with 5,000 HP, 55 Power and no stance', () => {
+  it('spawns the Tyrant as a level-32 standard elite with 5,200 HP, 50 Power and no stance', () => {
     const { state } = open([{ defId: 'emberwrought-tyrant', slot: 0 }])
     const tyrant = actorAt(state, 0)
     expect(tyrant.level).toBe(32)
-    expect(tyrant.maxHp).toBe(5000)
+    expect(tyrant.maxHp).toBe(5200)
     expect(tyrant.elite).toBe(true)
     expect(tyrant.stance).toBeNull()
-    expect(emberwroughtTyrant.overrides).toMatchObject({ maxHp: 5000, power: 55, consistency: 25, actionTime: 2.2 })
+    expect(emberwroughtTyrant.overrides).toMatchObject({ maxHp: 5200, power: 50, consistency: 25, actionTime: 2.2 })
     expect(emberwroughtTyrant.timePressure).toEqual({
-      startMs: 120_000,
+      startMs: 100_000,
       intervalMs: 3000,
       maxStacks: 10,
       power: 1.1,
