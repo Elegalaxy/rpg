@@ -5,7 +5,7 @@ import { formatEvent } from '../sim/log.ts'
 import type { CombatSetup, LogEvent, PriorityRow } from '../sim/types.ts'
 
 import { DUEL_BASIC_ID, ROOTMAW_ID, gameDefs, scenarios, setupForScenario } from './scenarios.ts'
-import { SUPPLIES, supplyTable } from './supplies.ts'
+import { DEFAULT_SUPPLY_ROWS, SUPPLIES, WARMING_TONIC_BURN_ROW, WARMING_TONIC_ROW, supplyTable } from './supplies.ts'
 import { skills } from './skills.ts'
 
 const DRAUGHT_ROW: PriorityRow = {
@@ -113,6 +113,37 @@ describe('the Warming Tonic', () => {
 
   it('is a half-time supply with no cost or cooldown', () => {
     expect(skills['warming-tonic']).toMatchObject({ tags: ['supply'], cooldownSeconds: 0, actionTimeCoefficient: 0.5, supply: true })
+  })
+})
+
+describe('the Warming Tonic Burn row', () => {
+  it('reads 3 Burn stacks and sits right after the Chill row in the defaults', () => {
+    expect(WARMING_TONIC_BURN_ROW).toEqual({
+      skillId: 'warming-tonic',
+      conditions: [{ kind: 'status', who: 'hero', statusId: 'burn', measure: 'stacks', operator: 'atLeast', value: 3 }],
+    })
+    expect(DEFAULT_SUPPLY_ROWS.indexOf(WARMING_TONIC_BURN_ROW)).toBe(DEFAULT_SUPPLY_ROWS.indexOf(WARMING_TONIC_ROW) + 1)
+  })
+
+  it('drinks the Tonic at 3 Burn stacks, clears the Burn, and skips without a Tonic packed', () => {
+    const defs = gameDefs()
+    const build = (supplies: string[]): CombatSetup => {
+      const setup = withSupplies(DUEL_BASIC_ID, supplies, [WARMING_TONIC_BURN_ROW])
+      return { ...setup, enemies: [{ defId: 'cinder-imp', slot: 0, level: 30 }, { defId: 'cinder-imp', slot: 1, level: 30 }, { defId: 'cinder-imp', slot: 2, level: 30 }] }
+    }
+    const state = createCombat(build(['warming-tonic']), defs, 5)
+    state.hero.maxHp = 100_000
+    state.hero.hp = 100_000
+    runCombat(state, defs, 60_000)
+    const used = firstOf(state.log, 'supplyUse', (event) => event.supplyId === 'warming-tonic')
+    if (used === undefined) throw new Error('the tonic was never used')
+    const cleared = state.log.filter((event) => event.type === 'statusCleared' && event.timeMs === used.timeMs && event.actorId === state.hero.id)
+    expect(cleared.map((event) => (event.type === 'statusCleared' ? event.statusId : ''))).toContain('burn')
+    const bare = createCombat(build([]), defs, 5)
+    bare.hero.maxHp = 100_000
+    bare.hero.hp = 100_000
+    runCombat(bare, defs, 60_000)
+    expect(bare.log.some((event) => event.type === 'supplyUse')).toBe(false)
   })
 })
 

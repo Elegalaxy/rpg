@@ -107,6 +107,12 @@ export const WARMING_TONIC_ROW: PriorityRow = {
   conditions: [{ kind: 'status', who: 'hero', statusId: 'chill', measure: 'stacks', operator: 'atLeast', value: 2 }],
 }
 
+/** The Warming Tonic's second default rule: drink it at 3 Burn stacks (decided 2026-11-09, GAME_DESIGN Fourth zone: Cinder Scar). Placed after the Chill row. */
+export const WARMING_TONIC_BURN_ROW: PriorityRow = {
+  skillId: 'warming-tonic',
+  conditions: [{ kind: 'status', who: 'hero', statusId: 'burn', measure: 'stacks', operator: 'atLeast', value: 3 }],
+}
+
 /** The Greater Draught's default rule: drink it at 40% HP or less, above the Healing Draught row (30% until 2026-11-09). */
 export const GREATER_DRAUGHT_ROW: PriorityRow = {
   skillId: 'greater-draught',
@@ -130,6 +136,7 @@ export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [
   RIFTGLASS_WARD_ROW,
   WARD_CHARM_ROW,
   WARMING_TONIC_ROW,
+  WARMING_TONIC_BURN_ROW,
 ]
 
 /** A hero's starting rules: the supply rules, then the class rules. */

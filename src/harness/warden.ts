@@ -1,12 +1,13 @@
 import { referenceHeroAtLevel } from '../content/heroes.ts'
 import { gameDefs } from '../content/scenarios.ts'
-import { startingRules } from '../content/supplies.ts'
+import { WARMING_TONIC_BURN_ROW, startingRules } from '../content/supplies.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
+import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
 import { EQUIPMENT_SLOT_IDS, statBonusesFor, type Equipment, type EquipmentSlotId } from '../sim/economy.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import type { HeroGear } from '../sim/stats.ts'
-import type { CombatSetup } from '../sim/types.ts'
+import type { CombatSetup, PriorityRow } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 import { builtSetup } from './builds.ts'
@@ -31,6 +32,12 @@ export type WardenTier = {
   modifiers: { readonly [slot in EquipmentSlotId]: string | null }
   /** Supply ids in the backpack. */
   supplies: readonly string[]
+  /**
+   * The hero keeps the default Warming Tonic Burn row (Step 13.6). Off by default so the earlier matrices keep the rules
+   * they were measured with. When the rules then exceed the row limit (the Assassin with Smoke Step), the Chill Tonic row,
+   * which never fires where there is no Chill, makes room.
+   */
+  burnRow?: boolean
   /** Per-class replacements for single slots in `modifiers` (for example Hallowed for a healer). */
   classModifiers?: { readonly [classId in HeroClass]?: Partial<WardenTier['modifiers']> }
 }
@@ -177,6 +184,18 @@ function modifierEquipment(modifiers: WardenTier['modifiers']): Equipment {
   return equipment
 }
 
+const sameCondition = (a: PriorityRow, b: PriorityRow): boolean => JSON.stringify(a.conditions) === JSON.stringify(b.conditions)
+
+/** The starting supply rules for a tier: without `burnRow` the Burn Tonic row is left out. */
+function tierRules(classRows: readonly PriorityRow[], tier: WardenTier): PriorityRow[] {
+  const rules = startingRules(classRows)
+  const isBurnRow = (row: PriorityRow): boolean => row.skillId === WARMING_TONIC_BURN_ROW.skillId && sameCondition(row, WARMING_TONIC_BURN_ROW)
+  if (tier.burnRow !== true) return rules.filter((row) => !isBurnRow(row))
+  if (rules.length <= MAX_PRIORITY_ROWS) return rules
+  const chill = rules.findIndex((row) => row.skillId === WARMING_TONIC_BURN_ROW.skillId && !isBurnRow(row))
+  return chill < 0 ? rules : rules.filter((_, index) => index !== chill)
+}
+
 /** The Warden fight for a class at a tier: the class's reference rules behind the starting supply rules. */
 export function wardenSetup(classId: HeroClass, tier: WardenTier): CombatSetup {
   const base = builtSetup(`ref-${classId}-warden`, classId, tier.nodes)
@@ -189,7 +208,7 @@ export function wardenSetup(classId: HeroClass, tier: WardenTier): CombatSetup {
       attributes: reference.attributes,
       gear: scaleGear(reference.gear, tier.level, tier.quality),
       statBonuses: statBonusesFor(modifierEquipment({ ...tier.modifiers, ...(tier.classModifiers?.[classId] ?? {}) })),
-      priorityRows: startingRules(base.hero.priorityRows ?? []),
+      priorityRows: tierRules(base.hero.priorityRows ?? [], tier),
       supplies: tier.supplies,
       ...(classId === 'ranger' ? { carriedSupplyCount: tier.supplies.length } : {}),
     },

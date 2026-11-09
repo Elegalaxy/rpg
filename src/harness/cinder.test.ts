@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { enemies } from '../content/enemies.ts'
+import { WARMING_TONIC_BURN_ROW } from '../content/supplies.ts'
 import { HERO_CLASSES } from '../sim/constants.ts'
 
 import { CINDER_FIGHTS, CINDER_TIERS, CINDER_VARIANTS, cinderSetup, formatCinderTable, runCinderMatrix } from './cinder.ts'
+import { WARDEN_TIERS, wardenSetup } from './warden.ts'
 
 describe('cinder matrix', () => {
   it('uses the planned tiers and the no-Tonic variant', () => {
@@ -55,6 +57,22 @@ describe('cinder matrix', () => {
     expect(warrior?.maxHpBonus ?? 0).toBe(0)
     expect(cleric?.maxHpBonus).toBeCloseTo(0.05, 8)
     expect(cleric?.equipmentHealingPower).toBe(8)
+  })
+
+  it('gives every Cinder tier the Burn Tonic row within the 12-row limit, and leaves the Warden tiers without it', () => {
+    const burnRows = (rows: readonly { skillId: string; conditions?: unknown }[] | undefined): number =>
+      (rows ?? []).filter((row) => row.skillId === 'warming-tonic' && JSON.stringify(row.conditions) === JSON.stringify(WARMING_TONIC_BURN_ROW.conditions)).length
+    for (const classId of HERO_CLASSES) {
+      for (const tier of [...CINDER_TIERS, ...CINDER_VARIANTS]) {
+        const rows = cinderSetup(classId, tier, CINDER_FIGHTS[0]!).hero.priorityRows
+        expect(rows?.length ?? 0, `${classId} ${tier.id}`).toBeLessThanOrEqual(12)
+        expect(burnRows(rows), `${classId} ${tier.id}`).toBe(1)
+      }
+      expect(burnRows(wardenSetup(classId, WARDEN_TIERS[1]!).hero.priorityRows)).toBe(0)
+    }
+    // The Assassin gives up the Chill Tonic row (no Chill in the zone) to make room.
+    const assassin = cinderSetup('assassin', CINDER_TIERS[1]!, CINDER_FIGHTS[0]!).hero.priorityRows ?? []
+    expect(assassin.filter((row) => row.skillId === 'warming-tonic')).toHaveLength(1)
   })
 
   it('runs every class, tier and fight', () => {
