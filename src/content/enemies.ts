@@ -962,6 +962,180 @@ export const hollowmawReaver: EnemyDef = {
   drop: { materialId: 'duskiron', baseQuantity: 10 },
 }
 
+const emberSpit: EnemySkillDef = {
+  id: 'ember-spit',
+  name: 'Ember Spit',
+  coefficient: 0.8,
+  school: 'magical',
+  cooldownSeconds: 4,
+  tag: 'ember-spit',
+  tags: ['magical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'magical', coefficient: 0.8 },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 0.6, coefficient: 0.12, power: 'magical' },
+  ],
+}
+
+/** Levels 28-32. Swarm, in groups of 3. Ember Spit burns. Drops 2 duskiron. */
+export const cinderImp: EnemyDef = {
+  id: 'cinder-imp',
+  name: 'Cinder Imp',
+  level: 28,
+  levelMin: 28,
+  levelMax: 32,
+  archetype: 'swarm',
+  school: 'magical',
+  filler: { school: 'magical' },
+  skills: [emberSpit],
+  drop: { materialId: 'duskiron', baseQuantity: 2 },
+}
+
+const magmaSlam: EnemySkillDef = {
+  id: 'magma-slam',
+  name: 'Magma Slam',
+  coefficient: 2.2,
+  school: 'physical',
+  cooldownSeconds: 10,
+  telegraphMs: 2000,
+  tag: 'magma-slam',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  interruptMaxHpFraction: 0.25,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 2.2 },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 1, coefficient: 0.12, power: 'magical' },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 1, coefficient: 0.12, power: 'magical' },
+  ],
+}
+
+/** Levels 29-34. Standard (not a Tank). Magma Slam is a 2.0 s interruptible wind-up that applies Burn twice. Drops 4 cinderite. */
+export const slagGolem: EnemyDef = {
+  id: 'slag-golem',
+  name: 'Slag Golem',
+  level: 29,
+  levelMin: 29,
+  levelMax: 34,
+  archetype: 'standard',
+  school: 'physical',
+  filler: { school: 'physical' },
+  skills: [magmaSlam],
+  drop: { materialId: 'cinderite', baseQuantity: 4 },
+}
+
+const kindle: EnemySkillDef = {
+  id: 'kindle',
+  name: 'Kindle',
+  coefficient: 0,
+  school: 'magical',
+  cooldownSeconds: 8,
+  tag: 'ward',
+  tags: ['defense'],
+  canCrit: false,
+  allyTarget: 'lowestBarrier',
+  effects: [{ kind: 'barrier', source: 'magical', coefficient: 1, durationSeconds: 8 }],
+}
+
+const fireBolt: EnemySkillDef = {
+  id: 'fire-bolt',
+  name: 'Fire Bolt',
+  coefficient: 0.9,
+  school: 'magical',
+  cooldownSeconds: 0,
+  tag: 'fire-bolt',
+  tags: ['magical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'magical', coefficient: 0.9 },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 0.5, coefficient: 0.12, power: 'magical' },
+  ],
+}
+
+/** Levels 28-33. Support defense is replaced by 0.5x Armor and 1.5x Resistance. Kindle shields an ally, then Fire Bolt burns. Drops 3 cinderite. */
+export const pyreAcolyte: EnemyDef = {
+  id: 'pyre-acolyte',
+  name: 'Pyre Acolyte',
+  level: 28,
+  levelMin: 28,
+  levelMax: 33,
+  archetype: 'support',
+  school: 'magical',
+  filler: { school: 'magical' },
+  overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5 },
+  skills: [kindle, fireBolt],
+  drop: { materialId: 'cinderite', baseQuantity: 3 },
+}
+
+const searingBrand: EnemySkillDef = {
+  id: 'searing-brand',
+  name: 'Searing Brand',
+  coefficient: 1.1,
+  school: 'physical',
+  cooldownSeconds: 6,
+  tag: 'searing-brand',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 1.1 },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 0.75, coefficient: 0.15, power: 'magical' },
+  ],
+}
+
+const pyreWave: EnemySkillDef = {
+  id: 'pyre-wave',
+  name: 'Pyre Wave',
+  coefficient: 2.6,
+  school: 'magical',
+  cooldownSeconds: 10,
+  telegraphMs: 2500,
+  tag: 'pyre-wave',
+  tags: ['magical', 'attack'],
+  canCrit: true,
+  interruptMaxHpFraction: 0.05,
+  effects: [
+    { kind: 'damage', school: 'magical', coefficient: 2.6 },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 1, coefficient: 0.15, power: 'magical' },
+    { kind: 'applyStatus', statusId: 'burn', baseChance: 1, coefficient: 0.15, power: 'magical' },
+  ],
+}
+
+const summonCinderImps: EnemySkillDef = {
+  id: 'summon-cinder-imps',
+  name: 'Summon Cinder Imps',
+  coefficient: 0,
+  school: 'physical',
+  cooldownSeconds: 0,
+  telegraphMs: 2000,
+  tag: 'summon-imps',
+  tags: ['summon'],
+  canCrit: false,
+  trigger: 'hp',
+  hpFraction: 0.4,
+  effects: [
+    { kind: 'summon', enemyId: 'cinder-imp', level: 28 },
+    { kind: 'summon', enemyId: 'cinder-imp', level: 28 },
+  ],
+}
+
+/**
+ * Level 32 standard elite. Searing Brand burns, Pyre Wave is a 2.5 s wind-up that can be interrupted by a small
+ * hit (5%). At 40% HP it summons 2 Cinder Imps. No stance. Late enrage. Drops 10 cinderite.
+ */
+export const emberwroughtTyrant: EnemyDef = {
+  id: 'emberwrought-tyrant',
+  name: 'Emberwrought Tyrant',
+  level: 32,
+  archetype: 'standard',
+  elite: true,
+  school: 'physical',
+  filler: { school: 'physical' },
+  overrides: { maxHp: 5000, power: 55, consistency: 25, actionTime: 2.2 },
+  timePressure: eliteEnrage(120_000),
+  traitIds: [HP_SUMMON_TRAIT],
+  skills: [searingBrand, pyreWave, summonCinderImps],
+  drop: { materialId: 'cinderite', baseQuantity: 10 },
+}
+
 export const enemies: { [id: string]: EnemyDef } = {
   [standardDummy.id]: standardDummy,
   [fractureShardling.id]: fractureShardling,
@@ -986,4 +1160,8 @@ export const enemies: { [id: string]: EnemyDef } = {
   [hollowChanneler.id]: hollowChanneler,
   [riftbornBrute.id]: riftbornBrute,
   [hollowmawReaver.id]: hollowmawReaver,
+  [cinderImp.id]: cinderImp,
+  [slagGolem.id]: slagGolem,
+  [pyreAcolyte.id]: pyreAcolyte,
+  [emberwroughtTyrant.id]: emberwroughtTyrant,
 }

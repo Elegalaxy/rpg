@@ -1119,6 +1119,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Parts: (1) docs; (2) enemies and encounters; (3) harness baseline (`--matrix cinder`, Tyrant elite cells, build order), measurements only; (4) world (node, leg, route, gate, map); (5) cinderite material; (6) modifiers and `magicalStatusResistanceBonus`; (7) Warming Tonic Burn row; (8) Salvage, Legacy and browser check; (9) tuning and close.
 - Progress:
   - 2026-11-09: Part 1, docs written (GAME_DESIGN §6 "Fourth zone: Cinder Scar", changelog, this step).
+  - 2026-11-09: Part 2, enemies Cinder Imp, Slag Golem, Pyre Acolyte, Emberwrought Tyrant (with Ember Spit, Magma Slam, Kindle, Fire Bolt, Searing Brand, Pyre Wave, Summon Cinder Imps) and encounters `imp-swarm`, `golem`, `cinder-mixed`, `cinder-deep`, `emberwrought-tyrant`; content only, no sim change. New `src/content/cinder.test.ts`, including the first test of an enemy skill applying Burn to a hero and the burn ticking.
 
 ## 8. Risks, and what would reveal them early
 

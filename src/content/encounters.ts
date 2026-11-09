@@ -197,6 +197,52 @@ export const reaverEncounter: EncounterDef = {
   members: [{ enemyId: 'hollowmaw-reaver', slot: 0, level: 26 }],
 }
 
+/** Three level-28 Cinder Imps. */
+export const impSwarm: EncounterDef = {
+  id: 'imp-swarm',
+  name: 'Cinder Imp Swarm',
+  members: [
+    { enemyId: 'cinder-imp', slot: 0, level: 28 },
+    { enemyId: 'cinder-imp', slot: 1, level: 28 },
+    { enemyId: 'cinder-imp', slot: 2, level: 28 },
+  ],
+}
+
+/** One level-29 Slag Golem. */
+export const golemEncounter: EncounterDef = {
+  id: 'golem',
+  name: 'Slag Golem',
+  members: [{ enemyId: 'slag-golem', slot: 0, level: 29 }],
+}
+
+/** Level-29 Slag Golem and Pyre Acolyte. */
+export const cinderMixed: EncounterDef = {
+  id: 'cinder-mixed',
+  name: 'Cinder Scar Mixed',
+  members: [
+    { enemyId: 'slag-golem', slot: 0, level: 29 },
+    { enemyId: 'pyre-acolyte', slot: 1, level: 29 },
+  ],
+}
+
+/** Level-31 Cinder Imp, Slag Golem and Pyre Acolyte. */
+export const cinderDeep: EncounterDef = {
+  id: 'cinder-deep',
+  name: 'Cinder Scar Deep',
+  members: [
+    { enemyId: 'cinder-imp', slot: 0, level: 31 },
+    { enemyId: 'slag-golem', slot: 1, level: 31 },
+    { enemyId: 'pyre-acolyte', slot: 2, level: 31 },
+  ],
+}
+
+/** The Cinder Scar elite, level 32. */
+export const tyrantEncounter: EncounterDef = {
+  id: 'emberwrought-tyrant',
+  name: 'Emberwrought Tyrant',
+  members: [{ enemyId: 'emberwrought-tyrant', slot: 0, level: 32 }],
+}
+
 export const encounters: { [id: string]: EncounterDef } = {
   [shardlingPair.id]: shardlingPair,
   [wolfPair.id]: wolfPair,
@@ -217,6 +263,11 @@ export const encounters: { [id: string]: EncounterDef } = {
   [hollowsMixed.id]: hollowsMixed,
   [hollowsDeep.id]: hollowsDeep,
   [reaverEncounter.id]: reaverEncounter,
+  [impSwarm.id]: impSwarm,
+  [golemEncounter.id]: golemEncounter,
+  [cinderMixed.id]: cinderMixed,
+  [cinderDeep.id]: cinderDeep,
+  [tyrantEncounter.id]: tyrantEncounter,
 }
 
 /** An encounter as an expedition fight list entry, with each enemy's drops copied from its definition. Gold is level × 2, or × 3 for an elite or the boss (G1). */
