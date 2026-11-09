@@ -369,6 +369,9 @@ export function formatEvent(event: LogEvent): string {
     case 'supplyUse':
       return `At ${seconds(event.timeMs)}s, ${event.actorName} uses a ${event.supplyName} (${event.left} left).${event.nextReadyMs === null ? '' : ` Next ready at ${seconds(event.nextReadyMs)}s.`}`
     case 'skillDodge':
+      if (event.damageFraction !== undefined) {
+        return `At ${seconds(event.timeMs)}s, ${event.actorName} partly dodges ${event.sourceName}'s ${event.skillName}: ${Math.round(event.damageFraction * 100)}% of the damage lands, no statuses.`
+      }
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dodges ${event.sourceName}'s ${event.skillName}: no damage and no statuses.`
     case 'escape': {
       const result = event.success ? 'success' : 'failure'

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createCombat, runCombat, stepCombat } from '../sim/combat.ts'
 import { formatEvent } from '../sim/log.ts'
-import type { CombatSetup, LogEvent } from '../sim/types.ts'
+import type { CombatSetup, EnemySkillDef, GameDefs, LogEvent } from '../sim/types.ts'
 
 import { gameDefs, scenarios, setupForScenario } from './scenarios.ts'
 import { skills } from './skills.ts'
@@ -58,5 +58,51 @@ describe('Fade Back', () => {
     runCombat(state, defs, 300_000)
     expect(state.log.some((event) => event.type === 'skillDodge')).toBe(false)
     expect(state.hero.skillDodgeUntilMs).toBeNull()
+  })
+})
+
+/** Defs where the wolf's Pounce also chills and, optionally, lets a share of its damage through a dodge. */
+function defsWithPounce(dodgedDamageFraction: number | undefined): GameDefs {
+  const defs = gameDefs()
+  const wolf = defs.enemies['starved-wolf']!
+  const pounce = wolf.skills![0]!
+  const custom: EnemySkillDef = {
+    ...pounce,
+    effects: [...pounce.effects, { kind: 'applyStatus', statusId: 'chill', baseChance: 1 }],
+    ...(dodgedDamageFraction === undefined ? {} : { dodgedDamageFraction }),
+  }
+  return { ...defs, enemies: { ...defs.enemies, 'starved-wolf': { ...wolf, skills: [custom] } } }
+}
+
+describe('Fade Back with a dodged-damage share', () => {
+  it('lets the share of damage land and still avoids statuses', () => {
+    const defs = defsWithPounce(0.5)
+    const state = runCombat(createCombat(rangerVsWolves(), defs, 11), defs, 300_000)
+    const dodges = state.log.filter((event) => event.type === 'skillDodge')
+    expect(dodges.length).toBeGreaterThan(0)
+    for (const dodge of dodges) {
+      expect(dodge.damageFraction).toBe(0.5)
+      const hits = state.log.filter(
+        (event) => event.type === 'damage' && event.timeMs === dodge.timeMs && event.actorId === dodge.sourceId,
+      )
+      expect(hits.length).toBeGreaterThan(0)
+      expect(hits.some((event) => event.type === 'damage' && event.hpDamage > 0)).toBe(true)
+      const statuses = state.log.filter(
+        (event) => event.type === 'statusAttempt' && event.timeMs === dodge.timeMs && event.actorId === dodge.sourceId,
+      )
+      expect(statuses).toHaveLength(0)
+      expect(formatEvent(dodge)).toContain('partly dodges')
+    }
+  })
+
+  it('deals no damage when the share is omitted', () => {
+    const defs = defsWithPounce(undefined)
+    const state = runCombat(createCombat(rangerVsWolves(), defs, 11), defs, 300_000)
+    const dodges = state.log.filter((event) => event.type === 'skillDodge')
+    expect(dodges.length).toBeGreaterThan(0)
+    for (const dodge of dodges) {
+      expect(dodge.damageFraction).toBeUndefined()
+      expect(heroHitBy(state.log, dodge.sourceId, dodge.timeMs)).toBe(false)
+    }
   })
 })

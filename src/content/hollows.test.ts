@@ -136,7 +136,7 @@ describe('Rift Hollows enemies', () => {
     console.log('[enemy] reaver stats', stats)
   })
 
-  it('defines Rift Surge: 2.5 s, 400% Magical, can crit, not interruptible, 9 s cooldown', () => {
+  it('defines Rift Surge: 2.5 s, 400% Magical, can crit, not interruptible, 9 s cooldown, half-dodge 0.6', () => {
     const surge = hollowmawReaver.skills?.[0]
     expect(surge).toMatchObject({
       id: 'rift-surge',
@@ -145,6 +145,7 @@ describe('Rift Hollows enemies', () => {
       telegraphMs: 2500,
       canCrit: true,
       cooldownSeconds: 9,
+      dodgedDamageFraction: 0.6,
     })
     expect(surge?.interruptMaxHpFraction).toBeUndefined()
   })

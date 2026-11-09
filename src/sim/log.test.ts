@@ -273,3 +273,26 @@ describe('summarizeDefeat', () => {
     expect(() => summarizeDefeat({ ...state, outcome: 'timeout' })).toThrow(/defeat/)
   })
 })
+
+describe('skillDodge text', () => {
+  const base = {
+    type: 'skillDodge' as const,
+    timeMs: 4200,
+    actorId: 'hero',
+    actorName: 'Ranger',
+    sourceId: 'boss#0',
+    sourceName: 'Hollowmaw Reaver',
+    skillId: 'rift-surge',
+    skillName: 'Rift Surge',
+  }
+
+  it('writes a full dodge', () => {
+    expect(formatEvent(base)).toBe("At 4.200s, Ranger dodges Hollowmaw Reaver's Rift Surge: no damage and no statuses.")
+  })
+
+  it('writes a partial dodge with the share that lands', () => {
+    expect(formatEvent({ ...base, damageFraction: 0.6 })).toBe(
+      "At 4.200s, Ranger partly dodges Hollowmaw Reaver's Rift Surge: 60% of the damage lands, no statuses.",
+    )
+  })
+})

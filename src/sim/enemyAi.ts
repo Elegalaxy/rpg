@@ -207,6 +207,18 @@ function assertEnemySkill(value: unknown, enemyId: string): EnemySkillDef {
       throw new Error(`enemy skill '${id}' HP trigger needs an HP fraction`)
     }
   }
+  if (value.dodgedDamageFraction !== undefined) {
+    if (
+      typeof value.dodgedDamageFraction !== 'number' ||
+      !Number.isFinite(value.dodgedDamageFraction) ||
+      value.dodgedDamageFraction <= 0 ||
+      value.dodgedDamageFraction >= 1
+    ) {
+      throw new Error(
+        `enemy skill '${id}' dodged damage fraction must be greater than 0 and less than 1, received ${describeValue(value.dodgedDamageFraction)}`,
+      )
+    }
+  }
   if (value.interruptMaxHpFraction !== undefined) {
     if (
       typeof value.interruptMaxHpFraction !== 'number' ||

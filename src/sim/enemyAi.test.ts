@@ -9,6 +9,7 @@ import {
   STUN_DELAY_SECONDS,
 } from './constants.ts'
 import {
+  assertEnemyDef,
   encounterXpAward,
   enemyRecoveryMs,
   packHunterSpeed,
@@ -882,5 +883,18 @@ describe('telegraph automation', () => {
     expect(early.events.some((event) => event.reason === 'telegraph pounce 1500ms is above 1499ms')).toBe(true)
     expect(otherTag.kind).toBe('basicAttack')
     expect(otherTag.events.some((event) => event.reason === 'telegraph fracture-burst is absent')).toBe(true)
+  })
+})
+
+describe('dodged damage fraction validation', () => {
+  it('accepts a fraction strictly between 0 and 1 and rejects the rest', () => {
+    const withFraction = (value: number): EnemyDef => ({
+      ...wolf(),
+      skills: [{ ...pounce(), dodgedDamageFraction: value }],
+    })
+    expect(() => assertEnemyDef(withFraction(0.6))).not.toThrow()
+    for (const bad of [0, 1, Number.NaN, -0.1]) {
+      expect(() => assertEnemyDef(withFraction(bad))).toThrow(/dodged damage fraction must be greater than 0 and less than 1/)
+    }
   })
 })

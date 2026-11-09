@@ -938,7 +938,7 @@ Regular enemies (a Standard enemy at level 24 has 560 HP and 32 Power):
 Elite Hollowmaw Reaver:
 
 - Level 26 Burst elite. 4,400 HP, 65 Power (Step 13.5 parts 5B and 8a; were 3,400 and 40, then 44), Consistency 25; the other stats come from the elite Burst line. Step 13.5 part 8a (final values): Power 65 (was 44) and a `timePressure` enrage from 90 s (§7 "Elite pressure").
-- Rift Surge: 2.5 s telegraph, 400% Magical Power (Step 13.5 part 5B; was 300%), can critically hit, NOT interruptible, 9 s cooldown (12 s until Step 13.5 part 8a). Reaver Strike fills ordinary actions at 100% Physical Power.
+- Rift Surge: 2.5 s telegraph, 400% Magical Power (Step 13.5 part 5B; was 300%), can critically hit, NOT interruptible, 9 s cooldown (12 s until Step 13.5 part 8a). A readied dodge (Fade Back) takes only 40% of it: 60% of the damage still lands, no statuses (2026-11-09, "Ranger Reaver half-dodge" in §7). Reaver Strike fills ordinary actions at 100% Physical Power.
 - Uses the stance trait (10 seconds, guard and assault, as the Echo Knight and the Colossus). No summons.
 - Drops 10 duskiron. Gold is the elite rate. Its first defeat by any hero records `defeated:hollowmaw-reaver` and unlocks Bloodbound.
 
@@ -1365,11 +1365,11 @@ Final measurement (Step 13.5 part 8, 2026-11-09; replaces the part 1 baseline, w
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Warrior | 0 | 52 (94 / 2) | 100 (47 / 0) | 100 (47 / 0) | 0 (100 / 34) | 74 (88 / 2) | 100 (56 / 0) | 0 | 42 (91 / 5) | 100 (52 / 0) |
 | Assassin | 0 | 42 (94 / 6) | 100 (46 / 0) | 100 (44 / 0) | 0 (100 / 33) | 57 (86 / 5) | 100 (46 / 0) | 15 | 76 (72 / 5) | 94 (50 / 2) |
-| Ranger | 0 | 54 (88 / 4) | 100 (47 / 0) | 100 (46 / 0) | 0 (100 / 31) | 65 (83 / 5) | 100 (48 / 0) | 84 | 99 (47 / 0) | 100 (42 / 0) |
+| Ranger | 0 | 54 (88 / 4) | 100 (47 / 0) | 100 (46 / 0) | 0 (100 / 31) | 65 (83 / 5) | 100 (48 / 0) | 8 | 76 (79 / 2) | 99 (50 / 0) |
 | Mage | 0 | 48 (93 / 2) | 100 (51 / 0) | 100 (57 / 0) | 0 (100 / 35) | 67 (87 / 5) | 100 (54 / 0) | 1 | 45 (92 / 6) | 96 (65 / 0) |
 | Cleric | 0 | 45 (89 / 2) | 100 (43 / 0) | 100 (41 / 0) | 0 (100 / 30) | 59 (79 / 2) | 100 (43 / 0) | 0 | 57 (74 / 3) | 100 (41 / 0) |
 
-Seeds (wins % per seed, prepared tier): Warrior Warden 47,51,58, Colossus 80,74,69, Reaver 48,38,40; Assassin Warden 42,40,45, Colossus 50,63,59, Reaver 76,79,72; Ranger Warden 59,54,49, Colossus 58,69,67, Reaver 99,100,98; Mage Warden 45,45,53, Colossus 75,68,59, Reaver 49,40,46; Cleric Warden 47,42,45, Colossus 62,56,59, Reaver 62,53,57.
+Seeds (wins % per seed, prepared tier): Warrior Warden 47,51,58, Colossus 80,74,69, Reaver 48,38,40; Assassin Warden 42,40,45, Colossus 50,63,59, Reaver 76,79,72; Ranger Warden 59,54,49, Colossus 58,69,67, Reaver 75,78,75 (99,100,98 before the half-dodge); Mage Warden 45,45,53, Colossus 75,68,59, Reaver 49,40,46; Cleric Warden 47,42,45, Colossus 62,56,59, Reaver 62,53,57.
 
 Crafted supplies (3 Greater Draughts and a Riftglass Ward), wins % plain prepared / crafted prepared / difference (band: at most +30):
 
@@ -1377,7 +1377,7 @@ Crafted supplies (3 Greater Draughts and a Riftglass Ward), wins % plain prepare
 | --- | --- | --- | --- |
 | Warrior | 52 / 77 / +25 | 74 / 97 / +23 | 42 / 68 / +26 |
 | Assassin | 42 / 79 / +37 | 57 / 76 / +19 | 76 / 85 / +9 |
-| Ranger | 54 / 81 / +27 | 65 / 85 / +21 | 99 / 99 / +0 |
+| Ranger | 54 / 81 / +27 | 65 / 85 / +21 | 76 / 93 / +17 |
 | Mage | 48 / 69 / +21 | 67 / 85 / +17 | 45 / 73 / +28 |
 | Cleric | 45 / 64 / +19 | 59 / 73 / +14 | 57 / 70 / +12 |
 
@@ -1387,7 +1387,7 @@ Telegraph check, rules minus blind at the prepared tier (win points / HP-lost po
 | --- | --- | --- | --- |
 | Warrior | +33 / +4 | +37 / +7 | +41 / +9 |
 | Assassin | +26 / +4 | -7 / -2 | +25 / +14 |
-| Ranger | +53 / +12 | +52 / +15 | +85 / +50 |
+| Ranger | +53 / +12 | +52 / +15 | +62 / +19 |
 | Mage | +47 / +7 | +18 / +4 | +19 / +5 |
 | Cleric | -3 / -1 | -30 / -16 | -33 / -17 |
 
@@ -1401,10 +1401,20 @@ Band misses and open items (all accepted unless marked open; no number was chang
 - Assassin Warden crafted minus plain +37 (Warrior +25, Ranger +27, Mage +21, Cleric +19 are inside +30; Mage Reaver +28 inside). Assassin Warden prepared 42 sits in its band, but its crafted tier is 79. Accepted.
 - Mixed fights HP lost mostly outside 15-40: Assassin road-mixed 46, Mage grove and bastion 44 and 48, Cleric road and grove 41, Ranger bastion 14. Accepted (the band predates the stat changes; the fights are won 100%).
 - Telegraph check not met: Cleric (all three elites; the blind Cleric wins as often or more, Warden -3, Colossus -30, Reaver -33), Assassin at the Colossus (-7). Cleric rules were left unchanged by decision (part 8a). Accepted.
-- Ranger Reaver prepared 99 (band 40-85), approved; blind Ranger 14.
+- Ranger Reaver prepared 76 (band 40-85): in band after the half-dodge (was 99, above the ceiling); blind Ranger 14.
 - Cleric Colossus enrage start is a cliff (130 s: 20%, 140 s: 68%, 150 s: 90%); retune with care. Accepted.
 - Warrior Reaver over 100, Assassin 94, Mage 96, all at least 85. Met.
-- OPEN (new in part 8, not retuned): Ranger arrived at the Reaver wins 84% (band for an arrived hero: at most 20%). The other four classes are at 0-15%. Cause not investigated (measure-only part). Needs a decision: accept (the Ranger's ranged kit trivialises an under-geared Reaver, as it does at the prepared tier) or retune.
+- RESOLVED (2026-11-09, "Ranger Reaver half-dodge" below): Ranger arrived at the Reaver won 84% (band: at most 20%). Fade Back's full dodge cancelled about 60% of the Rift Surges. Rift Surge now sets `dodgedDamageFraction` 0.6; the Ranger arrived tier wins 8%.
+
+Ranger Reaver half-dodge (2026-11-09). Fade Back's full dodge cancelled about 60% of the Reaver's Rift Surges, so the Ranger arrived tier won 84% (band: at most 20%) and the prepared tier 99% (band 40-85). A new optional enemy-skill field `dodgedDamageFraction` lets a readied dodge take a skill only in part: that share of each damage effect still lands (no statuses, no supply theft). Only Rift Surge sets it, at 0.6. Sweep of the fraction (Ranger, seeds 1-3 x 100 runs, mean wins %):
+
+| `dodgedDamageFraction` | Arrived | Prepared | Prepared minus blind |
+| --- | --- | --- | --- |
+| omitted (full dodge) | 84 | 99 | +85 |
+| 0.5 | 16 | 88 | +74 |
+| 0.6 (chosen) | 8 | 76 | +62 |
+
+The 0.5 and 0.6 rows are the planner's patched-copy measurement; a run of the final code agrees at 0.6 (arrived 9, 9, 6; prepared 75, 78, 75; over 99; crafted 93; blind prepared 14 unchanged). Other classes, other elites, regular fights and the reference CSV are byte-identical before and after. The Ranger telegraph check at the Reaver is now +62 wins / +19 HP points (still at least +10 / +8).
 
 Echo-first diagnostic (Warrior and Cleric against the Warden, prepared, `targetPriority` `lowestHpPercent` on the whole hero): Warrior 0% wins, Warden 51% left (reference rules: 0%, 51%); Cleric 0% wins, Warden 71% left (reference rules: 0%, 71%). The targeting change moves nothing, so Echo-first targeting does not explain the gap and the reference rules are NOT changed. The gap is class damage and sustain, as diagnosed.
 
@@ -1765,7 +1775,7 @@ These are a first broad roster for mechanical review. Names and effects are not 
 4. Snare Trap: costs 25 Readiness; arm one trap that triggers on the target's next action with a 75% base Stun chance; 8-second cooldown; 1.0× action time. Only one Ranger trap can be armed at a time.
 5. Piercing Arrow: costs 20 Readiness; deals 220% Physical Power (130% until 2026-11-03); adds 30 percentage points of Armor penetration, subject to the total penetration cap; 5-second cooldown; 1.0× action time.
 6. Flame Arrow: costs 20 Readiness and one special arrow; deals magical damage equal to 100% Physical Power; applies one Burn intensity whose tick deals 10% of snapshotted Physical Power; 6-second cooldown; 1.0× action time.
-7. Fade Back: no Readiness cost; gain +30 Evasion until the next Ranger action, and ready a dodge: the next enemy skill with a damage effect that would hit the Ranger within 3 seconds deals no damage and applies none of its statuses, then the dodge is spent; 16-second cooldown; 0.5× action time. The dodge was added and the cooldown raised from 8 seconds on 2026-11-03, because skills never roll to hit, so Evasion alone could not answer a telegraph. Measured at seed 1, 40 runs, nodes 0/6/9: Rootmaw at level 14 15/45/45% to 75/85/85%, Echo Knight at level 16 0/0/0% to 18/33/33%, Echo Knight at level 20 50% to 100%. Added 2026-11-03 so a Ranger can answer a telegraph; the Ranger's arrows were raised 30% in the same change. Measured at seed 1, 30 runs: a level-20 Ranger beats the Rootmaw 73% at 0 nodes and 87% at 9 nodes (33% and 60% before). The Echo Knight still beats it (0%).
+7. Fade Back: no Readiness cost; gain +30 Evasion until the next Ranger action, and ready a dodge: the next enemy skill with a damage effect that would hit the Ranger within 3 seconds deals no damage and applies none of its statuses, then the dodge is spent (an enemy skill may set a dodged-damage share, so that part of the damage still lands; only the Hollowmaw Reaver's Rift Surge does, at 0.6); 16-second cooldown; 0.5× action time. The dodge was added and the cooldown raised from 8 seconds on 2026-11-03, because skills never roll to hit, so Evasion alone could not answer a telegraph. Measured at seed 1, 40 runs, nodes 0/6/9: Rootmaw at level 14 15/45/45% to 75/85/85%, Echo Knight at level 16 0/0/0% to 18/33/33%, Echo Knight at level 20 50% to 100%. Added 2026-11-03 so a Ranger can answer a telegraph; the Ranger's arrows were raised 30% in the same change. Measured at seed 1, 30 runs: a level-20 Ranger beats the Rootmaw 73% at 0 nodes and 87% at 9 nodes (33% and 60% before). The Echo Knight still beats it (0%).
 
 #### Mage
 

@@ -1096,6 +1096,8 @@ export type SkillDodgeEvent = {
   sourceName: string
   skillId: string
   skillName: string
+  /** Present when part of the damage still landed (the skill set a dodged-damage share). */
+  damageFraction?: number
 }
 
 export type RaceEvent = {
@@ -1631,6 +1633,8 @@ export type EnemySkillDef = {
    * Barrier damage that never reaches HP is not counted.
    */
   interruptMaxHpFraction?: number
+  /** Share of each damage effect that still lands when the hero's readied dodge takes this skill; statuses and supply theft are still avoided. Omitted: a full dodge. */
+  dodgedDamageFraction?: number
   /** Ally chosen when the skill resolves. Omitted skills do not need an ally. */
   allyTarget?: AllyTarget
   /** The caster is affected even when no ally exists. */

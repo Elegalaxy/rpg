@@ -959,6 +959,7 @@ function resolveEnemyStrike(
   skill: EnemySkillDef,
   effect: DamageEffect,
   timeMs: number,
+  scale = 1,
 ): DamageResult {
   const bounds = consistencyBounds(actor.consistency)
   const consistencyRoll = centeredRoll(state.rng, bounds.floor, bounds.ceiling)
@@ -968,7 +969,7 @@ function resolveEnemyStrike(
     evasion: effectiveEvasion(target, timeMs),
     power: actor.power,
     coefficient: effect.coefficient,
-    outgoingModifier: 1,
+    outgoingModifier: scale,
     consistency: actor.consistency,
     critChance: skill.canCrit === true ? CRIT_CHANCE_BASE : 0,
     critDamage: actor.critDamage,
@@ -1302,6 +1303,7 @@ function spendSkillDodge(state: CombatState, actor: CombatActor, skill: EnemySki
     sourceName: actor.name,
     skillId: skill.id,
     skillName: skill.name,
+    ...(skill.dodgedDamageFraction === undefined ? {} : { damageFraction: skill.dodgedDamageFraction }),
   })
   return true
 }
@@ -1368,9 +1370,11 @@ function applyEnemySkill(
   const hpDamageDealt: { [targetId: string]: number } = {}
   const ally = skill.allyTarget === undefined ? null : selectAlly(state.enemies, actor, skill.allyTarget, timeMs)
   const dodged = spendSkillDodge(state, actor, skill, timeMs)
+  const dodgedShare = dodged ? (skill.dodgedDamageFraction ?? 0) : 1
   for (const effect of skill.effects) {
     if (state.outcome !== 'ongoing') break
-    if (dodged && (effect.kind === 'damage' || effect.kind === 'applyStatus' || effect.kind === 'stealSupply')) continue
+    if (dodged && (effect.kind === 'applyStatus' || effect.kind === 'stealSupply')) continue
+    if (dodged && effect.kind === 'damage' && dodgedShare <= 0) continue
     if (effect.kind === 'stealSupply') {
       stealSupply(state, actor, effect.chance, timeMs)
       continue
@@ -1378,7 +1382,7 @@ function applyEnemySkill(
     if (effect.kind === 'damage') {
       const target = state.hero
       if (!target.alive) continue
-      const result = resolveEnemyStrike(state, actor, target, skill, effect, timeMs)
+      const result = resolveEnemyStrike(state, actor, target, skill, effect, timeMs, dodgedShare)
       applyHit(state, defs, actor, target, timeMs, result, deaths)
       hpDamageDealt[target.id] = (hpDamageDealt[target.id] ?? 0) + result.hpDamage
       continue

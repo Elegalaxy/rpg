@@ -939,11 +939,12 @@ const riftSurge: EnemySkillDef = {
   tag: 'rift-surge',
   tags: ['magical', 'attack'],
   canCrit: true,
+  dodgedDamageFraction: 0.6,
   effects: [{ kind: 'damage', school: 'magical', coefficient: 4 }],
 }
 
 /**
- * Level 26 elite burst. Rift Surge cannot be interrupted. Reaver Strike (the 100% filler) fills ordinary actions.
+ * Level 26 elite burst. Rift Surge cannot be interrupted; a readied dodge (Fade Back) takes only 40% of it (dodgedDamageFraction 0.6, no statuses). Reaver Strike (the 100% filler) fills ordinary actions.
  * Guard and assault stances as the Echo Knight. No summons. Drops 10 duskiron.
  */
 export const hollowmawReaver: EnemyDef = {
