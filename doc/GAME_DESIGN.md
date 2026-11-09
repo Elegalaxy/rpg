@@ -1529,6 +1529,8 @@ Chosen: Greater Draught 35%, Riftglass Ward 25%. 30% equals the Healing Draught 
 
 Finding: the Warrior and Cleric excess is NOT the heal or Ward number. At Greater Draught 30% and Ward 20% (the same values as the Healing Draught and Ward Charm) the crafted Warrior still wins 97 against 55 plain. The cause is the Greater Draught default rule: it drinks at hero HP at most 30%, the Healing Draught rule at 40%. With the Greater Draught rule also at 40% the 30 / 20 gap is exactly 0 for every class and elite. So the later, riskier trigger is worth about +40 points to Warrior and about +20 to Cleric. Option for the user, NOT applied (rule thresholds are outside the approved levers): raise the Greater Draught rule to hero HP at most 40%. Measured with that rule (seed 1, 60 runs, Warden gap W / A / R / M / C, Colossus A): 35 / 25 at 40% gives +22 / +36 / +29 / +20 / +23, Colossus Assassin +24; at 35% rule gives +45 / +28 / +27 / +23 / +35.
 
+Part 7b (user decision 2026-11-09): the Greater Draught default rule now fires at hero HP at most 40% (was 30%), matching the Healing Draught row. Only new heroes get it; heroes who already received the row at 30% keep it. Measured by the implementer (seed 1, 60 runs) before applying: Warden gap W +22 / A +36 / R +29 / M +20 / C +23, Colossus Assassin +24. The Assassin is expected over the +30 ceiling (+36) and is accepted for now; acceptance (seeds 1-3 x 100, crafted prepared wins, mean; gap over plain prepared 52 / 42 / 54 / 48 / 45): Warden Warrior 77 (+25), Assassin 79 (+37), Ranger 81 (+27), Mage 69 (+21), Cleric 64 (+19); Colossus Warrior 100 (0), Assassin 76 (+23), Ranger 96 (+9), Mage 100 (0), Cleric 100 (0). Every cell is inside the +30 band except the Assassin at the Warden (+37), accepted for now.
+
 Applied 2026-11-09: Greater Draught 35%, Riftglass Ward 25% (`src/content/skills.ts`, `src/content/supplies.ts` text, `supplies.test.ts`). Measured after (seeds 1-3 x 100 runs, mean; plain prepared > crafted prepared wins %, gap; before-gaps from the baseline and the Assassin fix: Warden W +21 (older), A +58, R +45, M +50, C +52; Colossus A +45):
 
 | Elite | Warrior | Assassin | Ranger | Mage | Cleric |
@@ -1965,7 +1967,7 @@ First-playable supplies, decided 2026-11-03:
 | Supply | Effect | Shop price | Brew | Unlock | Default rule |
 |---|---|---|---|---|---|
 | Warming Tonic | Removes all Chill and Burn from the hero and restores 10% of maximum HP. | 12 gold | 2 hide + 4 gold | none | Hero Chill at least 2 stacks |
-| Greater Draught | Restores 35% of maximum HP (50% until Step 13.5 part 7). | not sold | 2 riftglass + 10 gold | Drowned Causeway discovered | Hero HP at most 30%, placed above the Healing Draught row |
+| Greater Draught | Restores 35% of maximum HP (50% until Step 13.5 part 7). | not sold | 2 riftglass + 10 gold | Drowned Causeway discovered | Hero HP at most 40% (30% until Step 13.5 part 7b), placed above the Healing Draught row |
 | Riftglass Ward | A barrier of 25% of maximum HP for 8 seconds (30% until Step 13.5 part 7). | not sold | 2 riftglass + 12 gold | Any hero has beaten the Tidebound Colossus | Same conditions as the Ward Charm row, placed above it |
 
   - A locked supply cannot be brewed and shows its lock reason, the same way a locked recipe does. A supply with no shop price cannot be bought.

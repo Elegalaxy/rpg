@@ -107,10 +107,10 @@ export const WARMING_TONIC_ROW: PriorityRow = {
   conditions: [{ kind: 'status', who: 'hero', statusId: 'chill', measure: 'stacks', operator: 'atLeast', value: 2 }],
 }
 
-/** The Greater Draught's default rule: drink it at 30% HP or less, above the Healing Draught row (decided 2026-11-08). */
+/** The Greater Draught's default rule: drink it at 40% HP or less, above the Healing Draught row (30% until 2026-11-09). */
 export const GREATER_DRAUGHT_ROW: PriorityRow = {
   skillId: 'greater-draught',
-  conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 30 }],
+  conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 40 }],
 }
 
 /** The Riftglass Ward's default rule: the Ward Charm's conditions, above the Ward Charm row (decided 2026-11-08). */
