@@ -789,9 +789,9 @@ The Leech's regeneration is the `REGENERATION_TRAIT` with a per-enemy multiplier
 
 Elite Tidebound Colossus:
 
-- Level 22 Tank elite. Stats: 4,000 HP (Step 13.5 part 5B; was 3,600, about the Echo Knight x 1.12), 35 Power (31 in the proposal, raised in tuning, Step 13.1 part 8); Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25. Step 13.5 part 8a start values: action time 2.2 s (from the Tank line's 2.64 s) and a `timePressure` enrage from 140 s (§7 "Elite pressure"); final values are recorded there.
+- Level 22 Tank elite. Stats: 4,000 HP (Step 13.5 part 5B; was 3,600, about the Echo Knight x 1.12), 35 Power (31 in the proposal, raised in tuning, Step 13.1 part 8); Armor, Resistance, Accuracy and Evasion come from the elite Tank line. Consistency 25. Step 13.5 part 8a (final values): action time 2.2 s (from the Tank line's 2.64 s) and a `timePressure` enrage from 140 s (§7 "Elite pressure").
 - Tide cycle uses the existing stance trait (10-second switch, the same constants as the Echo Knight): Ebb is the Guard stance (+30% Armor and Resistance), Flood is the Assault stance (+25% Power, -40% Armor and Resistance). It starts in Ebb. The sim keeps the names guard and assault; the Tide names are display text for later.
-- Breaker Wave: 2.5 s telegraph, 300% Physical Power (Step 13.5 part 5B; was 230%), can critically hit, interruptible at 8% of max HP (4% in the Step 13.5 part 8a start values), 10 s cooldown.
+- Breaker Wave: 2.5 s telegraph, 300% Physical Power (Step 13.5 part 5B; was 230%), can critically hit, interruptible at 5% of max HP (8% until Step 13.5 part 8a), 10 s cooldown.
 - At 35% HP (50% in the proposal, lowered in tuning, Step 13.1 part 8) it uses a 2-second telegraph to summon 2 Mire Leeches (level 18), through the HP summon trait. Summons award no XP.
 - Drops 10 riftglass. Gold is the elite rate, level x 3.
 - Its first defeat by any hero unlocks the Siphoning modifier recipe (account-wide).
@@ -937,8 +937,8 @@ Regular enemies (a Standard enemy at level 24 has 560 HP and 32 Power):
 
 Elite Hollowmaw Reaver:
 
-- Level 26 Burst elite. 4,400 HP, 44 Power (Step 13.5 part 5B; were 3,400 and 40), Consistency 25; the other stats come from the elite Burst line. Step 13.5 part 8a start values: Power 60-62 and a `timePressure` enrage from 90 s (§7 "Elite pressure"); final values are recorded there.
-- Rift Surge: 2.5 s telegraph, 400% Magical Power (Step 13.5 part 5B; was 300%), can critically hit, NOT interruptible, 12 s cooldown (8 s in the Step 13.5 part 8a start values). Reaver Strike fills ordinary actions at 100% Physical Power.
+- Level 26 Burst elite. 4,400 HP, 65 Power (Step 13.5 parts 5B and 8a; were 3,400 and 40, then 44), Consistency 25; the other stats come from the elite Burst line. Step 13.5 part 8a (final values): Power 65 (was 44) and a `timePressure` enrage from 90 s (§7 "Elite pressure").
+- Rift Surge: 2.5 s telegraph, 400% Magical Power (Step 13.5 part 5B; was 300%), can critically hit, NOT interruptible, 9 s cooldown (12 s until Step 13.5 part 8a). Reaver Strike fills ordinary actions at 100% Physical Power.
 - Uses the stance trait (10 seconds, guard and assault, as the Echo Knight and the Colossus). No summons.
 - Drops 10 duskiron. Gold is the elite rate. Its first defeat by any hero records `defeated:hollowmaw-reaver` and unlocks Bloodbound.
 
@@ -1612,6 +1612,22 @@ Reaver sweep (2026-11-09, seed 1 x 60, rules mode, `timePressure` patched in mem
 | 66 | 10 s | 90 s | 30 / 78 / 100 / 52 / 48 |
 
 Reading: the Assassin and Warrior fights end before the enrage (about 37 s and 70 s), so only Power and the cooldown move them; the enrage start moves only the Cleric (fights of about 105 s), steeply (80 s: 18, 90 s: 63-73, 100 s: 93). Inside the planned range (Power 58-62, cooldown 8-9 s) no row puts the Assassin and the Warrior in band together (62 / 8 s: Warrior 35; 62 / 9 s: Assassin 88). Power 65 with a 9 s cooldown and the enrage at 90 s does (outside the planned Power range, reported): Warrior 47, Assassin 72, Ranger 100, Mage 50, Cleric 63.
+
+Chosen for the Reaver: Power 65, Rift Surge cooldown 9 s, enrage from 90 s. Applied 2026-11-09 (`src/content/enemies.ts`: `overrides.power` 65, Rift Surge `cooldownSeconds` 9, `timePressure` via `eliteEnrage(90_000)`). Power 65 is outside the planned 58-62; no point inside the range puts the Warrior and the Assassin in band together.
+
+Reaver acceptance (`--matrix elites`, seeds 1-3 x 100, rules mode; mean of the seeds, individual seeds in brackets):
+
+| Class | Prepared (band 40-85) | Over-levelled (at least 85) | Prepared crafted (gap) | Prepared blind |
+| --- | --- | --- | --- | --- |
+| Warrior | 42 (48, 38, 40) | 100 | 68 (+26) | 1 |
+| Assassin | 76 (76, 79, 72) | 94 | 85 (+9) | 50 |
+| Ranger | 99 (99, 100, 98) | 100 | 99 (0) | 14 |
+| Mage | 45 (49, 40, 46) | 96 | 73 (+28) | 26 |
+| Cleric | 57 (62, 53, 57) | 100 | 70 (+13) | 91 |
+
+Bands met: prepared inside 40-85 for Warrior, Assassin, Mage and Cleric, the Ranger accepted at about 100 (blind Ranger 14, so Fade Back and the rules still decide the fight); over-levelled at least 94 for every class; crafted minus plain at most +30 (Mage +28 is close). The Warrior (seed 2: 38) and the Mage (seed 2: 40) are at the lower edge. Seeds differ by up to 10 points (Warrior 10, Mage 9, Cleric 9, Assassin 7, Ranger 2); the mean of three seeds is in band for all five.
+
+Reaver guards (seed 1): `--matrix hollows` (60 runs) differs from before only in the Reaver column (every regular fight stays at 100% and every mixed-fight HP-lost value is identical); the reference CSV (100 runs) and `--matrix warden` (40 runs) are byte-identical to before apart from the runs/sec line, since neither fights the Reaver.
 
 
 ### Automation

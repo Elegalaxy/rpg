@@ -108,16 +108,24 @@ describe('Rift Hollows enemies', () => {
     })
   })
 
-  it('spawns the Reaver as a level-26 burst elite with 3,400 HP, 40 Power and stances', () => {
+  it('spawns the Reaver as a level-26 burst elite with 4,400 HP, 65 Power, an enrage and stances', () => {
     const { state } = open([{ defId: 'hollowmaw-reaver', slot: 0 }])
     const reaver = actorAt(state, 0)
     const stats = deriveEnemyStats({
       level: 26,
       archetype: 'burst',
       elite: true,
-      overrides: { maxHp: 4400, power: 44, consistency: 25 },
+      overrides: { maxHp: 4400, power: 65, consistency: 25 },
     })
-    expect(stats).toMatchObject({ maxHp: 4400, power: 44, consistency: 25 })
+    expect(stats).toMatchObject({ maxHp: 4400, power: 65, consistency: 25 })
+    expect(hollowmawReaver.timePressure).toEqual({
+      startMs: 90_000,
+      intervalMs: 3000,
+      maxStacks: 10,
+      power: 1.1,
+      defense: 0.95,
+      actionSpeed: 1.05,
+    })
     expect(reaver.level).toBe(26)
     expect(reaver.maxHp).toBe(4400)
     expect(reaver.elite).toBe(true)
@@ -128,7 +136,7 @@ describe('Rift Hollows enemies', () => {
     console.log('[enemy] reaver stats', stats)
   })
 
-  it('defines Rift Surge: 2.5 s, 400% Magical, can crit, not interruptible, 12 s cooldown', () => {
+  it('defines Rift Surge: 2.5 s, 400% Magical, can crit, not interruptible, 9 s cooldown', () => {
     const surge = hollowmawReaver.skills?.[0]
     expect(surge).toMatchObject({
       id: 'rift-surge',
@@ -136,7 +144,7 @@ describe('Rift Hollows enemies', () => {
       school: 'magical',
       telegraphMs: 2500,
       canCrit: true,
-      cooldownSeconds: 12,
+      cooldownSeconds: 9,
     })
     expect(surge?.interruptMaxHpFraction).toBeUndefined()
   })
