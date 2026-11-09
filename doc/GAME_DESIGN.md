@@ -1355,7 +1355,7 @@ If Echo-first targeting (Q5) explains most of the Warrior and Cleric Warden gap 
 
 Guards after each class part: the built matrix (Rootmaw and Echo Knight at 6 nodes) is not trivialised (Warrior and Cleric HP lost not down more than 15 points); reference regular fights at least 95% wins; Causeway and Hollows regular fights at least 95%; Mage over-levelled Warden at least 85%. Acceptance: seeds 1, 2 and 3 at 100 runs, mean of the seeds, seeds within 8 points of each other.
 
-Later parts: 5 elite retune (Colossus HP 3,600 to 4,200 and Breaker Wave 230% to 320%; Reaver HP 3,400 to 4,400, Power 40 to 44, Rift Surge 300% to 400%; Warden unchanged unless Warrior or Cleric is below 30% prepared, then the HP multiplier 8 to 7); 6 telegraph check (an optional single-action interrupt mechanic only with user approval); 7 crafted supplies (planned Greater Draught 50% to 40%, Riftglass Ward 30% to 25%; the sweep chose 35% and 25%, see "Crafted supplies trim"); 8 full re-measure and close.
+Later parts: 5 elite retune (Colossus HP 3,600 to 4,200 and Breaker Wave 230% to 320%; Reaver HP 3,400 to 4,400, Power 40 to 44, Rift Surge 300% to 400%; Warden unchanged unless Warrior or Cleric is below 30% prepared, then the HP multiplier 8 to 7); 6 telegraph check (done 2026-11-09, see "Elite pressure"; the single-action interrupt was not built); 7 crafted supplies (planned Greater Draught 50% to 40%, Riftglass Ward 30% to 25%; the sweep chose 35% and 25%, see "Crafted supplies trim"); 8 full re-measure and close.
 
 Baselines and results are recorded below as each part is measured.
 
@@ -1628,6 +1628,17 @@ Reaver acceptance (`--matrix elites`, seeds 1-3 x 100, rules mode; mean of the s
 Bands met: prepared inside 40-85 for Warrior, Assassin, Mage and Cleric, the Ranger accepted at about 100 (blind Ranger 14, so Fade Back and the rules still decide the fight); over-levelled at least 94 for every class; crafted minus plain at most +30 (Mage +28 is close). The Warrior (seed 2: 38) and the Mage (seed 2: 40) are at the lower edge. Seeds differ by up to 10 points (Warrior 10, Mage 9, Cleric 9, Assassin 7, Ranger 2); the mean of three seeds is in band for all five.
 
 Reaver guards (seed 1): `--matrix hollows` (60 runs) differs from before only in the Reaver column (every regular fight stays at 100% and every mixed-fight HP-lost value is identical); the reference CSV (100 runs) and `--matrix warden` (40 runs) are byte-identical to before apart from the runs/sec line, since neither fights the Reaver.
+
+Telegraph check (Step 13.5 part 6, recorded 2026-11-09 from the same runs; prepared tier, rules minus blind wins in points, then HP lost points saved by the rules; positive means the rules hero does better):
+
+| Elite | Warrior | Assassin | Ranger | Mage | Cleric |
+| --- | --- | --- | --- | --- | --- |
+| Colossus wins | +37 | -7 | +53 | +18 | -30 |
+| Colossus HP lost | +7 | -2 | +15 | +4 | -16 |
+| Reaver wins | +41 | +26 | +85 | +19 | -34 |
+| Reaver HP lost | +9 | +14 | +51 | +5 | -17 |
+
+Target (rules beat blind by at least 10 win points and at least 8 HP points for every class with an answer skill): met by the Warrior, Ranger and Mage on wins at both elites (HP only partly: Warrior Colossus +7, Mage +4 and +5), and by the Assassin at the Reaver. NOT met: the Assassin at the Colossus (-7), and the Cleric at both elites (-30 and -34 wins). Reading: under the late enrage the Cleric's telegraph rows (spend on a telegraph, hold Mend for it) make a slow fight slower, so the blind Cleric, who just attacks and heals, wins more; the Cleric rules are left unchanged by decision (the user accepted this). The single-action interrupt mechanic was not built (not approved). The planner's preview (Reaver W +40, A +17, R +92, M +27, C -20; Colossus W +45, A -18, R +38, M -3, C -30) matches within noise.
 
 
 ### Automation
