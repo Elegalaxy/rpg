@@ -988,6 +988,60 @@ Blind runs (the same hero with its telegraph and interrupt rows removed) were al
 
 Reading against the targets: regular fights meet the 95% win band at every tier. The mixed fights lose 15-40% only for some classes (Mage loses 0-1% in `hollows-mixed`, Ranger Brute 0%, below band; Warrior and Cleric lose 10-34%). The Reaver is far above its 40-85% band: every class wins 100% at every tier, losing 15-47% of its HP, so it needs hardening in part 8. The Brute's Rift Cleave is not dangerous enough to make interrupts matter (blind equals rules). No number was changed.
 
+### Fourth zone: Cinder Scar
+
+Decided 2026-11-09 (user approved), Step 13.6. One new zone and one elite, copying the Rift Hollows pattern (Step 13.4), with one new material (cinderite), the first Burn applications by enemies against heroes, and one new stat (magical status resistance from gear). Warrior and Cleric must not be walled.
+
+World:
+
+- Node Cinder Scar, levels 28-34, reached by a leg from the Splintered Road (20 seconds). Resource node Ember Seam gives 3 cinderite per visit (display only).
+- Gate: the Hollowmaw Reaver defeated (personal to the hero). The gate message reads "Defeat Hollowmaw Reaver first."
+- Route `cinder-scar`: Greyhaven, Splintered Road, Cinder Scar. Fixed fights in order: `imp-swarm` (3 Cinder Imps, level 28), `golem` (one Slag Golem, level 29), `cinder-mixed` (Golem and Pyre Acolyte, level 29), then the elite fight `emberwrought-tyrant`. Drawn fights after the fixed ones: `cinder-mixed`, `cinder-deep` (Imp, Golem and Acolyte, all level 31), `imp-swarm`.
+- Map position {470, 290}; the map height grows from 300 to 330. The leg must not cross the Bastion or Hollows markers (checked in the browser).
+- Pass-through rule (Step 13.2): only the Cinder Scar's own fights drop materials.
+
+Regular enemies (framework stats: a Standard enemy at level 31 has 700 HP and 39 Power):
+
+| Enemy | Levels | Archetype | Skills | Drop |
+| --- | --- | --- | --- | --- |
+| Cinder Imp | 28-32 | Swarm (groups of 3) | Ember Spit: 80% Magical Power, 60% base chance to apply Burn (coefficient 0.12, magical), 4 s cooldown | 2 duskiron |
+| Slag Golem | 29-34 | Standard (not Tank) | Magma Slam: 2.0 s telegraph, 220% Physical Power, two Burn applications at 100% chance (coefficient 0.12), interruptible at 25% of max HP, 10 s cooldown | 4 cinderite |
+| Pyre Acolyte | 28-33 | Support (0.5x Armor, 1.5x Resistance) | Kindle: ally barrier worth 100% of its Magical Power, 8 s cooldown (as the Echo Ward). Fire Bolt: 90% Magical Power and a 50% base chance to apply Burn | 3 cinderite |
+
+Elite Emberwrought Tyrant (starting values; ranges are the tuning space):
+
+- Level 32 Standard elite. 5,000 HP (range 4,600-5,400), Power 55 (50-62), Consistency 25, action time 2.2 s. No stance.
+- Searing Brand: 110% Physical Power, 75% base chance to apply Burn (coefficient 0.15), 6 s cooldown. Pyre Wave: 2.5 s telegraph, 260% Magical Power, can critically hit, two Burn applications, interruptible at 5% of max HP (4-8%), 10 s cooldown.
+- At 40% HP a 2 s telegraph summons 2 Cinder Imps (level 28) through the HP summon trait (as the Mire Leech summon).
+- Late enrage `timePressure: eliteEnrage(120_000)` (start range 100-140 s): the Warden per-stack numbers from Step 13.5 part 8a.
+- Drops 10 cinderite. Gold is the elite rate. Its first defeat by any hero records `defeated:emberwrought-tyrant` and unlocks Kindled.
+
+Cinderite (new material): sells for 10 gold. A craft rolls quality 110% to 120%. As an upgrade material it adds +5 points, up to 120%, cost 3. It is last in `MATERIAL_RARITY`, after duskiron.
+
+Modifiers (one per item; the stack cap is 2 across worn gear):
+
+| Modifier | Effect | Min level | Slots | Recipe | Unlock |
+| --- | --- | --- | --- | --- | --- |
+| Emberward | +10 magical status resistance (new field `magicalStatusResistanceBonus`; lowers the chance a magical status lands on the hero by 10 points) | 28 | armor, accessory | 700 gold | Cinder Scar discovered |
+| Tempered | +4 points Armor and magical penetration, +2 points crit chance | 28 | weapon | 700 gold | Cinder Scar discovered |
+| Kindled | +5% max HP, +8 Healing Power | 30 | off-hand, accessory | 800 gold (`recipeGold`) | Emberwrought Tyrant defeated by any hero |
+
+Supplies: a new default rule row `WARMING_TONIC_BURN_ROW` (use Warming Tonic when the hero has 3 or more Burn stacks) is placed after the Warming Tonic row in `DEFAULT_SUPPLY_ROWS`. Existing heroes receive it once through the hero update `warming-tonic-burn-rule`. No new supply.
+
+Contracts and Legacy: the Salvage contract gains a cinderite entry: "bring home N cinderite", N from 5 to 10, contract level 31, reward paid in duskiron (`SALVAGE_BY_MATERIAL`), offered once the Cinder Scar is discovered. The first Tyrant defeat gives 3 Legacy once (`elite:emberwrought-tyrant`). No save version bump; older saves load with the node undiscovered and the material at 0.
+
+Harness tiers (`--matrix cinder`): Arrived (level 28, 9 nodes, quality 116%, the Hollows prepared set plus Bloodbound, 3 Draughts), Prepared (level 30, 10 nodes, 120%, Emberward on head, chest and one accessory, Tempered weapon, a Cleric adds Kindled on the off-hand, 2 Draughts, 1 Warming Tonic and 1 Ward Charm), Over-levelled (level 33, 11 nodes, 120%, as Prepared). `BUILD_ORDER` gains two non-keystone nodes per class, appended so existing prefixes do not change: Warrior Shield Impact, Reckless Strike; Assassin Ambush, Fan of Knives; Ranger Efficient Quiver, Volley; Mage Quick Study, Defensive Preparation; Cleric Safeguard, Reciprocal Purpose. A `-notonic` variant of the Prepared tier swaps the Tonic for a Draught.
+
+Acceptance bands (mean of seeds 1-3 x 100 runs, rules mode):
+
+- Regular fights, prepared: at least 95% wins for every class; `cinder-mixed` and `cinder-deep` lose 15-40% of maximum HP.
+- Emberwrought Tyrant: prepared 40-85% (Warrior and Cleric at least 30%), over-levelled at least 85%, arrived at most 20%, crafted minus plain at most +30 points.
+- Burn check: prepared minus `-notonic` is at least +10 win points at the Tyrant, or at least 8 HP points saved in `cinder-deep`, for at least 3 classes.
+- Telegraph check as in Step 13.5: rules minus blind at least +10 for classes that have an answer (the Cleric exception stands).
+- About 35-45 fights per level at level 30. `--expedition cinder-scar` seeds 1-5 run cleanly; the defeat rate is recorded.
+- Guards: the reference CSV and the earlier matrices stay byte-identical apart from new rows.
+Tuning knobs: the Tyrant ranges above; only if needed the Golem and Imp Burn coefficients (0.10-0.15). If the bands cannot be reached, stop and report; do not loosen them.
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
@@ -2397,6 +2451,7 @@ Balance values should be treated as testable starting hypotheses rather than fin
 
 ## 19. Changelog
 
+- 2026-11-09: Designed the fourth zone, Cinder Scar (levels 28-34): three new enemies, the Emberwrought Tyrant elite, cinderite, the first enemy Burn on heroes, magical status resistance gear, three gated modifiers (Emberward, Tempered, Kindled), a Warming Tonic Burn default row, a cinderite Salvage contract and Legacy +3 for the first Tyrant defeat (Step 13.6).
 - 2026-11-08: Designed the third zone, Rift Hollows (levels 22-28): three new enemies, the Hollowmaw Reaver elite, duskiron, three gated modifiers (Stalwart, Devout, Bloodbound), a duskiron Salvage contract and Legacy +3 for the first Reaver defeat (Step 13.4).
 - 2026-11-08: Designed Grove and Bastion material drops (witherbark, oathsteel) and the pass-through rule: fights before a route's last node drop no materials (Step 13.2).
 - 2026-11-08: Designed the second zone, Drowned Causeway (levels 17-22): three new enemies, the Tidebound Colossus elite, riftglass, three gated modifiers (Hallowed, Rending, Siphoning), a Salvage contract and Legacy +3 for the first Colossus defeat (Step 13.1).

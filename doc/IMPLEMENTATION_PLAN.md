@@ -1111,6 +1111,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-09: Part 8 done, Step 13.5 closed (measure and document only; no sim, content or test expectation changed). Full re-measure at seeds 1-3 x 100 (rules mode) of `--matrix reference` (seed 1; `reports/2026-10-23-reference.csv` byte-identical), `warden`, `elites`, `causeway`, `hollows`, `built`, `telegraph`, and `--expedition` Splintered Road, Sunken Causeway and Rift Hollows (seeds 1-5, 0 defeats on every route). Final tables are in GAME_DESIGN §7 "Class balance pass" ("Final measurement"). Met: Warden prepared 45-54 for all classes (band 30-70), over and Causeway 100 (85+), arrived 0 (20 or less); Colossus prepared 57-74 (40-85), over 100; Reaver prepared 42-99, over 94-100; crafted minus plain at most +30 except Assassin Warden +37; regular fights 100%. Accepted deviations: seed spread over 8 points in mid-band cells (up to 16); mixed-fight HP lost mostly outside 15-40 (Assassin road 46, Mage grove 44 and bastion 48, Cleric road and grove 41, Ranger bastion 14); Assassin Warden crafted gap +37; Cleric telegraph check not met at all three elites and Assassin at the Colossus (-7), Cleric rules unchanged by decision; Ranger Reaver prepared 99 approved; Cleric Colossus enrage cliff (130 s 20%, 140 s 68%, 150 s 90%). Open item found by the re-measure: Ranger arrived at the Reaver wins 84% (arrived band 20% or less; other classes 0-15%), not retuned. Greater Draught default rule threshold decided at 40% HP.
   - 2026-11-09: Ranger Reaver half-dodge (follow-up to part 8; GAME_DESIGN §7 "Ranger Reaver half-dodge"). New optional `EnemySkillDef.dodgedDamageFraction` (validated 0 < x < 1; `SkillDodgeEvent.damageFraction`; log text "partly dodges"); Rift Surge sets 0.6, so Fade Back lets 60% of the damage land (no statuses). Ranger Reaver arrived 84 -> 8, prepared 99 -> 76, over 100 -> 99, crafted 99 -> 93, telegraph check +62 / +19 (seeds 1-3 x 100). Reference CSV, warden, causeway, telegraph, built and every other class/elite row byte-identical. The OPEN Ranger item is resolved. 954 tests. Optional follow-up: a UI telegraph chip "half-dodge" (the log line covers it).
 
+### Step 13.6: Cinder Scar
+- Status: `in-progress`
+- Depends on: 13.4, 13.5
+- Design: GAME_DESIGN §6, "Fourth zone: Cinder Scar", decided 2026-11-09 (user approved).
+- Goal: fourth zone (levels 28-34) and one elite (Emberwrought Tyrant), new material cinderite, enemy Burn on heroes, magical status resistance gear, gated modifiers Emberward, Tempered, Kindled, a Warming Tonic Burn default row.
+- Parts: (1) docs; (2) enemies and encounters; (3) harness baseline (`--matrix cinder`, Tyrant elite cells, build order), measurements only; (4) world (node, leg, route, gate, map); (5) cinderite material; (6) modifiers and `magicalStatusResistanceBonus`; (7) Warming Tonic Burn row; (8) Salvage, Legacy and browser check; (9) tuning and close.
+- Progress:
+  - 2026-11-09: Part 1, docs written (GAME_DESIGN §6 "Fourth zone: Cinder Scar", changelog, this step).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
