@@ -110,6 +110,7 @@ export const SALVAGE_BY_MATERIAL: {
 } = {
   [SALVAGE_MATERIAL]: { count: SALVAGE_COUNT, level: SALVAGE_LEVEL, rewardMaterialId: 'scrap', name: 'Salvage: Riftglass' },
   duskiron: { count: { min: 5, max: 10 }, level: 25, rewardMaterialId: 'riftglass', name: 'Salvage: Duskiron' },
+  cinderite: { count: { min: 5, max: 10 }, level: 31, rewardMaterialId: 'duskiron', name: 'Salvage: Cinderite' },
 }
 export const SALVAGE_CHANCE = 1 / 6
 export const REWARD_ROLL = { min: 0.8, max: 1.3 } as const

@@ -533,3 +533,59 @@ describe('Rift Hollows Salvage', () => {
     expect(unitsFrom(run([], [{ materialId: 'duskiron', quantity: 5 }]), def)).toBe(0)
   })
 })
+
+describe('Cinder Scar Salvage', () => {
+  const found = [...newSave().account.discoveries, 'node:withered-grove', 'node:fallen-bastion', 'node:drowned-causeway', 'node:rift-hollows', 'node:cinder-scar']
+  const reaver = { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight', 'tidebound-colossus', 'hollowmaw-reaver'] }
+  const colossus = { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight', 'tidebound-colossus'] }
+
+  it('offers cinderite Salvage once the Cinder Scar is discovered and the hero can enter', () => {
+    expect(boardPool(found, reaver).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass', 'secure:duskiron', 'secure:cinderite'])
+    expect(boardPool(found, colossus).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass', 'secure:duskiron'])
+    expect(targetKey({ kind: 'secure', materialId: 'cinderite' })).toBe('secure:cinderite')
+  })
+
+  it('rolls 5 to 10 cinderite paying rewardFor(ceil(N / 3), 31, duskiron) with the usual roll', () => {
+    const seen: ContractDef[] = []
+    for (let seed = 1; seed <= 3000 && seen.length < 12; seed += 1) {
+      const rng = createRng(seed)
+      const offer = rollContract(`c-${seed}`, found, () => nextFloat(rng), [], reaver)
+      if (offer?.target.kind === 'secure' && offer.target.materialId === 'cinderite') seen.push(offer)
+    }
+    expect(seen.length).toBeGreaterThan(0)
+    for (const offer of seen) {
+      expect(offer.count).toBeGreaterThanOrEqual(5)
+      expect(offer.count).toBeLessThanOrEqual(10)
+      expect(offer.level).toBe(31)
+      expect(offer.name).toBe('Salvage: Cinderite')
+      expect(offer.description).toBe(`Salvage: bring home ${offer.count} cinderite (Cinder Scar).`)
+      const base = rewardFor(Math.ceil(offer.count / 3), 31, 'duskiron')
+      expect(offer.reward.materialId).toBe('duskiron')
+      expect(offer.reward.gold).toBeGreaterThanOrEqual(Math.floor(base.gold * 0.8))
+      expect(offer.reward.gold).toBeLessThanOrEqual(Math.ceil(base.gold * 1.3))
+    }
+  })
+
+  it('rolls boards without the Cinder Scar exactly as before', () => {
+    const early = found.filter((id) => id !== 'node:cinder-scar')
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const a = createRng(seed)
+      const b = createRng(seed)
+      expect(rollContract('x', found, () => nextFloat(a), [], colossus)).toEqual(rollContract('x', early, () => nextFloat(b), [], colossus))
+    }
+  })
+
+  it('counts cinderite secured at settlement, never unsecured', () => {
+    let def: ContractDef | undefined
+    for (let seed = 1; seed <= 3000 && def === undefined; seed += 1) {
+      const rng = createRng(seed)
+      const offer = rollContract('d-1', found, () => nextFloat(rng), [], reaver)
+      if (offer?.target.kind === 'secure' && offer.target.materialId === 'cinderite') def = offer
+    }
+    if (def === undefined) throw new Error('no cinderite offer rolled')
+    const run = (secured: { materialId: string; quantity: number }[], unsecured: { materialId: string; quantity: number }[]) =>
+      ({ history: [], secured, unsecured, id: 'cinder-scar' }) as never
+    expect(unitsFrom(run([{ materialId: 'cinderite', quantity: 6 }, { materialId: 'duskiron', quantity: 9 }], [{ materialId: 'cinderite', quantity: 5 }]), def)).toBe(6)
+    expect(unitsFrom(run([], [{ materialId: 'cinderite', quantity: 5 }]), def)).toBe(0)
+  })
+})

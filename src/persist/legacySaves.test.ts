@@ -110,7 +110,9 @@ describe('a save from the first version of the game', () => {
     const save = parsed.data
     expect(save.account.discoveries).not.toContain('node:drowned-causeway')
     expect(save.account.discoveries).not.toContain('node:rift-hollows')
+    expect(save.account.discoveries).not.toContain('node:cinder-scar')
     expect(purseOf(save).materials.duskiron ?? 0).toBe(0)
+    expect(purseOf(save).materials.cinderite ?? 0).toBe(0)
     expect(save.account.discoveries.some((id) => id.startsWith('defeated:'))).toBe(false)
     expect(purseOf(save).materials.riftglass ?? 0).toBe(0)
     expect(purseOf(save).board.some((offer) => offer.target.kind === 'secure')).toBe(false)

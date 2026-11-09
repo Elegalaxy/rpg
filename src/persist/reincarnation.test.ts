@@ -394,3 +394,17 @@ describe('Hollowmaw Reaver Legacy bonus', () => {
     expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:hollowmaw-reaver')).toBe(false)
   })
 })
+
+describe('Emberwrought Tyrant Legacy bonus', () => {
+  it('pays 3 Legacy once for the first defeat of the Emberwrought Tyrant', () => {
+    const base = veteran()
+    const beaten = { ...base, heroes: base.heroes.map((h) => ({ ...h, defeatedEnemyIds: [...h.defeatedEnemyIds, 'emberwrought-tyrant'] })) }
+    const due = bonusesDue(hero(beaten)).find((bonus) => bonus.id === 'elite:emberwrought-tyrant')
+    expect(due).toMatchObject({ amount: 3, text: 'First defeat of the Emberwrought Tyrant' })
+    expect(bonusesDue(hero(base)).some((bonus) => bonus.id === 'elite:emberwrought-tyrant')).toBe(false)
+    const first = ok(reincarnate(beaten, 'hero-1', null))
+    expect(hero(first).claimedBonuses).toContain('elite:emberwrought-tyrant')
+    const again = { ...first, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true, defeatedEnemyIds: ['emberwrought-tyrant'] })) }
+    expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:emberwrought-tyrant')).toBe(false)
+  })
+})
