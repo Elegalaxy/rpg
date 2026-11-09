@@ -126,7 +126,7 @@ describe('the Causeway modifiers', () => {
     expect(ITEM_MODIFIERS.hallowed).toMatchObject({ minLevel: 16, bonus: { equipmentHealingPower: 10 }, requires: { discoveryId: 'node:drowned-causeway' } })
     expect(ITEM_MODIFIERS.rending).toMatchObject({ minLevel: 18, bonus: { armorPenetrationBonus: 0.06, magicalPenetrationBonus: 0.06 }, requires: { discoveryId: 'node:drowned-causeway' } })
     expect(ITEM_MODIFIERS.siphoning).toMatchObject({ minLevel: 20, bonus: { lifestealFraction: 0.03 }, requires: { enemyId: 'tidebound-colossus' } })
-    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(15)
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(18)
     const hallowed = ITEM_MODIFIERS.hallowed!
     const rending = ITEM_MODIFIERS.rending!
     const siphoning = ITEM_MODIFIERS.siphoning!
@@ -201,5 +201,73 @@ describe('the Rift Hollows modifiers', () => {
     expect(bonus.maxHpBonus).toBeCloseTo(0.12, 10)
     expect(bonus.lifestealFraction).toBeCloseTo(0.05, 10)
     expect(modifierCapNotes(worn({ head: ['stalwart'], chest: ['stalwart'], hands: ['stalwart'] }))).toEqual(['Stalwart is on 3 pieces, but only 2 count.'])
+  })
+})
+
+describe('the Cinder Scar modifiers', () => {
+  const input = {
+    level: 1,
+    classId: 'warrior',
+    attributes: { strength: 10, vitality: 10, agility: 10, intellect: 10, spirit: 10 },
+    gear: {
+      mainHand: { id: 'w', kind: 'oneHanded', itemLevel: 1, quality: 1 },
+      offHand: { id: 'o', kind: 'shield', itemLevel: 1, quality: 1 },
+      head: { id: 'a', slot: 'head', category: 'heavy', itemLevel: 1, quality: 1 },
+      chest: { id: 'b', slot: 'chest', category: 'heavy', itemLevel: 1, quality: 1 },
+      hands: { id: 'c', slot: 'hands', category: 'heavy', itemLevel: 1, quality: 1 },
+      feet: { id: 'd', slot: 'feet', category: 'heavy', itemLevel: 1, quality: 1 },
+      accessories: [
+        { id: 'e', itemLevel: 1, quality: 1 },
+        { id: 'f', itemLevel: 1, quality: 1 },
+      ],
+    },
+  } as HeroStatInput
+
+  it('have the decided levels, numbers, fits, prices and unlocks', () => {
+    expect(ITEM_MODIFIERS.emberward).toMatchObject({
+      minLevel: 28,
+      bonus: { magicalStatusResistanceBonus: 10 },
+      recipeGold: 700,
+      requires: { discoveryId: 'node:cinder-scar' },
+    })
+    expect(ITEM_MODIFIERS.tempered).toMatchObject({
+      minLevel: 28,
+      bonus: { armorPenetrationBonus: 0.04, magicalPenetrationBonus: 0.04, critChanceBonus: 0.02 },
+      recipeGold: 700,
+      requires: { discoveryId: 'node:cinder-scar' },
+    })
+    expect(ITEM_MODIFIERS.kindled).toMatchObject({
+      minLevel: 30,
+      bonus: { maxHpBonus: 0.05, equipmentHealingPower: 8 },
+      recipeGold: 800,
+      requires: { enemyId: 'emberwrought-tyrant' },
+    })
+    const emberward = ITEM_MODIFIERS.emberward!
+    const tempered = ITEM_MODIFIERS.tempered!
+    const kindled = ITEM_MODIFIERS.kindled!
+    expect([chest, head, ring, sword, shield].map((base) => modifierFits(emberward, base))).toEqual([true, true, true, false, false])
+    expect([sword, ring, shield, chest].map((base) => modifierFits(tempered, base))).toEqual([true, false, false, false])
+    expect([shield, ring, sword, chest].map((base) => modifierFits(kindled, base))).toEqual([true, true, false, false])
+    expect(appliesToText(emberward)).toBe('armor and accessories')
+  })
+
+  it('add their bonuses to the derived stats', () => {
+    const plain = deriveHeroStats(input)
+    expect(plain.magicalStatusResistance).toBe(0)
+    const ward = deriveHeroStats({ ...input, ...statBonusesFor(worn({ head: ['emberward'] })) })
+    expect(ward.magicalStatusResistance).toBe(10)
+    const temper = deriveHeroStats({ ...input, ...statBonusesFor(worn({ mainHand: ['tempered'] })) })
+    expect(temper.armorPenetration).toBeCloseTo(plain.armorPenetration + 0.04, 10)
+    expect(temper.magicalPenetration).toBeCloseTo(plain.magicalPenetration + 0.04, 10)
+    expect(temper.critChance).toBeCloseTo(plain.critChance + 0.02, 10)
+    const kindle = deriveHeroStats({ ...input, ...statBonusesFor(worn({ offHand: ['kindled'] })) })
+    expect(kindle.healingPower).toBeCloseTo(plain.healingPower + 8, 10)
+    expect(kindle.maxHp / plain.maxHp).toBeCloseTo(1.05, 10)
+  })
+
+  it('respect the two-piece stack cap for Emberward', () => {
+    const gear = worn({ head: ['emberward'], chest: ['emberward'], accessory0: ['emberward'] })
+    expect(statBonusesFor(gear).magicalStatusResistanceBonus).toBe(20)
+    expect(modifierCapNotes(gear)).toEqual(['Emberward is on 3 pieces, but only 2 count.'])
   })
 })

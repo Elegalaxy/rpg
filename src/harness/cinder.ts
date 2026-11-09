@@ -1,7 +1,6 @@
 import { gameDefs } from '../content/scenarios.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
-import { ITEM_MODIFIERS, type EquipmentSlotId, type StatBonuses } from '../sim/economy.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import type { CombatSetup } from '../sim/types.ts'
 
@@ -83,33 +82,6 @@ const preparedTier = (): WardenTier => CINDER_TIERS.find((tier) => tier.id === '
 /** Measured beside the tiers, never instead of them. */
 export const CINDER_VARIANTS: readonly WardenTier[] = [notonicVariant(preparedTier())]
 
-/**
- * Bonuses of the Cinder Scar modifiers while they are not yet in `ITEM_MODIFIERS` (part 6). Once an id is defined
- * there, that definition is used and this entry is ignored. Emberward has no stat before part 6 and counts as nothing.
- */
-const PENDING_BONUSES: { readonly [id: string]: StatBonuses } = {
-  emberward: {},
-  tempered: { armorPenetrationBonus: 0.04, magicalPenetrationBonus: 0.04, critChanceBonus: 0.02 },
-  kindled: { maxHpBonus: 0.05, equipmentHealingPower: 8 },
-}
-
-const MODIFIER_STACK = 2
-
-function pendingBonuses(modifiers: WardenTier['modifiers']): StatBonuses {
-  const total: { [key in keyof StatBonuses]: number } = {}
-  const seen: { [id: string]: number } = {}
-  for (const slot of Object.keys(modifiers) as EquipmentSlotId[]) {
-    const id = modifiers[slot]
-    if (id === null || ITEM_MODIFIERS[id] !== undefined) continue
-    const pending = PENDING_BONUSES[id]
-    if (pending === undefined) continue
-    seen[id] = (seen[id] ?? 0) + 1
-    if (seen[id] > MODIFIER_STACK) continue
-    for (const key of Object.keys(pending) as (keyof StatBonuses)[]) total[key] = (total[key] ?? 0) + (pending[key] ?? 0)
-  }
-  return total
-}
-
 export type CinderFight = {
   id: string
   enemies: CombatSetup['enemies']
@@ -165,13 +137,9 @@ export type CinderRow = {
   medianMs: number
 }
 
-/** A class at a Cinder Scar tier, with the tier's modifier bonuses (and pending ones before part 6), against the Warden-style default enemies. */
+/** A class at a Cinder Scar tier, against the Warden-style default enemies (the real modifiers apply through the Warden setup). */
 export function cinderTierSetup(classId: HeroClass, tier: WardenTier): CombatSetup {
-  const warden = wardenSetup(classId, tier)
-  const merged: { [key in keyof StatBonuses]: number } = { ...(warden.hero.statBonuses ?? {}) }
-  const extra = pendingBonuses({ ...tier.modifiers, ...(tier.classModifiers?.[classId] ?? {}) })
-  for (const key of Object.keys(extra) as (keyof StatBonuses)[]) merged[key] = (merged[key] ?? 0) + (extra[key] ?? 0)
-  return { ...warden, hero: { ...warden.hero, statBonuses: merged } }
+  return wardenSetup(classId, tier)
 }
 
 /** The fight for a class at a tier: the Warden-style hero against the fight's enemies. */

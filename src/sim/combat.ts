@@ -2452,7 +2452,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     spirit: hero.attributes.spirit,
     statusPotency: 0,
     physicalStatusResistance: 0,
-    magicalStatusResistance: 0,
+    magicalStatusResistance: derived.magicalStatusResistance,
     boss: false,
     elite: false,
     revealed: true,

@@ -213,3 +213,41 @@ describe('Enemy Burn on the hero', () => {
     expect(state.hero.hp).toBeLessThan(hpBefore)
   })
 })
+
+describe('Magical status resistance from gear', () => {
+  function firstBurnAttempt(bonus: number): { resistance: number; chance: number } {
+    const defs = gameDefs()
+    const hero = referenceHeroes.warrior
+    const state = createCombat(
+      {
+        hero: {
+          id: hero.id,
+          name: 'Warrior',
+          level: hero.level,
+          classId: hero.classId,
+          attributes: hero.attributes,
+          gear: hero.gear,
+          statBonuses: { magicalStatusResistanceBonus: bonus },
+        },
+        enemies: [{ defId: 'cinder-imp', slot: 0, level: 30 }],
+      },
+      defs,
+      1,
+    )
+    state.hero.hp = 1_000_000
+    state.hero.maxHp = 1_000_000
+    state.hero.nextReadyMs = 1_000_000
+    actorAt(state, 0).nextReadyMs = 10
+    stepUntil(state, defs, () => state.log.some((event) => event.type === 'statusAttempt' && event.statusId === 'burn'), 10_000)
+    const attempt = state.log.find((event) => event.type === 'statusAttempt' && event.statusId === 'burn')
+    if (attempt === undefined || attempt.type !== 'statusAttempt') throw new Error('no burn attempt')
+    return { resistance: attempt.resistance, chance: attempt.chance }
+  }
+
+  it('adds to the hero resistance and lowers the chance Burn lands by 10 points', () => {
+    const plain = firstBurnAttempt(0)
+    const warded = firstBurnAttempt(10)
+    expect(warded.resistance - plain.resistance).toBe(10)
+    expect(plain.chance - warded.chance).toBeCloseTo(0.1, 10)
+  })
+})

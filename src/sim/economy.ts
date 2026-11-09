@@ -272,6 +272,8 @@ export type StatBonuses = {
   maxHpBonus?: number
   /** Heals this fraction of damage dealt after mitigation. 0.03 is 3%. */
   lifestealFraction?: number
+  /** Added to the hero's magical status resistance, in points. 10 lowers the chance a magical status lands by 10 points. */
+  magicalStatusResistanceBonus?: number
 }
 
 export type ItemModifier = {
@@ -324,7 +326,7 @@ export function modifierFits(modifier: ItemModifier, base: ItemBase): boolean {
   return true
 }
 
-/** The fifteen modifiers: six first-playable (G8), three from Batch C, three gated ones from the Drowned Causeway and three from the Rift Hollows. Percent values are fractions: 0.02 is 2 points. */
+/** The eighteen modifiers: six first-playable (G8), three from Batch C, three gated ones from the Drowned Causeway, three from the Rift Hollows and three from the Cinder Scar. Percent values are fractions: 0.02 is 2 points. */
 export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
   keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance', appliesTo: ['weapon', 'accessory'] },
   precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy', appliesTo: ['weapon', 'offHand', 'accessory'] },
@@ -405,6 +407,36 @@ export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
     appliesTo: ['weapon'],
     recipeGold: 650,
     requires: { enemyId: 'hollowmaw-reaver' },
+  },
+  emberward: {
+    id: 'emberward',
+    name: 'Emberward',
+    minLevel: 28,
+    bonus: { magicalStatusResistanceBonus: 10 },
+    text: '+10 magical status resistance',
+    appliesTo: ['armor', 'accessory'],
+    recipeGold: 700,
+    requires: { discoveryId: 'node:cinder-scar' },
+  },
+  tempered: {
+    id: 'tempered',
+    name: 'Tempered',
+    minLevel: 28,
+    bonus: { armorPenetrationBonus: 0.04, magicalPenetrationBonus: 0.04, critChanceBonus: 0.02 },
+    text: '+4 points armor and magical penetration, +2 points critical chance',
+    appliesTo: ['weapon'],
+    recipeGold: 700,
+    requires: { discoveryId: 'node:cinder-scar' },
+  },
+  kindled: {
+    id: 'kindled',
+    name: 'Kindled',
+    minLevel: 30,
+    bonus: { maxHpBonus: 0.05, equipmentHealingPower: 8 },
+    text: '+5% maximum HP, +8 Healing Power',
+    appliesTo: ['offHand', 'accessory'],
+    recipeGold: 800,
+    requires: { enemyId: 'emberwrought-tyrant' },
   },
 }
 

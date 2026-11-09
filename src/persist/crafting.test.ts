@@ -126,7 +126,7 @@ describe('queueing a craft', () => {
     expect(craftCheck(learned, hero(learned), { ...bow, modifierId: 'nimble' })).toBe('Nimble needs level 3. This hero is level 2.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, modifierId: 'nimble' })).toBe('Nimble can only go on armor and accessories.')
     expect(craftCheck(stocked(3), hero(stocked(3)), { ...bow, baseId: 'armor-heavy-chest', modifierId: 'nimble' })).toBeNull()
-    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(15)
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(18)
   })
 
   it('is closed while an expedition runs', () => {
@@ -337,7 +337,7 @@ describe('worn items and recipes', () => {
     const base = levelled()
     const grown = { ...base, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 12 } })) }
     const save = { ...updatePurse(grown, { gold: 300 }), account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES] } }
-    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['bloodbound', 'devout', 'hallowed', 'hauler', 'mending', 'nimble', 'piercing', 'quick', 'rending', 'siphoning', 'stalwart', 'sturdy', 'vicious'])
+    expect(recipesForSale(save).map((entry) => entry.modifierId).sort()).toEqual(['bloodbound', 'devout', 'emberward', 'hallowed', 'hauler', 'kindled', 'mending', 'nimble', 'piercing', 'quick', 'rending', 'siphoning', 'stalwart', 'sturdy', 'tempered', 'vicious'])
     expect(recipePrice('nimble')).toBe(75)
     expect(recipePrice('quick')).toBe(225)
     expect(recipePrice('vicious')).toBe(75)
@@ -600,5 +600,49 @@ describe('Rift Hollows recipes', () => {
     expect(buyRecipe(save, 'stalwart')).toEqual({ ok: false, reason: 'The Stalwart recipe needs level 22. This hero is level 21.' })
     const mid = withGold(23, ['node:rift-hollows'], ['hollowmaw-reaver'])
     expect(buyRecipe(mid, 'bloodbound')).toEqual({ ok: false, reason: 'The Bloodbound recipe needs level 24. This hero is level 23.' })
+  })
+})
+
+describe('Cinder Scar recipes', () => {
+  function withGold(level: number, discoveries: string[] = [], defeated: string[] = []): SaveData {
+    const base = stocked()
+    const grown = {
+      ...base,
+      account: { ...base.account, recipes: [...STARTING_MODIFIER_RECIPES], discoveries: [...base.account.discoveries, ...discoveries] },
+      heroes: base.heroes.map((h) => ({ ...h, defeatedEnemyIds: defeated, progress: { ...h.progress, level } })),
+    }
+    return updatePurse(grown, { gold: 5000 })
+  }
+
+  it('prices the three at 700, 700 and 800 gold', () => {
+    expect([recipePrice('emberward'), recipePrice('tempered'), recipePrice('kindled')]).toEqual([700, 700, 800])
+  })
+
+  it('locks Emberward and Tempered until the Cinder Scar is discovered, with the reason shown', () => {
+    const save = withGold(34)
+    const rows = recipesForSale(save)
+    expect(rows.find((row) => row.modifierId === 'emberward')?.locked).toBe('Discover Cinder Scar first.')
+    expect(rows.find((row) => row.modifierId === 'tempered')?.locked).toBe('Discover Cinder Scar first.')
+    expect(buyRecipe(save, 'emberward')).toEqual({ ok: false, reason: 'The Emberward recipe is locked. Discover Cinder Scar first.' })
+    const found = withGold(34, ['node:cinder-scar'])
+    expect(recipeLock(found, 'tempered')).toBeNull()
+    expect(purseOf(ok(buyRecipe(found, 'emberward'))).gold).toBe(5000 - 700)
+    expect(ok(buyRecipe(found, 'tempered')).account.recipes).toContain('tempered')
+  })
+
+  it('locks Kindled until any hero has defeated the Emberwrought Tyrant', () => {
+    const save = withGold(34, ['node:cinder-scar'])
+    expect(buyRecipe(save, 'kindled')).toEqual({ ok: false, reason: 'The Kindled recipe is locked. Defeat Emberwrought Tyrant with any hero first.' })
+    const bought = ok(buyRecipe(withGold(34, ['node:cinder-scar'], ['emberwrought-tyrant']), 'kindled'))
+    expect(bought.account.recipes).toContain('kindled')
+    expect(purseOf(bought).gold).toBe(5000 - 800)
+    expect(recipeLock(withGold(34, ['defeated:emberwrought-tyrant']), 'kindled')).toBeNull()
+  })
+
+  it('still needs the hero level once unlocked', () => {
+    const save = withGold(27, ['node:cinder-scar'])
+    expect(buyRecipe(save, 'emberward')).toEqual({ ok: false, reason: 'The Emberward recipe needs level 28. This hero is level 27.' })
+    const mid = withGold(29, ['node:cinder-scar'], ['emberwrought-tyrant'])
+    expect(buyRecipe(mid, 'kindled')).toEqual({ ok: false, reason: 'The Kindled recipe needs level 30. This hero is level 29.' })
   })
 })

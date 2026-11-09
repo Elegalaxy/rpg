@@ -160,6 +160,8 @@ export type HeroStatInput = {
   cooldownReductionBonus?: number
   /** Fraction of damage dealt (after mitigation) the hero heals. 0.03 is 3%. */
   lifestealFraction?: number
+  /** Added to the hero's magical status resistance, in points. */
+  magicalStatusResistanceBonus?: number
   /** Racial branch nodes that change derived stats. Omitted applies none. */
   racialNodeIds?: readonly string[]
   /** Human Renaissance is active. */
@@ -187,6 +189,8 @@ export type HeroDerivedStats = {
   healingReceivedBonus: number
   /** Fraction of damage dealt the hero heals. 0 when no gear gives any. */
   lifestealFraction: number
+  /** Spirit is added in combat; this is the gear part, in points. */
+  magicalStatusResistance: number
 }
 
 export type EnemyStatOverrides = {
@@ -679,6 +683,7 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
     outOfCombatRegenPerSecond: REGEN_PER_VITALITY * attributes.vitality,
     healingReceivedBonus: healingReceivedBonus(attributes.vitality),
     lifestealFraction: optionalBonus(input.lifestealFraction, 'lifesteal fraction'),
+    magicalStatusResistance: optionalBonus(input.magicalStatusResistanceBonus, 'magical status resistance bonus'),
   }
 }
 

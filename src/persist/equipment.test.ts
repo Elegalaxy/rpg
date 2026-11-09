@@ -246,6 +246,21 @@ describe('what equipping changes', () => {
     expect(rendLines['Magical penetration']).toBeCloseTo(plain['Magical penetration']! + 6, 5)
   })
 
+  it('shows the magical status resistance from Emberward', () => {
+    const save = heroSave()
+    const plain = Object.fromEntries(statLines(statsFor(hero(save))!).map((line) => [line.label, line.value]))
+    expect(plain['Magical status resistance']).toBe(0)
+    const warded = {
+      ...save,
+      heroes: save.heroes.map((h) => ({
+        ...h,
+        equipment: { ...h.equipment, accessory0: { ...h.equipment.accessory0!, modifiers: ['emberward'] } },
+      })),
+    }
+    const lines = Object.fromEntries(statLines(statsFor(hero(warded))!).map((line) => [line.label, line.value]))
+    expect(lines['Magical status resistance']).toBe(10)
+  })
+
   it('previews the same numbers the equip then produces', () => {
     const save = withItems(heroSave(), developmentItems(1, 1))
     for (const id of ['dev-1', 'dev-2', 'dev-3', 'dev-6']) {

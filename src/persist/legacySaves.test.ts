@@ -116,7 +116,7 @@ describe('a save from the first version of the game', () => {
     expect(purseOf(save).board.some((offer) => offer.target.kind === 'secure')).toBe(false)
     expect(save.account.recipes).not.toContain('siphoning')
     const rows = recipesForSale(save)
-    expect(rows.filter((row) => row.locked !== null).map((row) => row.modifierId)).toEqual(['hallowed', 'rending', 'siphoning', 'stalwart', 'devout', 'bloodbound'])
+    expect(rows.filter((row) => row.locked !== null).map((row) => row.modifierId)).toEqual(['hallowed', 'rending', 'siphoning', 'stalwart', 'devout', 'bloodbound', 'emberward', 'tempered', 'kindled'])
     expect(Object.keys(save.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots'])
   })
 })
