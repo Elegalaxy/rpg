@@ -363,6 +363,29 @@ export function assertEnemyDef(value: unknown): asserts value is EnemyDef {
   if (!hasPhases && value.phases !== undefined) {
     throw new Error(`enemy ${id} phases need the boss-phases trait`)
   }
+  if (value.timePressure !== undefined) assertTimePressure(value.timePressure, value.phases, id)
+}
+
+function assertTimePressure(value: unknown, phases: unknown, enemyId: string): void {
+  assertObject(value, `enemy ${enemyId} time pressure`)
+  for (const [key, label] of [
+    ['startMs', 'start'],
+    ['intervalMs', 'interval'],
+    ['maxStacks', 'cap'],
+  ] as const) {
+    const field = value[key]
+    if (typeof field !== 'number' || !Number.isInteger(field) || field < 1) {
+      throw new Error(
+        `enemy ${enemyId} time pressure ${label} must be a positive integer, received ${describeValue(field)}`,
+      )
+    }
+  }
+  assertPositiveFactor(value.power, `enemy ${enemyId} time pressure power`)
+  assertPositiveFactor(value.defense, `enemy ${enemyId} time pressure defense`)
+  assertPositiveFactor(value.actionSpeed, `enemy ${enemyId} time pressure action speed`)
+  if (Array.isArray(phases) && phases.some((phase) => phase !== null && typeof phase === 'object' && phase.pressureIntervalMs !== undefined)) {
+    throw new Error(`enemy ${enemyId} cannot combine time pressure with phase pressure`)
+  }
 }
 
 function assertPositiveFactor(value: unknown, label: string): number {
@@ -475,6 +498,11 @@ export function applyPhaseModifiers(actor: CombatActor): void {
   const stacks = actor.pressureStacks
   const powerScale = stacks > 0 ? Math.pow(actor.pressurePowerMultiplier, stacks) : 1
   const defenseScale = stacks > 0 ? Math.pow(actor.pressureDefenseMultiplier, stacks) : 1
+  if (actor.stance !== null) {
+    // A stance keeps its own numbers; the pressure stacks and a timed defense bonus scale them.
+    applyStanceNumbers(actor, actor.stance, powerScale, defenseScale * actor.defenseBonusMultiplier)
+    return
+  }
   actor.power = actor.rankPower * powerScale
   actor.armor = actor.rankArmor * actor.defenseBonusMultiplier * defenseScale
   actor.resistance = actor.rankResistance * actor.defenseBonusMultiplier * defenseScale
@@ -743,10 +771,15 @@ export function atOrBelowFraction(amount: number, total: number, fraction: numbe
   return amount * 1_000_000 <= total * fraction * 1_000_000 + 1
 }
 
-function applyStanceNumbers(actor: CombatActor, stance: EnemyStance): void {
-  const power = actor.stanceBasePower
-  const armor = actor.stanceBaseArmor
-  const resistance = actor.stanceBaseResistance
+function applyStanceNumbers(
+  actor: CombatActor,
+  stance: EnemyStance,
+  powerScale: number,
+  defenseScale: number,
+): void {
+  const power = actor.stanceBasePower * powerScale
+  const armor = actor.stanceBaseArmor * defenseScale
+  const resistance = actor.stanceBaseResistance * defenseScale
   if (stance === 'guard') {
     actor.power = power
     actor.armor = armor * GUARD_DEFENSE_MULTIPLIER
@@ -756,6 +789,14 @@ function applyStanceNumbers(actor: CombatActor, stance: EnemyStance): void {
   actor.power = power * ASSAULT_POWER_MULTIPLIER
   actor.armor = armor * ASSAULT_DEFENSE_MULTIPLIER
   actor.resistance = resistance * ASSAULT_DEFENSE_MULTIPLIER
+}
+
+/** The pressure and defense-bonus scales a stance multiplies in. Both are exactly 1 when nothing applies. */
+function stanceScales(actor: CombatActor): { power: number; defense: number } {
+  const stacks = actor.pressureStacks
+  const power = stacks > 0 ? Math.pow(actor.pressurePowerMultiplier, stacks) : 1
+  const defense = stacks > 0 ? Math.pow(actor.pressureDefenseMultiplier, stacks) : 1
+  return { power, defense: defense * actor.defenseBonusMultiplier }
 }
 
 /**
@@ -768,7 +809,8 @@ function enterStance(state: CombatState, actor: CombatActor, stance: EnemyStance
     actor.stanceBaseArmor = actor.armor
     actor.stanceBaseResistance = actor.resistance
   }
-  applyStanceNumbers(actor, stance)
+  const scales = stanceScales(actor)
+  applyStanceNumbers(actor, stance, scales.power, scales.defense)
   actor.stance = stance
   state.log.push({
     type: 'stance',
@@ -849,6 +891,12 @@ function enterBossPhase(state: CombatState, actor: CombatActor, phase: BossPhase
   actor.pressureActionSpeed = phase.pressureActionSpeed ?? 1
   actor.pressureStacks = 0
   actor.pressureNextMs = timeMs + phase.pressureIntervalMs
+}
+
+/** A `timePressure` enemy gets its first stack `timePressureStartMs` after it spawns. */
+function timePressureOnSpawn(state: CombatState, actor: CombatActor): void {
+  if (actor.timePressureStartMs < 1) return
+  actor.pressureNextMs = state.timeMs + actor.timePressureStartMs
 }
 
 function bossPhasesOnSpawn(state: CombatState, actor: CombatActor): void {
@@ -942,6 +990,7 @@ export function onEnemySpawn(state: CombatState, actor: CombatActor): void {
     const handler = TRAIT_ON_SPAWN[traitId]
     if (handler !== undefined) handler(state, actor)
   }
+  timePressureOnSpawn(state, actor)
   onEnemyHpChanged(state, actor, state.timeMs)
 }
 

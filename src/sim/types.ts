@@ -224,6 +224,8 @@ export type CombatActor = {
   pressurePowerMultiplier: number
   pressureDefenseMultiplier: number
   pressureActionSpeed: number
+  /** Milliseconds after spawn before the first `timePressure` stack. 0 when the enemy has none. */
+  timePressureStartMs: number
   phases: BossPhaseDef[]
   phaseSkillsDue: PhaseSkillDue[]
   /** Pending action telegraph. Automation reads `tag` and the time until `resolvesAtMs`. */
@@ -1640,6 +1642,20 @@ export type EnemySkillDef = {
   forcedRecovery?: ForcedRecovery
 }
 
+/**
+ * A late enrage: the first stack lands `startMs` after the enemy spawns, then one every `intervalMs`, up to
+ * `maxStacks`. Each stack multiplies Power by `power`, Armor and Resistance by `defense` and the action speed by
+ * `actionSpeed`, the same stacks boss phases use. Not allowed on an enemy whose phases define pressure.
+ */
+export type TimePressureDef = {
+  startMs: number
+  intervalMs: number
+  maxStacks: number
+  power: number
+  defense: number
+  actionSpeed: number
+}
+
 export type EnemyDef = {
   id: string
   name: string
@@ -1665,6 +1681,8 @@ export type EnemyDef = {
   boss?: boolean
   /** Ordered boss phases. The trait enters each threshold once. */
   phases?: readonly BossPhaseDef[]
+  /** Late enrage that stacks from `startMs` after spawn. See `TimePressureDef`. */
+  timePressure?: TimePressureDef
   /** Encounter rank R multiplies HP, Power, Armor, and Resistance by 1.12^R. */
   echoRank?: boolean
   /** Material dropped when an expedition fight is won. Omitted enemies drop nothing. */

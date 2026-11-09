@@ -2221,6 +2221,7 @@ function ratingDefaults(stats: { maxHp: number; power: number; armor: number; re
   pressurePowerMultiplier: number
   pressureDefenseMultiplier: number
   pressureActionSpeed: number
+  timePressureStartMs: number
   phases: CombatActor['phases']
   phaseSkillsDue: CombatActor['phaseSkillsDue']
 } {
@@ -2239,8 +2240,23 @@ function ratingDefaults(stats: { maxHp: number; power: number; armor: number; re
     pressurePowerMultiplier: 1,
     pressureDefenseMultiplier: 1,
     pressureActionSpeed: 1,
+    timePressureStartMs: 0,
     phases: [],
     phaseSkillsDue: [],
+  }
+}
+
+/** Copies a `timePressure` definition into the actor's pressure fields; a missing one leaves the defaults. */
+function timePressureFields(def: EnemyDef): Partial<CombatActor> {
+  const pressure = def.timePressure
+  if (pressure === undefined) return {}
+  return {
+    timePressureStartMs: pressure.startMs,
+    pressureIntervalMs: pressure.intervalMs,
+    pressureMaxStacks: pressure.maxStacks,
+    pressurePowerMultiplier: pressure.power,
+    pressureDefenseMultiplier: pressure.defense,
+    pressureActionSpeed: pressure.actionSpeed,
   }
 }
 
@@ -2305,6 +2321,7 @@ function actorFromEnemy(
     rank,
     bossPhase: 0,
     ...ratingDefaults(stats),
+    ...timePressureFields(def),
     phases: copyBossPhases(def.phases),
     telegraph: null,
     skills: copyEnemySkills(def),
