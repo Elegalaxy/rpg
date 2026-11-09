@@ -28,10 +28,11 @@ const NODE_POSITIONS: { readonly [id: string]: { x: number; y: number } } = {
   'fracture-gate': { x: 470, y: 110 },
   'drowned-causeway': { x: 190, y: 220 },
   'rift-hollows': { x: 330, y: 250 },
+  'cinder-scar': { x: 470, y: 290 },
 }
 
 const WIDTH = 540
-const HEIGHT = 300
+const HEIGHT = 330
 
 function point(position: MarkerPosition): { x: number; y: number } {
   if (position.kind === 'at') return NODE_POSITIONS[position.nodeId] ?? { x: 0, y: 0 }

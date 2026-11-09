@@ -34,3 +34,11 @@ describe('world map with the Rift Hollows', () => {
     expect(html).toContain('aria-label="Rift Hollows, locked. Not discovered yet."')
   })
 })
+
+describe('world map with the Cinder Scar', () => {
+  it('shows the Cinder Scar node as undiscovered', () => {
+    const html = renderToStaticMarkup(<MapView />)
+    expect(html).toContain('Cinder Scar')
+    expect(html).toContain('aria-label="Cinder Scar, locked. Not discovered yet."')
+  })
+})

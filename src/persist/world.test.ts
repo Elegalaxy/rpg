@@ -428,3 +428,50 @@ describe('Rift Hollows in the save', () => {
     expect(info.fights).toBe(7)
   })
 })
+
+describe('Cinder Scar in the save', () => {
+  it('is discovered when the Splintered Road is cleared, and stays gated on the Reaver', () => {
+    const save = withRun('cinder-scar')
+    expect(fightNodeIds(routes['cinder-scar']!)).toEqual([
+      'splintered-road',
+      'splintered-road',
+      'splintered-road',
+      'cinder-scar',
+      'cinder-scar',
+      'cinder-scar',
+      'cinder-scar',
+    ])
+    victoryFor(save.expedition!, 3)
+    const next = recordProgress(save)
+    expect(next.account.discoveries).toContain('node:cinder-scar')
+    const hero = selectedHero(next)!
+    expect(nodeStatus(node('cinder-scar'), next, hero)).toEqual({
+      state: 'locked',
+      reason: 'Defeat Hollowmaw Reaver first.',
+    })
+    expect(canStartRoute({ ...next, expedition: null }, 'cinder-scar')).toEqual({
+      ok: false,
+      reason: 'Cinder Scar: Defeat Hollowmaw Reaver first.',
+    })
+    const colossus = { ...next, expedition: null, heroes: next.heroes.map((h) => ({ ...h, defeatedEnemyIds: ['tidebound-colossus'] })) }
+    expect(nodeStatus(node('cinder-scar'), colossus, selectedHero(colossus)!).state).toBe('locked')
+    const ready = { ...next, expedition: null, heroes: next.heroes.map((h) => ({ ...h, defeatedEnemyIds: ['hollowmaw-reaver'] })) }
+    expect(nodeStatus(node('cinder-scar'), ready, selectedHero(ready)!).state).toBe('discovered')
+    expect(canStartRoute(ready, 'cinder-scar').ok).toBe(true)
+  })
+
+  it('records the Tyrant as a defeated elite and lists the route info with its enemies', () => {
+    let save = withRun('cinder-scar')
+    victoryFor(save.expedition!, 7)
+    save = recordProgress(save)
+    const hero = selectedHero(save)!
+    expect(hero.defeatedEnemyIds).toEqual(['emberwrought-tyrant'])
+    expect(hero.clearedNodeIds).toEqual(['splintered-road', 'cinder-scar'])
+    expect(save.account.discoveries).toContain('defeated:emberwrought-tyrant')
+    const info = routeInfo('cinder-scar', save)
+    expect(info.enemyNames).toEqual(expect.arrayContaining(['Cinder Imp', 'Slag Golem', 'Pyre Acolyte', 'Emberwrought Tyrant']))
+    expect(info.levels).toEqual({ min: 1, max: 34 })
+    expect(info.resources.map((entry) => entry.materialId)).toEqual(['scrap', 'cinderite'])
+    expect(info.fights).toBe(7)
+  })
+})

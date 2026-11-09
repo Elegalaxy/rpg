@@ -64,6 +64,7 @@ export const FALLEN_BASTION_NODE = 'fallen-bastion'
 export const FRACTURE_GATE_NODE = 'fracture-gate'
 export const DROWNED_CAUSEWAY_NODE = 'drowned-causeway'
 export const RIFT_HOLLOWS_NODE = 'rift-hollows'
+export const CINDER_SCAR_NODE = 'cinder-scar'
 
 export const nodes: { readonly [id: string]: WorldNode } = {
   [GREYHAVEN_ID]: {
@@ -129,6 +130,18 @@ export const nodes: { readonly [id: string]: WorldNode } = {
     gate: { defeatedEnemyIds: ['tidebound-colossus'] },
     discoveryId: 'node:rift-hollows',
   },
+  [CINDER_SCAR_NODE]: {
+    id: CINDER_SCAR_NODE,
+    name: 'Cinder Scar',
+    kind: 'zone',
+    levels: { min: 28, max: 34 },
+    encounterIds: ['imp-swarm', 'golem', 'cinder-mixed', 'emberwrought-tyrant'],
+    drawEncounterIds: ['cinder-mixed', 'cinder-deep', 'imp-swarm'],
+    resource: { id: 'ember-seam', name: 'Ember Seam', materialId: 'cinderite', quantity: 3 },
+    eliteEnemyId: 'emberwrought-tyrant',
+    gate: { defeatedEnemyIds: ['hollowmaw-reaver'] },
+    discoveryId: 'node:cinder-scar',
+  },
   [FRACTURE_GATE_NODE]: {
     id: FRACTURE_GATE_NODE,
     name: 'Fracture Gate',
@@ -149,6 +162,7 @@ export const legs: readonly Leg[] = [
   { from: FALLEN_BASTION_NODE, to: FRACTURE_GATE_NODE, travelMs: LEG_TRAVEL_MS },
   { from: SPLINTERED_ROAD_NODE, to: DROWNED_CAUSEWAY_NODE, travelMs: LEG_TRAVEL_MS },
   { from: SPLINTERED_ROAD_NODE, to: RIFT_HOLLOWS_NODE, travelMs: LEG_TRAVEL_MS },
+  { from: SPLINTERED_ROAD_NODE, to: CINDER_SCAR_NODE, travelMs: LEG_TRAVEL_MS },
 ]
 
 /** Route ids match the expedition ids the simulation accepts. */
@@ -187,6 +201,11 @@ export const routes: { readonly [id: string]: Route } = {
     id: 'rift-hollows',
     name: 'Road to the Rift Hollows',
     nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, RIFT_HOLLOWS_NODE],
+  },
+  'cinder-scar': {
+    id: 'cinder-scar',
+    name: 'Road to the Cinder Scar',
+    nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, CINDER_SCAR_NODE],
   },
 }
 
