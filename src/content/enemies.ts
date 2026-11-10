@@ -987,6 +987,7 @@ export const cinderImp: EnemyDef = {
   archetype: 'swarm',
   school: 'magical',
   filler: { school: 'magical' },
+  overrides: { xpMultiplier: 0.88 },
   skills: [emberSpit],
   drop: { materialId: 'duskiron', baseQuantity: 2 },
 }
@@ -1019,6 +1020,7 @@ export const slagGolem: EnemyDef = {
   archetype: 'standard',
   school: 'physical',
   filler: { school: 'physical' },
+  overrides: { xpMultiplier: 2.2 },
   skills: [magmaSlam],
   drop: { materialId: 'cinderite', baseQuantity: 4 },
 }
@@ -1061,7 +1063,7 @@ export const pyreAcolyte: EnemyDef = {
   archetype: 'support',
   school: 'magical',
   filler: { school: 'magical' },
-  overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5 },
+  overrides: { armorMultiplier: 0.5, resistanceMultiplier: 1.5, xpMultiplier: 2.2 },
   skills: [kindle, fireBolt],
   drop: { materialId: 'cinderite', baseQuantity: 3 },
 }
@@ -1129,7 +1131,7 @@ export const emberwroughtTyrant: EnemyDef = {
   elite: true,
   school: 'physical',
   filler: { school: 'physical' },
-  overrides: { maxHp: 5200, power: 50, consistency: 25, actionTime: 2.2 },
+  overrides: { maxHp: 5400, power: 68, consistency: 25, actionTime: 2.2 },
   timePressure: eliteEnrage(100_000),
   traitIds: [HP_SUMMON_TRAIT],
   skills: [searingBrand, pyreWave, summonCinderImps],

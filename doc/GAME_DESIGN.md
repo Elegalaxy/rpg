@@ -1010,10 +1010,10 @@ Regular enemies (framework stats: a Standard enemy at level 31 has 700 HP and 39
 
 Elite Emberwrought Tyrant (starting values; ranges are the tuning space):
 
-- Level 32 Standard elite. 5,000 HP (range 4,600-5,400; tuned to 5,200 in part 9), Power 55 (50-62; tuned to 50), Consistency 25, action time 2.2 s. No stance.
+- Level 32 Standard elite. 5,000 HP (range 4,600-5,400; tuned to 5,200 in part 9, then 5,400 on 2026-11-10), Power 55 (50-62; tuned to 50, then 68 on 2026-11-10, a user-approved deviation outside the planned range, see "Option A" below), Consistency 25, action time 2.2 s. No stance.
 - Searing Brand: 110% Physical Power, 75% base chance to apply Burn (coefficient 0.15), 6 s cooldown. Pyre Wave: 2.5 s telegraph, 260% Magical Power, can critically hit, two Burn applications, interruptible at 5% of max HP (4-8%), 10 s cooldown.
 - At 40% HP a 2 s telegraph summons 2 Cinder Imps (level 28) through the HP summon trait (as the Mire Leech summon).
-- Late enrage `timePressure: eliteEnrage(120_000)` (start range 100-140 s; tuned to 100 s in part 9): the Warden per-stack numbers from Step 13.5 part 8a.
+- Late enrage `timePressure: eliteEnrage(120_000)` (start range 100-140 s; tuned to 100 s in part 9, unchanged since): the Warden per-stack numbers from Step 13.5 part 8a.
 - Drops 10 cinderite. Gold is the elite rate. Its first defeat by any hero records `defeated:emberwrought-tyrant` and unlocks Kindled.
 
 Cinderite (new material): sells for 10 gold. A craft rolls quality 110% to 120%. As an upgrade material it adds +5 points, up to 120%, cost 3. It is last in `MATERIAL_RARITY`, after duskiron.
@@ -1030,13 +1030,13 @@ Supplies: a new default rule row `WARMING_TONIC_BURN_ROW` (use Warming Tonic whe
 
 Contracts and Legacy: the Salvage contract gains a cinderite entry: "bring home N cinderite", N from 5 to 10, contract level 31, reward paid in duskiron (`SALVAGE_BY_MATERIAL`), offered once the Cinder Scar is discovered. The first Tyrant defeat gives 3 Legacy once (`elite:emberwrought-tyrant`). No save version bump; older saves load with the node undiscovered and the material at 0.
 
-Harness tiers (`--matrix cinder`): Arrived (level 28, 9 nodes, quality 116%, the Hollows prepared set plus Bloodbound, 3 Draughts), Prepared (level 30, 10 nodes, 120%, Emberward on head, chest and one accessory, Tempered weapon, a Cleric adds Kindled on the off-hand, 2 Draughts, 1 Warming Tonic and 1 Ward Charm), Over-levelled (level 33, 11 nodes, 120%, as Prepared). `BUILD_ORDER` gains two non-keystone nodes per class, appended so existing prefixes do not change: Warrior Shield Impact, Reckless Strike; Assassin Ambush, Fan of Knives; Ranger Efficient Quiver, Volley; Mage Quick Study, Defensive Preparation; Cleric Safeguard, Reciprocal Purpose. A `-notonic` variant of the Prepared tier swaps the Tonic for a Draught. Only the Cinder Scar tiers carry the Burn Tonic row (`burnRow`), so every earlier matrix keeps the rules it was measured with; a hero is limited to 12 rules, so the Assassin (Smoke Step is a sixth class row) gives up the Chill Tonic row, which never fires in the Cinder Scar.
+Harness tiers (`--matrix cinder`; Prepared revised 2026-11-10, see "Option A" below): Arrived (level 28, 9 nodes, quality 116%, the Hollows prepared set plus Bloodbound on the weapon, so Bloodbound, Stalwart, Vicious and Quick with Nimble on hands and feet, 3 Draughts), Prepared (level 30, 10 nodes, 120%, the Arrived set with Emberward replacing Nimble on hands and feet, so Prepared is never weaker than Arrived; a Cleric adds Kindled on the off-hand and Devout on one accessory; 2 Draughts, 1 Warming Tonic and 1 Ward Charm), Over-levelled (level 33, 11 nodes, 120%, as Prepared). Tempered is in no tier. `BUILD_ORDER` gains two non-keystone nodes per class, appended so existing prefixes do not change: Warrior Shield Impact, Reckless Strike; Assassin Ambush, Fan of Knives; Ranger Efficient Quiver, Volley; Mage Quick Study, Defensive Preparation; Cleric Safeguard, Reciprocal Purpose. A `-notonic` variant of the Prepared tier swaps the Tonic for a Draught, and a `-noember` variant puts Nimble back on hands and feet (the Emberward check). Only the Cinder Scar tiers carry the Burn Tonic row (`burnRow`), so every earlier matrix keeps the rules it was measured with; a hero is limited to 12 rules, so the Assassin (Smoke Step is a sixth class row) gives up the Chill Tonic row, which never fires in the Cinder Scar.
 
 Acceptance bands (mean of seeds 1-3 x 100 runs, rules mode):
 
 - Regular fights, prepared: at least 95% wins for every class; `cinder-mixed` and `cinder-deep` lose 15-40% of maximum HP.
 - Emberwrought Tyrant: prepared 40-85% (Warrior and Cleric at least 30%), over-levelled at least 85%, arrived at most 20%, crafted minus plain at most +30 points.
-- Burn check: prepared minus `-notonic` is at least +10 win points at the Tyrant, or at least 8 HP points saved in `cinder-deep`, for at least 3 classes.
+- Emberward check (replaces the Tonic-based Burn check on 2026-11-10; no allowed lever could meet that one): Prepared minus `prepared-noember` is at least +10 Tyrant win points for at least 3 classes.
 - Telegraph check as in Step 13.5: rules minus blind at least +10 for classes that have an answer (the Cleric exception stands).
 - About 35-45 fights per level at level 30. `--expedition cinder-scar` seeds 1-5 run cleanly; the defeat rate is recorded.
 - Guards: the reference CSV and the earlier matrices stay byte-identical apart from new rows.
@@ -1116,6 +1116,48 @@ Against the bands:
 - Met: regular fights 100% wins for every class (band 95%); Tyrant over-levelled 93-100% (band 85% or more); Tyrant prepared in 40-85% for the Warrior (44, at least 30), Assassin (66), Ranger (41) and Cleric (75, at least 30); crafted minus plain at most +30 for the Assassin, Ranger (+30), Mage and Cleric; rules minus blind at least +10 at the Tyrant for the Warrior (+15), Assassin (+10) and Ranger (+32); the Cleric exception stands (-22: the Cleric does better blind, as at the Colossus and Reaver); `--expedition cinder-scar` seeds 1-5 (level-5 reference Warrior, 40% retreat): 0 defeats, every run retreats in the Imp swarm or the Golem, nothing to compare for the Tyrant.
 - Not met, and not reachable inside the decided ranges: (1) Tyrant arrived at most 20%: Assassin 66, Ranger 66 and Mage 93 (Warrior 18 met, Cleric 22 misses by 2). The Arrived tier is not weaker than the Prepared tier for these three classes (Bloodbound life steal and Stalwart HP against Tempered and Emberward), so any change that lowers Arrived lowers Prepared by the same amount; the 8% interrupt sweep separates them for the Assassin (arrived 21, prepared 28) only by dropping every Prepared cell except the Cleric's to 26-37. (2) Tyrant prepared Mage 86 (1 over; Ranger 41 sits at the bottom of its band at the same setting, so the two trade off). (3) Crafted minus plain for the Warrior +36 (the Greater Draught raises a class that is a few hits short). (4) Burn check: prepared minus no-Tonic is negative at the Tyrant for every class (-2 to -16) and saves 0 to 4 HP points in cinder-deep (band 8 points): the Tonic takes the place of a Healing Draught and Burn is too weak to repay it. Only the Imp and Golem Burn coefficients (0.10-0.15) were allowed; they change cinder-deep HP by at most 2 points. (5) Telegraph check at the Tyrant for the Mage (+3), and the Golem is a 100% win for every class with and without telegraph rules (the Mage saves 15 HP points with them, the other classes 0 to 1). (6) Mixed-fight HP lost outside 15-40%: cinder-mixed Ranger 10 and Mage 6 (too little); cinder-deep Warrior 42 and Cleric 41 (just over; Assassin 40 on the edge). (7) XP: the framework enemy XP gives a level-30 hero 92 XP for cinder-mixed (89 fights per level; a level costs 8,216 XP), 156 for cinder-deep (53 per level), 37 for imp-swarm (222), 72 for a Golem (114), 234 for the Tyrant (35); the 35-45 fights per level band is met only by the Tyrant, and no lever was allowed. (8) Seed spread up to 15 points in the mid-band cells. No band was loosened.
 - Guards: `--matrix reference` (seed 1, 100 runs; the tracked CSV is byte-identical), `--matrix warden`, `causeway`, `hollows`, `built` and `telegraph` (seed 1, 100 runs) are byte-identical to the baseline captured before the first sim edit (the timing line aside); `--matrix elites` is identical apart from the new Tyrant rows.
+
+Option A, decided 2026-11-10 (user approved all defaults; Step 13.6 part 10). Root cause of the band misses: the part-3 Prepared tier swapped Bloodbound and Stalwart for Tempered and Emberward, which made Prepared weaker than Arrived, so nothing could lower Arrived without also lowering Prepared. The part-9 tables above are superseded by the numbers below. Changes:
+
+- Tiers: Arrived unchanged. Prepared and Over-levelled are the Arrived set with Emberward on hands and feet in place of Nimble (Bloodbound, Stalwart, Vicious and Quick kept). The Cleric adds Kindled on the off-hand and Devout on one accessory. Levels, nodes, quality and supplies unchanged. Tempered is in no tier. New variant `prepared-noember` (Nimble back on hands and feet).
+- Emberwrought Tyrant: 5,400 HP (from 5,200; top of the 4,600-5,400 range), Power 68 (from 50). Power 68 is outside the planned 50-62 range: a user-approved deviation, with the Hollowmaw Reaver (Power 65) as precedent. It is needed because Prepared now carries Bloodbound and Stalwart. Enrage start 100 s and the 5% Pyre Wave interrupt unchanged.
+- XP (enemy `xpMultiplier` overrides): Cinder Imp 0.88 (0.4 swarm x 2.2; an override replaces the swarm's 0.4), Slag Golem 2.2, Pyre Acolyte 2.2, Tyrant 1 (unchanged). A level-30 hero needs about 40-41 `cinder-mixed` fights per level (band 35-45) and about 35 Tyrant fights.
+
+Measured 2026-11-10 (Option A; `--matrix cinder` and `--matrix elites --elites tyrant`, seeds 1-3 x 100 runs, mean of the three seeds, rules mode unless stated). Tyrant wins % (rules / blind):
+
+| Class | Arrived | Prepared | Over | Prepared crafted | Prepared no Emberward | Prepared no Tonic | Spread (prepared) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Warrior | 0 / 0 | 35 / 19 | 89 / 80 | 61 / 52 | 5 / 6 | 38 / 30 | 13 |
+| Assassin | 6 / 6 | 75 / 69 | 95 / 98 | 85 / 86 | 42 / 41 | 80 / 77 | 11 |
+| Ranger | 4 / 0 | 59 / 23 | 96 / 79 | 83 / 47 | 44 / 15 | 68 / 34 | 2 |
+| Mage | 3 / 4 | 74 / 74 | 97 / 99 | 88 / 89 | 31 / 33 | 78 / 81 | 4 |
+| Cleric | 0 / 3 | 43 / 85 | 100 / 100 | 58 / 90 | 16 / 47 | 50 / 91 | 20 |
+
+Regular fights, prepared tier (wins % / mean HP lost %): all 100% wins for every class, tier and fight.
+
+| Class | imp | golem | acolyte | imp-swarm | cinder-mixed | cinder-deep |
+| --- | --- | --- | --- | --- | --- | --- |
+| Warrior | 100 / 3 | 100 / 6 | 100 / 3 | 100 / 22 | 100 / 11 | 100 / 28 |
+| Assassin | 100 / 2 | 100 / 2 | 100 / 2 | 100 / 14 | 100 / 16 | 100 / 23 |
+| Ranger | 100 / 0 | 100 / 2 | 100 / 1 | 100 / 9 | 100 / 4 | 100 / 14 |
+| Mage | 100 / 1 | 100 / 0 | 100 / 2 | 100 / 10 | 100 / 3 | 100 / 9 |
+| Cleric | 100 / 3 | 100 / 15 | 100 / 6 | 100 / 23 | 100 / 24 | 100 / 34 |
+
+Checks (prepared tier):
+
+| Class | Emberward check: prepared minus no-Emberward, Tyrant wins | Crafted minus plain, Tyrant wins | Rules minus blind, Tyrant wins | Prepared minus no-Tonic, Tyrant wins |
+| --- | --- | --- | --- | --- |
+| Warrior | +30 | +26 | +16 | -3 |
+| Assassin | +33 | +10 | +6 | -5 |
+| Ranger | +15 | +24 | +37 | -8 |
+| Mage | +43 | +14 | 0 | -4 |
+| Cleric | +27 | +15 | -42 | -8 |
+
+Against the bands: met are regular fights 100% wins (band 95%); Tyrant arrived at most 20% (0-6 for every class); prepared 40-85% for Assassin 75, Ranger 59, Mage 74 and Cleric 43, and the Warrior at 35 (the Warrior and Cleric band is at least 30); over-levelled at least 85% (89-100); crafted minus plain at most +30 (+10 to +26); the Emberward check (5 of 5 classes at +15 or more, band 3 of 5 at +10); XP about 40-41 `cinder-mixed` fights per level at level 30 (band 35-45).
+
+Accepted deviations (no lever left, no band loosened further): (1) The Mage telegraph difference at the Tyrant is 0 (rules 74, blind 74) and the Assassin's is +6 (band +10): the Mage is an exception like the Cleric (the Cleric does better blind, -42, as at the Colossus and Reaver). The Warrior (+16) and Ranger (+37) meet it. (2) Mixed-fight HP lost: 5 of 10 cells are inside 15-40% (cinder-mixed Assassin 16 and Cleric 24; cinder-deep Warrior 28, Assassin 23 and Cleric 34); Warrior 11, Ranger 4 and Mage 3 in `cinder-mixed`, and Ranger 14 and Mage 9 in `cinder-deep`, are under. (3) The Warming Tonic is close to obsolete in the Scar: prepared minus no-Tonic is -3 to -8 Tyrant wins, because the Tonic takes the place of a Healing Draught and Burn is cheap once Emberward is worn. A Burn immunity on the Tonic needs a new sim effect and is a follow-up. (4) Tempered looks like a trap pick against Bloodbound on the weapon slot (it is now in no tier); flagged for later. (5) Seed spread up to 20 points (Cleric prepared).
+
+Guards: `--matrix reference` (the tracked CSV), `warden`, `causeway`, `hollows`, `built` and `telegraph` (seed 1, 100 runs) are byte-identical to the baseline captured before the edits (the timing line aside); `--matrix elites` is identical apart from the Tyrant rows.
 
 ### Events
 

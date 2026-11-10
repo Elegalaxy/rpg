@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createCombat, stepCombat } from '../sim/combat.ts'
 import { onEnemyHpChanged } from '../sim/enemyAi.ts'
+import { xpFromEnemies } from '../sim/progression.ts'
 import { deriveEnemyStats } from '../sim/stats.ts'
 import type { CombatActor, CombatSetup, CombatState, GameDefs } from '../sim/types.ts'
 
@@ -15,7 +16,7 @@ import {
   tyrantEncounter,
 } from './encounters.ts'
 import { cinderImp, emberwroughtTyrant, enemies, pyreAcolyte, slagGolem } from './enemies.ts'
-import { referenceHeroes } from './heroes.ts'
+import { referenceHeroAtLevel, referenceHeroes } from './heroes.ts'
 import { gameDefs } from './scenarios.ts'
 
 function open(members: CombatSetup['enemies'], seed = 1): { state: CombatState; defs: GameDefs } {
@@ -87,7 +88,7 @@ describe('Cinder Scar enemies', () => {
 
   it('gives the Acolyte a Kindle barrier, a burning Fire Bolt and a cinderite drop', () => {
     expect(pyreAcolyte).toMatchObject({ archetype: 'support', levelMin: 28, levelMax: 33 })
-    expect(pyreAcolyte.overrides).toEqual({ armorMultiplier: 0.5, resistanceMultiplier: 1.5 })
+    expect(pyreAcolyte.overrides).toEqual({ armorMultiplier: 0.5, resistanceMultiplier: 1.5, xpMultiplier: 2.2 })
     expect(pyreAcolyte.drop).toEqual({ materialId: 'cinderite', baseQuantity: 3 })
     const [kindle, bolt] = pyreAcolyte.skills ?? []
     expect(kindle).toMatchObject({ id: 'kindle', cooldownSeconds: 8, allyTarget: 'lowestBarrier' })
@@ -96,20 +97,41 @@ describe('Cinder Scar enemies', () => {
     expect(bolt?.effects[1]).toMatchObject({ statusId: 'burn', baseChance: 0.5 })
   })
 
+  it('pays about 40-41 cinder-mixed fights per level at level 30, and the Tyrant about 35', () => {
+    expect(cinderImp.overrides).toEqual({ xpMultiplier: 0.88 })
+    expect(slagGolem.overrides).toEqual({ xpMultiplier: 2.2 })
+    const level = 30
+    const hero = referenceHeroAtLevel('warrior', level)
+    const xp = (members: readonly (readonly [string, number])[]): number =>
+      xpFromEnemies(
+        level,
+        hero.attributes.spirit,
+        members.map(([id, enemyLevel]) => {
+          const def = enemies[id]!
+          return { xp: deriveEnemyStats({ level: enemyLevel, archetype: def.archetype, elite: def.elite, overrides: def.overrides }).xp, level: enemyLevel, summon: false }
+        }),
+      )
+    const perLevel = Math.round(50 * level ** 1.5)
+    const mixed = perLevel / xp([['slag-golem', 29], ['pyre-acolyte', 29]])
+    expect(mixed).toBeGreaterThanOrEqual(39.5)
+    expect(mixed).toBeLessThanOrEqual(41.5)
+    expect(perLevel / xp([['emberwrought-tyrant', 32]])).toBeCloseTo(35, 0)
+  })
+
   it('follows the Standard framework: 700 HP and 39 Power at level 31', () => {
     const stats = deriveEnemyStats({ level: 31, archetype: 'standard' })
     expect(stats.maxHp).toBe(700)
     expect(stats.power).toBe(39)
   })
 
-  it('spawns the Tyrant as a level-32 standard elite with 5,200 HP, 50 Power and no stance', () => {
+  it('spawns the Tyrant as a level-32 standard elite with 5,400 HP, 68 Power and no stance', () => {
     const { state } = open([{ defId: 'emberwrought-tyrant', slot: 0 }])
     const tyrant = actorAt(state, 0)
     expect(tyrant.level).toBe(32)
-    expect(tyrant.maxHp).toBe(5200)
+    expect(tyrant.maxHp).toBe(5400)
     expect(tyrant.elite).toBe(true)
     expect(tyrant.stance).toBeNull()
-    expect(emberwroughtTyrant.overrides).toMatchObject({ maxHp: 5200, power: 50, consistency: 25, actionTime: 2.2 })
+    expect(emberwroughtTyrant.overrides).toMatchObject({ maxHp: 5400, power: 68, consistency: 25, actionTime: 2.2 })
     expect(emberwroughtTyrant.timePressure).toEqual({
       startMs: 100_000,
       intervalMs: 3000,

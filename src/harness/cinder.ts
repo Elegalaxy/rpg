@@ -7,7 +7,7 @@ import type { CombatSetup } from '../sim/types.ts'
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 import { HOLLOWS_TIERS } from './hollows.ts'
 import { blindSetup } from './telegraph.ts'
-import { PREPARED_MODIFIERS, wardenSetup, type WardenTier } from './warden.ts'
+import { wardenSetup, type WardenTier } from './warden.ts'
 
 /**
  * Realistic heroes at the Cinder Scar (Step 13.6 part 3). Same construction as the Hollows tiers (reference
@@ -20,16 +20,13 @@ const hollowsPrepared = (): WardenTier => HOLLOWS_TIERS.find((tier) => tier.id =
 const CINDER_ARRIVED_MODIFIERS: WardenTier['modifiers'] = { ...hollowsPrepared().modifiers, mainHand: 'bloodbound' }
 
 /**
- * Emberward on head, chest and one accessory, Tempered on the weapon (GAME_DESIGN, harness tiers). The same
- * modifier counts at most twice, so the accessory Emberward is worn but does not count.
+ * The Arrived set with Emberward replacing Nimble on hands and feet (GAME_DESIGN, harness tiers). Bloodbound,
+ * Stalwart, Vicious and Quick are kept, so Prepared is never weaker than Arrived.
  */
-const CINDER_PREPARED_MODIFIERS: WardenTier['modifiers'] = {
-  ...PREPARED_MODIFIERS,
-  mainHand: 'tempered',
-  head: 'emberward',
-  chest: 'emberward',
-  accessory0: 'emberward',
-  accessory1: 'quick',
+export const CINDER_PREPARED_MODIFIERS: WardenTier['modifiers'] = {
+  ...CINDER_ARRIVED_MODIFIERS,
+  hands: 'emberward',
+  feet: 'emberward',
 }
 
 const PREPARED_SUPPLIES = ['healing-draught', 'healing-draught', 'warming-tonic', 'ward-charm'] as const
@@ -55,7 +52,7 @@ export const CINDER_TIERS: readonly WardenTier[] = [
     burnRow: true,
     modifiers: CINDER_PREPARED_MODIFIERS,
     supplies: PREPARED_SUPPLIES,
-    classModifiers: { cleric: { offHand: 'kindled' } },
+    classModifiers: { cleric: { offHand: 'kindled', accessory1: 'devout' } },
   },
   {
     id: 'over',
@@ -66,7 +63,7 @@ export const CINDER_TIERS: readonly WardenTier[] = [
     burnRow: true,
     modifiers: CINDER_PREPARED_MODIFIERS,
     supplies: PREPARED_SUPPLIES,
-    classModifiers: { cleric: { offHand: 'kindled' } },
+    classModifiers: { cleric: { offHand: 'kindled', accessory1: 'devout' } },
   },
 ]
 
@@ -80,10 +77,20 @@ export function notonicVariant(tier: WardenTier): WardenTier {
   }
 }
 
+/** The prepared tier with Nimble back on hands and feet in place of Emberward (the Emberward check, Step 13.6). */
+export function noemberVariant(tier: WardenTier): WardenTier {
+  return {
+    ...tier,
+    id: `${tier.id}-noember`,
+    label: `${tier.label}, no Emberward`,
+    modifiers: { ...tier.modifiers, hands: 'nimble', feet: 'nimble' },
+  }
+}
+
 const preparedTier = (): WardenTier => CINDER_TIERS.find((tier) => tier.id === 'prepared')!
 
 /** Measured beside the tiers, never instead of them. */
-export const CINDER_VARIANTS: readonly WardenTier[] = [notonicVariant(preparedTier())]
+export const CINDER_VARIANTS: readonly WardenTier[] = [notonicVariant(preparedTier()), noemberVariant(preparedTier())]
 
 export type CinderFight = {
   id: string

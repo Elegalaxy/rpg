@@ -1,17 +1,17 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code (2026-11-09)
-- **Current Goal:** Step 13.6 Cinder Scar (fourth zone, levels 28-34). Parts 1-8 are done and pushed; part 9 (tuning) is done as far as the decided ranges allow, but several acceptance bands are not reachable, so the step is `blocked` on a user decision. Older open items: user playtest of the Causeway, Hollows and Scar; Warrior/Cleric Warden gap.
-- **Recent Changes & Files Touched (Step 13.6, 9 commits, 995 tests):**
-  - Content: `src/content/enemies.ts` (Cinder Imp, Slag Golem, Pyre Acolyte, Emberwrought Tyrant: first enemy Burn on heroes), `encounters.ts` (`imp-swarm`, `golem`, `cinder-mixed`, `cinder-deep`, `emberwrought-tyrant`), `world.ts` (node/leg/route `cinder-scar`, gate: Reaver defeated), `shop.ts`, `supplies.ts` (`WARMING_TONIC_BURN_ROW`), `contracts.ts` (cinderite Salvage).
-  - Sim: new `magicalStatusResistanceBonus` (economy, stats, combat hero actor, equipment stat line); modifiers Emberward, Tempered, Kindled in `ITEM_MODIFIERS`; cinderite in `MATERIAL_RARITY`, crafting tables; `EXPEDITION_IDS`; Tyrant Legacy +3 (`reincarnation.ts`); hero update `warming-tonic-burn-rule` (`heroUpdates.ts`).
-  - Harness: `src/harness/cinder.ts` (`--matrix cinder`, tiers Arrived/Prepared/Over, `prepared-notonic`), Tyrant cells in `--matrix elites`, `BUILD_ORDER` now 11 nodes per class, `WardenTier.burnRow` (opt-in; Assassin 13-rule limit handled by dropping the Chill Tonic row).
-  - Map: `MapView.tsx` position {470, 290}, height 330. Browser-checked (map, Enchanter locks, Craft ranges, live Imp swarm with Burn on the hero card).
-  - Tyrant tuned to 5,200 HP, Power 50, enrage 100 s, interrupt 5%. Numbers, sweep and band misses are in GAME_DESIGN §6 "Fourth zone: Cinder Scar".
+- **Last Updated By:** Claude Code (2026-11-10)
+- **Current Goal:** Step 13.6 Cinder Scar is closed as `done` with accepted deviations (part 10, Option A). Open items: user playtest of the Causeway, Hollows and Cinder Scar; Warrior/Cleric Warden gap; optional Cleric telegraph rows.
+- **Recent Changes & Files Touched (part 10):**
+  - `src/harness/cinder.ts`: `CINDER_PREPARED_MODIFIERS` is the Arrived set with Emberward on hands and feet (replaces Nimble); Bloodbound, Stalwart, Vicious, Quick kept; Prepared and Over use it; Cleric override `{ offHand: 'kindled', accessory1: 'devout' }`; new variant `prepared-noember` (`noemberVariant`) beside `prepared-notonic`.
+  - `src/content/enemies.ts`: Tyrant 5,400 HP, Power 68 (user-approved deviation outside 50-62); Imp xpMultiplier 0.88, Golem 2.2, Acolyte 2.2 (in its overrides).
+  - Tests: `src/harness/cinder.test.ts` (variants, modifier checks), `src/content/cinder.test.ts` (Tyrant 5400/68, Acolyte overrides, XP about 40-41 fights per level).
+  - Docs: GAME_DESIGN §6 "Option A" (tiers, Tyrant, XP, Emberward check replaces the Burn check, final tables, accepted deviations); IMPLEMENTATION_PLAN Step 13.6 done, Part 10 line.
+- **Results (seeds 1-3 x 100, rules):** Tyrant wins arrived/prepared/over: Warrior 0/35/89, Assassin 6/75/95, Ranger 4/59/96, Mage 3/74/97, Cleric 0/43/100. Regular fights 100%. Emberward check +15 to +43 (all five classes).
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
   - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
-  - Guards byte-identical to the pre-step baseline: reference CSV, warden, causeway, hollows, built, telegraph; elites apart from new Tyrant rows. Bands were not loosened.
-  - Band misses (no allowed lever): arrived Tyrant at most 20 for Assassin 66, Ranger 66, Mage 93 (Cleric 22); prepared Mage 86; Warrior crafted gap +36; Burn check (Tonic loses 2-16 win points); Mage telegraph +3; mixed-fight HP (Ranger/Mage too low, Warrior/Cleric deep 42/41); XP fights per level (89 for cinder-mixed).
-- **Not verified:** Golem, Acolyte and Tyrant fights, a cinderite drop and Salvage in the browser; offline and away route with the new zone.
-- **Exact Next Step:** (1) User decision on the band misses: the Arrived tier (Bloodbound, Stalwart) is not weaker than Prepared (Tempered, Emberward) for three classes, so a tier-definition change (for example Prepared keeps Bloodbound and Stalwart, Arrived drops them) or a Burn buff (the Tonic needs Burn that matters, beyond the 0.10-0.15 allowed range) is the likely answer; then re-measure and close Step 13.6. (2) Optional: Cleric telegraph rows, Warrior/Cleric Warden gap. (3) User playtest of the Causeway, Hollows and Cinder Scar. (4) Later: Grove/Bastion material drops, a post-Cinder zone.
+  - Guards byte-identical to the pre-change baseline: reference CSV, warden, causeway, hollows, built, telegraph; elites apart from Tyrant rows.
+  - Accepted deviations: Mage telegraph 0, Assassin +6; mixed-fight HP 5 of 10 cells in band; Warming Tonic close to obsolete in the Scar (Burn immunity on the Tonic needs a new sim effect, follow-up); Tempered looks like a trap pick vs Bloodbound on the weapon slot (in no tier, flagged).
+- **Not verified:** Golem, Acolyte and Tyrant fights, a cinderite drop and Salvage in the browser; offline and away route with the new zone; the Tyrant at Power 68 in the live UI.
+- **Exact Next Step:** (1) User playtest of the Causeway, Hollows and Cinder Scar (Tyrant at Power 68). (2) Optional: Cleric telegraph rows, Warrior/Cleric Warden gap, Tonic Burn immunity effect, Tempered review. (3) Later: Grove/Bastion material drops, a post-Cinder zone.

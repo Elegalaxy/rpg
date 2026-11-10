@@ -15,8 +15,9 @@ describe('cinder matrix', () => {
       ['over', 33, 11, 1.2, 4],
     ])
     expect(CINDER_TIERS[1]?.supplies).toEqual(['healing-draught', 'healing-draught', 'warming-tonic', 'ward-charm'])
-    expect(CINDER_VARIANTS.map((tier) => tier.id)).toEqual(['prepared-notonic'])
+    expect(CINDER_VARIANTS.map((tier) => tier.id)).toEqual(['prepared-notonic', 'prepared-noember'])
     expect(CINDER_VARIANTS[0]?.supplies).toEqual(['healing-draught', 'healing-draught', 'healing-draught', 'ward-charm'])
+    expect(CINDER_VARIANTS[1]?.modifiers).toMatchObject({ hands: 'nimble', feet: 'nimble', mainHand: 'bloodbound', head: 'stalwart', chest: 'stalwart' })
   })
 
   it('names only defined enemies and keeps levels inside each band', () => {
@@ -48,15 +49,22 @@ describe('cinder matrix', () => {
     }
   })
 
-  it('applies Tempered everywhere and Kindled to the prepared Cleric only', () => {
+  it('keeps Bloodbound and Stalwart in every tier, adds Emberward from prepared, and Kindled to the prepared Cleric only', () => {
     const fight = CINDER_FIGHTS[0]!
-    const prepared = CINDER_TIERS[1]!
+    const [arrived, prepared] = [CINDER_TIERS[0]!, CINDER_TIERS[1]!]
+    expect(prepared.modifiers).toMatchObject({ mainHand: 'bloodbound', head: 'stalwart', chest: 'stalwart', hands: 'emberward', feet: 'emberward' })
+    expect(arrived.modifiers).toMatchObject({ mainHand: 'bloodbound', head: 'stalwart', chest: 'stalwart' })
+    expect(arrived.modifiers.hands).not.toBe('emberward')
+    const arrivedWarrior = cinderSetup('warrior', arrived, fight).hero.statBonuses
     const warrior = cinderSetup('warrior', prepared, fight).hero.statBonuses
     const cleric = cinderSetup('cleric', prepared, fight).hero.statBonuses
-    expect(warrior?.armorPenetrationBonus).toBeCloseTo(0.04, 8)
-    expect(warrior?.maxHpBonus ?? 0).toBe(0)
-    expect(cleric?.maxHpBonus).toBeCloseTo(0.05, 8)
-    expect(cleric?.equipmentHealingPower).toBe(8)
+    expect(arrivedWarrior?.magicalStatusResistanceBonus ?? 0).toBe(0)
+    expect(warrior?.magicalStatusResistanceBonus).toBeGreaterThan(0)
+    expect(warrior?.lifestealFraction).toBeCloseTo(0.05, 8)
+    expect(warrior?.maxHpBonus).toBeGreaterThan(0)
+    expect(warrior?.armorPenetrationBonus ?? 0).toBe(0)
+    expect(cleric?.maxHpBonus).toBeCloseTo((warrior?.maxHpBonus ?? 0) + 0.05, 8)
+    expect(cleric?.equipmentHealingPower).toBeGreaterThanOrEqual(8)
   })
 
   it('gives every Cinder tier the Burn Tonic row within the 12-row limit, and leaves the Warden tiers without it', () => {
@@ -83,6 +91,7 @@ describe('cinder matrix', () => {
     expect(table).toContain('warrior arrived rules:')
     expect(table).toContain('warrior arrived blind:')
     expect(table).toContain('warrior prepared-notonic rules:')
+    expect(table).toContain('warrior prepared-noember rules:')
     expect(table).toContain('tyrant')
   }, 300_000)
 })
