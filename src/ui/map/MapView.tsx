@@ -17,23 +17,12 @@ import { Kpi, KpiRow } from '../Kit.tsx'
 import { MASTERY_HELP } from '../masteryHelp.ts'
 import { GoingIn } from './GoingIn.tsx'
 import type { GoTo } from './goingInLines.ts'
+import { MAP_HEIGHT, MAP_WIDTH, NODE_POSITIONS } from './layout.ts'
 
 import './map.css'
 
-/** Where each node sits in the map's coordinate space. The background is a placeholder. */
-const NODE_POSITIONS: { readonly [id: string]: { x: number; y: number } } = {
-  greyhaven: { x: 60, y: 110 },
-  'splintered-road': { x: 190, y: 110 },
-  'withered-grove': { x: 330, y: 50 },
-  'fallen-bastion': { x: 330, y: 170 },
-  'fracture-gate': { x: 470, y: 110 },
-  'drowned-causeway': { x: 190, y: 220 },
-  'rift-hollows': { x: 330, y: 250 },
-  'cinder-scar': { x: 470, y: 290 },
-}
-
-const WIDTH = 540
-const HEIGHT = 330
+const WIDTH = MAP_WIDTH
+const HEIGHT = MAP_HEIGHT
 
 function point(position: MarkerPosition): { x: number; y: number } {
   if (position.kind === 'at') return NODE_POSITIONS[position.nodeId] ?? { x: 0, y: 0 }

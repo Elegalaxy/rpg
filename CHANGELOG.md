@@ -11,7 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased: playtest fixes (Step 13.7, in progress)
 
-Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI rework (batch 6) follows.
+Source: playtest feedback of 2026-11-11. Bug batches 1-5 and the UI rework (batch 6) are in.
 
 - Fixed: gear no longer returns to 100% durability at the start of every run, so wear carries over and repair matters again (Step 13.7, batch 1).
 - Improved: a run cannot start while a worn piece is disabled or the 5-minute rest after a defeat is pending, and the reason is shown (Step 13.7, batch 1).
@@ -43,7 +43,7 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - Balance: the craft queue has no limit any more; an item can have several +1 upgrades queued in a row, each taking the usual time and cost and checked against the level it will have when its turn comes (Step 13.7, batch 6).
 - New: "Queue all" queues +1 upgrades for every worn item, lowest level first, as far as your gold and the chosen material allow, and shows the total cost first (Step 13.7, batch 6).
 - Improved: each upgrade row has its own material, shows Level and Quality before and after, the cost, the time and how many upgrades are already queued; long queues show five jobs with "Show all" (Step 13.7, batch 6).
-- Improved (planned): map layout (batch 6, next part).
+- Improved: the map is laid out as a hub with spokes, so no walk passes next to a place it does not visit (Step 13.7, batch 6).
 
 ## 0.10.0 · 2026-11-09 to 2026-11-10 · Cinder Scar (Step 13.6)
 
