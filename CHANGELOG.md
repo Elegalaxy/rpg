@@ -25,6 +25,7 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - Fixed: crafting and upgrade selects keep one width, with short option names and the effect text on its own reserved line (Step 13.7, batch 3).
 - Improved: shop and archive comparisons name the worn piece that is replaced ("Replaces: Hauler's Medium Chest · L8 · 98%"), show bag room and lost or gained modifiers, round stats to one decimal and sign each change (Step 13.7, batch 4).
 - Fixed: HP regeneration while walking is no longer rounded each second; the leftover fraction carries over, so low-VIT heroes (Elf, Undead at VIT 9 heal 0.45 HP/s) heal too, and the run panel shows the rate as "+N HP/s between fights" (Step 13.7, batch 5).
+- New: an in-game "What's new" page lists the patch notes with category filters (Step 13.7).
 - Improved (planned): run mini-panel, contract board first, grouped enchanter, batch brewing, escape banner (batch 6).
 
 ## 0.10.0 · 2026-11-09 to 2026-11-10 · Cinder Scar (Step 13.6)

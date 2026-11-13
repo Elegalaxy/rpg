@@ -838,3 +838,94 @@ table.away-table {
   margin: var(--s1) 0 var(--s2);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- What's new page ---- */
+
+.whatsnew-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+
+.whatsnew-chips button {
+  min-height: 44px;
+}
+
+.whatsnew-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.whatsnew-chips button[aria-pressed='true'] .whatsnew-count {
+  color: inherit;
+}
+
+.whatsnew-section {
+  margin-bottom: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.whatsnew-section summary {
+  min-height: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: var(--s2) var(--s3);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.whatsnew-section summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.whatsnew-title,
+.whatsnew-date {
+  color: var(--muted);
+}
+
+.whatsnew-intro {
+  margin: 0;
+  padding: 0 var(--s3) var(--s2);
+  color: var(--muted);
+}
+
+.whatsnew-section ul {
+  margin: 0;
+  padding: 0 var(--s3) var(--s2);
+  list-style: none;
+}
+
+.whatsnew-entry {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--border);
+}
+
+.whatsnew-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s1);
+}
+
+.whatsnew-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.whatsnew-empty {
+  color: var(--muted);
+}
+
+@media (max-width: 600px) {
+  .whatsnew-entry {
+    grid-template-columns: 1fr;
+  }
+}

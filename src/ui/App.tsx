@@ -9,6 +9,9 @@ import { isComplete } from '../persist/contracts.ts'
 import { PLACES as PLACE_LIST, dealsIn, type PlaceDef } from '../content/places.ts'
 import { scenarios } from '../content/scenarios.ts'
 import type { CombatState } from '../sim/types.ts'
+import { CHANGELOG_SECTIONS, changelogKey } from './whatsNew/changelog.ts'
+import { WhatsNew } from './whatsNew/WhatsNew.tsx'
+import { readSeen, writeSeen } from './whatsNew/seen.ts'
 
 import { Attributes } from './character/Attributes.tsx'
 import { CreateHero } from './character/CreateHero.tsx'
@@ -63,12 +66,15 @@ function shownTimeMs(combat: CombatState): number {
   return combat.timeMs
 }
 
-const TABS: { id: Tab; label: string }[] = [
+type AppTab = Tab | 'whatsnew'
+
+const TABS: { id: AppTab; label: string }[] = [
   { id: 'heroes', label: 'Hero' },
   { id: 'town', label: 'Town' },
   { id: 'map', label: 'Map' },
   { id: 'roster', label: 'Roster' },
   { id: 'combat', label: 'Combat viewer' },
+  { id: 'whatsnew', label: "What's new" },
 ]
 
 type HeroPart = 'overview' | 'skills' | 'combat' | 'gear' | 'legacy'
@@ -295,7 +301,9 @@ export function CombatViewer() {
 }
 
 function App() {
-  const [tab, setTab] = useState<Tab>('heroes')
+  const [tab, setTab] = useState<AppTab>('heroes')
+  const latestKey = changelogKey(CHANGELOG_SECTIONS)
+  const [seenKey, setSeenKey] = useState<string | null>(readSeen)
   const [heroPart, setHeroPart] = useState<HeroPart>('overview')
   const [townPart, setTownPart] = useState<PlaceId>('weaponsmith')
   const saved = useSaveStatus()
@@ -317,6 +325,12 @@ function App() {
   useEffect(() => {
     if (tab === 'map' && unseenDiscoveries > 0) clearUnseenDiscoveries()
   }, [tab, unseenDiscoveries])
+  useEffect(() => {
+    if (tab === 'whatsnew' && seenKey !== latestKey) {
+      writeSeen(latestKey)
+      setSeenKey(latestKey)
+    }
+  }, [tab, seenKey, latestKey])
 
   useEffect(() => {
     debugLog('[ui]', 'app mounted')
@@ -370,6 +384,11 @@ function App() {
                     {entry.label}
                     {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts.length} what="things waiting in town" /> : null}
                     {entry.id === 'map' ? <Badge count={unseenDiscoveries} what="new places discovered" /> : null}
+                    {entry.id === 'whatsnew' && seenKey !== latestKey && tab !== 'whatsnew' ? (
+                      <span className="badge" role="status">
+                        new
+                      </span>
+                    ) : null}
                     {entry.id === 'heroes' ? <Badge count={attributePoints + skillPoints} what="unspent points" /> : null}
                   </button>
                 ))}
@@ -435,6 +454,7 @@ function App() {
                 </>
               ) : null}
               {tab === 'combat' ? <CombatViewer /> : null}
+              {tab === 'whatsnew' ? <WhatsNew /> : null}
             </main>
           </div>
         </>
