@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { selectedHero } from '../persist/character.ts'
 import type { SavedHero } from '../persist/save.ts'
@@ -136,6 +136,21 @@ export function RunDock({ onOpenMap }: { onOpenMap: () => void }) {
   const { save } = useSaveStatus()
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const expedition = save.expedition
+  const running = expedition !== null
+  // Publishes the dock's real height (again whenever it folds or unfolds; the observer also catches wrapping) so the page can keep its end clear of it (the CSS only uses it under 1280px).
+  useEffect(() => {
+    const dock = running ? document.querySelector<HTMLElement>('.run-dock') : null
+    if (dock === null || typeof ResizeObserver === 'undefined') return
+    const root = document.documentElement
+    const publish = () => root.style.setProperty('--run-dock-height', `${Math.ceil(dock.getBoundingClientRect().height)}px`)
+    publish()
+    const observer = new ResizeObserver(publish)
+    observer.observe(dock)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--run-dock-height')
+    }
+  }, [running, collapsed])
   if (expedition === null) return null
   return (
     <RunDockView

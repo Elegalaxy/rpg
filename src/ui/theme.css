@@ -254,6 +254,20 @@ label {
   gap: var(--s2) var(--s3);
 }
 
+/* A file input has a wide intrinsic size; let it shrink so a narrow screen does not scroll sideways. */
+.controls label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.controls input[type='file'] {
+  max-width: 100%;
+}
+
 [role='alert'] {
   padding: var(--s2) var(--s3);
   border: 1px solid var(--danger);

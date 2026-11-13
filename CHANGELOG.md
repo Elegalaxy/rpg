@@ -44,6 +44,10 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 and the UI rework (batc
 - New: "Queue all" queues +1 upgrades for every worn item, lowest level first, as far as your gold and the chosen material allow, and shows the total cost first (Step 13.7, batch 6).
 - Improved: each upgrade row has its own material, shows Level and Quality before and after, the cost, the time and how many upgrades are already queued; long queues show five jobs with "Show all" (Step 13.7, batch 6).
 - Improved: the map is laid out as a hub with spokes, so no walk passes next to a place it does not visit (Step 13.7, batch 6).
+- Fixed: the escape banner shows the roll and the chance as whole percents instead of a long decimal (Step 13.7, batch 6).
+- Fixed: the run dock no longer hides the end of the page; the page keeps clear of it however tall it is (Step 13.7, batch 6).
+- Fixed: the Roster page no longer scrolls sideways on a narrow screen (Step 13.7, batch 6).
+- Fixed: gear compare changes now match the shown numbers and always show one decimal (Step 13.7, batch 6).
 
 ## 0.10.0 · 2026-11-09 to 2026-11-10 · Cinder Scar (Step 13.6)
 

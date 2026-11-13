@@ -155,11 +155,12 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
               type="button"
               className="btn-primary"
               disabled={!start.ok}
+              aria-describedby={!start.ok ? 'start-blocked' : undefined}
               onClick={() => setError(startExpeditionFromUi(routeId))}
             >
               Start expedition
             </button>
-            {!start.ok ? <p data-testid="start-blocked">{start.reason}</p> : null}
+            {!start.ok ? <p id="start-blocked" data-testid="start-blocked">{start.reason}</p> : null}
           </>
         ) : (
           <p data-testid="map-expedition-note">

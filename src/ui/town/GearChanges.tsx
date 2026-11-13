@@ -5,10 +5,18 @@ function format(value: number, unit: string): string {
   return `${Math.round(value * 10) / 10}${unit}`
 }
 
-/** The signed difference, with a real minus sign so it lines up and reads without colour. */
-function delta(before: number, after: number, unit: string): string {
-  const diff = Math.round((after - before) * 10) / 10
-  return `${diff > 0 ? '+' : diff < 0 ? '−' : ''}${Math.abs(diff)}${unit}`
+function round1(value: number): number {
+  return Math.round(value * 10) / 10
+}
+
+/**
+ * The signed difference of the ROUNDED before and after, so it always agrees with the numbers shown beside it. Stat lines
+ * keep one decimal (a whole change reads "-9.0"); time lines (unit "s") and counts print as plain numbers.
+ */
+function delta(before: number, after: number, unit: string, fixed: boolean): string {
+  const diff = Math.round((round1(after) - round1(before)) * 10) / 10
+  const text = fixed && !unit.includes('s') ? Math.abs(diff).toFixed(1) : String(Math.abs(diff))
+  return `${diff > 0 ? '+' : diff < 0 ? '−' : ''}${text}${unit}`
 }
 
 /**
@@ -30,12 +38,12 @@ export function GearChanges({ preview, empty }: { preview: EquipPreview; empty: 
         {preview.changes.length === 0 && extras.length === 0 && notes.length === 0 ? <span>No stat change.</span> : null}
         {preview.changes.map((change) => (
           <span key={change.label} className={changeIsBetter(change.label, change.before, change.after) ? 'change-better' : 'change-worse'}>
-            {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit)})
+            {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit, true)})
           </span>
         ))}
         {extras.map((change) => (
           <span key={change.label} className={change.after > change.before ? 'change-better' : 'change-worse'} data-testid="equip-extra">
-            {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit)})
+            {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit, false)})
           </span>
         ))}
         {notes.map((note) => (

@@ -109,7 +109,7 @@ function EscapeBanner({ combat }: { combat: CombatState }) {
         <>
           <Tag kind={last.success ? 'good' : 'gold'}>{last.success ? `✓ Escaped at ${(last.timeMs / 1000).toFixed(1)} s` : '⚠ Escape failed'}</Tag>
           <span className="muted">
-            HP {last.hp}/{last.maxHp} · roll {last.roll} vs {last.chancePercent}%
+            HP {last.hp}/{last.maxHp} · roll {Math.floor(last.roll * 100)}% vs {last.chancePercent}%
           </span>
         </>
       )}
