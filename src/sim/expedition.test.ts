@@ -29,6 +29,7 @@ import {
   type ExpeditionEncounterDef,
   type ExpeditionState,
   requestEscapeNow,
+  hpRegenMilliPerSecond,
 } from './expedition.ts'
 import { formatEvent } from './log.ts'
 import { createRng, deriveSeed, nextFloat, type RngState } from './rng.ts'
@@ -224,15 +225,19 @@ function forceDefeat(state: ExpeditionState, defs: GameDefs): void {
 describe('splintered road expedition', () => {
   const defs = fixtureDefs()
 
-  it('regenerates HP at 0.05 × VIT, rounded half-up once per second, and caps at maximum HP', () => {
+  it('regenerates HP at 0.05 × VIT, carrying the fraction between seconds, and caps at maximum HP', () => {
     expect(REGEN_PER_VITALITY).toBe(0.05)
     expect(TRAVEL_GAP_MS).toBe(20_000)
     const cases = [
-      { vitality: 0, seconds: 1, each: 0 },
-      { vitality: 9, seconds: 3, each: 0 },
-      { vitality: 10, seconds: 1, each: 1 },
-      { vitality: 14, seconds: 1, each: 1 },
-      { vitality: 30, seconds: 1, each: 2 },
+      { vitality: 0, seconds: 3, total: 0 },
+      { vitality: 9, seconds: 2, total: 0 },
+      { vitality: 9, seconds: 3, total: 1 },
+      { vitality: 9, seconds: 19, total: 8 },
+      { vitality: 10, seconds: 1, total: 0 },
+      { vitality: 10, seconds: 2, total: 1 },
+      { vitality: 14, seconds: 1, total: 0 },
+      { vitality: 30, seconds: 1, total: 1 },
+      { vitality: 30, seconds: 2, total: 3 },
     ]
     for (const entry of cases) {
       const state = start()
@@ -242,7 +247,7 @@ describe('splintered road expedition', () => {
       stepFor(state, defs, entry.seconds * 1000)
       console.log('[expedition] hp regen', { ...entry, hp: state.hero.hp })
       expect(state.phase).toBe('travel')
-      expect(state.hero.hp).toBe(50 + entry.each * entry.seconds)
+      expect(state.hero.hp).toBe(50 + entry.total)
     }
 
     const capped = start()
@@ -254,7 +259,8 @@ describe('splintered road expedition', () => {
     expect(capped.hero.hp).toBe(100)
 
     const hero = start()
-    const gain = Math.floor((hero.hero.vitality + 10) / 20)
+    hero.hero.vitality = 20
+    const gain = Math.floor(hpRegenMilliPerSecond(hero.hero.vitality) / 1000)
     const before = hero.hero.maxHp - 30
     hero.hero.hp = before
     stepFor(hero, defs, 990)
@@ -766,9 +772,10 @@ describe('splintered road expedition', () => {
     expect(state.unsecured).toEqual([{ materialId: 'shard', quantity: 4 }])
     state.hero.hp = 50
     state.hero.maxHp = 100
+    state.hero.vitality = 20
     returnToTown(state)
     stepFor(state, defs, 1_000)
-    const regen = Math.floor((state.hero.vitality + 10) / 20)
+    const regen = Math.floor(hpRegenMilliPerSecond(state.hero.vitality) / 1000)
     console.log('[expedition] return before arrival', {
       hp: state.hero.hp,
       regen,

@@ -20,7 +20,7 @@ import { countNames } from '../town/groupItems.ts'
 import { outcomeStats } from '../../persist/world.ts'
 import { pendingContractProgress } from '../../persist/contracts.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
-import { MOMENTUM_CAP, SUPPLY_SLOT_COUNT, bagIsFull, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
+import { MOMENTUM_CAP, SUPPLY_SLOT_COUNT, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Help } from '../Help.tsx'
@@ -503,7 +503,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         </p>
       ) : null}
       <KpiRow label="Run status">
-        <Kpi label="HP" value={`${Math.round(resource.hp)}/${Math.round(resource.maxHp)}`} tone={hpFraction < 0.4 ? 'bad' : hpFraction < 0.7 ? 'warn' : 'good'} />
+        <Kpi label="HP" value={`${Math.round(resource.hp)}/${Math.round(resource.maxHp)}`} note={`+${Math.round(hpRegenRate(expedition) * 100) / 100} HP/s between fights`} tone={hpFraction < 0.4 ? 'bad' : hpFraction < 0.7 ? 'warn' : 'good'} />
         {resource.classResourceId.length > 0 ? (
           <Kpi label={resource.classResourceId} value={`${Math.round(resource.classResource)}/${resource.classResourceMax}`} />
         ) : null}

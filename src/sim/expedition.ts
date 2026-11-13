@@ -229,6 +229,8 @@ export type ExpeditionState = {
   rareNodeChance: number
   /** Beastfolk Ferocity progress, 0–6. Not a combat resource. */
   ferocityProgress: number
+  /** Fraction of an HP left over from out-of-combat regeneration, in whole thousandths (0–999). Omitted is 0. */
+  hpRegenCarryMilli?: number
   /** Hero XP from fights won on this expedition. Added to the hero when the run is settled. Omitted is 0. */
   xpEarned?: number
   /** Encounters remaining before Trapper may deploy. 0 is ready. A new expedition starts ready. */
@@ -469,6 +471,20 @@ export function hpRegenPerSecond(vitality: number, factor = 1): number {
   }
   if (factor === 1) return Math.floor((vitality + 10) / 20)
   return Math.floor(((vitality + 10) * Math.round(factor * 1000)) / 20_000)
+}
+
+/**
+ * Exact `0.05 × VIT × factor` HP per second, in whole thousandths of an HP (VIT 9 gives 450).
+ * `VIT × factor1000 / 20` is that product without a binary 0.05.
+ */
+export function hpRegenMilliPerSecond(vitality: number, factor = 1): number {
+  if (typeof vitality !== 'number' || !Number.isFinite(vitality) || vitality < 0) {
+    throw new Error(`vitality must be at least 0, received ${describeValue(vitality)}`)
+  }
+  if (REGEN_PER_VITALITY !== 0.05) {
+    throw new Error(`out-of-combat HP regen must be 0.05 × VIT, received ${REGEN_PER_VITALITY}`)
+  }
+  return Math.floor((vitality * Math.round(factor * 1000)) / 20)
 }
 
 function capMeter(amount: number, maximum: number): number {
@@ -868,6 +884,11 @@ function outOfCombatRegenFactor(state: ExpeditionState): number {
   return factor
 }
 
+/** HP per second the hero regenerates between fights, for display. Exact, not rounded. */
+export function hpRegenRate(state: ExpeditionState): number {
+  return hpRegenMilliPerSecond(state.hero.vitality, outOfCombatRegenFactor(state)) / 1000
+}
+
 function applyTravelSecond(state: ExpeditionState, second: number): void {
   const hero = state.hero
   if (typeof hero.hp !== 'number' || !Number.isFinite(hero.hp)) {
@@ -877,10 +898,17 @@ function applyTravelSecond(state: ExpeditionState, second: number): void {
     throw new Error(`hero maximum HP must be greater than 0, received ${describeValue(hero.maxHp)}`)
   }
   if (hero.hp > hero.maxHp) hero.hp = hero.maxHp
-  const healed = hpRegenPerSecond(hero.vitality, outOfCombatRegenFactor(state))
-  if (healed > 0 && hero.hp < hero.maxHp) {
-    const next = hero.hp + healed
-    hero.hp = next > hero.maxHp ? hero.maxHp : next
+  if (hero.hp >= hero.maxHp) {
+    state.hpRegenCarryMilli = 0
+  } else {
+    const total = (state.hpRegenCarryMilli ?? 0) + hpRegenMilliPerSecond(hero.vitality, outOfCombatRegenFactor(state))
+    const healed = Math.floor(total / 1000)
+    state.hpRegenCarryMilli = total - healed * 1000
+    if (healed > 0) {
+      const next = hero.hp + healed
+      hero.hp = next > hero.maxHp ? hero.maxHp : next
+      if (hero.hp >= hero.maxHp) state.hpRegenCarryMilli = 0
+    }
   }
   if (hero.classResourceId === MANA_RESOURCE_ID || hero.classResourceId === READINESS_RESOURCE_ID) {
     const base = hero.classResourceId === MANA_RESOURCE_ID ? MANA_TRAVEL_REGEN_PER_SECOND : READINESS_TRAVEL_PER_SECOND

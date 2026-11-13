@@ -1340,6 +1340,7 @@ A successful unshielded hit deals at least 1 HP. A barrier can absorb the entire
 
 - `Out-of-combat HP regeneration per second = 0.05 × VIT`
 - Natural regeneration works during travel and between encounters, not during combat.
+- Fractional regeneration, decided 2026-11-13 (playtest fix): the rate is exactly `0.05 × VIT` HP per second, times the Thick Hide and Long Hunt factors, and it is not rounded each second. The sim keeps the fraction left over in whole thousandths of an HP and adds it to the next second, so a hero at VIT 9 (Elf, Undead) heals 0.45 HP per second: 9 HP every 20 seconds. Full HP clears the leftover. The run panel shows the rate as "+N HP/s".
 - `Vitality healing-received bonus = min(50%, 0.5% × VIT)`
 - Final direct healing applies its 90%-100% roll, outgoing healing modifiers, and the target's healing-received modifier.
 
