@@ -19,7 +19,7 @@ import { startExpedition } from './expeditionSetup.ts'
 import { packFromStash } from './preparation.ts'
 import { itemBase } from '../content/items.ts'
 import { awardXp } from '../sim/progression.ts'
-import { applyDurability, gearGaps } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress, refreshBoard } from './contracts.ts'
 import { defeatRecordId } from './crafting.ts'
 import { scaleHeirlooms } from './reincarnation.ts'
@@ -138,10 +138,31 @@ export function routeInfo(routeId: string, save: SaveData): RouteInfo {
   }
 }
 
+/** The names of equipped items worn down to 0 durability. They stay disabled until repaired (GAME_DESIGN §8). */
+export function disabledPieces(hero: SavedHero): string[] {
+  const names: string[] = []
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const item = hero.equipment[slot]
+    if (item !== null && item.durability <= 0) names.push(itemBase(item.baseId)?.name ?? item.baseId)
+  }
+  return names
+}
+
+/** Milliseconds of rest left after a defeat, or 0. Without a clock the wait is not enforced. */
+export function recoveryMsLeft(hero: SavedHero, now: number | null): number {
+  if (now === null || hero.recoveryUntil === undefined) return 0
+  return Math.max(0, hero.recoveryUntil - now)
+}
+
+function recoveryText(ms: number): string {
+  const seconds = Math.ceil(ms / 1000)
+  return seconds >= 60 ? `${Math.ceil(seconds / 60)} min` : `${seconds} s`
+}
+
 export type StartCheck = { ok: true } | { ok: false; reason: string }
 
 /** A route can start when a hero is selected, none is running, and every node on it is open to this hero. */
-export function canStartRoute(save: SaveData, routeId: string): StartCheck {
+export function canStartRoute(save: SaveData, routeId: string, now: number | null = null): StartCheck {
   const route = routes[routeId]
   if (route === undefined) return { ok: false, reason: 'Unknown route.' }
   const hero = selectedHero(save)
@@ -149,6 +170,10 @@ export function canStartRoute(save: SaveData, routeId: string): StartCheck {
   if (save.expedition !== null) return { ok: false, reason: 'An expedition is already running.' }
   const gaps = gearGaps(hero.equipment, itemBase)
   if (gaps.length > 0) return { ok: false, reason: `Equip every slot first. Missing: ${gaps.join(', ')}.` }
+  const broken = disabledPieces(hero)
+  if (broken.length > 0) return { ok: false, reason: `Repair first: ${broken.join(', ')} ${broken.length === 1 ? 'is' : 'are'} disabled at 0 durability.` }
+  const wait = recoveryMsLeft(hero, now)
+  if (wait > 0) return { ok: false, reason: `${hero.name} is recovering from the last defeat. Ready in ${recoveryText(wait)}.` }
   for (const node of routeNodes(route)) {
     if (node.kind === 'town') continue
     const status = nodeStatus(node, save, hero)
@@ -288,8 +313,8 @@ export function bossVictoryRanks(expedition: ExpeditionState): number[] {
  * Begin a run for the selected hero. The gold the hero carries comes out of its purse, up to the
  * chosen amount, and the rest travels as safe deposited gold. Settling puts it back.
  */
-export function beginExpedition(save: SaveData, routeId: string, seed: number): { ok: true; save: SaveData } | { ok: false; reason: string } {
-  const check = canStartRoute(save, routeId)
+export function beginExpedition(save: SaveData, routeId: string, seed: number, now: number | null = null): { ok: true; save: SaveData } | { ok: false; reason: string } {
+  const check = canStartRoute(save, routeId, now)
   if (!check.ok) return check
   const hero = selectedHero(save)
   if (hero === null) return { ok: false, reason: 'Select a hero first.' }
@@ -330,7 +355,7 @@ export function routeMastery(hero: SavedHero | null, routeId: string | null): { 
   return { returns, mastered: returns >= MASTERY_RETURNS }
 }
 
-export function settleExpedition(save: SaveData): SaveData {
+export function settleExpedition(save: SaveData, now: number | null = null): SaveData {
   const expedition = save.expedition
   if (expedition === null || expedition.outcome === 'ongoing') return save
   const heroId = save.selectedHeroId
@@ -357,6 +382,7 @@ export function settleExpedition(save: SaveData): SaveData {
           progress: awardXp(hero.progress, expedition.xpEarned ?? 0),
           ...unlockedRanks(hero, expedition),
           bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
+          ...(expedition.outcome === 'defeat' && now !== null && expedition.recoveryMs > 0 ? { recoveryUntil: now + expedition.recoveryMs } : {}),
           routeReturns:
             expedition.outcome === 'returned' ? { ...hero.routeReturns, [expedition.id]: (hero.routeReturns[expedition.id] ?? 0) + 1 } : hero.routeReturns,
           purse,

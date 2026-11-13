@@ -205,6 +205,8 @@ export type SavedHero = {
   claimedBonuses: string[]
   /** Crafting experience. Rank is `floor(√XP)` up to 10. Personal to the hero and kept through reincarnation. */
   craftXp: number
+  /** Epoch ms at which the rest after a defeat ends. Absent or in the past means the hero can set out (GAME_DESIGN §8). */
+  recoveryUntil?: number
   /** Equipped items. Gear is bound to its hero. */
   equipment: Equipment
   /** Gold, materials, unequipped items, contracts, crafting, and debt. Personal to the hero. */
@@ -414,6 +416,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   }
   stringList(value.packedSupplies, `${label} packed supplies`)
   stringList(value.updates, `${label} updates`)
+  check(value.recoveryUntil === undefined || (typeof value.recoveryUntil === 'number' && Number.isFinite(value.recoveryUntil)), `${label} recovery time must be a number`)
   check(value.packedSupplies.length <= SUPPLY_SLOT_COUNT, `${label} packs more than ${SUPPLY_SLOT_COUNT} supplies`)
   for (const id of value.packedSupplies) check(supplyTable[id] !== undefined, `${label} packs unknown supply ${id}`)
   whole(value.craftXp, `${label} crafting experience`)

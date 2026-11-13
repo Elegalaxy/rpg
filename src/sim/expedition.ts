@@ -85,6 +85,8 @@ export type ExpeditionBlueprint = {
   supplies?: readonly string[]
   /** Bag room, from `LOOT_CAPACITY` up to `MAX_LOOT_CAPACITY`. Omitted means `LOOT_CAPACITY`. */
   lootCapacity?: number
+  /** Durability each equipped piece starts the run with, by slot. Omitted slots start at `EQUIPMENT_DURABILITY_MAX`. */
+  durability?: { readonly [slot: string]: number }
 }
 
 export const EQUIPMENT_SLOTS = [
@@ -643,29 +645,32 @@ function syncSupplies(state: ExpeditionState, remaining: readonly string[]): voi
   })
 }
 
-function freshPiece(slot: ExpeditionEquipmentSlot, itemId: string): ExpeditionEquipment {
+function freshPiece(slot: ExpeditionEquipmentSlot, itemId: string, start?: { readonly [slot: string]: number }): ExpeditionEquipment {
+  const given = start?.[slot]
+  const durability =
+    given === undefined || !Number.isInteger(given) ? EQUIPMENT_DURABILITY_MAX : Math.max(0, Math.min(EQUIPMENT_DURABILITY_MAX, given))
   return {
     slot,
     itemId,
-    durability: EQUIPMENT_DURABILITY_MAX,
+    durability,
     maxDurability: EQUIPMENT_DURABILITY_MAX,
-    disabled: false,
+    disabled: durability === 0,
   }
 }
 
 /** mainHand, offHand when present, then armor, then the two accessories. */
-function equipmentFromGear(gear: HeroGear): ExpeditionEquipment[] {
-  const pieces: ExpeditionEquipment[] = [freshPiece('mainHand', gear.mainHand.id)]
-  if (gear.offHand !== null) pieces.push(freshPiece('offHand', gear.offHand.id))
+function equipmentFromGear(gear: HeroGear, start?: { readonly [slot: string]: number }): ExpeditionEquipment[] {
+  const pieces: ExpeditionEquipment[] = [freshPiece('mainHand', gear.mainHand.id, start)]
+  if (gear.offHand !== null) pieces.push(freshPiece('offHand', gear.offHand.id, start))
   pieces.push(
-    freshPiece('head', gear.head.id),
-    freshPiece('chest', gear.chest.id),
-    freshPiece('hands', gear.hands.id),
-    freshPiece('feet', gear.feet.id),
+    freshPiece('head', gear.head.id, start),
+    freshPiece('chest', gear.chest.id, start),
+    freshPiece('hands', gear.hands.id, start),
+    freshPiece('feet', gear.feet.id, start),
   )
   const first = gear.accessories[0]
   const second = gear.accessories[1]
-  pieces.push(freshPiece('accessory0', first.id), freshPiece('accessory1', second.id))
+  pieces.push(freshPiece('accessory0', first.id, start), freshPiece('accessory1', second.id, start))
   return pieces
 }
 
@@ -808,7 +813,7 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
   const retreatThresholds = copyThresholds(blueprint.retreatThresholds)
   const rng = createRng(seed)
   const hero = carriedFromTemplate(blueprint.hero)
-  const equipment = equipmentFromGear(blueprint.hero.gear)
+  const equipment = equipmentFromGear(blueprint.hero.gear, blueprint.durability)
   const carriedGold = optionalGold(blueprint.carriedGold, 'carried gold')
   const depositedGold = optionalGold(blueprint.depositedGold, 'deposited gold')
   return {

@@ -10,12 +10,22 @@ import {
   type ExpeditionEncounterDef,
   type ExpeditionState,
 } from '../sim/expedition.ts'
-import { gearFromEquipment, statBonusesFor } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, gearFromEquipment, statBonusesFor } from '../sim/economy.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 
 import { bagCapacity } from './bag.ts'
 import { masteryRank } from './reincarnation.ts'
 import type { SavedHero } from './save.ts'
+
+/** What each equipped item has left, so a run starts with the wear the gear already carries. */
+function durabilityBySlot(hero: SavedHero): { [slot: string]: number } {
+  const out: { [slot: string]: number } = {}
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const item = hero.equipment[slot]
+    if (item !== null) out[slot] = item.durability
+  }
+  return out
+}
 
 /** A boss in the fight gets the hero's chosen Echo rank. Other enemies keep rank 0. */
 function withBossRank(encounter: ExpeditionEncounterDef, rank: number): ExpeditionEncounterDef {
@@ -53,6 +63,7 @@ export function blueprintForHero(
     depositedGold: gold.deposited,
     supplies: [...supplies],
     lootCapacity: bagCapacity(hero),
+    durability: durabilityBySlot(hero),
     retreatThresholds: hero.retreatAtMost === null ? [] : [{ kind: 'hpFraction', atMost: hero.retreatAtMost }],
     hero: {
       id: hero.id,

@@ -143,7 +143,8 @@ function startAwayRun(save: SaveData, seed: number): { save: SaveData; stopped: 
   if (save.expedition !== null || hero === null || hero.awayRouteId === null) return { save, stopped: null, note: null }
   if (!routeCleared(hero, hero.awayRouteId)) return { save, stopped: 'uncleared', note: null }
   if (packFromStash(hero).missing.length > 0) return { save, stopped: 'supplies', note: null }
-  const begun = beginExpedition(save, hero.awayRouteId, seed)
+  // The player left at `lastSeenAt`; a defeat's rest still pending then keeps the away run from starting.
+  const begun = beginExpedition(save, hero.awayRouteId, seed, save.lastSeenAt)
   if (!begun.ok) return { save, stopped: 'blocked', note: begun.reason }
   return { save: begun.save, stopped: null, note: null }
 }

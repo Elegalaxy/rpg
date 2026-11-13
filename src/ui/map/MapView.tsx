@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 import { selectedHero } from '../../persist/character.ts'
 import {
-  canStartRoute,
   markerPosition,
   nodeStatus,
   MASTERY_RETURNS,
@@ -12,7 +11,7 @@ import {
   type NodeState,
 } from '../../persist/world.ts'
 import { legs, nodes, routes } from '../../content/world.ts'
-import { getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
+import { canStartRouteNow, getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
 import { Kpi, KpiRow } from '../Kit.tsx'
 import { GoingIn } from './GoingIn.tsx'
 import type { GoTo } from './goingInLines.ts'
@@ -48,7 +47,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const [error, setError] = useState<string | null>(null)
   const expedition = save.expedition
   const info = routeInfo(routeId, save)
-  const start = canStartRoute(save, routeId)
+  const start = canStartRouteNow(save, routeId)
   const mastery = routeMastery(hero, routeId)
   const chosen = new Set(routes[routeId]?.nodeIds ?? [])
   const position = expedition === null ? null : markerPosition(expedition)

@@ -2048,6 +2048,12 @@ First-playable defeat, decided 2026-10-24:
 - The rescue fee is 25 gold, paid from gold the hero is carrying. Unpaid gold is added to debt. Debt is only stored. Deposited gold is not spent. Soul Debt's extra 50% is a racial node, not this base fee.
 - The hero must wait 5 minutes before the next expedition. The wait is stored on the defeat. It does not tick inside the lost expedition.
 
+Durability carry-through, decided 2026-11-13 (playtest fix):
+
+- A run starts with each piece at the durability the saved item has, not at 100. Settling writes the end value back, so wear accumulates until the player repairs the piece. The harness has no saved items and still starts every piece at 100.
+- A run cannot start while any equipped piece is disabled (durability 0), or while the 5-minute recovery after a defeat has not passed. The refusal names the piece or the minutes left. This holds for a live start and for an away start.
+- The recovery wait is stored on the hero as the time it ends, set when the defeated run is settled.
+
 ### Batch C: loot safety, bag, rules, modifiers (decided 2026-11-07)
 
 Safe pouch (replaces the "send loot home" idea; there is no courier):

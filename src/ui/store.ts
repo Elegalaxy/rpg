@@ -493,14 +493,19 @@ export function startExpeditionLoop(): () => void {
   }
 }
 
+/** Whether a route can start right now, judged on the live clock so a defeat's rest counts down. */
+export function canStartRouteNow(save: SaveData, routeId: string): ReturnType<typeof canStartRoute> {
+  return canStartRoute(save, routeId, Date.now())
+}
+
 /** Start a run on a route for the selected hero. Returns the reason it was refused, or null. */
 export function startExpeditionFromUi(routeId: string): string | null {
-  const check = canStartRoute(saveStatus.save, routeId)
+  const check = canStartRoute(saveStatus.save, routeId, Date.now())
   if (!check.ok) return check.reason
   const buffer = new Uint32Array(1)
   crypto.getRandomValues(buffer)
   const seed = (buffer[0] ?? 1) | 0
-  const begun = beginExpedition(saveStatus.save, routeId, seed)
+  const begun = beginExpedition(saveStatus.save, routeId, seed, Date.now())
   if (!begun.ok) return begun.reason
   pushedAt = null
   lastRouteId = routeId
@@ -925,7 +930,7 @@ export function devLegacyTools(kind: 'bossLoss' | 'legacy'): void {
 
 /** Close a finished expedition: loot to the account, the first return opens a slot. */
 export function settleExpeditionFromUi(): void {
-  const settled = settleExpedition(saveStatus.save)
+  const settled = settleExpedition(saveStatus.save, Date.now())
   if (settled === saveStatus.save) return
   commitSave(settled, 'expedition settled')
 }
