@@ -26,7 +26,13 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - Improved: shop and archive comparisons name the worn piece that is replaced ("Replaces: Hauler's Medium Chest · L8 · 98%"), show bag room and lost or gained modifiers, round stats to one decimal and sign each change (Step 13.7, batch 4).
 - Fixed: HP regeneration while walking is no longer rounded each second; the leftover fraction carries over, so low-VIT heroes (Elf, Undead at VIT 9 heal 0.45 HP/s) heal too, and the run panel shows the rate as "+N HP/s between fights" (Step 13.7, batch 5).
 - New: an in-game "What's new" page lists the patch notes with category filters (Step 13.7).
-- Improved (planned): run mini-panel, contract board first, grouped enchanter, batch brewing, escape banner (batch 6).
+- Improved: the Contract Board is now the first town tab and opens by default (Step 13.7, batch 6).
+- Balance: walking between fights plays at 8x your chosen speed, and 16x on a mastered route; it is playback only, so nothing in the run changes (Step 13.7, batch 6).
+- Improved: a "?" next to Mastery and the locked 8x button explains what mastery counts and what it unlocks (Step 13.7, batch 6).
+- Improved: a "?" next to item quality and in the Upgrade section explains what quality does and that upgrades never lower it (Step 13.7, batch 6).
+- Improved: the "while you were away" table shows which route each hero ran (Step 13.7, batch 6).
+- Improved: the fight view shows the last escape attempt (Escaped at X s, or Escape failed, with HP and the roll), and escaped fights are marked "Escaped" on the run chips (Step 13.7, batch 6).
+- Improved (planned): run mini-panel, grouped enchanter, batch brewing, upgrade queue and map layout (batch 6, next parts).
 
 ## 0.10.0 · 2026-11-09 to 2026-11-10 · Cinder Scar (Step 13.6)
 

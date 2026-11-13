@@ -24,6 +24,7 @@ import {
 } from '../../persist/crafting.ts'
 import { wearerOf } from '../../persist/equipment.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { QualityHelp } from './QualityHelp.tsx'
 import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
 
 const MATERIALS = Object.keys(MATERIAL_QUALITY)
@@ -200,7 +201,9 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         />
       </ul>
 
-      <h4>Upgrade</h4>
+      <h4>
+        Upgrade <QualityHelp />
+      </h4>
       <p className="muted">
         An upgrade always adds 1 item level. The material adds quality too:{' '}
         {MATERIALS.map((id) => `${id} +${UPGRADE_QUALITY_POINTS[id] ?? 0}`).join(', ')} percentage points, up to 110% ({MATERIALS.filter((id) => upgradeCapFor(id) > UPGRADE_QUALITY_CAP).map((id) => `${percent(upgradeCapFor(id))} with ${id}`).join(', ')}).

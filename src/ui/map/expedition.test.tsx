@@ -16,6 +16,7 @@ import {
   settleAndRepeatFromUi,
   settleExpeditionFromUi,
   startExpeditionFromUi,
+  MASTERED_TRAVEL_SPEEDUP,
   TRAVEL_SPEEDUP,
 } from '../store.ts'
 import { ExpeditionPanel } from './ExpeditionPanel.tsx'
@@ -130,6 +131,18 @@ describe('the expedition panel', () => {
     expect(expeditionSpeed()).toBe(TRAVEL_SPEEDUP)
     advanceUntil(() => expedition().combat !== null)
     expect(expeditionSpeed()).toBe(1)
+  })
+
+  it('plays the walk at x8, and x16 on a mastered route', () => {
+    expect(TRAVEL_SPEEDUP).toBe(8)
+    expect(MASTERED_TRAVEL_SPEEDUP).toBe(16)
+    const save = getSaveStatus().save
+    commitSave({ ...save, expedition: null, heroes: save.heroes.map((hero) => ({ ...hero, routeReturns: { 'splintered-road': 10 } })) }, 'test reset', false)
+    seeds([5])
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    expect(expedition().phase).toBe('travel')
+    expect(expeditionSpeed()).toBe(MASTERED_TRAVEL_SPEEDUP)
+    commitSave({ ...getSaveStatus().save, expedition: null, heroes: getSaveStatus().save.heroes.map((hero) => ({ ...hero, routeReturns: {} })) }, 'test reset', false)
   })
 
   it('keeps each finished fight with its log after the fight panel closes', () => {

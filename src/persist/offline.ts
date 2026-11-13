@@ -28,6 +28,8 @@ export type OfflineStop = 'defeat' | 'returned' | 'uncleared' | 'supplies' | 'bl
 export type HeroAwaySummary = {
   heroId: string
   heroName: string
+  /** The route this hero was running (the live run's, else the away route), or null. */
+  routeId: string | null
   /** Runs that ended: returned safely, or defeated. */
   runs: number
   fightsWon: number
@@ -191,6 +193,7 @@ function newLane(view: SaveData, heroId: string, note: string | null, stopped: O
     summary: {
       heroId,
       heroName: selectedHero(view)?.name ?? heroId,
+      routeId: view.expedition?.id ?? selectedHero(view)?.awayRouteId ?? null,
       runs: 0,
       fightsWon: 0,
       retreats: 0,

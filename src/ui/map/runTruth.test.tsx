@@ -75,7 +75,7 @@ describe('the run panel tells the truth', () => {
     const run = startRun()
     expect(pendingContractProgress(getSaveStatus().save, run)).toEqual([])
     expect(
-      ordersLine({ heroId: 'h', heroName: 'Ash', runs: 0, fightsWon: 0, retreats: 0, defeated: false, xp: 0, levelsGained: 0, gold: 0, materials: {}, contractsFinished: 0, stopped: null, note: null, pushedOn: 3, walkedHomeHp: 1 }),
+      ordersLine({ heroId: 'h', heroName: 'Ash', routeId: null, runs: 0, fightsWon: 0, retreats: 0, defeated: false, xp: 0, levelsGained: 0, gold: 0, materials: {}, contractsFinished: 0, stopped: null, note: null, pushedOn: 3, walkedHomeHp: 1 }),
     ).toBe('Standing orders for Ash: pushed on 3 times, walked home 1 time because HP was under the push-on limit.')
   })
 })

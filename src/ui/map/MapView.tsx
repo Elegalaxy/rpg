@@ -12,7 +12,9 @@ import {
 } from '../../persist/world.ts'
 import { legs, nodes, routes } from '../../content/world.ts'
 import { canStartRouteNow, getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
+import { Help } from '../Help.tsx'
 import { Kpi, KpiRow } from '../Kit.tsx'
+import { MASTERY_HELP } from '../masteryHelp.ts'
 import { GoingIn } from './GoingIn.tsx'
 import type { GoTo } from './goingInLines.ts'
 
@@ -119,7 +121,11 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
           <Kpi
             label="Mastery"
             value={`${Math.min(mastery.returns, MASTERY_RETURNS)}/${MASTERY_RETURNS}`}
-            note={mastery.mastered ? '8× speed unlocked' : 'Safe returns'}
+            note={
+              <>
+                {mastery.mastered ? '8× speed unlocked' : 'Safe returns'} <Help label="About mastery">{MASTERY_HELP}</Help>
+              </>
+            }
             tone={mastery.mastered ? 'good' : undefined}
             testId="route-mastery"
           />

@@ -75,4 +75,17 @@ describe('the fight view controls', () => {
     state.outcome = 'victory'
     expect(renderToStaticMarkup(<FightView combat={state} title="test" onEscapeNow={() => undefined} />)).not.toContain('Escape now')
   })
+  it('always draws the escape banner and fills it from the last escape event', () => {
+    const { state } = fresh()
+    const empty = renderToStaticMarkup(<FightView combat={state} title="test" />)
+    expect(empty).toContain('fight-escape-banner')
+    expect(empty).not.toContain('Escape failed')
+    const base = { type: 'escape' as const, timeMs: 4200, actorId: 'hero', actorName: 'Hero', hp: 30, maxHp: 100, thresholdPercent: 40, roll: 12, chancePercent: 55, basePercent: 40, agility: 5, agilityPoints: 5, suppliesBonus: 0, zoneBonus: 0, momentumBonus: 10 }
+    state.log.push({ ...base, success: false })
+    expect(renderToStaticMarkup(<FightView combat={state} title="test" />)).toContain('Escape failed')
+    state.log.push({ ...base, timeMs: 6000, success: true })
+    const html = renderToStaticMarkup(<FightView combat={state} title="test" />)
+    expect(html).toContain('Escaped at 6.0 s')
+    expect(html).toContain('roll 12 vs 55%')
+  })
 })

@@ -35,6 +35,7 @@ describe('mastered routes', () => {
     const html = renderToStaticMarkup(<MapView />)
     expect(html).toContain('10/10')
     expect(html).toContain('8× speed unlocked')
+    expect(html).toContain('16× walking')
     expect(masteredSpeedAllowed()).toBe(true)
     setSpeed(8)
     expect(getSnapshot().speed).toBe(8)

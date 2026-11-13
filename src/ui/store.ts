@@ -448,14 +448,22 @@ export function advanceExpedition(count: number): void {
  * The walk between fights plays this many times faster than the player's speed. The simulation still
  * spends the whole 20-second journey, so regeneration, Readiness and Fury drain keep their ratios.
  */
-export const TRAVEL_SPEEDUP = 4
+export const TRAVEL_SPEEDUP = 8
+
+/** The same walk on a route the hero has mastered. */
+export const MASTERED_TRAVEL_SPEEDUP = 16
+
+/** How much faster the walk plays right now: more on a mastered route. */
+export function travelSpeedup(): number {
+  return routeMastery(selectedHero(saveStatus.save), speedRouteId()).mastered ? MASTERED_TRAVEL_SPEEDUP : TRAVEL_SPEEDUP
+}
 
 /** Playback speed for the expedition clock: faster on the road, the chosen speed in a fight. */
 export function expeditionSpeed(): number {
   const expedition = saveStatus.save.expedition
   const walking = expedition !== null && expedition.phase === 'travel' && expedition.combat === null
   const speed = allowedSpeed(snapshot.speed)
-  return walking ? speed * TRAVEL_SPEEDUP : speed
+  return walking ? speed * travelSpeedup() : speed
 }
 
 const expeditionLoop = createGameLoop({

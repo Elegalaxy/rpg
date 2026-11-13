@@ -1,7 +1,7 @@
 import { skills } from '../../content/skills.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { queueManualAction, skipReason } from '../../sim/automation.ts'
-import type { CombatState } from '../../sim/types.ts'
+import type { CombatState, EscapeEvent } from '../../sim/types.ts'
 import { debugLog } from '../debug.ts'
 import { Help } from '../Help.tsx'
 import { Tag } from '../Kit.tsx'
@@ -99,6 +99,24 @@ function SuppliesBar({ combat }: { combat: CombatState }) {
   )
 }
 
+/** The last escape attempt of this fight in one line. The line is always drawn so nothing shifts when it fills. */
+function EscapeBanner({ combat }: { combat: CombatState }) {
+  let last: EscapeEvent | undefined
+  for (const event of combat.log) if (event.type === 'escape') last = event
+  return (
+    <div className="fight-escape-banner" role="status" data-testid="fight-escape-banner">
+      {last === undefined ? null : (
+        <>
+          <Tag kind={last.success ? 'good' : 'gold'}>{last.success ? `✓ Escaped at ${(last.timeMs / 1000).toFixed(1)} s` : '⚠ Escape failed'}</Tag>
+          <span className="muted">
+            HP {last.hp}/{last.maxHp} · roll {last.roll} vs {last.chancePercent}%
+          </span>
+        </>
+      )}
+    </div>
+  )
+}
+
 /**
  * One fight, live or finished, in the same layout so nothing jumps when it ends: a header with the
  * result, the hero on one side and the enemies on the other, and the log beside or below them.
@@ -128,6 +146,7 @@ export function FightView({
           {live ? `In progress · ${seconds} s` : `${titleCase(combat.outcome)} · ${seconds} s`}
         </span>
       </header>
+      <EscapeBanner combat={combat} />
       <div className="fight-body">
         <div className="fight-field" aria-label="Combat">
           <div className="fight-side fight-side--hero">

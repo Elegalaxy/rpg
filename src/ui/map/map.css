@@ -85,3 +85,9 @@
   opacity: 0.75;
   cursor: default;
 }
+
+/* The Mastery card is the last in its row: open its tip towards the left so it stays on screen. */
+.kpi-note .help-tip {
+  left: auto;
+  right: 0;
+}

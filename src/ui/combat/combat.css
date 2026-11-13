@@ -396,6 +396,22 @@
   min-width: 0;
 }
 
+.fight-escape-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+  min-height: 2rem; /* reserved: the line comes and goes without moving the fight */
+  margin-bottom: var(--s3);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 480px) {
+  .fight-escape-banner {
+    min-height: 3.25rem;
+  }
+}
+
 .fight-escape {
   display: flex;
   align-items: center;

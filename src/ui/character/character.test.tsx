@@ -85,6 +85,7 @@ describe('away report table', () => {
     const hero = {
       heroId: 'hero-1',
       heroName: 'Ash',
+      routeId: 'splintered-road',
       runs: 4,
       fightsWon: 12,
       retreats: 0,
@@ -109,6 +110,8 @@ describe('away report table', () => {
         }}
       />,
     )
+    expect(html).toContain('Route')
+    expect(html).toContain('Splintered Road')
     expect(html).toContain('away-row-hero-1')
     expect(html).toContain('away-row-hero-2')
     expect(html).toContain('Run limit reached')

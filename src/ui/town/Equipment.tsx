@@ -9,6 +9,7 @@ import { bagCapacity } from '../../persist/bag.ts'
 import { EQUIPMENT_SLOT_IDS, MODIFIER_STACK_CAP, gearGaps, modifierCapNotes, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
 import { Tag } from '../Kit.tsx'
+import { QualityHelp } from './QualityHelp.tsx'
 import { groupItems } from './groupItems.ts'
 import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
 
@@ -51,7 +52,7 @@ function ItemFacts({ item }: { item: ItemInstance }) {
     <span className="item-facts" aria-label={describeItem(item)}>
       <strong>{itemName(item)}</strong>
       <small className="row-note">
-        lvl {item.itemLevel} · {Math.round(item.quality * 100)}% quality ·{' '}
+        lvl {item.itemLevel} · {Math.round(item.quality * 100)}% quality <QualityHelp /> ·{' '}
         <Tag kind={wear} title="Durability">
           {item.durability <= 0 ? '✕ Broken' : `${wear === 'bad' ? '▼ ' : ''}${item.durability}/${item.maxDurability}`}
         </Tag>

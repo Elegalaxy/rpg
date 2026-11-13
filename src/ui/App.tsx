@@ -23,6 +23,8 @@ import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
 import { Legacy } from './character/Legacy.tsx'
 import { AwayPanel } from './AwayPanel.tsx'
+import { Help } from './Help.tsx'
+import { MASTERY_HELP } from './masteryHelp.ts'
 import { PLACES, Town, type PlaceId } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { PALETTES, applyPalette, applyTheme, storedPalette, storedTheme, type PaletteChoice, type ThemeChoice } from './theme.ts'
@@ -87,7 +89,10 @@ const HERO_PARTS: { id: HeroPart; label: string }[] = [
   { id: 'legacy', label: 'Legacy' },
 ]
 
-const TOWN_PARTS: { id: PlaceId; label: string }[] = PLACES.map((place) => ({ id: place.id, label: place.name }))
+const TOWN_PARTS: { id: PlaceId; label: string }[] = [
+  ...PLACES.filter((place) => place.id === 'contract-board'),
+  ...PLACES.filter((place) => place.id !== 'contract-board'),
+].map((place) => ({ id: place.id, label: place.name }))
 
 /** A second row of buttons inside a tab, so one screen shows one job. */
 /** A small count pill on a tab: something is waiting there. */
@@ -291,7 +296,12 @@ export function CombatViewer() {
             </button>
           )
         })}
-        {!masteredSpeedAllowed() ? <small className="muted-inline"> 8× unlocks after 10 safe returns on a route.</small> : null}
+        {!masteredSpeedAllowed() ? (
+          <small className="muted-inline">
+            {' '}
+            8× unlocks after 10 safe returns on a route. <Help label="About mastery">{MASTERY_HELP}</Help>
+          </small>
+        ) : null}
       </div>
       <CombatPanel combat={view.combat} queueError={view.queueError} />
       <OutcomeCard combat={view.combat} />
@@ -305,7 +315,7 @@ function App() {
   const latestKey = changelogKey(CHANGELOG_SECTIONS)
   const [seenKey, setSeenKey] = useState<string | null>(readSeen)
   const [heroPart, setHeroPart] = useState<HeroPart>('overview')
-  const [townPart, setTownPart] = useState<PlaceId>('weaponsmith')
+  const [townPart, setTownPart] = useState<PlaceId>('contract-board')
   const saved = useSaveStatus()
   const purse = purseOf(saved.save)
   const finishedContracts = purse.contracts.filter((entry) => isComplete(entry, contractFor(purse, entry.contractId))).length

@@ -39,7 +39,7 @@ import {
   expeditionWaiting,
   getDiscoveryNotices,
   getFinishedFights,
-  TRAVEL_SPEEDUP,
+  travelSpeedup,
   useSaveStatus,
 } from '../store.ts'
 
@@ -346,6 +346,7 @@ function FightArea({ live, escapePending, expedition }: { live: ExpeditionState[
   const fights = getFinishedFights()
   // Fights played while the page was closed have no kept log. Their chips say so instead of vanishing.
   const unplayed = expedition.history.filter((entry) => !fights.some((fight) => fight.fight === entry.index + 1))
+  const retreatedFights = new Set(expedition.history.filter((entry) => entry.outcome === 'retreat').map((entry) => entry.index + 1))
   const [chosen, setChosen] = useState<number | 'follow'>('follow')
   const latest = fights[fights.length - 1]
   const picked = chosen === 'follow' ? undefined : fights.find((entry) => entry.fight === chosen)
@@ -363,7 +364,7 @@ function FightArea({ live, escapePending, expedition }: { live: ExpeditionState[
             disabled
             title="This fight was played while you were away, so there is no log to replay."
           >
-            Fight {entry.index + 1} · played while away
+            Fight {entry.index + 1} · played while away{entry.outcome === 'retreat' ? ' · ↩ Escaped' : ''}
           </button>
         ))}
         {fights.map((entry) => (
@@ -375,6 +376,7 @@ function FightArea({ live, escapePending, expedition }: { live: ExpeditionState[
             onClick={() => setChosen(entry.fight)}
           >
             Fight {entry.fight}
+            {retreatedFights.has(entry.fight) ? ' · ↩ Escaped' : ''}
           </button>
         ))}
         {live !== null ? (
@@ -485,7 +487,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
             ? `Fight ${expedition.encounterIndex + 1} is under way.`
             : expedition.returning
               ? 'Walking back to Greyhaven.'
-              : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds (played ${TRAVEL_SPEEDUP}× faster).`}
+              : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds (played ${travelSpeedup()}× faster).`}
         </p>
       )}
       {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (

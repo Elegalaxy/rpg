@@ -578,7 +578,7 @@ The three-zone route:
 First-playable layout, decided 2026-10-31 (the contract list is still open for Step 9.4):
 
 - Nodes: Greyhaven (town), Splintered Road, Withered Grove, Fallen Bastion, and the Fracture Gate, where the Fractured Warden waits. The Road leads to a branch. The Grove and the Bastion each lead on to the Fracture Gate.
-- Every leg takes 20 seconds, the same as the road's ordinary journey, and a return walk takes the same. These are simulated seconds. The UI plays the walk 4× faster than the chosen speed (about 5 real seconds at 1×), so regeneration, Readiness, and Fury drain keep their ratios to the walk. Fights are not sped up.
+- Every leg takes 20 seconds, the same as the road's ordinary journey, and a return walk takes the same. These are simulated seconds. The UI plays the walk 8× faster than the chosen speed (about 2.5 real seconds at 1×), and 16× on a route the hero has mastered, so regeneration, Readiness, and Fury drain keep their ratios to the walk. Fights are not sped up.
 - Each zone has one resource node that gives the hero 4 of a material on a visit, using the existing materials: a Scrap Heap on the Road (scrap), a Hollow Thicket in the Grove (hide), and a Shard Seam in the Bastion (shard). New materials wait for crafting (G8). Resource nodes do not change when the Grove and Bastion get their own materials (Step 13.2); those two materials come from enemy drops only.
 - Each branch ends in its elite: the Rootmaw Stalker in the Grove and the Echo Knight in the Bastion.
 - The Fracture Gate is a personal gate. It opens for a hero once that hero has defeated both elites at least once. The boss is revealed to the hero on arrival at the gate, not before.
@@ -2401,6 +2401,7 @@ Offline extras, decided 2026-11-08 (user approved; Step 12.6):
 - Selecting a hero who has a background run brings that run onto the live screen. A run that has ended (returned or defeated) waits for the player on the Map. A hero with a background run cannot be deleted.
 - The away summary is one row per hero (runs, fights won, gold, XP and levels, why it stopped), with the shared crafts and discoveries below.
 - Mastered routes: each hero counts safe returns per route. At 10 safe returns the route is mastered for that hero and the live screen offers x8 playback speed on it. Live only: offline loot and the 0.5 rate do not change.
+- Walking playback, decided 2026-11-13 (Step 13.7 batch 6): the walk between fights plays at x8 the chosen speed, and x16 on a mastered route. Playback only; the simulation, regeneration, Readiness and Fury drain are unchanged.
 - Unchanged: the 8-hour cap, the 0.5 loot rate, the 5-slot roster, no shared vault. The first run of each other hero's catch-up uses its own seed, so heroes do not replay identical fights.
 
 ## 12. Presentation

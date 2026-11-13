@@ -1,4 +1,5 @@
 import { ordersLine, type AwayReport, type HeroAwaySummary } from '../persist/offline.ts'
+import { routes } from '../content/world.ts'
 import { Tag } from './Kit.tsx'
 import { dismissAway, getAwayView, useSaveStatus } from './store.ts'
 
@@ -57,6 +58,7 @@ export function AwayReportView({ report }: { report: AwayReport }) {
           <thead>
             <tr>
               <th scope="col">Hero</th>
+              <th scope="col">Route</th>
               <th scope="col" className="num">Runs</th>
               <th scope="col" className="num">Fights won</th>
               <th scope="col" className="num">Gold</th>
@@ -70,6 +72,7 @@ export function AwayReportView({ report }: { report: AwayReport }) {
               return (
                 <tr key={hero.heroId} data-testid={`away-row-${hero.heroId}`}>
                   <th scope="row">{hero.heroName}</th>
+                  <td>{hero.routeId === null ? '—' : (routes[hero.routeId]?.name ?? hero.routeId)}</td>
                   <td className="num">{hero.runs}</td>
                   <td className="num">{hero.fightsWon}</td>
                   <td className="num">{hero.gold}</td>
