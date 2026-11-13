@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { selectedHero } from '../../persist/character.ts'
 import {
@@ -18,6 +18,7 @@ import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
 import { countNames } from '../town/groupItems.ts'
 import { outcomeStats } from '../../persist/world.ts'
+import { pendingContractProgress } from '../../persist/contracts.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { MOMENTUM_CAP, SUPPLY_SLOT_COUNT, bagIsFull, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
@@ -32,6 +33,7 @@ import {
   escapeNowFromUi,
   setAutoEscapeFromUi,
   savePreparationFromUi,
+  setPreparationProblem,
   settleExpeditionFromUi,
   settleAndRepeatFromUi,
   expeditionWaiting,
@@ -61,10 +63,23 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   const counts = packedCounts(draft.supplies)
   const packedTotal = draft.supplies.filter((id) => id !== '').length
 
+  // Every change is saved as soon as it is valid, so Start never runs on stale settings. A draft that is not valid yet blocks Start.
+  useEffect(() => () => setPreparationProblem(null), [])
+
   function patch(next: Partial<PreparationDraft>): void {
-    setDraft({ ...draft, ...next })
-    setSaved(false)
-    setProblems([])
+    const changed = { ...draft, ...next }
+    setDraft(changed)
+    const check = checkPreparation(hero, changed)
+    if (!check.ok) {
+      setSaved(false)
+      setProblems([])
+      setPreparationProblem('Unsaved changes: fix the preparation first (see the problems listed).')
+      return
+    }
+    const refused = savePreparationFromUi(changed)
+    setProblems(refused)
+    setSaved(refused.length === 0)
+    setPreparationProblem(refused.length === 0 ? null : 'Unsaved changes: the preparation was refused.')
   }
 
   function save(): void {
@@ -147,7 +162,10 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             onChange={(event) => patch({ carryGold: event.target.value })}
           />
         </label>
-        <Help label="About carried gold">The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat.</Help>
+        <Help label="About carried gold">
+          The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat. While a run is out your purse shows 0: the run panel
+          lists what you carry and what is banked.
+        </Help>
       </div>
       <fieldset className="away-box">
         <legend>While you are away</legend>
@@ -313,7 +331,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           ))}
         </ul>
       ) : null}
-      {saved ? <p>Preparation saved.</p> : null}
+      <p className="prep-status" role="status" data-testid="prep-status">
+        {!checked.ok ? <Tag kind="bad">Unsaved changes. Start is blocked until the problems above are fixed.</Tag> : saved ? 'Preparation saved. Changes save automatically.' : 'Changes save automatically.'}
+      </p>
     </section>
   )
 }
@@ -322,17 +342,30 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
  * The fight area of a run. It follows the live fight, and the same view then stays on the fight that
  * just ended, so the result never snaps away. Chips above it open any earlier fight of the run.
  */
-function FightArea({ live, escapePending }: { live: ExpeditionState['combat']; escapePending: boolean }) {
+function FightArea({ live, escapePending, expedition }: { live: ExpeditionState['combat']; escapePending: boolean; expedition: ExpeditionState }) {
   const fights = getFinishedFights()
+  // Fights played while the page was closed have no kept log. Their chips say so instead of vanishing.
+  const unplayed = expedition.history.filter((entry) => !fights.some((fight) => fight.fight === entry.index + 1))
   const [chosen, setChosen] = useState<number | 'follow'>('follow')
   const latest = fights[fights.length - 1]
   const picked = chosen === 'follow' ? undefined : fights.find((entry) => entry.fight === chosen)
   const showLive = live !== null && picked === undefined
-  if (live === null && fights.length === 0) return null
+  if (live === null && fights.length === 0 && unplayed.length === 0) return null
   const shown = picked ?? (showLive ? undefined : latest)
   return (
     <section aria-label="Fights">
       <div className="fight-tabs" role="group" aria-label="Fights of this run">
+        {unplayed.map((entry) => (
+          <button
+            key={`away-${entry.index}`}
+            type="button"
+            className={entry.outcome === 'victory' ? 'btn-good' : 'btn-danger'}
+            disabled
+            title="This fight was played while you were away, so there is no log to replay."
+          >
+            Fight {entry.index + 1} · played while away
+          </button>
+        ))}
         {fights.map((entry) => (
           <button
             key={entry.fight}
@@ -353,7 +386,7 @@ function FightArea({ live, escapePending }: { live: ExpeditionState['combat']; e
       {showLive && live !== null ? (
         <FightView
           combat={live}
-          title={`Fight ${fights.length + 1}`}
+          title={`Fight ${expedition.encounterIndex + 1}`}
           onEscapeNow={escapeNowFromUi}
           escapePending={escapePending}
         />
@@ -410,6 +443,14 @@ function DiscoveredLine() {
 
 function Running({ expedition }: { expedition: ExpeditionState }) {
   const [error, setError] = useState<string | null>(null)
+  const { save } = useSaveStatus()
+  const hero = selectedHero(save)
+  const pendingContracts = pendingContractProgress(save, expedition)
+  const runGold = expedition.carriedGold - (expedition.startGold ?? 0)
+  // A leg whose fights drop no materials (before the route's last zone) still drops gold.
+  const legFight = expedition.current ?? expedition.opening[expedition.encounterIndex] ?? null
+  const legEnemies = legFight === null ? [] : legFight.enemies
+  const goldOnly = legEnemies.length > 0 && legEnemies.every((enemy) => enemy.materialId === undefined) && legEnemies.some((enemy) => (enemy.gold ?? 0) > 0)
   const waiting = expeditionWaiting()
   const carried = expedition.unsecured.reduce((sum, stack) => sum + stack.quantity, 0)
   const pouch = safePouch(expedition.unsecured)
@@ -468,8 +509,31 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         ) : null}
         <Kpi label="Momentum" value={`${expedition.momentum}/${MOMENTUM_CAP}`} testId="momentum" />
         <Kpi label="Fights won" value={expedition.history.filter((entry) => entry.outcome === 'victory').length} />
-        <Kpi label="Loot bag" value={`${carried}/${lootCapacityOf(expedition)}`} testId="loot-bag" note={bagIsFull(expedition) ? 'Nearly full' : undefined} tone={bagIsFull(expedition) ? 'warn' : undefined} />
+        <Kpi label="Loot bag" value={`${carried}/${lootCapacityOf(expedition)}`} testId="loot-bag" note={bagIsFull(expedition) ? (carried >= lootCapacityOf(expedition) ? 'Full' : 'Nearly full') : undefined} tone={bagIsFull(expedition) ? 'warn' : undefined} />
       </KpiRow>
+      <KpiRow label="Run gold">
+        <Kpi label="Carried gold" value={`${expedition.carriedGold} g`} tone="gold" testId="gold-carried" note="With you. Pays the rescue fee." />
+        <Kpi label="Banked gold" value={`${expedition.depositedGold} g`} testId="gold-banked" note="Safe in town. The purse reads 0 meanwhile." />
+        <Kpi
+          label="Run gold"
+          value={`${runGold >= 0 ? '+' : '−'}${Math.abs(runGold)} g`}
+          tone={runGold > 0 ? 'good' : undefined}
+          testId="gold-run"
+          note={goldOnly ? 'This leg drops gold only.' : 'Dropped on this run so far.'}
+        />
+      </KpiRow>
+      <p className="muted" data-testid="standing-orders">
+        <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, repeat {hero?.repeatRoute === true ? 'on' : 'off'}. They apply when you are away.
+      </p>
+      {pendingContracts.length > 0 ? (
+        <ul className="muted" data-testid="pending-contracts" aria-label="Contract progress this run">
+          {pendingContracts.map((entry) => (
+            <li key={entry.contractId}>
+              {entry.name}: <Tag kind="good">+{entry.pending} pending this run</Tag> ({entry.progress}/{entry.count} banked)
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div className="pill-lines">
         <div className="pill-line" data-testid="unsecured" title="Lost if you are defeated, except the safe pouch">
           <small className="pill-label">Carrying</small>
@@ -605,7 +669,7 @@ export function ExpeditionPanel() {
     return (
       <>
         {expedition.outcome === 'ongoing' ? <Running expedition={expedition} /> : <Ended expedition={expedition} />}
-        <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} />
+        <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} expedition={expedition} />
       </>
     )
   }

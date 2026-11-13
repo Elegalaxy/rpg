@@ -74,3 +74,14 @@
   display: block;
   font-size: 0.8rem;
 }
+
+/* Reserved so the autosave status never moves the layout. */
+.prep-status {
+  min-height: 2.5rem;
+  margin: var(--s2) 0 0;
+}
+
+.fight-tabs button:disabled {
+  opacity: 0.75;
+  cursor: default;
+}

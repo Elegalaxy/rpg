@@ -1,4 +1,4 @@
-import type { AwayReport, HeroAwaySummary } from '../persist/offline.ts'
+import { ordersLine, type AwayReport, type HeroAwaySummary } from '../persist/offline.ts'
 import { Tag } from './Kit.tsx'
 import { dismissAway, getAwayView, useSaveStatus } from './store.ts'
 
@@ -48,7 +48,7 @@ export function AwayReportView({ report }: { report: AwayReport }) {
       : `You were away ${duration(report.awayMs)}.`
   const withMaterials = report.heroes.filter((hero) => Object.keys(hero.materials).length > 0)
   const contracts = report.heroes.reduce((sum, hero) => sum + hero.contractsFinished, 0)
-  const stops = report.heroes.map(stopLine).filter((line) => line !== '')
+  const stops = [...report.heroes.map(ordersLine), ...report.heroes.map(stopLine)].filter((line) => line !== '')
   return (
     <>
       <p>{intro}</p>

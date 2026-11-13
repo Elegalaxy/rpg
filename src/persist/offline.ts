@@ -43,6 +43,10 @@ export type HeroAwaySummary = {
   stopped: OfflineStop
   /** The reason a repeat could not start, in words, when `stopped` is blocked. */
   note: string | null
+  /** What the standing orders did at the holds between fights. Absent counts as 0. */
+  pushedOn?: number
+  walkedHomeHp?: number
+  walkedHomeBag?: number
 }
 
 /** The "while you were away" report: shared facts, and one row per hero that ran. The selected hero is first. */
@@ -58,6 +62,19 @@ export type AwayReport = {
   /** Places discovered, sorted. Several heroes can reach them in any order. */
   discovered: string[]
   heroes: HeroAwaySummary[]
+}
+
+/** What the standing orders did between fights, or an empty string when there was no hold. */
+export function ordersLine(hero: HeroAwaySummary): string {
+  const pushed = hero.pushedOn ?? 0
+  const hp = hero.walkedHomeHp ?? 0
+  const bag = hero.walkedHomeBag ?? 0
+  if (pushed + hp + bag === 0) return ''
+  const parts: string[] = []
+  if (pushed > 0) parts.push(`pushed on ${pushed} ${pushed === 1 ? 'time' : 'times'}`)
+  if (hp > 0) parts.push(`walked home ${hp} ${hp === 1 ? 'time' : 'times'} because HP was under the push-on limit`)
+  if (bag > 0) parts.push(`walked home ${bag} ${bag === 1 ? 'time' : 'times'} because the bag was nearly full`)
+  return `Standing orders for ${hero.heroName}: ${parts.join(', ')}.`
 }
 
 /** One hero's replay: the selected hero's live run, or another hero's away run. */
@@ -322,16 +339,22 @@ function decideAtHold(ctx: Ctx): void {
   const hero = selectedHero(ctx.save)
   if (expedition === null || hero === null) return
   const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
+  const summary = ctx.lane.summary
   if (hpPercent < hero.pushOnHpPercent) {
+    summary.walkedHomeHp = (summary.walkedHomeHp ?? 0) + 1
     returnToTown(expedition)
     return
   }
   if (bagIsFull(expedition)) {
     // 'ask' holds the run for the player; replaying stops here and the run waits at this hold.
     if (hero.bagFullOrder === 'ask') ctx.lane.stopped = 'bagFull'
-    else returnToTown(expedition)
+    else {
+      summary.walkedHomeBag = (summary.walkedHomeBag ?? 0) + 1
+      returnToTown(expedition)
+    }
     return
   }
+  summary.pushedOn = (summary.pushedOn ?? 0) + 1
   ctx.lane.pushedAt = expedition.encounterIndex
 }
 

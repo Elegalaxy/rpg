@@ -249,6 +249,8 @@ export type ExpeditionState = {
   consumedSupplyIds: string[]
   /** Gold the hero is carrying. The rescue fee is paid from this. */
   carriedGold: number
+  /** Gold carried when the run started, so the screens can tell what the run itself dropped. Omitted is 0. */
+  startGold?: number
   /** Gold left in town. A defeat does not spend it. */
   depositedGold: number
   /** Unpaid rescue fees. Stored only: no interest, and it blocks nothing. */
@@ -844,6 +846,7 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
     supplySlots: packedSupplySlots(blueprint.supplies),
     consumedSupplyIds: [],
     carriedGold,
+    ...(carriedGold > 0 ? { startGold: carriedGold } : {}),
     depositedGold,
     debt: 0,
     recoveryMs: 0,

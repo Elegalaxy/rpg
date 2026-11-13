@@ -163,6 +163,19 @@ export function unitsFrom(expedition: ExpeditionState, def: ContractDef): number
   return units
 }
 
+/** What a live run has already earned toward each of the selected hero's active contracts, before it is settled. */
+export function pendingContractProgress(save: SaveData, expedition: ExpeditionState): { contractId: string; name: string; pending: number; progress: number; count: number }[] {
+  const purse = purseOf(save)
+  const rows: { contractId: string; name: string; pending: number; progress: number; count: number }[] = []
+  for (const active of purse.contracts) {
+    const def = contractFor(purse, active.contractId)
+    if (def === undefined) continue
+    const pending = Math.min(def.count - active.progress, unitsFrom(expedition, def))
+    if (pending > 0) rows.push({ contractId: def.id, name: def.name, pending, progress: active.progress, count: def.count })
+  }
+  return rows
+}
+
 /** Add an expedition's won fights to the selected hero's active contracts, never past their target. */
 export function addContractProgress(save: SaveData, expedition: ExpeditionState): SaveData {
   const purse = purseOf(save)

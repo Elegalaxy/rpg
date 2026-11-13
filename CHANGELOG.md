@@ -15,7 +15,13 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 
 - Fixed: gear no longer returns to 100% durability at the start of every run, so wear carries over and repair matters again (Step 13.7, batch 1).
 - Improved: a run cannot start while a worn piece is disabled or the 5-minute rest after a defeat is pending, and the reason is shown (Step 13.7, batch 1).
-- Fixed (planned): fight numbering after being away, "Nearly full" at 23/23, gold-to-carry confusion, layout jumps in the fight view and crafting (batches 2-3).
+- Fixed: the live fight is numbered from the run, and fights played while you were away show as "Fight N · played while away" chips (Step 13.7, batch 2).
+- Fixed: the loot bag says "Full" at capacity and "Nearly full" below it (Step 13.7, batch 2).
+- Improved: the run panel shows Carried gold, Banked gold and gold dropped this run, so the purse reading 0 during a run is explained (Step 13.7, batch 2).
+- Improved: preparation changes save automatically; an invalid or unsaved change blocks Start and says so (Step 13.7, batch 2).
+- Improved: contracts show "+N pending this run" on the live run, and the run panel states your standing orders (Step 13.7, batch 2).
+- Improved: the "while you were away" report says how often the standing orders pushed on or walked home (Step 13.7, batch 2).
+- Fixed (planned): layout jumps in the fight view and crafting (batch 3).
 - Improved (planned): shop comparison shows which worn item is replaced and the lost bag room (batch 4).
 - Fixed (planned): fractional HP regeneration while walking, so Elf and Undead heal too (batch 5).
 - Improved (planned): run mini-panel, contract board first, grouped enchanter, batch brewing, escape banner (batch 6).

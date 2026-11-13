@@ -493,14 +493,29 @@ export function startExpeditionLoop(): () => void {
   }
 }
 
+/** Why the preparation form holds changes that are not saved, or null. Start is refused while this is set. */
+let preparationProblem: string | null = null
+
+export function getPreparationProblem(): string | null {
+  return preparationProblem
+}
+
+export function setPreparationProblem(message: string | null): void {
+  if (message === preparationProblem) return
+  preparationProblem = message
+  saveStatus = { ...saveStatus }
+  emit()
+}
+
 /** Whether a route can start right now, judged on the live clock so a defeat's rest counts down. */
 export function canStartRouteNow(save: SaveData, routeId: string): ReturnType<typeof canStartRoute> {
+  if (preparationProblem !== null) return { ok: false, reason: preparationProblem }
   return canStartRoute(save, routeId, Date.now())
 }
 
 /** Start a run on a route for the selected hero. Returns the reason it was refused, or null. */
 export function startExpeditionFromUi(routeId: string): string | null {
-  const check = canStartRoute(saveStatus.save, routeId, Date.now())
+  const check = canStartRouteNow(saveStatus.save, routeId)
   if (!check.ok) return check.reason
   const buffer = new Uint32Array(1)
   crypto.getRandomValues(buffer)
