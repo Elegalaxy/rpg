@@ -23,7 +23,7 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - Improved: the "while you were away" report says how often the standing orders pushed on or walked home (Step 13.7, batch 2).
 - Fixed: the fight view no longer jumps when you queue a skill or supply: Queue buttons are always drawn (disabled with the reason in the tooltip), and the queued, error, "used" and "just used" lines keep their space (Step 13.7, batch 3).
 - Fixed: crafting and upgrade selects keep one width, with short option names and the effect text on its own reserved line (Step 13.7, batch 3).
-- Improved (planned): shop comparison shows which worn item is replaced and the lost bag room (batch 4).
+- Improved: shop and archive comparisons name the worn piece that is replaced ("Replaces: Hauler's Medium Chest · L8 · 98%"), show bag room and lost or gained modifiers, round stats to one decimal and sign each change (Step 13.7, batch 4).
 - Fixed (planned): fractional HP regeneration while walking, so Elf and Undead heal too (batch 5).
 - Improved (planned): run mini-panel, contract board first, grouped enchanter, batch brewing, escape banner (batch 6).
 

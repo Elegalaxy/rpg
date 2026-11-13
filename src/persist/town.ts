@@ -89,7 +89,7 @@ export function buyItem(save: SaveData, heroId: string, baseId: string): RosterR
 export function previewBuy(save: SaveData, heroId: string, baseId: string): EquipPreview {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   const base = itemBase(baseId)
-  if (hero === undefined || base === undefined) return { block: 'Greyhaven does not sell that.', slot: null, changes: [] }
+  if (hero === undefined || base === undefined) return { block: 'Greyhaven does not sell that.', slot: null, changes: [], replaces: null, extras: [], notes: [] }
   const standIn = newItem('preview-item', baseId, hero.progress.level)
   const copy: SaveData = { ...save, expedition: null, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, purse: { ...entry.purse, archive: [...entry.purse.archive, standIn] } } : entry)) }
   return previewEquip(copy, heroId, standIn.id)

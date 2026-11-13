@@ -1,10 +1,11 @@
-import { developmentItems, itemBase } from '../content/items.ts'
-import { equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type Wearer } from '../sim/economy.ts'
+import { developmentItems, itemBase, itemName } from '../content/items.ts'
+import { ITEM_MODIFIERS, equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
 import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats, type HeroDerivedStats } from '../sim/stats.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 import { classWebs } from '../content/webs/index.ts'
 
+import { bagCapacity } from './bag.ts'
 import type { RosterResult } from './roster.ts'
 import { updatePurse, type SaveData, type SavedHero } from './save.ts'
 
@@ -66,6 +67,45 @@ export type EquipPreview = {
   slot: EquipmentSlotId | null
   /** Each stat before and after, for a legal equip. Empty when it is refused or the gear stays incomplete. */
   changes: { label: string; before: number; after: number; unit: string }[]
+  /** The worn piece this one takes the place of, or null when the slot is empty or the equip is refused. */
+  replaces: ReplacedPiece | null
+  /** Changes that are not hero stats, such as bag room, before and after. Empty when nothing of the kind changes. */
+  extras: { label: string; before: number; after: number; unit: string }[]
+  /** Modifiers lost or gained, in words, for example "Loses Hauler's: +3 bag room". */
+  notes: string[]
+}
+
+/** A worn item as the comparison names it. */
+export type ReplacedPiece = { name: string; itemLevel: number; quality: number; durability: number; maxDurability: number }
+
+const NO_PREVIEW: Pick<EquipPreview, 'replaces' | 'extras' | 'notes'> = { replaces: null, extras: [], notes: [] }
+
+function replacedPiece(item: ItemInstance | null | undefined): ReplacedPiece | null {
+  if (item === null || item === undefined) return null
+  return { name: itemName(item), itemLevel: item.itemLevel, quality: item.quality, durability: item.durability, maxDurability: item.maxDurability }
+}
+
+/** The modifiers that leave the hero and those that arrive, from the whole worn set before and after. */
+function modifierNotes(before: readonly ItemInstance[], after: readonly ItemInstance[]): string[] {
+  const count = (items: readonly ItemInstance[]) => {
+    const tally: { [id: string]: number } = {}
+    for (const item of items) for (const id of item.modifiers) tally[id] = (tally[id] ?? 0) + 1
+    return tally
+  }
+  const was = count(before)
+  const now = count(after)
+  const notes: string[] = []
+  for (const id of Object.keys(was)) {
+    if ((now[id] ?? 0) < (was[id] ?? 0)) notes.push(`Loses ${ITEM_MODIFIERS[id]?.name ?? id}: ${ITEM_MODIFIERS[id]?.text ?? ''}`)
+  }
+  for (const id of Object.keys(now)) {
+    if ((was[id] ?? 0) < (now[id] ?? 0)) notes.push(`Gains ${ITEM_MODIFIERS[id]?.name ?? id}: ${ITEM_MODIFIERS[id]?.text ?? ''}`)
+  }
+  return notes
+}
+
+function worn(hero: SavedHero): ItemInstance[] {
+  return Object.values(hero.equipment).flatMap((item) => (item === null ? [] : [item]))
 }
 
 /** Who the hero is for the class gear rule. */
@@ -81,14 +121,21 @@ function withEquipped(hero: SavedHero, itemId: string, slot: EquipmentSlotId | n
 export function previewEquip(save: SaveData, heroId: string, itemId: string, slot: EquipmentSlotId | null = null): EquipPreview {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   const item = hero?.purse.archive.find((entry) => entry.id === itemId)
-  if (hero === undefined || item === undefined) return { block: 'That item is not in the archive.', slot: null, changes: [] }
+  if (hero === undefined || item === undefined) return { block: 'That item is not in the archive.', slot: null, changes: [], ...NO_PREVIEW }
   const result = withEquipped(hero, itemId, slot)
-  if (!result.ok) return { block: result.reason, slot: null, changes: [] }
+  if (!result.ok) return { block: result.reason, slot: null, changes: [], ...NO_PREVIEW }
   const base = itemBase(item.baseId)
   const chosen = slot ?? (base === undefined ? null : (slotsFor(base).find((candidate) => equipBlock(hero.equipment, item, candidate, hero.progress.level, itemBase, wearerOf(hero)) === null) ?? null))
+  const afterHero = { ...hero, equipment: result.equipment }
+  const replaces = chosen === null ? null : replacedPiece(hero.equipment[chosen])
+  const extras: EquipPreview['extras'] = []
+  const bagBefore = bagCapacity(hero)
+  const bagAfter = bagCapacity(afterHero)
+  if (bagBefore !== bagAfter) extras.push({ label: 'Bag room', before: bagBefore, after: bagAfter, unit: '' })
+  const notes = modifierNotes(worn(hero), worn(afterHero))
   const before = statsFor(hero)
-  const after = statsFor({ ...hero, equipment: result.equipment })
-  if (before === null || after === null) return { block: null, slot: chosen, changes: [] }
+  const after = statsFor(afterHero)
+  if (before === null || after === null) return { block: null, slot: chosen, changes: [], replaces, extras, notes }
   const lines = statLines(before)
   const next = statLines(after)
   const changes = lines.flatMap((line, index) => {
@@ -97,7 +144,7 @@ export function previewEquip(save: SaveData, heroId: string, itemId: string, slo
       ? [{ label: line.label, before: line.value, after: changed.value, unit: line.unit }]
       : []
   })
-  return { block: null, slot: chosen, changes }
+  return { block: null, slot: chosen, changes, replaces, extras, notes }
 }
 
 /** Equip an item from the hero's archive. Equipment cannot change while the hero is out on an expedition. */
