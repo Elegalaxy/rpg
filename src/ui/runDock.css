@@ -1,0 +1,206 @@
+/* ---- Run dock: fight state, HP, Push on and Return on every page but the Map ---- */
+
+.run-dock {
+  z-index: 20;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+}
+
+.run-dock button {
+  min-height: 44px;
+}
+
+.run-dock :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.run-dock-main {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2);
+}
+
+.run-dock-state {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.run-dock-status {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.run-dock-hp {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.run-dock-hp progress {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 8px;
+  accent-color: var(--good);
+}
+
+.run-dock-hp progress.hp-warn {
+  accent-color: var(--warn);
+}
+
+.run-dock-hp progress.hp-bad {
+  accent-color: var(--danger);
+}
+
+.run-dock-hp-num {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.run-dock .hold-actions .button-row {
+  flex-wrap: nowrap;
+}
+
+.run-dock .hold-actions button {
+  white-space: nowrap;
+  padding-inline: var(--s3);
+}
+
+.run-dock-toggle {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.run-dock-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: var(--s3) var(--s2) var(--s2);
+  border-top: 1px solid var(--border);
+}
+
+.run-dock-details p {
+  margin: 0;
+}
+
+.run-dock-repeat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.run-dock-repeat label {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+}
+
+.run-dock-repeat label.is-disabled {
+  color: var(--muted);
+}
+
+.run-dock-repeat input {
+  width: 20px;
+  height: 20px;
+}
+
+/* The refusal line has its own space in the Running panel and floats above the bar in the dock. */
+.hold-msg {
+  display: block;
+  min-height: 1.3em;
+  padding: 0;
+  border: 0;
+  color: var(--danger);
+}
+
+/* Under 1280px the dock is a bar along the bottom of the content. */
+@media (max-width: 1279px) {
+  .run-dock {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-width: 1px 0 0;
+  }
+
+  .run-dock .hold-msg {
+    position: absolute;
+    bottom: calc(100% + var(--s1));
+    left: var(--s2);
+    min-height: 0;
+    padding: var(--s1) var(--s2);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+
+  .run-dock .hold-msg:empty {
+    display: none;
+  }
+
+  /* Keeps the end of the page clear of the collapsed bar (60px). */
+  .shell-docked .content {
+    padding-bottom: calc(var(--s5) + 64px);
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1279px) {
+  .run-dock {
+    left: 280px;
+  }
+}
+
+@media (max-width: 899px) {
+  .shell-docked .content {
+    padding-bottom: calc(var(--s3) + 64px);
+  }
+}
+
+/* From 1280px it is a card in its own column, so it covers nothing. */
+@media (min-width: 1280px) {
+  .shell-docked {
+    grid-template-columns: 280px minmax(0, 1fr) 300px;
+  }
+
+  .run-dock {
+    position: sticky;
+    top: var(--s4);
+    align-self: start;
+    margin: var(--s5) var(--s5) 0 0;
+    border-radius: var(--radius);
+  }
+
+  .run-dock-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .run-dock-state {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .run-dock-toggle {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .run-dock .hold-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

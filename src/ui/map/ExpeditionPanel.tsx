@@ -24,12 +24,11 @@ import { MOMENTUM_CAP, SUPPLY_SLOT_COUNT, bagIsFull, hpRegenRate, lootCapacityOf
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Help } from '../Help.tsx'
+import { HoldActions } from '../HoldActions.tsx'
 import { DurabilityGrid, Kpi, KpiRow, Tag } from '../Kit.tsx'
 import { Row } from '../Row.tsx'
 import { FightView } from '../combat/FightView.tsx'
 import {
-  pushOnFromUi,
-  returnFromUi,
   escapeNowFromUi,
   setAutoEscapeFromUi,
   savePreparationFromUi,
@@ -444,7 +443,6 @@ function DiscoveredLine() {
 }
 
 function Running({ expedition }: { expedition: ExpeditionState }) {
-  const [error, setError] = useState<string | null>(null)
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const pendingContracts = pendingContractProgress(save, expedition)
@@ -474,12 +472,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
               Pushing on adds momentum and loot but risks everything you carry. Returning secures what you carry and clears momentum.
             </Help>
           </p>
-          <button type="button" onClick={pushOnFromUi}>
-            Push on
-          </button>{' '}
-          <button type="button" onClick={() => setError(returnFromUi())}>
-            Return to town
-          </button>
+          <HoldActions waiting />
         </div>
       ) : (
         <p className="callout" data-testid="travel-status">
@@ -579,7 +572,6 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         </div>
         <DiscoveredLine />
       </div>
-      {error !== null ? <p role="alert">{error}</p> : null}
     </section>
   )
 }

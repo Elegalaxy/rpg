@@ -23,6 +23,8 @@ import { SkillWeb } from './character/SkillWeb.tsx'
 import { Equipment } from './town/Equipment.tsx'
 import { Legacy } from './character/Legacy.tsx'
 import { AwayPanel } from './AwayPanel.tsx'
+import { RunDock } from './RunDock.tsx'
+import { dockVisible } from './runDockState.ts'
 import { Help } from './Help.tsx'
 import { MASTERY_HELP } from './masteryHelp.ts'
 import { PLACES, Town, type PlaceId } from './town/Town.tsx'
@@ -324,6 +326,7 @@ function App() {
   const chosenHero = selectedHero(saved.save)
   const attributePoints = chosenHero?.progress.unspentAttributePoints ?? 0
   const skillPoints = chosenHero === null ? 0 : chosenHero.progress.unspentSkillPoints + chosenHero.progress.legacySkillPoints
+  const docked = dockVisible(saved.save, tab)
   const openShop = tab === 'town' ? PLACE_LIST.find((place) => place.id === townPart && place.gear !== undefined) : undefined
   const craftsAt = (place: PlaceDef) => unseenCrafts.filter((baseId) => dealsIn(place, baseId)).length
 
@@ -385,7 +388,7 @@ function App() {
         </section>
       ) : (
         <>
-          <div className="shell">
+          <div className={`shell${docked ? ' shell-docked' : ''}`}>
             <aside className="sidebar">
               <Header save={saved.save} onGo={setTab} />
               <nav aria-label="Main">
@@ -466,6 +469,7 @@ function App() {
               {tab === 'combat' ? <CombatViewer /> : null}
               {tab === 'whatsnew' ? <WhatsNew /> : null}
             </main>
+            {docked ? <RunDock onOpenMap={() => setTab('map')} /> : null}
           </div>
         </>
       )}

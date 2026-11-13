@@ -582,6 +582,21 @@ export function setAutoEscapeFromUi(on: boolean): void {
   commitSave(saveStatus.save, 'auto-escape toggled')
 }
 
+/**
+ * Switch the selected hero's "run a cleared route again" setting while a run is out. It is the same
+ * `repeatRoute` field the Preparation checkbox sets, so nothing new is saved. Only a mastered route allows it.
+ */
+export function setRepeatRouteFromUi(on: boolean): string | null {
+  const save = saveStatus.save
+  const hero = selectedHero(save)
+  const expedition = save.expedition
+  if (hero === null || expedition === null) return 'No expedition is running.'
+  if (!routeMastery(hero, expedition.id).mastered) return 'Repeating can be switched during a run only on a mastered route.'
+  if (hero.repeatRoute === on) return null
+  commitSave({ ...save, heroes: save.heroes.map((entry) => (entry.id === hero.id ? { ...entry, repeatRoute: on } : entry)) }, 'repeat toggled')
+  return null
+}
+
 /** Save the preparation for the selected hero. Returns the messages for a refused draft. */
 export function savePreparationFromUi(draft: PreparationDraft): string[] {
   const hero = selectedHero(saveStatus.save)

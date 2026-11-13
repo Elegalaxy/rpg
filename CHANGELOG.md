@@ -32,7 +32,10 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - Improved: a "?" next to item quality and in the Upgrade section explains what quality does and that upgrades never lower it (Step 13.7, batch 6).
 - Improved: the "while you were away" table shows which route each hero ran (Step 13.7, batch 6).
 - Improved: the fight view shows the last escape attempt (Escaped at X s, or Escape failed, with HP and the roll), and escaped fights are marked "Escaped" on the run chips (Step 13.7, batch 6).
-- Improved (planned): run mini-panel, grouped enchanter, batch brewing, upgrade queue and map layout (batch 6, next parts).
+- New: a run dock on every page except the Map shows what the hero is doing (walking, fighting which encounter, waiting), HP, and Push on and Return buttons, so you no longer have to open the Map to continue (Step 13.7, batch 6).
+- Improved: the dock unfolds to the route, loot bag, momentum, gold, enemies left, Escape now, the auto-escape switch and a Map shortcut; it remembers whether you left it folded (Step 13.7, batch 6).
+- New: on a mastered route you can switch "Run this route again" while the run is out, from the dock; on other routes it is shown locked with your safe returns (Step 13.7, batch 6).
+- Improved (planned): grouped enchanter, batch brewing, upgrade queue and map layout (batch 6, next parts).
 
 ## 0.10.0 · 2026-11-09 to 2026-11-10 · Cinder Scar (Step 13.6)
 
