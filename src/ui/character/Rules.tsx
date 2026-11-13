@@ -21,6 +21,7 @@ import {
 } from '../../persist/loadout.ts'
 import type { SavedHero } from '../../persist/save.ts'
 import { TARGET_PRIORITIES, type TargetPriority } from '../../sim/types.ts'
+import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
@@ -143,6 +144,15 @@ export function RulesForm({ hero }: { hero: SavedHero }) {
             <p className="rule-summary" aria-label={`Rule ${index + 1} summary`}>
               {summarizeRule(row, hero.classId)}
             </p>
+            <Collapsible
+              defaultOpen={row.conditions.length === 0}
+              summary={
+                <>
+                  <strong>Conditions</strong>
+                  <span className="fold-count">{row.conditions.length}</span>
+                </>
+              }
+            >
             <ul className="rule-conditions">
               {row.conditions.map((condition, conditionIndex) => {
                 const kind = CONDITION_KINDS.find((entry) => entry.type === condition.type)
@@ -229,6 +239,7 @@ export function RulesForm({ hero }: { hero: SavedHero }) {
             >
               Add condition
             </button>
+            </Collapsible>
           </li>
         ))}
       </ol>

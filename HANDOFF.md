@@ -1,18 +1,15 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code (implementer, 2026-11-13)
-- **Current Goal:** Step 13.7 batch 6 (UI rework), done in parts. Parts 1 (quick wins) and 2 (run dock) are committed and pushed. Bug batches 1-5 and the What's new page are in.
-- **Recent Changes & Files Touched (Part 2, run dock):**
-  - `src/ui/RunDock.tsx` (view + container), `src/ui/runDockState.ts` (visibility rule, collapse storage `rpg.runDockCollapsed`, folded by default), `src/ui/runDock.css`, `src/ui/runDock.test.tsx`. Mounted once in `src/ui/App.tsx` (`shell-docked` class on `.shell`); css imported in `src/main.tsx`.
-  - `src/ui/HoldActions.tsx`: shared Push on / Return buttons with a reserved message line; used by the Running panel (`ExpeditionPanel.tsx`) and the dock.
-  - `setRepeatRouteFromUi` in `src/ui/store.ts`: flips the hero's existing `repeatRoute` during a run (savePreparation refuses while a run exists, so it patches the hero directly); mastered route only (`routeMastery`, 10 safe returns). No save-format change. Rule recorded in GAME_DESIGN section 11 (Run dock).
-  - Layout: from 1280 px a sticky card in a third `.shell` column; under 1280 a fixed bottom bar (left 280 px from 900 px); collapsed height 61 px; hidden on the Map tab and with no live run.
-  - Nothing in `src/sim` changed; no snapshot changed.
+- **Last Updated By:** Claude Code (2026-11-14)
+- **Current Goal:** Step 13.7 playtest fixes (feedback of 2026-11-11). Bug batches 1-5, the What's new page and batch 6 parts 1-3 are done; Part 4 (upgrades) and Part 5 (map layout) remain.
+- **Recent Changes & Files Touched:**
+  - Batch 6 part 3 (town lists): Enchanter grouped into folding sections by first item kind (`Town.tsx`), new-recipe badge from `src/ui/town/enchanterSeen.ts` (localStorage `rpg.enchanterSeen`, Town nav + Enchanter sub-tab), Brew 1 / Brew 4 / Brew max in `SupplyCard.tsx`, Trading Post lists all materials with "Where to find" (`src/content/materialSources.ts`), Loadout and each rule's Conditions fold (`Loadout.tsx`, `Rules.tsx`), shared `src/ui/Collapsible.tsx` + `.fold` styles in `kit.css`.
+  - Earlier: batch 6 part 1 (quick wins) and part 2 (run dock), What's new page, batch 5 fractional regen.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
   - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
-  - Guards must stay byte-identical. Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
-  - Approved defaults: upgrade queue unlimited with costs paid at queue time, "Queue all" queues every affordable worn item, optional `chained` job field, old saves must load.
+  - Guards byte-identical; `src/sim` must not change. Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
+  - A recipe that fits several kinds of item is listed under its first kind (no Accessories group exists today: none starts with accessory).
   - Combo stacks still need a design description from the user.
-- **Not verified:** dock in a live fight (Escape now, enemies left) and the mastered repeat toggle in the browser (unit-tested only); Tyrant at Power 68; Cinder Scar offline route; user playtest.
-- **Exact Next Step:** Part 3: town lists (enchanter grouped by item kind, then unlock level, then gold; new-modifier badge; batch brewing Brew 1/5/max; material sources "where to find") plus grouped collapsible sections for the crowded combat-setup lists. Then Part 4: upgrades (unlimited queue, Queue all, costs paid at queue time, optional `chained` job field). Then Part 5: map layout.
+- **Not verified:** the new-recipe badge and "New" tag in the browser (the test hero had learned every level-appropriate recipe); loadout "Learned, not equipped" fold with spare skills.
+- **Exact Next Step:** (1) Part 4, upgrades: unlimited queue, "Queue all" queues every affordable worn item, costs paid at queue time, optional `chained` job field, old saves must load; per-item rows with their own material select; `QualityHelp` already exists. (2) Part 5, map layout. (3) User playtest of the Causeway, Hollows and Cinder Scar.

@@ -1,3 +1,4 @@
+import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { Tag } from '../Kit.tsx'
 import { skillFacts } from '../skillInfo.ts'
@@ -25,8 +26,31 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
     setMessage(result.message)
   }
 
+  const skillRow = (skillId: string) => {
+    const equipped = hero.progress.loadout.includes(skillId)
+    const picked = chosen.includes(skillId)
+    const facts = skillFacts(skillId, hero.progress.allocatedNodeIds)
+    return (
+      <li key={skillId}>
+        <label>
+          <input type="checkbox" checked={picked} onChange={() => toggle(skillId)} /> {skillName(skillId)}{' '}
+          {equipped ? <Tag kind="good">In loadout</Tag> : <Tag kind="plain">Not equipped</Tag>}
+          {picked !== equipped ? <Tag kind="info">{picked ? 'Will equip on save' : 'Will remove on save'}</Tag> : null}
+        </label>
+        {facts !== null ? (
+          <p className="skill-facts">
+            {facts.stats.join(' · ')}
+            <br />
+            {facts.effects.join('. ')}
+          </p>
+        ) : null}
+      </li>
+    )
+  }
   const tooMany = chosen.length > 4
-  const unequipped = hero.progress.learnedSkillIds.filter((id) => !hero.progress.loadout.includes(id)).length
+  const equippedIds = hero.progress.learnedSkillIds.filter((id) => hero.progress.loadout.includes(id))
+  const spareIds = hero.progress.learnedSkillIds.filter((id) => !hero.progress.loadout.includes(id))
+  const unequipped = spareIds.length
   return (
     <section aria-label="Loadout">
       <h2>Loadout — {hero.name}</h2>
@@ -39,29 +63,26 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
           <strong>{unequipped} learned, not equipped.</strong> Learned skills are only used in fights once they are in your loadout.
         </p>
       ) : null}
-      <ul>
-        {hero.progress.learnedSkillIds.map((skillId) => {
-          const equipped = hero.progress.loadout.includes(skillId)
-          const picked = chosen.includes(skillId)
-          const facts = skillFacts(skillId, hero.progress.allocatedNodeIds)
-          return (
-            <li key={skillId}>
-              <label>
-                <input type="checkbox" checked={picked} onChange={() => toggle(skillId)} /> {skillName(skillId)}{' '}
-                {equipped ? <Tag kind="good">In loadout</Tag> : <Tag kind="plain">Not equipped</Tag>}
-                {picked !== equipped ? <Tag kind="info">{picked ? 'Will equip on save' : 'Will remove on save'}</Tag> : null}
-              </label>
-              {facts !== null ? (
-                <p className="skill-facts">
-                  {facts.stats.join(' · ')}
-                  <br />
-                  {facts.effects.join('. ')}
-                </p>
-              ) : null}
-            </li>
-          )
-        })}
-      </ul>
+      {[
+        { key: 'in', title: 'In loadout', ids: equippedIds, open: true },
+        { key: 'spare', title: 'Learned, not equipped', ids: spareIds, open: equippedIds.length === 0 || spareIds.length > 0 },
+      ]
+        .filter((group) => group.ids.length > 0)
+        .map((group) => (
+          <Collapsible
+            key={group.key}
+            testId={`loadout-${group.key}`}
+            defaultOpen={group.open}
+            summary={
+              <>
+                <strong>{group.title}</strong>
+                <span className="fold-count">{group.ids.length}</span>
+              </>
+            }
+          >
+            <ul>{group.ids.map(skillRow)}</ul>
+          </Collapsible>
+        ))}
       {tooMany ? <p role="alert">Pick at most 4 skills.</p> : null}
       <button type="button" disabled={chosen.length < 1 || tooMany} onClick={save}>
         Save loadout

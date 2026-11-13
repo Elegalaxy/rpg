@@ -27,6 +27,7 @@ import { RunDock } from './RunDock.tsx'
 import { dockVisible } from './runDockState.ts'
 import { Help } from './Help.tsx'
 import { MASTERY_HELP } from './masteryHelp.ts'
+import { newRecipeIds, useSeenRecipes } from './town/enchanterSeen.ts'
 import { PLACES, Town, type PlaceId } from './town/Town.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { PALETTES, applyPalette, applyTheme, storedPalette, storedTheme, type PaletteChoice, type ThemeChoice } from './theme.ts'
@@ -322,6 +323,7 @@ function App() {
   const purse = purseOf(saved.save)
   const finishedContracts = purse.contracts.filter((entry) => isComplete(entry, contractFor(purse, entry.contractId))).length
   const unseenCrafts = getUnseenCrafts()
+  const newRecipes = newRecipeIds(saved.save, useSeenRecipes()).length
   const unseenDiscoveries = getUnseenDiscoveries()
   const chosenHero = selectedHero(saved.save)
   const attributePoints = chosenHero?.progress.unspentAttributePoints ?? 0
@@ -395,7 +397,7 @@ function App() {
                 {TABS.map((entry) => (
                   <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
                     {entry.label}
-                    {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts.length} what="things waiting in town" /> : null}
+                    {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts.length + newRecipes} what="things waiting in town" /> : null}
                     {entry.id === 'map' ? <Badge count={unseenDiscoveries} what="new places discovered" /> : null}
                     {entry.id === 'whatsnew' && seenKey !== latestKey && tab !== 'whatsnew' ? (
                       <span className="badge" role="status">
@@ -447,6 +449,7 @@ function App() {
                     onPick={setTownPart}
                     badges={{
                       'contract-board': { count: finishedContracts, what: 'finished contracts to collect' },
+                      enchanter: { count: newRecipes, what: 'new recipes to learn' },
                       ...Object.fromEntries(
                         PLACE_LIST.filter((place) => place.gear !== undefined).map((place) => [place.id, { count: craftsAt(place), what: 'finished crafts' }]),
                       ),

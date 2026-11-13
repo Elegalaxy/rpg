@@ -45,4 +45,21 @@ describe('supply card', () => {
     expect(html).not.toContain('Brew only')
     expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*aria-label="Brew 1/)
   })
+
+  it('offers Brew 1, Brew 4 and Brew max with the most you can afford', () => {
+    const brew = supplyTable['warming-tonic']!.brew
+    const html = card('warming-tonic', { haveMaterial: brew.quantity * 6, gold: brew.gold * 3 })
+    expect(html).toContain('aria-label="Brew 4 Warming Tonic"')
+    expect(html).toContain('aria-label="Brew max Warming Tonic"')
+    expect(html).toContain('<small>(3)</small>')
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*title="Need[^"]*"[^>]*aria-label="Brew 4 Warming Tonic"/)
+    expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*aria-label="Brew 1 Warming Tonic"/)
+  })
+
+  it('disables every brew button and says why when materials run short', () => {
+    const html = card('warming-tonic', { haveMaterial: 0 })
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*aria-label="Brew max Warming Tonic"/)
+    expect(html).toContain('<small>(0)</small>')
+    expect(html).toContain('Need ')
+  })
 })

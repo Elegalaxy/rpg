@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { PLACES, dealsIn, placeTable, type PlaceDef, type PlaceId } from '../../content/places.ts'
 import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
+import { materialSources } from '../../content/materialSources.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { recipePrice, recipesForSale, supplyLock } from '../../persist/crafting.ts'
@@ -11,8 +12,9 @@ import { previewEquip, wearerOf } from '../../persist/equipment.ts'
 import { previewBuy, repairAllCost } from '../../persist/town.ts'
 import { GearChanges } from './GearChanges.tsx'
 import { groupItems } from './groupItems.ts'
-import { ITEM_MODIFIERS, appliesToText, type ItemInstance } from '../../sim/economy.ts'
+import { ITEM_MODIFIERS, appliesToText, type ItemBase, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
+import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
 import {
@@ -31,6 +33,7 @@ import {
 } from '../store.ts'
 import { Contracts } from './Contracts.tsx'
 import { Craft } from './Craft.tsx'
+import { markRecipesSeen, newRecipeIds, useSeenRecipes } from './enchanterSeen.ts'
 import { SupplyCard } from './SupplyCard.tsx'
 
 export { PLACES, type PlaceId }
@@ -232,7 +235,7 @@ function PotionShop() {
             heroSelected={hero !== null}
             lock={supplyLock(save, supply.id)}
             onBuy={(quantity) => run(buySupplyFromUi(supply.id, quantity), quantity === 1 ? `Bought 1 ${supply.name}.` : `Bought ${quantity} ${supply.name}s.`)}
-            onBrew={() => run(brewSupplyFromUi(supply.id, 1), `Brewed 1 ${supply.name}.`)}
+            onBrew={(quantity) => run(brewSupplyFromUi(supply.id, quantity), quantity === 1 ? `Brewed 1 ${supply.name}.` : `Brewed ${quantity} ${supply.name}s.`)}
           />
         ))}
       </ul>
@@ -245,41 +248,69 @@ function TradingPost() {
   const { save } = useSaveStatus()
   const { run, messages } = useMessages()
   const closed = save.expedition !== null
-  const materials = Object.entries(purseOf(save).materials)
+  const owned = purseOf(save).materials
+  const ids = [...new Set([...Object.keys(MATERIAL_SELL_PRICE), ...Object.keys(owned)])]
   return (
     <>
-      {materials.length === 0 ? <p>You have no materials.</p> : null}
       <ul className="shop-rows">
-        {materials.map(([id, quantity]) => (
-          <ShopRow
-            key={id}
-            name={id.charAt(0).toUpperCase() + id.slice(1)}
-            owned={quantity}
-            effect="Crafting material"
-            costs={[[{ kind: 'gold', amount: MATERIAL_SELL_PRICE[id] ?? 0, prefix: '+' }]]}
-            actions={
-              <>
-                <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell 1 ${id}`} onClick={() => run(sellMaterialFromUi(id, 1), `Sold 1 ${id}.`)}>
-                  Sell 1
-                </button>
-                <button
-                  type="button"
-                  className="btn-warn"
-                  disabled={closed}
-                  aria-label={`Sell all ${id}`}
-                  onClick={() => run(sellMaterialFromUi(id, quantity), `Sold ${quantity} ${id}.`)}
-                >
-                  Sell all
-                </button>
-              </>
-            }
-          />
-        ))}
+        {ids.map((id) => {
+          const quantity = owned[id] ?? 0
+          const sources = materialSources(id)
+          const elsewhere = [...sources.enemies, ...sources.resources]
+          return (
+            <ShopRow
+              key={id}
+              name={id.charAt(0).toUpperCase() + id.slice(1)}
+              owned={quantity}
+              effect="Crafting material"
+              note={
+                sources.routes.length + elsewhere.length === 0 ? undefined : (
+                  <span data-testid={`sources-${id}`}>
+                    Where to find: {sources.routes.join(', ')}
+                    {elsewhere.length === 0 ? null : <span className="muted-inline"> · {elsewhere.join(', ')}</span>}
+                  </span>
+                )
+              }
+              costs={[[{ kind: 'gold', amount: MATERIAL_SELL_PRICE[id] ?? 0, prefix: '+' }]]}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    className="btn-warn"
+                    disabled={closed || quantity < 1}
+                    title={quantity < 1 ? `You have no ${id}` : undefined}
+                    aria-label={`Sell 1 ${id}`}
+                    onClick={() => run(sellMaterialFromUi(id, 1), `Sold 1 ${id}.`)}
+                  >
+                    Sell 1
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-warn"
+                    disabled={closed || quantity < 1}
+                    title={quantity < 1 ? `You have no ${id}` : undefined}
+                    aria-label={`Sell all ${id}`}
+                    onClick={() => run(sellMaterialFromUi(id, quantity), `Sold ${quantity} ${id}.`)}
+                  >
+                    Sell all
+                  </button>
+                </>
+              }
+            />
+          )
+        })}
       </ul>
       {messages}
     </>
   )
 }
+
+const RECIPE_GROUPS: { type: ItemBase['type']; name: string }[] = [
+  { type: 'weapon', name: 'Weapons' },
+  { type: 'offHand', name: 'Off-hands' },
+  { type: 'armor', name: 'Armor' },
+  { type: 'accessory', name: 'Accessories' },
+]
 
 function Enchanter() {
   const { save } = useSaveStatus()
@@ -287,49 +318,100 @@ function Enchanter() {
   const closed = save.expedition !== null
   const forSale = recipesForSale(save)
   const heroLevel = selectedHero(save)?.progress.level ?? 1
+  const gold = purseOf(save).gold
+  const seen = useSeenRecipes()
+  // The recipes that were new when the player opened this place keep their tag until they leave.
+  const [fresh] = useState(() => newRecipeIds(save, seen))
+  useEffect(() => {
+    markRecipesSeen(fresh)
+  }, [fresh])
+
+  const entries = forSale.flatMap((entry) => {
+    const modifier = ITEM_MODIFIERS[entry.modifierId]
+    return modifier === undefined ? [] : [{ entry, modifier, price: recipePrice(entry.modifierId) }]
+  })
+  type Listed = (typeof entries)[number]
+  const learnable = (item: Listed) => item.entry.locked === null && heroLevel >= item.modifier.minLevel
+  const newest = entries
+    .filter(learnable)
+    .reduce<Listed | null>((best, item) => (best === null || item.modifier.minLevel >= best.modifier.minLevel ? item : best), null)
+  const groups = RECIPE_GROUPS.map((group) => ({
+    ...group,
+    items: entries
+      .filter((item) => item.modifier.appliesTo[0] === group.type)
+      .sort((a, b) => a.modifier.minLevel - b.modifier.minLevel || a.price - b.price || a.modifier.name.localeCompare(b.modifier.name)),
+  })).filter((group) => group.items.length > 0)
+  const firstOpen = newest !== null ? groups.find((group) => group.items.includes(newest)) : groups[0]
   return (
     <>
       <p>
         {forSale.length === 0 ? 'You know every recipe.' : 'Recipes for sale'}
-        <Help label="About recipes">A recipe lets every hero craft gear with that modifier at the matching shop.</Help>
+        <Help label="About recipes">
+          A recipe lets every hero craft gear with that modifier at the matching shop. A recipe that fits several kinds of item is listed under its first kind.
+        </Help>
       </p>
-      <ul className="shop-rows">
-        {forSale.map((entry) => {
-          const modifier = ITEM_MODIFIERS[entry.modifierId]
-          if (modifier === undefined) return null
-          return (
-            <ShopRow
-              key={entry.modifierId}
-              name={modifier.name}
-              effect={`${modifier.text} · ${appliesToText(modifier)}`}
-              costs={[[{ kind: 'gold', amount: recipePrice(entry.modifierId) }]]}
-              note={
-                <>
-                  <Tag kind="info">Needs level {modifier.minLevel}</Tag>
-                  {entry.locked === null ? null : (
+      {groups.map((group) => {
+        const ready = group.items.filter((item) => learnable(item) && gold >= item.price).length
+        return (
+          <Collapsible
+            key={group.type}
+            testId={`recipes-${group.type}`}
+            defaultOpen={group === firstOpen}
+            summary={
+              <>
+                <strong>{group.name}</strong>
+                <span className="fold-count" title="Recipes you can learn right now">
+                  {ready} of {group.items.length} ready
+                </span>
+              </>
+            }
+          >
+            <ul className="shop-rows">
+              {group.items.map(({ entry, modifier, price }) => (
+                <ShopRow
+                  key={entry.modifierId}
+                  name={
                     <>
-                      {' '}
-                      <Tag kind="bad">Locked</Tag> <span data-testid="recipe-lock">{entry.locked}</span>
+                      {modifier.name}
+                      {fresh.includes(entry.modifierId) ? (
+                        <>
+                          {' '}
+                          <Tag kind="good">New</Tag>
+                        </>
+                      ) : null}
                     </>
-                  )}
-                </>
-              }
-              actions={
-                <button
-                  type="button"
-                  className="btn-primary"
-                  disabled={closed || entry.locked !== null || purseOf(save).gold < recipePrice(entry.modifierId) || heroLevel < modifier.minLevel}
-                  title={entry.locked ?? (heroLevel < modifier.minLevel ? `Needs hero level ${modifier.minLevel}` : undefined)}
-                  aria-label={`Learn ${modifier.name} recipe`}
-                  onClick={() => run(buyRecipeFromUi(entry.modifierId), `Learned the ${modifier.name} recipe.`)}
-                >
-                  Learn
-                </button>
-              }
-            />
-          )
-        })}
-      </ul>
+                  }
+                  effect={`${modifier.text} · ${appliesToText(modifier)}`}
+                  costs={[[{ kind: 'gold', amount: price }]]}
+                  note={
+                    <>
+                      <Tag kind="info">Needs level {modifier.minLevel}</Tag>
+                      {entry.locked === null ? null : (
+                        <>
+                          {' '}
+                          <Tag kind="bad">Locked</Tag> <span data-testid="recipe-lock">{entry.locked}</span>
+                        </>
+                      )}
+                    </>
+                  }
+                  actions={
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={closed || entry.locked !== null || gold < price || heroLevel < modifier.minLevel}
+                      title={entry.locked ?? (heroLevel < modifier.minLevel ? `Needs hero level ${modifier.minLevel}` : undefined)}
+                      aria-label={`Learn ${modifier.name} recipe`}
+                      onClick={() => run(buyRecipeFromUi(entry.modifierId), `Learned the ${modifier.name} recipe.`)}
+                    >
+                      Learn
+                    </button>
+                  }
+                />
+              ))}
+            </ul>
+          </Collapsible>
+        )
+      })}
       {messages}
     </>
   )

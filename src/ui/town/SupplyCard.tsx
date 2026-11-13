@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type { SupplyDef } from '../../content/supplies.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { CostPill, Pill, Tag } from '../Kit.tsx'
@@ -14,7 +16,7 @@ export type SupplyCardProps = {
   /** Why the supply cannot be brewed yet, or null when it is open. */
   lock: string | null
   onBuy: (quantity: number) => void
-  onBrew: () => void
+  onBrew: (quantity: number) => void
 }
 
 /** One Potion Shop card: what the supply does, buying it (when sold), and brewing it. */
@@ -24,6 +26,31 @@ export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSele
   const brewShort =
     missingMaterial > 0 ? `Need ${missingMaterial} more ${supply.brew.materialId}` : missingBrewGold > 0 ? `Need ${missingBrewGold} more gold` : null
   const price = supply.price
+  const { quantity: perBrew, gold: brewGold } = supply.brew
+  const brewMax = Math.min(Math.floor(haveMaterial / perBrew), brewGold > 0 ? Math.floor(gold / brewGold) : Infinity)
+  /** Why `amount` cannot be brewed right now, or null when it can. */
+  const brewReason = (amount: number): string | null => {
+    const needMaterial = perBrew * amount - haveMaterial
+    if (needMaterial > 0) return `Need ${needMaterial} more ${supply.brew.materialId}`
+    const needGold = brewGold * amount - gold
+    return needGold > 0 ? `Need ${needGold} more gold` : null
+  }
+  const brewButton = (amount: number, label: ReactNode, aria: string) => {
+    const reason = lock ?? brewReason(amount)
+    return (
+      <button
+        type="button"
+        className="btn-good"
+        disabled={closed || !heroSelected || reason !== null}
+        title={reason ?? undefined}
+        aria-label={aria}
+        onClick={() => onBrew(amount)}
+      >
+        {label}
+      </button>
+    )
+  }
+  const batchShort = brewShort === null && lock === null ? brewReason(SUPPLY_SLOT_COUNT) : null
   return (
     <li className="supply-card">
       <div className="supply-head">
@@ -75,16 +102,21 @@ export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSele
             <CostPill cost={{ kind: 'gold', amount: supply.brew.gold }} />
           </span>
           <span className="button-row">
-            <button
-              type="button"
-              className="btn-good"
-              disabled={closed || !heroSelected || lock !== null || brewShort !== null}
-              title={lock ?? undefined}
-              aria-label={`Brew 1 ${supply.name}`}
-              onClick={onBrew}
-            >
-              Brew 1
-            </button>
+            {brewButton(1, 'Brew 1', `Brew 1 ${supply.name}`)}
+            {brewButton(
+              SUPPLY_SLOT_COUNT,
+              <>
+                Brew {SUPPLY_SLOT_COUNT}
+              </>,
+              `Brew ${SUPPLY_SLOT_COUNT} ${supply.name}`,
+            )}
+            {brewButton(
+              Math.max(1, brewMax),
+              <>
+                Brew max <small>({Math.max(0, brewMax)})</small>
+              </>,
+              `Brew max ${supply.name}`,
+            )}
           </span>
           {lock !== null ? (
             <small className="supply-option-note">
@@ -92,6 +124,8 @@ export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSele
             </small>
           ) : brewShort !== null ? (
             <small className="supply-option-note">{brewShort}</small>
+          ) : batchShort !== null ? (
+            <small className="supply-option-note">{`Brew ${SUPPLY_SLOT_COUNT}: ${batchShort.toLowerCase()}`}</small>
           ) : null}
         </div>
       </div>

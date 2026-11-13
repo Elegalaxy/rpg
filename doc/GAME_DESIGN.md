@@ -2423,6 +2423,7 @@ Building blocks live in `src/ui/Kit.tsx` and `src/ui/kit.css`. Use the existing 
 - Numbers and statuses are stat cards (`Kpi`, `KpiRow`) or key-value rows, never bullet lists or sentences. Use tabular figures and show direction (▲/▼) where it matters.
 - `Pill` badges are for counts, unspent points, and finished jobs only. Prices, loot, lists, and inline status use `Tag` (coloured text, no box). Colour is always paired with a sign, icon, or label.
 - Identical items show once with `×N` (`groupItems`).
+- Long lists fold into `Collapsible` sections with a count in the summary. Enchanter recipes group by the first kind of item they fit (weapons, off-hands, armor, accessories), sorted by minimum level, price, then name; the group with the newest learnable recipe opens first. The Trading Post lists every material with where it drops (`materialSources`: routes whose last node yields it, then enemies and resource nodes). Which recipes the player has seen is local UI state (`rpg.enchanterSeen`), not part of the save.
 - Avoid extra section cards and boxes; group with spacing first.
 
 ## 13. Technical Direction

@@ -35,7 +35,12 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - New: a run dock on every page except the Map shows what the hero is doing (walking, fighting which encounter, waiting), HP, and Push on and Return buttons, so you no longer have to open the Map to continue (Step 13.7, batch 6).
 - Improved: the dock unfolds to the route, loot bag, momentum, gold, enemies left, Escape now, the auto-escape switch and a Map shortcut; it remembers whether you left it folded (Step 13.7, batch 6).
 - New: on a mastered route you can switch "Run this route again" while the run is out, from the dock; on other routes it is shown locked with your safe returns (Step 13.7, batch 6).
-- Improved (planned): grouped enchanter, batch brewing, upgrade queue and map layout (batch 6, next parts).
+- Improved: the Enchanter groups recipes by what they go on (weapons, off-hands, armor, accessories), sorted by level, price and name; each group folds and shows how many you can learn now (Step 13.7, batch 6).
+- New: a badge on the Enchanter tab and on Town counts recipes you can now learn and have not seen yet; a "New" tag marks them until you leave (Step 13.7, batch 6).
+- New: Brew 1, Brew 4 and Brew max buttons in the Potion Shop, with the reason shown when one is out of reach (Step 13.7, batch 6).
+- Improved: the Trading Post lists every material, even ones you own none of, with a "Where to find" line naming the routes, enemies and resource nodes (Step 13.7, batch 6).
+- Improved: the Loadout and each priority rule fold into sections with counts, so long setups are easier to scan (Step 13.7, batch 6).
+- Improved (planned): upgrade queue and map layout (batch 6, next parts).
 
 ## 0.10.0 · 2026-11-09 to 2026-11-10 · Cinder Scar (Step 13.6)
 
