@@ -10,7 +10,8 @@ import type { CombatState } from '../../sim/types.ts'
 import { CombatPanel } from './CombatPanel.tsx'
 
 function queueButtons(html: string): string[] {
-  return [...html.matchAll(/aria-label="Queue ([^"]+)"/g)].map((match) => match[1] ?? '')
+  // Queue buttons are always drawn; only the enabled ones can be queued.
+  return [...html.matchAll(/<button[^>]*aria-label="Queue ([^"]+)"[^>]*>/g)].filter((match) => !match[0].includes('disabled')).map((match) => match[1] ?? '')
 }
 
 function skillName(id: string): string {
@@ -48,8 +49,9 @@ describe('manual queue button', () => {
     })
     expect(initialButtons).toEqual(['Driving Blow', 'Shield Brace'])
     expect(initialButtons).toEqual(eligibleSkillIds(state).map(skillName))
-    expect(initial).not.toContain('aria-label="Queue Sundering Blow"')
-    expect(initial).not.toContain('aria-label="Queue Second Wind"')
+    // Blocked skills keep their button, disabled, so the card does not change shape.
+    expect(initial).toContain('aria-label="Queue Sundering Blow"')
+    expect(initial).toContain('aria-label="Queue Second Wind"')
     expect(initial).not.toContain('aria-label="Queue Cleave"')
     expect(initial).not.toContain('Queued:')
 
@@ -68,8 +70,8 @@ describe('manual queue button', () => {
     console.log('[ui] queue buttons after cooldown and shield loss', { buttons: blockedButtons })
     expect(blockedButtons).toEqual(['Sundering Blow', 'Second Wind'])
     expect(blockedButtons).toEqual(eligibleSkillIds(state).map(skillName))
-    expect(blocked).not.toContain('aria-label="Queue Driving Blow"')
-    expect(blocked).not.toContain('aria-label="Queue Shield Brace"')
+    expect(blocked).toContain('aria-label="Queue Driving Blow"')
+    expect(blockedButtons).not.toContain('Driving Blow')
 
     state.hero.cooldowns = {}
     state.hero.offHandKind = 'shield'
@@ -90,5 +92,15 @@ describe('manual queue button', () => {
     expect(state.hero.nextReadyMs).toBe(readyAt)
     expect(state.hero.nextReadyMs).toBe(nextReadyMs)
     expect(state.queuedSkillId).toBe('shield-brace')
+  })
+
+  it('always draws the queued and error lines and a titled, disabled Queue for a blocked skill', () => {
+    const state = createCombat(setupForScenario(WARRIOR_VS_STANDARD_ID), gameDefs(), 1)
+    const html = renderToStaticMarkup(<CombatPanel combat={state} />)
+    expect(html).toContain('class="skill-queued"')
+    expect(html).toContain('class="skill-queue-error"')
+    const blocked = html.match(/<button[^>]*aria-label="Queue Sundering Blow"[^>]*>/)
+    expect(blocked?.[0]).toContain('disabled')
+    expect(blocked?.[0]).toMatch(/title="[^"]+"/)
   })
 })

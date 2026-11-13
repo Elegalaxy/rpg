@@ -21,7 +21,8 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - Improved: preparation changes save automatically; an invalid or unsaved change blocks Start and says so (Step 13.7, batch 2).
 - Improved: contracts show "+N pending this run" on the live run, and the run panel states your standing orders (Step 13.7, batch 2).
 - Improved: the "while you were away" report says how often the standing orders pushed on or walked home (Step 13.7, batch 2).
-- Fixed (planned): layout jumps in the fight view and crafting (batch 3).
+- Fixed: the fight view no longer jumps when you queue a skill or supply: Queue buttons are always drawn (disabled with the reason in the tooltip), and the queued, error, "used" and "just used" lines keep their space (Step 13.7, batch 3).
+- Fixed: crafting and upgrade selects keep one width, with short option names and the effect text on its own reserved line (Step 13.7, batch 3).
 - Improved (planned): shop comparison shows which worn item is replaced and the lost bag room (batch 4).
 - Fixed (planned): fractional HP regeneration while walking, so Elf and Undead heal too (batch 5).
 - Improved (planned): run mini-panel, contract board first, grouped enchanter, batch brewing, escape banner (batch 6).

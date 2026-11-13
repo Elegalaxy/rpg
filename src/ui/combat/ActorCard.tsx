@@ -237,10 +237,11 @@ function Meter({
   )
 }
 
-function skillIsEligible(state: CombatState, skillId: string, timeMs: number): boolean {
+/** Why a skill cannot be queued right now, or null when it can. */
+function queueBlock(state: CombatState, skillId: string, timeMs: number): string | null {
   const skill = skills[skillId]
-  if (skill === undefined) return false
-  return skipReason(state, state.hero, skill, timeMs) === null
+  if (skill === undefined) return 'Unknown skill.'
+  return skipReason(state, state.hero, skill, timeMs)
 }
 
 function SkillList({
@@ -260,15 +261,17 @@ function SkillList({
         const remaining = cooldownRemainingMs(cooldowns, skillId, timeMs)
         const cooling = remaining !== null && remaining > 0
         const queueState = manualQueue?.state
-        const eligible = queueState !== undefined && skillIsEligible(queueState, skillId, timeMs)
+        const block = queueState === undefined ? null : queueBlock(queueState, skillId, timeMs)
         return (
           <li key={`${skillId}:${index}`} className={cooling ? 'skill cooling' : 'skill ready'}>
             <span className="skill-id">{skillLabel(skillId)}</span>
-            {eligible ? (
+            {queueState !== undefined ? (
               <button
                 type="button"
                 className="skill-queue"
                 aria-label={`Queue ${skillLabel(skillId)}`}
+                disabled={block !== null}
+                title={block ?? `Queue ${skillLabel(skillId)} as the next action`}
                 onClick={() => {
                   if (queueState === undefined) return
                   debugLog('[ui]', 'queue skill', { skillId })
@@ -421,13 +424,18 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
       {equippedSkillIds !== undefined ? (
         <SkillList skillIds={equippedSkillIds} cooldowns={actor.cooldowns} timeMs={timeMs} manualQueue={manualQueue} />
       ) : null}
-      {manualQueue !== undefined && manualQueue.state.queuedSkillId !== null ? (
-        <p className="skill-queued">Queued: {skillLabel(manualQueue.state.queuedSkillId)}</p>
-      ) : null}
-      {manualQueue !== undefined && manualQueue.queueError !== null ? (
-        <p className="skill-queue-error" role="alert">
-          {manualQueue.queueError}
-        </p>
+      {equippedSkillIds !== undefined ? (
+        // Both lines keep their height when empty, so a queued skill or a refusal never pushes the card down.
+        <>
+          <p className="skill-queued">{manualQueue !== undefined && manualQueue.state.queuedSkillId !== null ? `Queued: ${skillLabel(manualQueue.state.queuedSkillId)}` : ''}</p>
+          <p
+            className="skill-queue-error"
+            role={manualQueue !== undefined && manualQueue.queueError !== null ? 'alert' : undefined}
+            title={manualQueue?.queueError ?? undefined}
+          >
+            {manualQueue?.queueError ?? ''}
+          </p>
+        </>
       ) : null}
       {actor.telegraph !== null ? (
         <TimingBar label="Telegraph" kind="telegraph" telegraph={actor.telegraph} timeMs={timeMs} defId={actor.defId} maxHp={actor.maxHp} />

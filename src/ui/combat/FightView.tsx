@@ -38,6 +38,10 @@ function SuppliesBar({ combat }: { combat: CombatState }) {
     }
   }
   const { hero } = combat
+  function queueBlock(id: string): string | null {
+    const skill = skills[id]
+    return skill === undefined ? 'Not a usable supply.' : skipReason(combat, hero, skill, combat.timeMs)
+  }
   const left: { [id: string]: number } = {}
   for (const id of hero.supplies) left[id] = (left[id] ?? 0) + 1
   const used: { [id: string]: number } = {}
@@ -60,38 +64,37 @@ function SuppliesBar({ combat }: { combat: CombatState }) {
           <li key={id} className={(left[id] ?? 0) === 0 ? 'supply-empty' : undefined}>
             {SUPPLIES.find((entry) => entry.id === id)?.name ?? names[id] ?? id}{' '}
             <strong>×{left[id] ?? 0}</strong>
-            {(used[id] ?? 0) > 0 ? <span className="supply-used"> · used {used[id]}</span> : null}
-            {live && (left[id] ?? 0) > 0 ? (
-              combat.queuedSkillId === id ? (
-                <>
-                  {' '}
-                  <Tag kind="info" testId="supply-queued">
-                    Queued for next action
+            <span className="supply-used" style={{ visibility: (used[id] ?? 0) > 0 ? 'visible' : 'hidden' }}>
+              {' '}
+              · used {used[id] ?? 0}
+            </span>
+            {/* One fixed-width slot holds Queue or Queued, so swapping them never reflows the row. */}
+            <span className="queue-slot">
+              {live && (left[id] ?? 0) > 0 ? (
+                combat.queuedSkillId === id ? (
+                  <Tag kind="info" testId="supply-queued" title="Queued for the next action">
+                    Queued
                   </Tag>
-                </>
-              ) : (
-                <>
-                  {' '}
+                ) : (
                   <button
                     type="button"
                     className="skill-queue"
                     aria-label={`Queue ${SUPPLIES.find((entry) => entry.id === id)?.name ?? id}`}
-                    disabled={skills[id] === undefined || skipReason(combat, hero, skills[id], combat.timeMs) !== null}
+                    disabled={queueBlock(id) !== null}
+                    title={queueBlock(id) ?? 'Queue as the next action'}
                     onClick={() => queue(id)}
                   >
                     Queue
                   </button>
-                </>
-              )
-            ) : null}
+                )
+              ) : null}
+            </span>
           </li>
         ))}
       </ul>
-      {fresh && latest !== null ? (
-        <p className="supply-flash" role="status">
-          Just used {latest.name} at {(latest.timeMs / 1000).toFixed(1)} s
-        </p>
-      ) : null}
+      <p className="supply-flash" role="status">
+        {fresh && latest !== null ? `Just used ${latest.name} at ${(latest.timeMs / 1000).toFixed(1)} s` : ''}
+      </p>
     </div>
   )
 }

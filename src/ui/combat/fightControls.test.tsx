@@ -59,10 +59,10 @@ describe('the fight view controls', () => {
     state.hero.supplies.push('healing-draught')
     const before = renderToStaticMarkup(<FightView combat={state} title="test" />)
     expect(before).toContain('aria-label="Queue Healing Draught"')
-    expect(before).not.toContain('Queued for next action')
+    expect(before).not.toContain('data-testid="supply-queued"')
     queueManualAction(state, 'healing-draught')
     const after = renderToStaticMarkup(<FightView combat={state} title="test" />)
-    expect(after).toContain('Queued for next action')
+    expect(after).toContain('data-testid="supply-queued"')
     expect(after).not.toContain('aria-label="Queue Healing Draught"')
   })
 

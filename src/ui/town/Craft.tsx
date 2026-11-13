@@ -104,7 +104,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
       <div className="controls">
         <label>
           Item{' '}
-          <select aria-label="Craft item" value={chosenBase} onChange={(event) => setBaseId(event.target.value)}>
+          <select className="craft-select" aria-label="Craft item" value={chosenBase} onChange={(event) => setBaseId(event.target.value)}>
             {craftable.map((base) => (
               <option key={base.id} value={base.id}>
                 {base.name}
@@ -129,7 +129,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         </label>{' '}
         <label>
           Material{' '}
-          <select aria-label="Craft material" value={materialId} onChange={(event) => setMaterialId(event.target.value)}>
+          <select className="craft-select" aria-label="Craft material" value={materialId} onChange={(event) => setMaterialId(event.target.value)}>
             {MATERIALS.map((id) => (
               <option key={id} value={id}>
                 {id} (have {purseOf(save).materials[id] ?? 0})
@@ -139,7 +139,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         </label>{' '}
         <label>
           Modifier{' '}
-          <select aria-label="Craft modifier" value={shownModifier} onChange={(event) => setModifierId(event.target.value)}>
+          <select className="craft-select" aria-label="Craft modifier" value={shownModifier} onChange={(event) => setModifierId(event.target.value)}>
             <option value="">None</option>
             {save.account.recipes
               .filter((id) => {
@@ -149,12 +149,15 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
               })
               .map((id) => (
                 <option key={id} value={id}>
-                  {ITEM_MODIFIERS[id]?.name} ({ITEM_MODIFIERS[id]?.text}, level {ITEM_MODIFIERS[id]?.minLevel})
+                  {ITEM_MODIFIERS[id]?.name} (level {ITEM_MODIFIERS[id]?.minLevel})
                 </option>
               ))}
           </select>
         </label>
       </div>
+      <p className="craft-effect muted" data-testid="modifier-effect">
+        {ITEM_MODIFIERS[shownModifier]?.text ?? ''}
+      </p>
       <table className="material-table" aria-label="Materials compared">
         <thead>
           <tr>
@@ -204,14 +207,17 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
       </p>
       <label>
         Material{' '}
-        <select aria-label="Upgrade material" value={upgradeMaterial} onChange={(event) => setUpgradeMaterial(event.target.value)}>
+        <select className="craft-select" aria-label="Upgrade material" value={upgradeMaterial} onChange={(event) => setUpgradeMaterial(event.target.value)}>
           {MATERIALS.map((id) => (
             <option key={id} value={id}>
-              {id}: +{UPGRADE_QUALITY_POINTS[id] ?? 0} quality, {upgradeMaterialCost(id)} per upgrade (have {purseOf(save).materials[id] ?? 0})
+              {id} (have {purseOf(save).materials[id] ?? 0})
             </option>
           ))}
         </select>
       </label>
+      <p className="craft-effect muted" data-testid="upgrade-effect">
+        {upgradeMaterial}: +{UPGRADE_QUALITY_POINTS[upgradeMaterial] ?? 0} quality points, {upgradeMaterialCost(upgradeMaterial)} per upgrade.
+      </p>
       {upgradable.length === 0 ? <p>Nothing of this kind to upgrade.</p> : null}
       <ul className="shop-rows" aria-label="Upgrades">
         {groupUpgradable(upgradable).map(({ item, worn, count }) => {

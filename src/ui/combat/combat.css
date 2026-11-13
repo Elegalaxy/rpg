@@ -406,3 +406,37 @@
   color: var(--muted, inherit);
   font-size: 0.75rem;
 }
+
+/* ---- Fixed heights and widths, so queueing never moves the layout ---- */
+
+.skill-queue {
+  min-width: 4.5rem;
+  min-height: 2rem;
+}
+
+.skill-queued,
+.skill-queue-error {
+  min-height: 1.3em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.queue-slot {
+  display: inline-block;
+  min-width: 4.5rem;
+  margin-left: var(--s2);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.supply-flash {
+  min-height: 1.3em;
+}
+
+@media (pointer: coarse) {
+  .skill-queue {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

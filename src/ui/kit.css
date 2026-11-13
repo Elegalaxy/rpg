@@ -826,3 +826,15 @@ table.away-table {
 .away-table .num {
   text-align: right;
 }
+
+/* Crafting selects keep one width whatever option is chosen; the effect text has its own reserved lines. */
+.craft-select {
+  width: 11rem;
+  max-width: 100%;
+}
+
+.craft-effect {
+  min-height: 2.6em;
+  margin: var(--s1) 0 var(--s2);
+  font-variant-numeric: tabular-nums;
+}
