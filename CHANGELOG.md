@@ -40,7 +40,10 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 are being built; the UI
 - New: Brew 1, Brew 4 and Brew max buttons in the Potion Shop, with the reason shown when one is out of reach (Step 13.7, batch 6).
 - Improved: the Trading Post lists every material, even ones you own none of, with a "Where to find" line naming the routes, enemies and resource nodes (Step 13.7, batch 6).
 - Improved: the Loadout and each priority rule fold into sections with counts, so long setups are easier to scan (Step 13.7, batch 6).
-- Improved (planned): upgrade queue and map layout (batch 6, next parts).
+- Balance: the craft queue has no limit any more; an item can have several +1 upgrades queued in a row, each taking the usual time and cost and checked against the level it will have when its turn comes (Step 13.7, batch 6).
+- New: "Queue all" queues +1 upgrades for every worn item, lowest level first, as far as your gold and the chosen material allow, and shows the total cost first (Step 13.7, batch 6).
+- Improved: each upgrade row has its own material, shows Level and Quality before and after, the cost, the time and how many upgrades are already queued; long queues show five jobs with "Show all" (Step 13.7, batch 6).
+- Improved (planned): map layout (batch 6, next part).
 
 ## 0.10.0 · 2026-11-09 to 2026-11-10 · Cinder Scar (Step 13.6)
 

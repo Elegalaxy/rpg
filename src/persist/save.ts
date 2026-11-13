@@ -56,6 +56,8 @@ export type CraftJob =
       item: ItemInstance
       /** The slot the item was worn in, or absent when it came from the archive. */
       slot?: EquipmentSlotId
+      /** True when another upgrade job for the same item follows: this job hands its result on instead of returning the item. Absent in older saves. */
+      chained?: true
       materialId: string
       remainingMs: number
       seedIndex: number
@@ -89,7 +91,7 @@ export type Purse = {
   materials: { [materialId: string]: number }
   /** Contracts taken from the board, at most three. */
   contracts: ActiveContract[]
-  /** Queued crafting jobs, at most three. Only the selected hero's queue advances. */
+  /** Queued crafting jobs, no limit. Every hero's queue advances, the first job first. */
   craftQueue: CraftJob[]
   /** How many crafting rolls this hero has used. The next job takes this index. */
   craftCounter: number
@@ -323,6 +325,7 @@ function assertJob(value: unknown): asserts value is CraftJob {
       value.slot === undefined || (typeof value.slot === 'string' && (EQUIPMENT_SLOT_IDS as readonly string[]).includes(value.slot)),
       'craft job slot is unknown',
     )
+    check(value.chained === undefined || value.chained === true, 'craft job chained flag must be true or absent')
   }
 }
 
@@ -357,7 +360,7 @@ function assertPurse(value: unknown, label: string, heroId: string): asserts val
     check(!taken.includes(entry.contractId), `contract ${entry.contractId} is taken twice`)
     taken.push(entry.contractId)
   }
-  check(Array.isArray(value.craftQueue) && value.craftQueue.length <= 3, `${label}: the craft queue holds at most 3 jobs`)
+  check(Array.isArray(value.craftQueue), `${label}: the craft queue must be a list`)
   for (const job of value.craftQueue) {
     assertJob(job)
     check(job.heroId === heroId, `${label} craft job ${job.id} belongs to another hero`)

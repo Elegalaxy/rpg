@@ -1,15 +1,16 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-14)
-- **Current Goal:** Step 13.7 playtest fixes (feedback of 2026-11-11). Bug batches 1-5, the What's new page and batch 6 parts 1-3 are done; Part 4 (upgrades) and Part 5 (map layout) remain.
+- **Current Goal:** Step 13.7 batch 6 (UI rework). Parts 1-4 are committed and pushed (quick wins, run dock, town lists, upgrades). Part 5 (map layout) is next. Step 13.6 Cinder Scar is closed as done with accepted deviations.
 - **Recent Changes & Files Touched:**
-  - Batch 6 part 3 (town lists): Enchanter grouped into folding sections by first item kind (`Town.tsx`), new-recipe badge from `src/ui/town/enchanterSeen.ts` (localStorage `rpg.enchanterSeen`, Town nav + Enchanter sub-tab), Brew 1 / Brew 4 / Brew max in `SupplyCard.tsx`, Trading Post lists all materials with "Where to find" (`src/content/materialSources.ts`), Loadout and each rule's Conditions fold (`Loadout.tsx`, `Rules.tsx`), shared `src/ui/Collapsible.tsx` + `.fold` styles in `kit.css`.
-  - Earlier: batch 6 part 1 (quick wins) and part 2 (run dock), What's new page, batch 5 fractional regen.
+  - Batch 6 part 4 (upgrades): the craft queue has no limit (craft and upgrade jobs; `QUEUE_MAX` removed, save check no longer caps it). An item may have several +1 upgrade jobs in a row: `queueUpgrade` marks the previous job for that item `chained: true` (optional field on the upgrade job in `src/persist/save.ts`, absent in old saves) and the new job holds the projected item (`itemLevel + 1`, `upgradedQuality`). `finishJob` gives craftXp but returns nothing for a chained job. `upgradeCandidates` and `planUpgradeAll` added in `src/persist/crafting.ts`; `queueUpgradeAllFromUi` in `src/ui/store.ts` (one commit, stops at first refusal). UI in `src/ui/town/Craft.tsx` and `src/ui/kit.css`: Queue all with its own material select, per-item rows (Level, Quality, Time, cost, own material, "queued +k"), queue list shows "lvl a -> b" and folds beyond 5 with "Show all N". Tests in `src/persist/crafting.test.ts`. Design in `doc/GAME_DESIGN.md` section Crafting.
+  - Earlier: batches 1-5, What's new page, batch 6 parts 1-3 (Contract Board first, walking x8, run dock, town lists).
 - **Active Decisions / Constraints:**
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`. Nothing in `src/sim` changes in batch 6.
   - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
-  - Guards byte-identical; `src/sim` must not change. Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
-  - A recipe that fits several kinds of item is listed under its first kind (no Accessories group exists today: none starts with accessory).
-  - Combo stacks still need a design description from the user.
-- **Not verified:** the new-recipe badge and "New" tag in the browser (the test hero had learned every level-appropriate recipe); loadout "Learned, not equipped" fold with spare skills.
-- **Exact Next Step:** (1) Part 4, upgrades: unlimited queue, "Queue all" queues every affordable worn item, costs paid at queue time, optional `chained` job field, old saves must load; per-item rows with their own material select; `QualityHelp` already exists. (2) Part 5, map layout. (3) User playtest of the Causeway, Hollows and Cinder Scar.
+  - Guards stay byte-identical (reference CSV, warden, causeway, hollows, built, telegraph, elites, cinder).
+  - Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
+  - There is no way to cancel a craft job; if one is added, only the last job of a chain may be cancelled and it must clear `chained` on the job before it.
+  - Queue all is for worn items only; archive items are upgraded one row at a time.
+- **Not verified:** the Tyrant at Power 68 in the live UI, cinderite drop and Salvage; offline and away route with Cinder Scar; `--expedition cinder-scar` after the tier change; batches 1-6 in the browser end to end (part 4 was checked at desktop and 375 px with a hand-edited save).
+- **Exact Next Step:** (1) Part 5: map layout. (2) Browser check of batches 1-6. (3) Combo stacks need a design description from the user before any work. (4) User playtest of the Causeway, Hollows and Cinder Scar.

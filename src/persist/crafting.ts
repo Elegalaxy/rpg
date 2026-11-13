@@ -20,7 +20,7 @@ export function upgradeMaterialCost(materialId: string): number {
   return UPGRADE_MATERIAL_COST_BY_MATERIAL[materialId] ?? UPGRADE_MATERIAL_COST
 }
 export const CRAFT_MS = 30_000
-export const QUEUE_MAX = 3
+type UpgradeJob = Extract<CraftJob, { kind: 'upgrade' }>
 export const MAX_RANK = 10
 /** Percentage points of quality an upgrade adds, by the material spent (GAME_DESIGN crafting). */
 export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, witherbark: 2, oathsteel: 2, riftglass: 3, duskiron: 4, cinderite: 5 }
@@ -134,7 +134,6 @@ export type CraftRequest = {
 export function craftCheck(save: SaveData, hero: SavedHero, request: CraftRequest): string | null {
   const shut = closed(save)
   if (shut !== null) return shut
-  if (hero.purse.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
   const base = itemBase(request.baseId)
   if (base === undefined) return 'Pick something to craft.'
   const classProblem = classBlock(wearerOf(hero), base)
@@ -250,24 +249,81 @@ export function wornSlot(hero: SavedHero, itemId: string): EquipmentSlotId | nul
   return EQUIPMENT_SLOT_IDS.find((slot) => hero.equipment[slot]?.id === itemId) ?? null
 }
 
-/** Why an item from the hero's archive, or one the hero wears, cannot be upgraded, or null. */
+/** The last upgrade job queued for this item: the one that will hand it on or return it. */
+function lastUpgradeJob(hero: SavedHero, itemId: string): UpgradeJob | undefined {
+  let found: UpgradeJob | undefined
+  for (const job of hero.purse.craftQueue) if (job.kind === 'upgrade' && job.item.id === itemId) found = job
+  return found
+}
+
+/** What an upgrade job hands on or returns when it ends. Deterministic: no roll is involved. */
+function afterUpgrade(job: UpgradeJob): ItemInstance {
+  return { ...job.item, itemLevel: job.item.itemLevel + 1, quality: upgradedQuality(job.item.quality, job.materialId) }
+}
+
+export type UpgradeCandidate = {
+  /** The item as it will be when the next job for it starts. For a queued item, the result of the jobs already queued. */
+  item: ItemInstance
+  /** The slot it is worn in (or was worn in when queued), or null for an archive item. */
+  slot: EquipmentSlotId | null
+  /** How many upgrade jobs are already queued for it. */
+  queued: number
+}
+
+function queuedCount(hero: SavedHero, itemId: string): number {
+  return hero.purse.craftQueue.filter((job) => job.kind === 'upgrade' && job.item.id === itemId).length
+}
+
+/** Everything the hero can upgrade: worn items and queued items from a slot in slot order, then queued archive items, then the archive. */
+export function upgradeCandidates(hero: SavedHero): UpgradeCandidate[] {
+  const bySlot: UpgradeCandidate[] = []
+  const queuedOnly: UpgradeCandidate[] = []
+  const seen = new Set<string>()
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const worn = hero.equipment[slot]
+    if (worn !== null) {
+      bySlot.push({ item: worn, slot, queued: 0 })
+      continue
+    }
+    const held = hero.purse.craftQueue.find((job) => job.kind === 'upgrade' && job.slot === slot)
+    if (held === undefined || held.kind !== 'upgrade' || seen.has(held.item.id)) continue
+    const tail = lastUpgradeJob(hero, held.item.id)
+    if (tail === undefined) continue
+    seen.add(held.item.id)
+    bySlot.push({ item: afterUpgrade(tail), slot, queued: queuedCount(hero, held.item.id) })
+  }
+  for (const job of hero.purse.craftQueue) {
+    if (job.kind !== 'upgrade' || seen.has(job.item.id)) continue
+    seen.add(job.item.id)
+    const tail = lastUpgradeJob(hero, job.item.id)
+    if (tail !== undefined) queuedOnly.push({ item: afterUpgrade(tail), slot: null, queued: queuedCount(hero, job.item.id) })
+  }
+  return [...bySlot, ...queuedOnly, ...hero.purse.archive.map((item) => ({ item, slot: null, queued: 0 }))]
+}
+
+/** Why an item from the hero's archive, one the hero wears, or one already queued for an upgrade cannot be upgraded (again), or null. */
 export function upgradeCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, materialId: string): string | null {
   const shut = closed(save)
   if (shut !== null) return shut
-  if (hero.purse.craftQueue.length >= QUEUE_MAX) return `The queue is full (${QUEUE_MAX} jobs).`
   if (item === undefined) return 'That item is not in the archive or worn by this hero.'
   if (item.itemLevel >= hero.progress.level) return `This hero is level ${hero.progress.level}. An item cannot go above the hero's level.`
   if (MATERIAL_QUALITY[materialId] === undefined) return pickMaterialText()
   return spend(hero.purse, materialId, upgradeMaterialCost(materialId), upgradeGold(item.itemLevel))
 }
 
-/** Pay for an upgrade and queue it. The item leaves the archive until the job ends. */
+/**
+ * Pay for an upgrade and queue it. The item leaves the archive or its slot until the jobs end. An item that already
+ * has an upgrade queued gets a chained job: the job before it hands the item on, and each job is checked against
+ * the level the item will have when its turn comes.
+ */
 export function queueUpgrade(save: SaveData, heroId: string, itemId: string, materialId: string): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
   const archived = hero.purse.archive.find((entry) => entry.id === itemId)
-  const slot = archived === undefined ? wornSlot(hero, itemId) : null
-  const item = archived ?? (slot === null ? undefined : (hero.equipment[slot] ?? undefined))
+  const wornIn = archived === undefined ? wornSlot(hero, itemId) : null
+  const tail = archived === undefined && wornIn === null ? lastUpgradeJob(hero, itemId) : undefined
+  const slot = wornIn ?? tail?.slot ?? null
+  const item = archived ?? (wornIn === null ? (tail === undefined ? undefined : afterUpgrade(tail)) : (hero.equipment[wornIn] ?? undefined))
   const problem = upgradeCheck(save, hero, item, materialId)
   if (problem !== null || item === undefined) return { ok: false, reason: problem ?? 'That item is not in the archive or worn by this hero.' }
   const job: CraftJob = {
@@ -286,13 +342,44 @@ export function queueUpgrade(save: SaveData, heroId: string, itemId: string, mat
     ...paid,
     craftCounter: paid.craftCounter + 1,
     archive: paid.archive.filter((entry) => entry.id !== itemId),
-    craftQueue: [...paid.craftQueue, job],
+    craftQueue: [...paid.craftQueue.map((entry) => (entry === tail ? { ...entry, chained: true as const } : entry)), job],
   }
-  const equipment = slot === null ? hero.equipment : { ...hero.equipment, [slot]: null }
+  const equipment = wornIn === null ? hero.equipment : { ...hero.equipment, [wornIn]: null }
   return {
     ok: true,
     save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment, purse } : entry)) },
   }
+}
+
+export type UpgradePlan = {
+  jobs: { itemId: string; fromLevel: number; toLevel: number }[]
+  gold: number
+  material: number
+}
+
+/**
+ * What "Queue all" would do with this material: +1 jobs for worn items, the lowest item level first, then slot order,
+ * one level at a time, until the gold or the material runs out or every item is at the hero's level.
+ */
+export function planUpgradeAll(save: SaveData, hero: SavedHero, materialId: string, accepts: (baseId: string) => boolean = () => true): UpgradePlan {
+  const plan: UpgradePlan = { jobs: [], gold: 0, material: 0 }
+  if (closed(save) !== null || MATERIAL_QUALITY[materialId] === undefined) return plan
+  const levels = upgradeCandidates(hero)
+    .filter((entry) => entry.slot !== null && accepts(entry.item.baseId))
+    .map((entry) => ({ itemId: entry.item.id, level: entry.item.itemLevel }))
+  const unit = upgradeMaterialCost(materialId)
+  for (;;) {
+    let next: (typeof levels)[number] | undefined
+    for (const entry of levels) if (entry.level < hero.progress.level && (next === undefined || entry.level < next.level)) next = entry
+    if (next === undefined) break
+    const gold = upgradeGold(next.level)
+    if (plan.gold + gold > hero.purse.gold || plan.material + unit > (hero.purse.materials[materialId] ?? 0)) break
+    plan.jobs.push({ itemId: next.itemId, fromLevel: next.level, toLevel: next.level + 1 })
+    plan.gold += gold
+    plan.material += unit
+    next.level += 1
+  }
+  return plan
 }
 
 export type CraftNotice = { jobId: string; text: string; baseId: string }
@@ -320,8 +407,15 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       notice: { jobId: job.id, baseId: job.baseId, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
-  const returned: ItemInstance = { ...job.item, itemLevel: job.item.itemLevel + 1, quality: upgradedQuality(job.item.quality, job.materialId) }
+  const returned = afterUpgrade(job)
   const name = itemBase(job.item.baseId)?.name ?? job.item.baseId
+  if (job.chained === true) {
+    // The next job for this item holds the upgraded copy, so nothing goes back to the slot or archive yet.
+    return {
+      save: { ...save, heroes },
+      notice: { jobId: job.id, baseId: job.item.baseId, text: `${name} was upgraded to item level ${returned.itemLevel}.` },
+    }
+  }
   const owner = heroes.find((entry) => entry.id === job.heroId)
   const backInSlot = job.slot !== undefined && owner !== undefined && owner.equipment[job.slot] === null
   const slot = job.slot

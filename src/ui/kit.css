@@ -966,3 +966,75 @@ table.away-table {
 .fold-body ul.shop-rows {
   margin: 0;
 }
+
+/* ---- Upgrade rows and Queue all ---- */
+
+.upgrade-all {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  margin: var(--s2) 0;
+}
+
+.upgrade-all button,
+.upgrade-actions button,
+.upgrade-actions select,
+.upgrade-all select,
+.queue-toggle {
+  min-height: 44px;
+}
+
+.upgrade-all-cost {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  min-width: 10rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.upgrade-all-note {
+  flex: 1 1 100%;
+  min-height: 1.4em;
+}
+
+.upgrade-select {
+  width: 10.5rem;
+}
+
+.upgrade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+dl.upgrade-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px var(--s2);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+dl.upgrade-facts dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+dl.upgrade-facts dd {
+  margin: 0;
+  color: var(--fg);
+}
+
+.queue-toggle {
+  margin: var(--s2) 0;
+}
+
+@media (max-width: 720px) {
+  .upgrade-actions {
+    justify-content: flex-start;
+  }
+}

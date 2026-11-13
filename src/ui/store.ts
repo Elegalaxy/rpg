@@ -7,7 +7,7 @@ import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../pers
 import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
-import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
+import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
@@ -918,6 +918,28 @@ export function queueUpgradeFromUi(itemId: string, materialId: string): string |
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   return applyTown(queueUpgrade(saveStatus.save, hero.id, itemId, materialId), 'upgrade queued')
+}
+
+/** Queue every upgrade the plan lists, in one save. Stops at the first refusal and keeps what was queued before it. */
+export function queueUpgradeAllFromUi(materialId: string, accepts: (baseId: string) => boolean): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  const plan = planUpgradeAll(saveStatus.save, hero, materialId, accepts)
+  if (plan.jobs.length === 0) return 'Nothing to queue with this material.'
+  let next = saveStatus.save
+  let refusal: string | null = null
+  let queued = 0
+  for (const job of plan.jobs) {
+    const result = queueUpgrade(next, hero.id, job.itemId, materialId)
+    if (!result.ok) {
+      refusal = result.reason
+      break
+    }
+    next = result.save
+    queued += 1
+  }
+  if (queued > 0) commitSave(next, 'upgrades queued')
+  return refusal
 }
 
 /** Development builds only. Learns every recipe and adds materials and gold. */

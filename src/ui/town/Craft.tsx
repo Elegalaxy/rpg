@@ -2,17 +2,16 @@ import { useState } from 'react'
 import { purseOf } from '../../persist/save.ts'
 
 import { itemBases, itemName } from '../../content/items.ts'
-import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
+import { CostPill, Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
 import { groupItems } from './groupItems.ts'
 import { selectedHero } from '../../persist/character.ts'
 import {
   CRAFT_MATERIAL_COST,
   CRAFT_MS,
   MATERIAL_QUALITY,
-  QUEUE_MAX,
-  UPGRADE_QUALITY_CAP,
   UPGRADE_QUALITY_POINTS,
-  upgradeCapFor,
+  planUpgradeAll,
+  upgradeCandidates,
   upgradeMaterialCost,
   craftCheck,
   craftGold,
@@ -23,9 +22,9 @@ import {
   upgradeCheck,
 } from '../../persist/crafting.ts'
 import { wearerOf } from '../../persist/equipment.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { ITEM_MODIFIERS, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { QualityHelp } from './QualityHelp.tsx'
-import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
+import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeAllFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
 
 const MATERIALS = Object.keys(MATERIAL_QUALITY)
 
@@ -44,12 +43,8 @@ function percent(value: number): string {
   return `${Math.round(value * 1000) / 10}%`
 }
 
-/** Identical archive items collapse into one upgrade row with a count. Worn items stay on their own rows. */
-function groupUpgradable(entries: { item: ItemInstance; worn: string | null }[]): { item: ItemInstance; worn: string | null; count: number }[] {
-  const worn = entries.filter((entry) => entry.worn !== null).map((entry) => ({ ...entry, count: 1 }))
-  const kept = groupItems(entries.filter((entry) => entry.worn === null).map((entry) => entry.item)).map(({ item, count }) => ({ item, worn: null, count }))
-  return [...worn, ...kept]
-}
+/** The queue list shows this many jobs until the player asks for all of them. */
+const QUEUE_SHOWN = 5
 
 /** Crafting and upgrades. A gear shop passes `accepts` so only its own kind of item shows. The queue is the hero's whole queue. */
 export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => boolean }) {
@@ -59,7 +54,9 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
   const [levelText, setLevelText] = useState('')
   const [materialId, setMaterialId] = useState('shard')
   const [modifierId, setModifierId] = useState('')
-  const [upgradeMaterial, setUpgradeMaterial] = useState('shard')
+  const [picks, setPicks] = useState<{ [itemId: string]: string }>({})
+  const [pickedAll, setPickedAll] = useState<string | null>(null)
+  const [showAllJobs, setShowAllJobs] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (hero === null) {
@@ -77,14 +74,48 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
   const request = { baseId: chosenBase, itemLevel: level, materialId, modifierId: shownModifier === '' ? null : shownModifier }
   const problem = craftCheck(save, hero, request)
   const notices = getCraftNotices()
-  const worn = EQUIPMENT_SLOT_IDS.flatMap((slot) => {
-    const item = hero.equipment[slot]
-    return item === null || !accepts(item.baseId) ? [] : [{ item, worn: SLOT_NAMES[slot] }]
-  })
-  const upgradable: { item: ItemInstance; worn: string | null }[] = [
-    ...worn,
-    ...purseOf(save).archive.filter((item) => accepts(item.baseId)).map((item) => ({ item, worn: null })),
+  const owned = purseOf(save)
+  const candidates = upgradeCandidates(hero).filter((entry) => accepts(entry.item.baseId))
+  const rows = [
+    ...candidates.filter((entry) => entry.slot !== null || entry.queued > 0).map((entry) => ({ ...entry, count: 1 })),
+    ...groupItems(candidates.filter((entry) => entry.slot === null && entry.queued === 0).map((entry) => entry.item)).map(({ item, count }) => ({
+      item,
+      slot: null,
+      queued: 0,
+      count,
+    })),
   ]
+  /** The material that adds the most quality among those this item's next upgrade can be paid with, else shard. */
+  const bestFor = (item: ItemInstance): string => {
+    let best: string | null = null
+    for (const id of MATERIALS) {
+      if ((owned.materials[id] ?? 0) < upgradeMaterialCost(id) || owned.gold < upgradeGold(item.itemLevel)) continue
+      if (best === null || (UPGRADE_QUALITY_POINTS[id] ?? 0) > (UPGRADE_QUALITY_POINTS[best] ?? 0)) best = id
+    }
+    return best ?? 'shard'
+  }
+  const pickFor = (item: ItemInstance): string => picks[item.id] ?? bestFor(item)
+  const planFor = (id: string) => planUpgradeAll(save, hero, id, accepts)
+  let defaultAll = 'shard'
+  for (const id of MATERIALS) {
+    if (planFor(id).jobs.length > 0 && (planFor(defaultAll).jobs.length === 0 || (UPGRADE_QUALITY_POINTS[id] ?? 0) > (UPGRADE_QUALITY_POINTS[defaultAll] ?? 0))) defaultAll = id
+  }
+  const allMaterial = pickedAll ?? defaultAll
+  const setAllMaterial = (id: string) => setPickedAll(id)
+  const plan = planFor(allMaterial)
+  const wornHere = candidates.filter((entry) => entry.slot !== null)
+  const allBlock =
+    plan.jobs.length > 0
+      ? null
+      : save.expedition !== null
+        ? 'Crafting is closed while an expedition is running.'
+        : wornHere.length === 0
+          ? 'No worn item of this kind to raise.'
+          : wornHere.every((entry) => entry.item.itemLevel >= hero.progress.level)
+            ? "Every worn item is already at the hero's level."
+            : `Not enough gold or ${allMaterial} for the next upgrade.`
+  const queue = owned.craftQueue
+  const shownJobs = showAllJobs ? queue : queue.slice(0, QUEUE_SHOWN)
 
   return (
     <>
@@ -92,7 +123,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
       <KpiRow label="Crafting status">
         <Kpi compact label="Proficiency rank" value={<span data-testid="rank">{rank}</span>} />
         <Kpi compact label="Experience" value={hero.craftXp} />
-        <Kpi compact label="Queue" value={`${purseOf(save).craftQueue.length}/${QUEUE_MAX}`} />
+        <Kpi compact label="Queue" value={purseOf(save).craftQueue.length} />
       </KpiRow>
       {import.meta.env.DEV ? (
         <p>
@@ -204,48 +235,86 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
       <h4>
         Upgrade <QualityHelp />
       </h4>
-      <p className="muted">
-        An upgrade always adds 1 item level. The material adds quality too:{' '}
-        {MATERIALS.map((id) => `${id} +${UPGRADE_QUALITY_POINTS[id] ?? 0}`).join(', ')} percentage points, up to 110% ({MATERIALS.filter((id) => upgradeCapFor(id) > UPGRADE_QUALITY_CAP).map((id) => `${percent(upgradeCapFor(id))} with ${id}`).join(', ')}).
-      </p>
-      <label>
-        Material{' '}
-        <select className="craft-select" aria-label="Upgrade material" value={upgradeMaterial} onChange={(event) => setUpgradeMaterial(event.target.value)}>
-          {MATERIALS.map((id) => (
-            <option key={id} value={id}>
-              {id} (have {purseOf(save).materials[id] ?? 0})
-            </option>
-          ))}
-        </select>
-      </label>
-      <p className="craft-effect muted" data-testid="upgrade-effect">
-        {upgradeMaterial}: +{UPGRADE_QUALITY_POINTS[upgradeMaterial] ?? 0} quality points, {upgradeMaterialCost(upgradeMaterial)} per upgrade.
-      </p>
-      {upgradable.length === 0 ? <p>Nothing of this kind to upgrade.</p> : null}
+      <div className="upgrade-all">
+        <label>
+          Queue all with{' '}
+          <select className="craft-select upgrade-select" aria-label="Queue all material" value={allMaterial} onChange={(event) => setAllMaterial(event.target.value)}>
+            {MATERIALS.map((id) => (
+              <option key={id} value={id}>
+                {id} (have {purseOf(save).materials[id] ?? 0})
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" className="btn-primary" disabled={allBlock !== null} onClick={() => setError(queueUpgradeAllFromUi(allMaterial, accepts))}>
+          Queue all ({plan.jobs.length} {plan.jobs.length === 1 ? 'job' : 'jobs'})
+        </button>
+        <span className="upgrade-all-cost">
+          {plan.jobs.length === 0 ? null : (
+            <>
+              <CostPill cost={{ kind: 'mat', amount: plan.material, label: allMaterial }} /> <CostPill cost={{ kind: 'gold', amount: plan.gold }} />
+            </>
+          )}
+        </span>
+        <small className="muted upgrade-all-note" data-testid="upgrade-all-note">
+          {allBlock ?? 'Raises every worn item, lowest level first, one level at a time.'}
+        </small>
+      </div>
+      {candidates.length === 0 ? <p>Nothing of this kind to upgrade.</p> : null}
       <ul className="shop-rows" aria-label="Upgrades">
-        {groupUpgradable(upgradable).map(({ item, worn, count }) => {
-          const block = upgradeCheck(save, hero, item, upgradeMaterial)
+        {rows.map(({ item, slot, queued, count }) => {
+          const material = pickFor(item)
+          const block = upgradeCheck(save, hero, item, material)
           return (
             <ShopRow
               key={item.id}
-              name={`${itemName(item)}${count > 1 ? ` ×${count}` : ''}`}
-              effect={
+              testId="upgrade-row"
+              name={
                 <>
-                  {worn === null ? null : <Tag kind="info">Worn ({worn})</Tag>} lvl {item.itemLevel} → {item.itemLevel + 1} · quality {percent(item.quality)} →{' '}
-                  {percent(upgradedQuality(item.quality, upgradeMaterial))}
+                  {itemName(item)}
+                  {count > 1 ? ` ×${count}` : ''} {slot === null ? null : <Tag kind="info">Worn ({SLOT_NAMES[slot]})</Tag>}
                 </>
               }
+              effect={
+                <dl className="upgrade-facts">
+                  <dt>Level</dt>
+                  <dd>
+                    {item.itemLevel} → {item.itemLevel + 1}
+                  </dd>
+                  <dt>Quality</dt>
+                  <dd>
+                    {percent(item.quality)} → {percent(upgradedQuality(item.quality, material))}
+                  </dd>
+                  <dt>Time</dt>
+                  <dd>{CRAFT_MS / 1000} s</dd>
+                </dl>
+              }
+              note={block ?? undefined}
               costs={[
                 [
-                  { kind: 'mat', amount: upgradeMaterialCost(upgradeMaterial), label: upgradeMaterial },
+                  { kind: 'mat', amount: upgradeMaterialCost(material), label: material },
                   { kind: 'gold', amount: upgradeGold(item.itemLevel) },
                 ],
               ]}
-              note={block ?? undefined}
+              pills={queued > 0 ? <Tag kind="info" title="Upgrade jobs already queued for this item">queued +{queued}</Tag> : undefined}
               actions={
-                <button type="button" className="btn-primary" disabled={block !== null} aria-label={`Upgrade ${item.id}`} onClick={() => setError(queueUpgradeFromUi(item.id, upgradeMaterial))}>
-                  Upgrade
-                </button>
+                <div className="upgrade-actions">
+                  <select
+                    className="craft-select upgrade-select"
+                    aria-label={`Material for ${item.id}`}
+                    value={material}
+                    onChange={(event) => setPicks({ ...picks, [item.id]: event.target.value })}
+                  >
+                    {MATERIALS.map((id) => (
+                      <option key={id} value={id}>
+                        {id} (have {purseOf(save).materials[id] ?? 0})
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn-primary" disabled={block !== null} aria-label={`Upgrade ${item.id}`} onClick={() => setError(queueUpgradeFromUi(item.id, material))}>
+                    Queue +1
+                  </button>
+                </div>
               }
             />
           )
@@ -253,9 +322,9 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
       </ul>
 
       <h4>Queue (all shops)</h4>
-      {purseOf(save).craftQueue.length === 0 ? <p>Nothing is being made.</p> : null}
+      {queue.length === 0 ? <p>Nothing is being made.</p> : null}
       <ul className="shop-rows" aria-label="Craft queue">
-        {purseOf(save).craftQueue.map((job, index) => (
+        {shownJobs.map((job, index) => (
           <ShopRow
             key={job.id}
             testId="job"
@@ -267,7 +336,7 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
             effect={
               job.kind === 'craft'
                 ? `lvl ${job.itemLevel}${job.modifierId === null ? '' : ` · ${ITEM_MODIFIERS[job.modifierId]?.name}`}`
-                : undefined
+                : `lvl ${job.item.itemLevel} → ${job.item.itemLevel + 1}`
             }
             pills={
               index === 0 ? (
@@ -279,6 +348,11 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
           />
         ))}
       </ul>
+      {queue.length > QUEUE_SHOWN ? (
+        <button type="button" className="queue-toggle" aria-expanded={showAllJobs} onClick={() => setShowAllJobs(!showAllJobs)}>
+          {showAllJobs ? 'Show fewer' : `Show all ${queue.length}`}
+        </button>
+      ) : null}
       {notices.length > 0 ? (
         <ul aria-label="Finished jobs">
           {notices.map((text, index) => (

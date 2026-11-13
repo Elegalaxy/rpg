@@ -27,6 +27,7 @@ import {
   requirementLock,
   upgradeCapFor,
   upgradeMaterialCost,
+  planUpgradeAll,
   MATERIAL_QUALITY,
   UPGRADE_QUALITY_POINTS,
 } from './crafting.ts'
@@ -95,10 +96,11 @@ describe('queueing a craft', () => {
     expect(() => assertSaveData(next)).not.toThrow()
   })
 
-  it('refuses a fourth job, too little material or gold, and a level above the hero', () => {
+  it('has no queue limit, and refuses too little material or gold and a level above the hero', () => {
     let save = stocked(2)
-    for (let index = 0; index < 3; index += 1) save = ok(queueCraft(save, 'hero-1', bow))
-    expect(queueCraft(save, 'hero-1', bow)).toEqual({ ok: false, reason: 'The queue is full (3 jobs).' })
+    for (let index = 0; index < 5; index += 1) save = ok(queueCraft(save, 'hero-1', { ...bow, materialId: 'scrap' }))
+    expect(purseOf(save).craftQueue).toHaveLength(5)
+    expect(() => assertSaveData(save)).not.toThrow()
     const poor = updatePurse(stocked(), { materials: { shard: 5 } })
     expect(queueCraft(poor, 'hero-1', bow)).toEqual({ ok: false, reason: 'That needs 6 shard. You have 5.' })
     const broke = updatePurse(stocked(), { gold: 4 })
@@ -226,7 +228,7 @@ describe('upgrades', () => {
     expect(purseOf(advanceCrafting(queued, CRAFT_MS).save).archive[0]?.itemLevel).toBe(17)
   })
 
-  it('refuses items above the hero, in the wrong place, or with no queue room', () => {
+  it('refuses items above the hero or in the wrong place', () => {
     const save = withItem(2, 0)
     const capped = { ...save, heroes: save.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 2 } })) }
     expect(queueUpgrade(capped, 'hero-1', 'old', 'scrap')).toEqual({
@@ -235,9 +237,95 @@ describe('upgrades', () => {
     })
     expect(queueUpgrade(save, 'hero-1', 'nothing', 'scrap')).toEqual({ ok: false, reason: 'That item is not in the archive or worn by this hero.' })
     expect(queueUpgrade(save, 'hero-1', 'old', 'iron').ok).toBe(false)
-    let full = save
-    for (let index = 0; index < 3; index += 1) full = ok(queueCraft(full, 'hero-1', bow))
-    expect(queueUpgrade(full, 'hero-1', 'old', 'scrap')).toEqual({ ok: false, reason: 'The queue is full (3 jobs).' })
+    let busy = save
+    for (let index = 0; index < 4; index += 1) busy = ok(queueCraft(busy, 'hero-1', { ...bow, materialId: 'scrap' }))
+    expect(queueUpgrade(busy, 'hero-1', 'old', 'scrap').ok).toBe(true)
+  })
+})
+
+describe('chained upgrades and Queue all', () => {
+  function chainSave(level = 6, itemLevel = 2): SaveData {
+    return updatePurse(stocked(level), { gold: 1000, materials: { scrap: 40, shard: 40, hide: 40 }, archive: [newItem('old', 'weapon-bow', itemLevel, 1.05)] })
+  }
+
+  it('two chained jobs give the same item as two upgrades one after the other', () => {
+    const chained = ok(queueUpgrade(ok(queueUpgrade(chainSave(), 'hero-1', 'old', 'hide')), 'hero-1', 'old', 'shard'))
+    const queue = purseOf(chained).craftQueue
+    expect(queue).toHaveLength(2)
+    expect(queue[0]).toMatchObject({ kind: 'upgrade', chained: true })
+    expect(queue[1]).toMatchObject({ kind: 'upgrade', item: { itemLevel: 3 } })
+    expect(queue[1]).not.toHaveProperty('chained')
+    expect(purseOf(chained).gold).toBe(1000 - upgradeGold(2) - upgradeGold(3))
+    expect(() => assertSaveData(chained)).not.toThrow()
+    expect(parseSave(serializeSave(chained)).ok).toBe(true)
+
+    const first = advanceCrafting(chained, CRAFT_MS)
+    expect(purseOf(first.save).archive).toEqual([])
+    expect(hero(first.save).craftXp).toBe(1)
+    const both = advanceCrafting(first.save, CRAFT_MS)
+    const sequential = finish(ok(queueUpgrade(finish(ok(queueUpgrade(chainSave(), 'hero-1', 'old', 'hide'))), 'hero-1', 'old', 'shard')))
+    expect(purseOf(both.save).archive).toEqual(purseOf(sequential).archive)
+    expect(purseOf(both.save).archive[0]).toMatchObject({ itemLevel: 4 })
+    expect(hero(both.save).craftXp).toBe(2)
+  })
+
+  it('refuses a chained upgrade that would pass the hero level, using the level it will have', () => {
+    let save = chainSave(4, 2)
+    save = ok(queueUpgrade(save, 'hero-1', 'old', 'scrap'))
+    save = ok(queueUpgrade(save, 'hero-1', 'old', 'scrap'))
+    expect(queueUpgrade(save, 'hero-1', 'old', 'scrap')).toEqual({
+      ok: false,
+      reason: "This hero is level 4. An item cannot go above the hero's level.",
+    })
+  })
+
+  it('chains a worn item and returns it to its slot only at the end', () => {
+    const base = updatePurse(stocked(6), { gold: 1000, materials: { scrap: 40 } })
+    let save = ok(queueUpgrade(base, 'hero-1', 'hero-1-mainHand', 'scrap'))
+    save = ok(queueUpgrade(save, 'hero-1', 'hero-1-mainHand', 'scrap'))
+    expect(purseOf(save).craftQueue.map((job) => job.kind === 'upgrade' && job.slot)).toEqual(['mainHand', 'mainHand'])
+    const middle = advanceCrafting(save, CRAFT_MS).save
+    expect(hero(middle).equipment.mainHand).toBeNull()
+    const end = finish(save)
+    expect(hero(end).equipment.mainHand?.itemLevel).toBe(hero(base).equipment.mainHand!.itemLevel + 2)
+    expect(hero(end).purse.archive.some((item) => item.id === 'hero-1-mainHand')).toBe(false)
+  })
+
+  it('plans Queue all lowest level first and stops at the gold or material limit', () => {
+    const base = updatePurse(stocked(4), { gold: 1000, materials: { scrap: 40 } })
+    const wearer = hero(base)
+    const plan = planUpgradeAll(base, wearer, 'scrap')
+    expect(plan.jobs.length).toBeGreaterThan(0)
+    const levels = plan.jobs.map((job) => job.fromLevel)
+    expect(levels).toEqual([...levels].sort((a, b) => a - b))
+    expect(plan.jobs.every((job) => job.toLevel === job.fromLevel + 1 && job.toLevel <= 4)).toBe(true)
+    expect(plan.gold).toBe(plan.jobs.reduce((sum, job) => sum + upgradeGold(job.fromLevel), 0))
+    expect(plan.material).toBe(plan.jobs.length * upgradeMaterialCost('scrap'))
+
+    const fewMaterials = updatePurse(base, { materials: { scrap: 7 } })
+    expect(planUpgradeAll(fewMaterials, hero(fewMaterials), 'scrap').jobs).toHaveLength(2)
+    const noGold = updatePurse(base, { gold: 0 })
+    expect(planUpgradeAll(noGold, hero(noGold), 'scrap').jobs).toEqual([])
+
+    let queued = base
+    for (const job of plan.jobs) queued = ok(queueUpgrade(queued, 'hero-1', job.itemId, 'scrap'))
+    expect(purseOf(queued).craftQueue).toHaveLength(plan.jobs.length)
+    expect(purseOf(queued).gold).toBe(1000 - plan.gold)
+    expect(planUpgradeAll(queued, hero(queued), 'scrap').jobs).toEqual([])
+    const done = advanceCrafting(queued, CRAFT_MS * plan.jobs.length).save
+    for (const item of Object.values(hero(done).equipment)) if (item !== null) expect(item.itemLevel).toBeLessThanOrEqual(4)
+  })
+
+  it('loads an old save without the chained field and upgrades as before', () => {
+    const queued = ok(queueUpgrade(chainSave(), 'hero-1', 'old', 'scrap'))
+    const raw = JSON.parse(serializeSave(queued)) as { heroes: { purse: { craftQueue: Record<string, unknown>[] } }[] }
+    expect(raw.heroes[0]!.purse.craftQueue[0]).not.toHaveProperty('chained')
+    const parsed = parseSave(JSON.stringify(raw))
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    expect(purseOf(finish(parsed.data)).archive[0]).toMatchObject({ itemLevel: 3 })
+    raw.heroes[0]!.purse.craftQueue[0]!.chained = 'yes'
+    expect(parseSave(JSON.stringify(raw)).ok).toBe(false)
   })
 })
 
@@ -297,7 +385,7 @@ describe('modifiers in play', () => {
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false })
     const again = JSON.parse(serializeSave(save)) as { heroes: { purse: { craftQueue: unknown[] } }[] }
     again.heroes[0]!.purse.craftQueue = [1, 2, 3, 4]
-    expect(parseSave(JSON.stringify(again))).toMatchObject({ ok: false, reason: expect.stringMatching(/at most 3 jobs/) })
+    expect(parseSave(JSON.stringify(again))).toMatchObject({ ok: false, reason: expect.stringMatching(/craft job/) })
   })
 })
 
