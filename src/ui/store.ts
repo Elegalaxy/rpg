@@ -15,9 +15,10 @@ import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition } from '../sim/expedition.ts'
-import { saveLoadout, saveRules, type RowDraft } from '../persist/loadout.ts'
+import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
+import { setManualStack, setRuleStacks } from '../sim/stacks.ts'
 import { createHero, deleteHero, selectHero, unlockAllSlots, type NewHero } from '../persist/roster.ts'
 import {
   clearSave,
@@ -233,21 +234,46 @@ export function saveLoadoutFromUi(skillIds: readonly string[]): { error: string 
  * When the combat on screen has the same class and is still running, the rules also go through
  * `setPriorityRules`, so the fight logs a `rulesChanged` line and uses them from the next action.
  */
-export function saveRulesFromUi(drafts: readonly RowDraft[]): string[] {
+export function saveRulesFromUi(drafts: readonly RowDraft[], stackDrafts?: readonly StackDraft[]): string[] {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return ['Select a hero first.']
   const result = saveRules(saveStatus.save, hero.id, drafts)
   if (!result.ok) return [result.reason]
-  commitSave(result.save, 'rules saved', false)
-  const saved = selectedHero(result.save)
+  let next = result.save
+  if (stackDrafts !== undefined) {
+    const stacked = saveRuleStacks(next, hero.id, stackDrafts)
+    if (!stacked.ok) return [stacked.reason]
+    next = stacked.save
+  }
+  commitSave(next, 'rules saved', false)
+  const saved = selectedHero(next)
   const combat = snapshot.combat
   if (saved !== null && combat.outcome === 'ongoing' && combat.hero.classId === saved.classId) {
     setPriorityRules(combat, { rows: saved.priorityRows }, defs)
-    debugLog('[ui]', 'rules applied to the running fight', { rows: saved.priorityRows.length })
+    if (stackDrafts !== undefined) setRuleStacks(combat, saved.ruleStacks, defs)
+    debugLog('[ui]', 'rules applied to the running fight', { rows: saved.priorityRows.length, stacks: saved.ruleStacks.length })
   }
   snapshot = { ...snapshot }
   emit()
   return []
+}
+
+/**
+ * Pick a rule stack by hand for the running fight, or null for Auto. It lasts until Auto or the end of the
+ * fight. An unknown id or a fight that is over changes nothing.
+ */
+export function pickStackFromUi(id: string | null): void {
+  const combat = snapshot.combat
+  if (combat.outcome !== 'ongoing') return
+  try {
+    setManualStack(combat, defs, id)
+  } catch (error) {
+    debugLog('[ui]', 'stack pick refused', { id, reason: error instanceof Error ? error.message : String(error) })
+    return
+  }
+  debugLog('[ui]', 'stack picked', { id })
+  snapshot = { ...snapshot }
+  emit()
 }
 
 /** Development builds only. Gives the selected hero points to try the allocation screens. */

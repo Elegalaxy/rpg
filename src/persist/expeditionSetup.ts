@@ -75,6 +75,7 @@ export function blueprintForHero(
       gear: gearFromEquipment(hero.equipment, itemBase),
       equippedSkillIds: [...hero.progress.loadout],
       priorityRows: hero.priorityRows.map((row) => ({ ...row })),
+      ...(hero.ruleStacks.length > 0 ? { ruleStacks: structuredClone(hero.ruleStacks) } : {}),
       allocatedNodeIds: [...nodeIds],
       renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
       statBonuses: statBonusesFor(hero.equipment),

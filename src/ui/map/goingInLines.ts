@@ -45,7 +45,7 @@ export function goingInLines(hero: SavedHero): Line[] {
     },
     {
       label: 'Rules',
-      text: `${hero.priorityRows.length} priority rule${hero.priorityRows.length === 1 ? '' : 's'}`,
+      text: `${hero.priorityRows.length} priority rule${hero.priorityRows.length === 1 ? '' : 's'}${hero.ruleStacks.length > 0 ? ` · ${hero.ruleStacks.length} stack${hero.ruleStacks.length === 1 ? '' : 's'}` : ''}`,
       edit: { to: { tab: 'heroes', heroPart: 'combat' }, label: 'Edit rules' },
     },
     {

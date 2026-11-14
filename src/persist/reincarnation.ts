@@ -177,6 +177,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     ...hero,
     progress,
     priorityRows: startingRules(loadout.priorityRows),
+    ruleStacks: [],
     preparedSpells: [],
     defeatedEnemyIds: [],
     clearedNodeIds: [],

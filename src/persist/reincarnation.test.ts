@@ -79,6 +79,7 @@ function veteran(): SaveData {
       defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight', 'fractured-warden'],
       clearedNodeIds: ['splintered-road', 'withered-grove'],
       priorityRows: [{ skillId: 'cleave' }],
+      ruleStacks: [{ id: 'stack-1', name: 'Pack', when: [], rows: [{ skillId: 'cleave' }] }],
     })),
   }
   return withWork
@@ -143,6 +144,7 @@ describe('what reincarnation resets', () => {
     expect(next.progress.loadout).toEqual([...classWebs.warrior.startingSkillIds])
     expect(next.priorityRows.length).toBeGreaterThan(1)
     expect(next.priorityRows).not.toEqual([{ skillId: 'cleave' }])
+    expect(next.ruleStacks).toEqual([])
   })
 
   it('resets personal world gates, Echo ranks, the boss loss flag, and the account contracts', () => {

@@ -2,7 +2,7 @@ import { skills } from '../content/skills.ts'
 import { RULE_SUPPLY_IDS } from '../content/supplies.ts'
 import { statuses } from '../content/statuses.ts'
 import { enemies } from '../content/enemies.ts'
-import { MAX_PRIORITY_ROWS, parsePriorityRules, STATUS_IDS } from '../sim/automation.ts'
+import { MAX_PRIORITY_ROWS, MAX_RULE_STACKS, MAX_STACK_NAME_LENGTH, parsePriorityRules, parseRuleStacks, STATUS_IDS } from '../sim/automation.ts'
 import { CONVERGENCE_SKILL_IDS, NODE_ELEMENTAL_CONVERGENCE } from '../sim/classes/mageAdjust.ts'
 import { NODE_LIVING_SANCTUARY, NODE_SACRED_BALANCE, RELEASE_IDS } from '../sim/classes/clericAdjust.ts'
 import type { HeroClass } from '../sim/constants.ts'
@@ -12,13 +12,14 @@ import {
   type AutomationCondition,
   type GameDefs,
   type PriorityRow,
+  type RuleStack,
   type TargetPriority,
 } from '../sim/types.ts'
 
 import type { RosterResult } from './roster.ts'
 import type { SaveData, SavedHero } from './save.ts'
 
-export { MAX_PRIORITY_ROWS }
+export { MAX_PRIORITY_ROWS, MAX_RULE_STACKS, MAX_STACK_NAME_LENGTH }
 
 export type ConditionType =
   | 'heroHp'
@@ -454,6 +455,99 @@ export function saveRules(save: SaveData, heroId: string, drafts: readonly RowDr
   }
 }
 
+/** What the player edits for one extra stack: a name, a trigger and its own rule rows. */
+export type StackDraft = {
+  id: string
+  name: string
+  /** The trigger. Empty means the stack is picked by hand only. */
+  when: ConditionDraft[]
+  /** Saved trigger conditions the editor has no control for. They are kept as they are. */
+  keptWhen?: AutomationCondition[]
+  rows: RowDraft[]
+}
+
+/** Turn saved stacks back into drafts. */
+export function draftsFromStacks(stacks: readonly RuleStack[]): StackDraft[] {
+  return stacks.map((stack) => {
+    const trigger = draftsFromRows([{ skillId: '', conditions: [...stack.when] }])[0]
+    return {
+      id: stack.id,
+      name: stack.name,
+      when: trigger.conditions,
+      keptWhen: trigger.kept ?? [],
+      rows: draftsFromRows(stack.rows),
+    }
+  })
+}
+
+/** The first `stack-N` id no stack uses. */
+export function nextStackId(stacks: readonly { id: string }[]): string {
+  for (let n = 1; ; n += 1) {
+    const id = `stack-${n}`
+    if (!stacks.some((stack) => stack.id === id)) return id
+  }
+}
+
+/** One plain line for a stack's trigger, for its tab and summary. */
+export function summarizeTrigger(draft: StackDraft, classId: HeroClass): string {
+  const parts: string[] = []
+  for (const conditionDraft of draft.when) {
+    const built = buildCondition(conditionDraft)
+    if (typeof built !== 'string') parts.push(describeCondition(built, classId))
+  }
+  for (const extra of draft.keptWhen ?? []) parts.push(describeCondition(extra, classId))
+  return parts.length === 0 ? 'Manual only' : `Auto when ${parts.join(' and ')}`
+}
+
+export type StacksResult = { ok: true; stacks: RuleStack[] } | { ok: false; errors: string[] }
+
+/**
+ * Check every stack. Each message names its stack and, for a row, the rule. The sim's parser has the
+ * last word, so a set that passes here is one `setRuleStacks` accepts.
+ */
+export function validateStacks(hero: SavedHero, drafts: readonly StackDraft[]): StacksResult {
+  const errors: string[] = []
+  if (drafts.length > MAX_RULE_STACKS) {
+    errors.push(`A hero can have at most ${MAX_RULE_STACKS} extra stacks, and there are ${drafts.length}.`)
+  }
+  const available = ruleSkillIds(hero)
+  const stacks: RuleStack[] = []
+  drafts.forEach((draft, index) => {
+    const label = `Stack ${draft.name.trim().length > 0 ? `"${draft.name.trim()}"` : index + 1}`
+    if (draft.name.trim().length === 0 || draft.name.length > MAX_STACK_NAME_LENGTH) {
+      errors.push(`${label}: the name must be 1 to ${MAX_STACK_NAME_LENGTH} characters.`)
+    }
+    const when: AutomationCondition[] = []
+    draft.when.forEach((conditionDraft, conditionIndex) => {
+      const built = buildCondition(conditionDraft)
+      if (typeof built === 'string') errors.push(`${label}, trigger ${conditionIndex + 1}: ${built}`)
+      else if (built.kind === 'skillReady' && !available.includes(built.skillId)) {
+        errors.push(`${label}, trigger ${conditionIndex + 1}: ${skillName(built.skillId)} is not in the equipped skills.`)
+      } else when.push(built)
+    })
+    for (const extra of draft.keptWhen ?? []) when.push(extra)
+    const rules = validateRules(hero, draft.rows)
+    if (!rules.ok) for (const message of rules.errors) errors.push(`${label}: ${message}`)
+    else stacks.push({ id: draft.id, name: draft.name.trim(), when, rows: rules.rows })
+  })
+  if (errors.length > 0) return { ok: false, errors }
+  const parsed = parseRuleStacks(stacks, rulesDefs())
+  if (!parsed.ok) return { ok: false, errors: [parsed.reason] }
+  return { ok: true, stacks: parsed.stacks }
+}
+
+/** Save a hero's extra stacks. Invalid sets are refused and nothing changes. */
+export function saveRuleStacks(save: SaveData, heroId: string, drafts: readonly StackDraft[]): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  const checked = validateStacks(hero, drafts)
+  if (!checked.ok) return { ok: false, reason: checked.errors.join(' ') }
+  return {
+    ok: true,
+    save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, ruleStacks: checked.stacks } : entry)) },
+  }
+}
+
 /**
  * Choose 1 to 4 learned skills. Rules that name a skill that is no longer equipped are removed, and
  * the result says how many, so the player is never left with a rule the fight would skip.
@@ -474,13 +568,18 @@ export function saveLoadout(
   const updated: SavedHero = { ...hero, progress }
   const allowed = ruleSkillIds(updated)
   const kept = hero.priorityRows.filter((row) => allowed.includes(row.skillId))
-  const removedRules = hero.priorityRows.length - kept.length
+  let removedRules = hero.priorityRows.length - kept.length
+  const stacks = hero.ruleStacks.map((stack) => {
+    const rows = stack.rows.filter((row) => allowed.includes(row.skillId))
+    removedRules += stack.rows.length - rows.length
+    return rows.length === stack.rows.length ? stack : { ...stack, rows }
+  })
   return {
     ok: true,
     removedRules,
     save: {
       ...save,
-      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...updated, priorityRows: kept } : entry)),
+      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...updated, priorityRows: kept, ruleStacks: stacks } : entry)),
     },
   }
 }

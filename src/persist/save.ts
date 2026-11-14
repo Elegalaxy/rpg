@@ -1,4 +1,7 @@
+import { enemies } from '../content/enemies.ts'
 import { itemBase, starterEquipment } from '../content/items.ts'
+import { skills } from '../content/skills.ts'
+import { statuses } from '../content/statuses.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { contracts as contractTable, type ContractDef } from '../content/contracts.ts'
 import { supplyTable } from '../content/supplies.ts'
@@ -6,7 +9,8 @@ import { applyHeroUpdates } from './heroUpdates.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
-import type { PriorityRow } from '../sim/types.ts'
+import { parseRuleStacks } from '../sim/automation.ts'
+import type { PriorityRow, RuleStack } from '../sim/types.ts'
 
 export const SAVE_VERSION = 1
 export const SAVE_KEY = 'rpg.save.v1'
@@ -158,6 +162,8 @@ export type SavedHero = {
   classId: HeroClass
   progress: HeroProgress
   priorityRows: PriorityRow[]
+  /** Extra named stacks of rules with a trigger. Empty keeps today's single list. */
+  ruleStacks: RuleStack[]
   /** The vow a Cleric takes into an expedition. Null for other classes. */
   vow: string | null
   /** The Undead curse chosen for an expedition. Null when none. */
@@ -393,6 +399,8 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   for (const row of value.priorityRows) {
     check(isRecord(row) && typeof row.skillId === 'string', `${label} has a bad priority row`)
   }
+  const stacks = parseRuleStacks(value.ruleStacks, { enemies, skills, statuses })
+  check(stacks.ok, `${label} rule stacks are invalid: ${stacks.ok ? '' : stacks.reason}`)
   check(value.vow === null || typeof value.vow === 'string', `${label} vow must be text or null`)
   check(value.curse === null || typeof value.curse === 'string', `${label} curse must be text or null`)
   stringList(value.preparedSpells, `${label} prepared spells`)
@@ -519,6 +527,7 @@ function fillWorldFields(parsed: unknown): void {
   if (!Array.isArray(parsed.heroes)) return
   for (const hero of parsed.heroes) {
     if (!isRecord(hero)) continue
+    if (hero.ruleStacks === undefined) hero.ruleStacks = []
     if (hero.defeatedEnemyIds === undefined) hero.defeatedEnemyIds = []
     if (hero.clearedNodeIds === undefined) hero.clearedNodeIds = []
     if (hero.retreatAtMost === undefined) hero.retreatAtMost = DEFAULT_RETREAT

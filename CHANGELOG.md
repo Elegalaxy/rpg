@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. Bug batches 1-5 and the UI rework (batch 6) are in.
 
+- Tech: rule stacks are saved with each hero, carried into runs and away replays, pruned when you unequip a skill, and cleared on reincarnation; the Going in panel shows the stack count (Step 13.8, part 2).
 - Tech: rule stacks in the combat sim — a hero can switch between named sets of automation rows by trigger (Step 13.8, part 1).
 - Fixed: gear no longer returns to 100% durability at the start of every run, so wear carries over and repair matters again (Step 13.7, batch 1).
 - Improved: a run cannot start while a worn piece is disabled or the 5-minute rest after a defeat is pending, and the reason is shown (Step 13.7, batch 1).

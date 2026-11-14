@@ -76,6 +76,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
       startingSkillIds: web.startingSkillIds,
     }),
     priorityRows: startingRules(loadout.priorityRows),
+    ruleStacks: [],
     vow: request.classId === 'cleric' ? (loadout.vow ?? 'zeal') : null,
     curse: null,
     preparedSpells: [],

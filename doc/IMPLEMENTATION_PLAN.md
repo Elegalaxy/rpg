@@ -1136,9 +1136,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Decided: stacks do not swap equipped skills; 3 extra stacks plus Default (4), 12 rows each; a 2 second hold before switching down, switching up is immediate; a manual pick lasts until the fight ends or Auto; no gating (every hero has stacks); reincarnation clears stacks (part 2).
 - Goal: a hero can switch between named sets of automation rows by trigger, with a manual override.
 - Parts: (1) docs and sim core: types, `stacks.ts`, `parseRuleStacks`, log event, tests, no change to any number; (2) save and persist: `SavedHero.ruleStacks`, loadout drafts, expedition setup, roster, reincarnation clears, store actions; (3) editor UI; (4) fight bar, picker and dock chip.
-- Part 1 status: `done`. Part 2: `pending`. Part 3: `pending`. Part 4: `pending`.
+- Part 1 status: `done`. Part 2: `done`. Part 3: `pending`. Part 4: `pending`.
 - Progress:
   - 2026-11-15: Part 1 done. `src/sim/stacks.ts` (`pickStack`, `applyStackPick`, `setManualStack`, `setRuleStacks`, `activeRules`), `parseRuleStacks` and `STACK_HOLD_MS` / `MAX_RULE_STACKS` in `automation.ts`, `chooseHeroAction` takes optional rules, `stackChanged` log event (formatter, automation category), `createCombat` sets stacks only when the setup has them. Heroes without stacks run the exact old path; all guards byte-identical.
+  - 2026-11-15: Part 2 done. `SavedHero.ruleStacks` (required; old saves load with `[]`, no version bump; `assertHero` runs `parseRuleStacks`), `StackDraft` / `draftsFromStacks` / `validateStacks` / `saveRuleStacks` / `summarizeTrigger` / `nextStackId` in `loadout.ts`, `saveLoadout` prunes stack rows, expedition setup passes stacks only when present, roster and reincarnation set `[]`, `saveRulesFromUi(rows, stacks?)` and `pickStackFromUi` in the store, "N priority rules · M stacks" in Going in. Tests in `src/persist/ruleStacks.test.ts`.
 
 ## 8. Risks, and what would reveal them early
 

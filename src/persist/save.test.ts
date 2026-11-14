@@ -52,6 +52,7 @@ function withHero(): SaveData {
     classId: 'warrior',
     progress: createProgress('human', { strength: 13, vitality: 12, agility: 9, intellect: 8, spirit: 8 }),
     priorityRows: [{ skillId: 'driving-blow' }],
+    ruleStacks: [],
     vow: null,
     curse: null,
     preparedSpells: [],

@@ -8,6 +8,7 @@ import { assertSaveData, newSave, parseSave, purseOf, serializeSave } from './sa
 
 /** Every hero field that was added after the first save format. */
 const LATER_HERO_FIELDS = [
+  'ruleStacks',
   'defeatedEnemyIds',
   'clearedNodeIds',
   'retreatAtMost',
