@@ -169,27 +169,32 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
             ))}
           </select>
         </label>{' '}
-        <label>
-          Modifier{' '}
-          <select className="craft-select" aria-label="Craft modifier" value={shownModifier} onChange={(event) => setModifierId(event.target.value)}>
-            <option value="">None</option>
-            {save.account.recipes
-              .filter((id) => {
-                const modifier = ITEM_MODIFIERS[id]
-                const base = itemBases[chosenBase]
-                return modifier !== undefined && base !== undefined && modifierFits(modifier, base)
-              })
-              .map((id) => (
-                <option key={id} value={id}>
-                  {ITEM_MODIFIERS[id]?.name} (level {ITEM_MODIFIERS[id]?.minLevel})
-                </option>
-              ))}
-          </select>
-        </label>
       </div>
-      <p className="craft-effect muted" data-testid="modifier-effect">
-        {ITEM_MODIFIERS[shownModifier]?.text ?? ''}
-      </p>
+      <fieldset className="craft-modifiers">
+        <legend>Modifier</legend>
+        <label className={shownModifier === '' ? 'craft-modifier craft-modifier-chosen' : 'craft-modifier'}>
+          <input type="radio" name="craft-modifier" aria-label="Craft modifier None" checked={shownModifier === ''} onChange={() => setModifierId('')} />
+          <span className="craft-modifier-name">None</span>
+          <span className="craft-modifier-effect muted">No extra bonus</span>
+        </label>
+        {save.account.recipes
+          .filter((id) => {
+            const modifier = ITEM_MODIFIERS[id]
+            const base = itemBases[chosenBase]
+            return modifier !== undefined && base !== undefined && modifierFits(modifier, base)
+          })
+          .map((id) => {
+            const modifier = ITEM_MODIFIERS[id]
+            return (
+              <label key={id} className={shownModifier === id ? 'craft-modifier craft-modifier-chosen' : 'craft-modifier'}>
+                <input type="radio" name="craft-modifier" aria-label={`Craft modifier ${modifier?.name}`} checked={shownModifier === id} onChange={() => setModifierId(id)} />
+                <span className="craft-modifier-name">{modifier?.name}</span>
+                <span className="craft-modifier-effect" data-testid={shownModifier === id ? 'modifier-effect' : undefined}>{modifier?.text}</span>
+                <span className="craft-modifier-level muted">level {modifier?.minLevel}</span>
+              </label>
+            )
+          })}
+      </fieldset>
       <table className="material-table" aria-label="Materials compared">
         <thead>
           <tr>

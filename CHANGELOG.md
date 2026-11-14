@@ -29,6 +29,7 @@ Source: playtest feedback of 2026-11-11. Bug batches 1-5 and the UI rework (batc
 - Fixed: crafting and upgrade selects keep one width, with short option names and the effect text on its own reserved line (Step 13.7, batch 3).
 - Improved: shop and archive comparisons name the worn piece that is replaced ("Replaces: Hauler's Medium Chest · L8 · 98%"), show bag room and lost or gained modifiers, round stats to one decimal and sign each change (Step 13.7, batch 4).
 - Fixed: HP regeneration while walking is no longer rounded each second; the leftover fraction carries over, so low-VIT heroes (Elf, Undead at VIT 9 heal 0.45 HP/s) heal too, and the run panel shows the rate as "+N HP/s between fights" (Step 13.7, batch 5).
+- Improved: the Craft modifier picker lists every modifier with its effect and unlock level, so you can compare them without opening a dropdown (Step 13.7, batch 6).
 - New: an in-game "What's new" page lists the patch notes with category filters (Step 13.7).
 - Improved: the Contract Board is now the first town tab and opens by default (Step 13.7, batch 6).
 - Balance: walking between fights plays at 8x your chosen speed, and 16x on a mastered route; it is playback only, so nothing in the run changes (Step 13.7, batch 6).

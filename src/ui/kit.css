@@ -839,6 +839,51 @@ table.away-table {
   font-variant-numeric: tabular-nums;
 }
 
+/* Modifier picker: every option shows its effect, so the choice never needs a guess. */
+.craft-modifiers {
+  margin: var(--s2) 0;
+  padding: var(--s2);
+  border: 1px solid var(--border, currentColor);
+  border-radius: var(--radius, 6px);
+  display: grid;
+  gap: var(--s1);
+}
+
+.craft-modifier {
+  display: grid;
+  grid-template-columns: auto minmax(5rem, 9rem) 1fr auto;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  padding: 0 var(--s2);
+  border-radius: var(--radius, 6px);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.craft-modifier:focus-within {
+  outline: 2px solid var(--focus, currentColor);
+  outline-offset: 1px;
+}
+
+.craft-modifier-chosen {
+  background: var(--surface-2, rgba(128, 128, 128, 0.15));
+}
+
+.craft-modifier-name {
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .craft-modifier {
+    grid-template-columns: auto 1fr auto;
+    padding-block: var(--s1);
+  }
+  .craft-modifier-effect {
+    grid-column: 2 / 4;
+  }
+}
+
 /* ---- What's new page ---- */
 
 .whatsnew-chips {
