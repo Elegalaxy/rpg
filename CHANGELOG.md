@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. Bug batches 1-5 and the UI rework (batch 6) are in.
 
+- New: you can build extra rule stacks that switch by trigger, for example one for groups and one for single targets, with a tab for each and a Switch-when condition list (Step 13.8, part 3).
 - Tech: rule stacks are saved with each hero, carried into runs and away replays, pruned when you unequip a skill, and cleared on reincarnation; the Going in panel shows the stack count (Step 13.8, part 2).
 - Tech: rule stacks in the combat sim — a hero can switch between named sets of automation rows by trigger (Step 13.8, part 1).
 - Fixed: gear no longer returns to 100% durability at the start of every run, so wear carries over and repair matters again (Step 13.7, batch 1).

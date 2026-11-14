@@ -1038,3 +1038,93 @@ dl.upgrade-facts dd {
     justify-content: flex-start;
   }
 }
+
+/* ---- Rule stacks: tab row, stack card ---- */
+
+.stack-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin: var(--s2) 0;
+}
+
+.stack-tabs {
+  display: flex;
+  flex: 1 1 100%;
+  gap: var(--s1);
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.stack-tab {
+  flex: none;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.stack-tab:focus-visible,
+.stack-new:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.stack-tab[aria-selected='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 -3px 0 var(--accent);
+  font-weight: 700;
+}
+
+.stack-card {
+  margin: var(--s2) 0;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.stack-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.stack-card input[aria-label='Stack name'] {
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.stack-when-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  margin: var(--s2) 0 var(--s1);
+  font-size: 1rem;
+}
+
+.stack-card .rule-summary,
+.stack-card ul.rule-conditions {
+  margin-left: 0;
+}
+
+.stack-card .rule-add {
+  margin-left: 0;
+}
+
+.stack-confirm {
+  margin: var(--s2) 0;
+}
+
+.stack-card-head label {
+  display: inline-flex;
+  flex: 1 1 14rem;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.stack-card-head label input {
+  flex: 1;
+  min-width: 0;
+}
