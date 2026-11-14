@@ -13,6 +13,7 @@ import {
   skillOffCooldown,
 } from './skills.ts'
 import {
+  DEFAULT_STACK_ID,
   TARGET_PRIORITIES,
   type ActorTelegraph,
   type AutomationCondition,
@@ -26,11 +27,17 @@ import {
   type PresenceOperator,
   type PriorityEvent,
   type PriorityRow,
+  type RuleStack,
   type SkillDef,
   type TargetPriority,
 } from './types.ts'
 
 export const MAX_PRIORITY_ROWS = 12
+/** Extra rule stacks per hero, not counting the Default stack. */
+export const MAX_RULE_STACKS = 3
+/** A lower-listed stack (Default included) replaces the active one only after it has held this long. */
+export const STACK_HOLD_MS = 2000
+export const MAX_STACK_NAME_LENGTH = 20
 
 export const STATUS_IDS = ['bleed', 'poison', 'burn', 'chill', 'mark', 'expose'] as const
 const COMPARE_OPERATORS = ['atMost', 'atLeast', 'equal', 'notEqual'] as const
@@ -44,6 +51,8 @@ export type HeroActionChoice =
 export type PriorityRulesParse =
   | { ok: true; rows: PriorityRow[]; targetPriority: TargetPriority | null }
   | { ok: false; reason: string; rowCount: number }
+
+export type RuleStacksParse = { ok: true; stacks: RuleStack[] } | { ok: false; reason: string }
 
 type PickResult = {
   enemy: CombatActor | null
@@ -366,6 +375,46 @@ export function parsePriorityRules(rules: unknown, defs: GameDefs): PriorityRule
   return { ok: true, rows, targetPriority }
 }
 
+/** Read a list of extra rule stacks. A failure keeps the old stacks. */
+export function parseRuleStacks(value: unknown, defs: GameDefs): RuleStacksParse {
+  if (!Array.isArray(value)) return { ok: false, reason: 'rule stacks must be a list' }
+  if (value.length > MAX_RULE_STACKS) {
+    return { ok: false, reason: `rule stacks has ${value.length} stacks and the maximum is ${MAX_RULE_STACKS}` }
+  }
+  const stacks: RuleStack[] = []
+  const seen: string[] = []
+  for (let index = 0; index < value.length; index += 1) {
+    const label = `stack ${index + 1}`
+    const record = asRecord(value[index], label)
+    if (typeof record === 'string') return { ok: false, reason: record }
+    const extra = unexpectedKey(record, ['id', 'name', 'when', 'rows'])
+    if (extra !== null) return { ok: false, reason: `${label} has unknown field '${extra}'` }
+    const id = record.id
+    if (typeof id !== 'string' || id.length === 0) return { ok: false, reason: `${label} is missing an id` }
+    if (id === DEFAULT_STACK_ID) return { ok: false, reason: `${label} id '${DEFAULT_STACK_ID}' is reserved` }
+    if (seen.includes(id)) return { ok: false, reason: `${label} id '${id}' is used twice` }
+    seen.push(id)
+    const name = record.name
+    if (typeof name !== 'string' || name.trim().length === 0 || name.length > MAX_STACK_NAME_LENGTH) {
+      return { ok: false, reason: `${label} name must be 1 to ${MAX_STACK_NAME_LENGTH} characters` }
+    }
+    const when: AutomationCondition[] = []
+    if (record.when !== undefined) {
+      if (!Array.isArray(record.when)) return { ok: false, reason: `${label} when must be a list` }
+      for (let c = 0; c < record.when.length; c += 1) {
+        const parsed = parseCondition(record.when[c], `${label} trigger ${c + 1}`)
+        if (typeof parsed === 'string') return { ok: false, reason: parsed }
+        when.push(parsed)
+      }
+    }
+    if (record.rows === undefined) return { ok: false, reason: `${label} is missing rows` }
+    const rows = parsePriorityRules({ rows: record.rows }, defs)
+    if (!rows.ok) return { ok: false, reason: `${label}: ${rows.reason}` }
+    stacks.push({ id, name, when, rows: rows.rows })
+  }
+  return { ok: true, stacks }
+}
+
 /**
  * Replace priority rules for the next evaluation.
  * The row list already being walked is left in place.
@@ -424,7 +473,7 @@ export function queueManualAction(state: CombatState, skillId: string): void {
   state.queuedSkillId = skillId
 }
 
-function livingEnemies(state: CombatState): CombatActor[] {
+export function livingEnemies(state: CombatState): CombatActor[] {
   const living: CombatActor[] = []
   for (const enemy of state.enemies) {
     if (enemy.alive) living.push(enemy)
@@ -682,7 +731,7 @@ function visibleTelegraph(enemy: CombatActor, tag: string | undefined): ActorTel
   return null
 }
 
-function conditionFailure(
+export function conditionFailure(
   state: CombatState,
   defs: GameDefs,
   hero: CombatHero,
@@ -842,7 +891,7 @@ function isWatchCondition(condition: AutomationCondition): boolean {
  * The living enemy a watching row answers: every watch condition of the row must pass for it. The enemy
  * whose telegraph resolves soonest wins, then the lowest slot. Null when the row does not watch or no enemy matches.
  */
-function watchedEnemy(state: CombatState, defs: GameDefs, hero: CombatHero, row: PriorityRow, timeMs: number): CombatActor | null {
+export function watchedEnemy(state: CombatState, defs: GameDefs, hero: CombatHero, row: PriorityRow, timeMs: number): CombatActor | null {
   const watch = (row.conditions ?? []).filter(isWatchCondition)
   if (watch.length === 0) return null
   let best: CombatActor | null = null
@@ -1016,9 +1065,10 @@ export function chooseHeroAction(
   defs: GameDefs,
   hero: CombatHero,
   timeMs: number,
+  rules?: { rows: readonly PriorityRow[]; targetPriority: TargetPriority | null },
 ): HeroActionChoice {
-  const rows = hero.priorityRows
-  const globalPriority = hero.targetPriority
+  const rows = rules === undefined ? hero.priorityRows : rules.rows
+  const globalPriority = rules === undefined ? hero.targetPriority : rules.targetPriority
   const events: PriorityEvent[] = []
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index]

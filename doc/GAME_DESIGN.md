@@ -1918,6 +1918,24 @@ Combat remains automation-first, but the player may manually queue a currently r
 
 Priority rules may be edited during combat. Changes take effect at the next action evaluation and are logged. Offline simulation uses the last saved rule set.
 
+#### Rule stacks
+
+Decided 2026-11-15 (Step 13.8). A stack is an extra named set of priority rows over the same equipped skills, with a "switch when" trigger. The hero's existing priority rows are the **Default stack**: no trigger, the fallback.
+
+- Limits: up to 3 extra stacks (`MAX_RULE_STACKS`, 4 counting Default), each with 0 to 12 rows under today's row rules. A stack has an id (never `default`), a name of 1 to 20 characters, a `when` list and its rows.
+- Stacks never swap equipped skills. Cooldowns are shared across stacks. Stacks use the hero's `targetPriority`. Rows may only name known skills; an unequipped skill is skipped as it is today.
+- `when` uses the same condition vocabulary as rows; all must pass. An empty `when` means the stack can only be picked by hand.
+- Evaluation: once per hero action evaluation, before the manual queue, a pure pick (never touches the RNG) chooses the stack whose rows are walked. Heroes without extra stacks skip it entirely and behave exactly as before. The wait check (`waitingCanAct`) runs the same pick without committing anything.
+  1. Manual: if a manual pick names an existing stack (Default included) it wins, reason `manual`.
+  2. Otherwise the candidate is the first extra stack, in list order, with a non-empty `when` that fully passes; if none, Default.
+  3. Target-reading triggers check the stack focus: the enemy in `currentTargetId` if alive, else the lowest-slot living enemy (no target picking, no RNG). Watch conditions (telegraph present or at most, interruptible present) check every enemy.
+  4. Hysteresis: a candidate higher in the list than the active stack switches at once. A lower one (Default included) switches only once 2 seconds (`STACK_HOLD_MS` = 2000 ms) have passed since the last switch; otherwise the active stack stays and nothing is logged. The first evaluation of a fight has no hold.
+  5. A change of stack logs one `stackChanged` event: `trigger` (detail: the new stack's trigger, e.g. "enemy count at least 2"), `fallback` (detail: why the stack it leaves no longer passes, e.g. "enemy count 1 is below 2"), `manual` or `manualCleared`.
+- Switching is free: no action time, cooldown or resource. It happens only at an action evaluation and never changes the action being resolved. A queued manual skill still goes first; the class fallback is unchanged.
+- Manual override: a hand pick takes effect at the next action evaluation and lasts until Auto is chosen or the fight ends (each fight starts with no manual pick). Clearing it applies the automatic pick at once with no hold.
+- Editing stacks in a fight (`setRuleStacks`) is logged like a rules change. If the active stack was deleted the hero falls back to Default; a deleted manual stack clears the manual pick; a stack list that fails to parse is rejected and the old stacks stay.
+- A combat saved before stacks existed has none and loads as before. Saving, the editor, the fight controls and reincarnation (which clears stacks) come in later parts.
+
 ### Provisional MVP active skills
 
 These are a first broad roster for mechanical review. Names and effects are not final.

@@ -18,6 +18,7 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   encounterStart: [],
   priority: ['automation'],
   rulesChanged: ['automation'],
+  stackChanged: ['automation'],
   manual: ['automation'],
   action: ['automation'],
   hitRoll: ['rolls'],

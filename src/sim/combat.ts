@@ -2,6 +2,7 @@ import {
   chooseHeroAction,
   evaluateManualAction,
   parsePriorityRules,
+  parseRuleStacks,
   skillActionTargets,
   type HeroActionChoice,
 } from './automation.ts'
@@ -60,6 +61,7 @@ import {
   incomingDamageFactor,
   resolveHeal,
 } from './skills.ts'
+import { activeRules, applyStackPick, pickStack } from './stacks.ts'
 import {
   applicationChance,
   assertStatusBook,
@@ -81,6 +83,7 @@ import {
 import type { StatusTickDraft } from './statuses.ts'
 import { CURSES, NODE_HUMAN_RENAISSANCE, RENAISSANCE_CONSISTENCY, SOUL_CAP } from './races/racialNodes.ts'
 import { actionTime, applyEchoRank, deriveEnemyStats, deriveHeroStats } from './stats.ts'
+import { DEFAULT_STACK_ID } from './types.ts'
 import type {
   ActiveField,
   CombatActor,
@@ -1969,6 +1972,8 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
   const hero = state.hero
   hero.overhealed = false
   const scheduled = hero.nextReadyMs
+  const stackPick = pickStack(state, defs, hero, scheduled)
+  if (stackPick !== null) applyStackPick(state, hero, stackPick, scheduled)
   const manual = evaluateManualAction(state, defs, hero, scheduled)
   if (manual.kind !== 'none') {
     state.queuedSkillId = null
@@ -1977,7 +1982,7 @@ function resolveHeroAction(state: CombatState, defs: GameDefs): void {
   const choice: HeroActionChoice =
     manual.kind === 'use'
       ? { kind: 'skill', skill: manual.skill, targets: manual.targets, focus: manual.focus, events: [] }
-      : chooseHeroAction(state, defs, hero, scheduled)
+      : chooseHeroAction(state, defs, hero, scheduled, stackPick === null ? undefined : activeRules(hero, stackPick.id))
   for (const event of choice.events) state.log.push(event)
   if (choice.kind === 'basicAttack') {
     const decision = decideFallback(state, defs, scheduled)
@@ -2091,7 +2096,8 @@ function waitingCanAct(state: CombatState, defs: GameDefs, timeMs: number): bool
     const hero = state.hero
     const manual = evaluateManualAction(state, defs, hero, timeMs)
     if (manual.kind === 'use') return true
-    const choice = chooseHeroAction(state, defs, hero, timeMs)
+    const stackPick = pickStack(state, defs, hero, timeMs)
+    const choice = chooseHeroAction(state, defs, hero, timeMs, stackPick === null ? undefined : activeRules(hero, stackPick.id))
     if (choice.kind === 'skill') return true
     const decision = decideFallback(state, defs, timeMs)
     if (decision.kind === 'wait') return false
@@ -2423,6 +2429,9 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     defs,
   )
   if (!parsedRules.ok) throw new Error(parsedRules.reason)
+  const stackParse = parseRuleStacks(hero.ruleStacks ?? [], defs)
+  if (!stackParse.ok) throw new Error(stackParse.reason)
+  const parsedStacks = stackParse.stacks
   return {
     id: hero.id,
     name: hero.name,
@@ -2489,6 +2498,9 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     offHandKind: hero.gear.offHand === null ? null : hero.gear.offHand.kind,
     equippedSkillIds,
     priorityRows: parsedRules.rows,
+    ...(parsedStacks.length > 0
+      ? { ruleStacks: parsedStacks, stackState: { activeId: DEFAULT_STACK_ID, sinceMs: null, manualId: null } }
+      : {}),
     classId: hero.classId,
     classResource: 0,
     classResourceId: '',

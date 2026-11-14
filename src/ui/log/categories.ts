@@ -52,6 +52,7 @@ const EVENT_CATEGORIES = {
   encounterStart: [],
   priority: ['automation'],
   rulesChanged: ['automation'],
+  stackChanged: ['automation'],
   manual: ['automation'],
   action: ['automation'],
   hitRoll: ['rolls'],

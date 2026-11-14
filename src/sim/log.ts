@@ -178,10 +178,34 @@ function formatWait(event: WaitEvent): string {
 function formatRulesChanged(event: Extract<LogEvent, { type: 'rulesChanged' }>): string {
   const when = `At ${seconds(event.timeMs)}s`
   if (!event.applied) {
-    return `${when}, ${event.actorName} rejects priority rules: ${event.reason}.`
+    const kind = event.stackCount !== undefined ? 'rule stacks' : 'priority rules'
+    return `${when}, ${event.actorName} rejects ${kind}: ${event.reason}.`
+  }
+  if (event.stackCount !== undefined) {
+    const stacks = event.stackCount === 1 ? '1 rule stack' : `${event.stackCount} rule stacks`
+    return `${when}, ${event.actorName} changes to ${stacks} with ${event.rowCount} extra rows.`
   }
   const rows = event.rowCount === 1 ? '1 row' : `${event.rowCount} rows`
   return `${when}, ${event.actorName} changes priority rules to ${rows}, targeting ${priorityLabel(event.targetPriority)}.`
+}
+
+function formatStackChanged(event: Extract<LogEvent, { type: 'stackChanged' }>): string {
+  const when = `At ${seconds(event.timeMs)}s`
+  const detail = event.detail === null ? '' : `: ${event.detail}`
+  switch (event.reason) {
+    case 'trigger':
+      return `${when}, ${event.actorName} switches from ${event.fromName} to ${event.toName}${detail}.`
+    case 'fallback':
+      return `${when}, ${event.actorName} falls back from ${event.fromName} to ${event.toName}${detail}.`
+    case 'manual':
+      return `${when}, ${event.actorName} is set to ${event.toName} by hand (was ${event.fromName}).`
+    case 'manualCleared':
+      return `${when}, ${event.actorName} returns to automatic stacks: ${event.toName} (was ${event.fromName}).`
+    default: {
+      const unexpected: never = event.reason
+      throw new Error(`unknown stack reason ${JSON.stringify(unexpected)}`)
+    }
+  }
 }
 
 /** Plain English for one log event. The simulation does not print; callers do. */
@@ -218,6 +242,8 @@ export function formatEvent(event: LogEvent): string {
       }
     case 'rulesChanged':
       return formatRulesChanged(event)
+    case 'stackChanged':
+      return formatStackChanged(event)
     case 'manual':
       if (event.result === 'cancel') {
         return `At ${seconds(event.timeMs)}s, ${event.actorName} cancels queued ${event.skillName} (${event.skillId}): ${event.reason}.`

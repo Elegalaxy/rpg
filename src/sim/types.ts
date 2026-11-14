@@ -478,6 +478,29 @@ export type AutomationCondition =
   /** Time since the fight began, in milliseconds. */
   | { kind: 'fightTime'; operator: CompareOperator; value: number }
 
+/** The id of the hero's own `priorityRows` when read as a stack: no trigger, the fallback. */
+export const DEFAULT_STACK_ID = 'default'
+
+/**
+ * An extra named set of priority rows over the same equipped skills.
+ * `when` conditions must all pass for the stack to be picked; an empty list means manual only.
+ */
+export type RuleStack = {
+  /** Never 'default'. */
+  id: string
+  /** 1 to 20 characters. */
+  name: string
+  when: readonly AutomationCondition[]
+  rows: readonly PriorityRow[]
+}
+
+/** Which stack is in force. `sinceMs` is null until the first switch, so the first pick has no hold. */
+export type StackState = {
+  activeId: string
+  sinceMs: number | null
+  manualId: string | null
+}
+
 export type PriorityDecision = 'skip' | 'use' | 'fallback'
 
 export type PriorityEvent = {
@@ -501,6 +524,22 @@ export type RulesChangedEvent = {
   reason: string | null
   rowCount: number
   targetPriority: TargetPriority | null
+  /** Set when the change was to the rule stacks. `rowCount` is then the rows across the extra stacks. */
+  stackCount?: number
+}
+
+/** The hero's active rule stack changed. */
+export type StackChangedEvent = {
+  type: 'stackChanged'
+  timeMs: number
+  actorId: string
+  actorName: string
+  fromId: string
+  fromName: string
+  toId: string
+  toName: string
+  reason: 'trigger' | 'fallback' | 'manual' | 'manualCleared'
+  detail: string | null
 }
 
 /** A queued skill was used, or cancelled because it was ineligible at the action. */
@@ -1016,6 +1055,7 @@ export type LogEvent =
   | EncounterStartEvent
   | PriorityEvent
   | RulesChangedEvent
+  | StackChangedEvent
   | ManualEvent
   | ActionEvent
   | HitRollEvent
@@ -1385,6 +1425,9 @@ export type CombatHero = CombatActor & {
   offHandKind: OffHandKind | null
   equippedSkillIds: string[]
   priorityRows: PriorityRow[]
+  /** Extra rule stacks. Absent or empty means the hero only has its priority rows. */
+  ruleStacks?: RuleStack[]
+  stackState?: StackState
   classId: HeroClass
   /** Live class meter. Conditions read it, and a positive skill cost is paid from it. */
   classResource: number
@@ -1487,6 +1530,8 @@ export type CombatHeroSetup = {
   gear: HeroGear
   equippedSkillIds?: readonly string[]
   priorityRows?: readonly PriorityRow[]
+  /** Extra rule stacks beside `priorityRows` (the Default stack). */
+  ruleStacks?: readonly RuleStack[]
   targetPriority?: TargetPriority
   /** Ranger Readiness start. Omitted uses the harness default. Other classes ignore it. */
   startingResource?: number
