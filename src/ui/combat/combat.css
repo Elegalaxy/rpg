@@ -456,3 +456,71 @@
     min-width: 44px;
   }
 }
+
+/* ---- Rule stack bar: which stack is active, why, and a picker. Fixed heights so a switch never shifts the card. ---- */
+
+.rs-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  text-align: left;
+  gap: var(--s1);
+  margin-top: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.rs-bar-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 2rem;
+}
+
+.rs-bar-name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rs-pending-slot {
+  flex: none;
+  margin-left: 0;
+}
+
+.rs-bar-reason {
+  margin: 0;
+  min-height: 1.4em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rs-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  min-width: 0;
+  gap: var(--s1) var(--s2);
+}
+
+.rs-pick {
+  min-height: 44px;
+  min-width: 44px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rs-bar :focus-visible,
+.rs-picker :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

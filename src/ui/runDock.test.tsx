@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { selectedHero } from '../persist/character.ts'
 import { MASTERY_RETURNS } from '../persist/world.ts'
+import { gameDefs, setupForScenario, WARRIOR_VS_STANDARD_ID } from '../content/scenarios.ts'
+import { createCombat } from '../sim/combat.ts'
 import { RunDockView } from './RunDock.tsx'
 import { DOCK_KEY, dockVisible, readCollapsed, writeCollapsed } from './runDockState.ts'
 import { commitSave, createHeroFromUi, getSaveStatus, setRepeatRouteFromUi, startExpeditionFromUi } from './store.ts'
@@ -105,5 +107,51 @@ describe('the run dock', () => {
     expect(setRepeatRouteFromUi(!before)).toBeNull()
     expect(selectedHero(getSaveStatus().save)?.repeatRoute).toBe(!before)
     expect(running().outcome).toBe('ongoing')
+  })
+
+  describe('the rule stack chip and picker', () => {
+    function withStacks(inCombat: boolean, stacked: boolean): string[] {
+      stubStorage()
+      createHeroFromUi({ name: 'Ash', race: 'human', classId: 'warrior' })
+      startExpeditionFromUi('splintered-road')
+      const { save } = getSaveStatus()
+      const hero = selectedHero(save)
+      if (hero === null) throw new Error('no hero')
+      const defs = gameDefs()
+      const combat = createCombat(setupForScenario(WARRIOR_VS_STANDARD_ID), defs, 1)
+      const skill = combat.hero.equippedSkillIds[0]
+      if (skill === undefined) throw new Error('no skill')
+      if (stacked) combat.hero.ruleStacks = [{ id: 'solo', name: 'Solo', when: [], rows: [{ skillId: skill }] }]
+      combat.hero.stackState = { activeId: 'default', sinceMs: null, manualId: null }
+      const savedHero = { ...hero, ruleStacks: stacked ? [{ id: 'solo', name: 'Solo', when: [], rows: [{ skillId: skill }] }] : [] }
+      const expedition = { ...running(), combat: inCombat ? combat : null }
+      const html = (collapsed: boolean) =>
+        renderToStaticMarkup(
+          <RunDockView expedition={expedition} hero={savedHero} waiting={false} collapsed={collapsed} onToggle={() => undefined} onOpenMap={() => undefined} />,
+        )
+      return [html(true), html(false)]
+    }
+
+    it('shows the active stack as a chip when folded, only in a fight and only with stacks', () => {
+      const [folded] = withStacks(true, true)
+      expect(folded).toContain('data-testid="dock-stack"')
+      expect(folded).toContain('Stack: Default')
+      expect(folded).not.toContain('rs-picker')
+    })
+
+    it('keeps an empty reserved slot between fights and draws nothing without stacks', () => {
+      const [between] = withStacks(false, true)
+      expect(between).toContain('data-testid="dock-stack-slot"')
+      expect(between).not.toContain('data-testid="dock-stack"')
+      const [none, noneOpen] = withStacks(true, false)
+      expect(none).not.toContain('run-dock-stack')
+      expect(noneOpen).not.toContain('rs-picker')
+    })
+
+    it('unfolds into the picker with Auto and every stack', () => {
+      const [, open] = withStacks(true, true)
+      expect(open).toContain('data-testid="stack-picker"')
+      expect([...open.matchAll(/class="rs-pick"[^>]*>([^<]*)</g)].map((match) => match[1])).toEqual(['Auto', 'Default', 'Solo'])
+    })
   })
 })

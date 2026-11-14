@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. Bug batches 1-5 and the UI rework (batch 6) are in.
 
+- New: the fight view shows which rule stack is active and why, and you can pin a stack or go back to Auto while watching; the run dock shows the active stack too (Step 13.8, part 4).
 - New: you can build extra rule stacks that switch by trigger, for example one for groups and one for single targets, with a tab for each and a Switch-when condition list (Step 13.8, part 3).
 - Tech: rule stacks are saved with each hero, carried into runs and away replays, pruned when you unequip a skill, and cleared on reincarnation; the Going in panel shows the stack count (Step 13.8, part 2).
 - Tech: rule stacks in the combat sim — a hero can switch between named sets of automation rows by trigger (Step 13.8, part 1).

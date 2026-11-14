@@ -9,6 +9,7 @@ import { LogPanel } from '../log/LogPanel.tsx'
 import { noteHeroQueue } from '../store.ts'
 
 import { ActorCard } from './ActorCard.tsx'
+import { StackBar } from './StackBar.tsx'
 import './combat.css'
 
 function finishedAtMs(combat: CombatState): number {
@@ -160,6 +161,7 @@ export function FightView({
               classResource={{ id: hero.classResourceId, current: hero.classResource, max: hero.classResourceMax }}
               manualQueue={live ? { state: combat, queueError } : undefined}
             />
+            <StackBar combat={combat} />
             <SuppliesBar combat={combat} />
             {live && onEscapeNow !== undefined ? (
               <div className="fight-escape">

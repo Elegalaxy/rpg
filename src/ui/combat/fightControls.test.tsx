@@ -4,8 +4,12 @@ import { describe, expect, it } from 'vitest'
 import { gameDefs, setupForScenario, WARRIOR_VS_STANDARD_ID } from '../../content/scenarios.ts'
 import { queueManualAction } from '../../sim/automation.ts'
 import { createCombat, stepCombat } from '../../sim/combat.ts'
+import { setManualStack, setRuleStacks } from '../../sim/stacks.ts'
+import type { CombatState } from '../../sim/types.ts'
 
 import { FightView } from './FightView.tsx'
+import { StackBar } from './StackBar.tsx'
+import { summarizeStack } from './stackSummary.ts'
 
 function fresh() {
   const defs = gameDefs()
@@ -87,5 +91,98 @@ describe('the fight view controls', () => {
     const html = renderToStaticMarkup(<FightView combat={state} title="test" />)
     expect(html).toContain('Escaped at 6.0 s')
     expect(html).toContain('roll 12% vs 55%')
+  })
+})
+
+describe('the rule stack bar', () => {
+  function stacked() {
+    const { defs, state } = fresh()
+    const [first, second] = state.hero.equippedSkillIds
+    if (first === undefined || second === undefined) throw new Error('warrior needs two skills')
+    setRuleStacks(
+      state,
+      [
+        { id: 'group', name: 'Group', when: [{ kind: 'hpPercent', who: 'hero', operator: 'atLeast', value: 50 }], rows: [{ skillId: first }] },
+        { id: 'solo', name: 'Solo', when: [], rows: [{ skillId: second }] },
+      ],
+      defs,
+    )
+    expect(state.hero.ruleStacks).toHaveLength(2)
+    return { defs, state }
+  }
+
+  function untilAction(state: CombatState, defs: ReturnType<typeof fresh>['defs']) {
+    const before = state.log.filter((event) => event.type === 'action' && event.actorId === state.hero.id).length
+    for (let i = 0; i < 3000; i += 1) {
+      stepCombat(state, defs)
+      if (state.log.filter((event) => event.type === 'action' && event.actorId === state.hero.id).length > before) break
+    }
+  }
+
+  it('is not drawn for a hero without extra stacks', () => {
+    const { state } = fresh()
+    const html = renderToStaticMarkup(<FightView combat={state} title="test" />)
+    expect(html).not.toContain('rs-bar')
+    expect(html).not.toContain('Stack:')
+  })
+
+  it('shows the active stack with a reason, and the picker with Auto first', () => {
+    const { state } = stacked()
+    const html = renderToStaticMarkup(<FightView combat={state} title="test" />)
+    expect(html).toContain('Stack: Default')
+    expect(html).toContain('Default · no trigger passed')
+    const labels = [...html.matchAll(/class="rs-pick"[^>]*>([^<]*)</g)].map((match) => match[1])
+    expect(labels).toEqual(['Auto', 'Default', 'Group', 'Solo'])
+    expect(html).toMatch(/aria-pressed="true"[^>]*>Auto</)
+  })
+
+  it('names the trigger from the last switch', () => {
+    const { defs, state } = stacked()
+    untilAction(state, defs)
+    expect(state.hero.stackState?.activeId).toBe('group')
+    const html = renderToStaticMarkup(<StackBar combat={state} />)
+    expect(html).toContain('Stack: Group')
+    expect(html).toContain('Auto · hero HP% at least 50')
+  })
+
+  it('shows Next action for a pick that is not applied yet, then the stack, and Auto clears it', () => {
+    const { defs, state } = stacked()
+    setManualStack(state, defs, 'solo')
+    const pending = renderToStaticMarkup(<StackBar combat={state} />)
+    expect(pending).toContain('data-testid="stack-pending"')
+    expect(pending).toContain('Next action')
+    untilAction(state, defs)
+    const applied = renderToStaticMarkup(<StackBar combat={state} />)
+    expect(applied).toContain('Stack: Solo')
+    expect(applied).toContain('Manual · until the fight ends')
+    expect(applied).not.toContain('data-testid="stack-pending"')
+    expect(applied).toMatch(/aria-pressed="true"[^>]*>Solo</)
+    setManualStack(state, defs, null)
+    const auto = renderToStaticMarkup(<StackBar combat={state} />)
+    expect(auto).toMatch(/aria-pressed="true"[^>]*>Auto</)
+    expect(auto).not.toContain('Manual ·')
+  })
+
+  it('keeps the same structure and classes before and after a switch', () => {
+    const { defs, state } = stacked()
+    const shape = (html: string) => html.replace(/>[^<]+</g, '><').replace(/ (aria-pressed|title)="[^"]*"/g, '').replace(/ data-testid="stack-pending"/g, '')
+    const slotOf = (html: string) => (html.match(/rs-pending-slot/g) ?? []).length
+    const before = renderToStaticMarkup(<StackBar combat={state} />)
+    setManualStack(state, defs, 'solo')
+    const pending = renderToStaticMarkup(<StackBar combat={state} />)
+    untilAction(state, defs)
+    const after = renderToStaticMarkup(<StackBar combat={state} />)
+    expect(slotOf(before)).toBe(1)
+    expect(slotOf(pending)).toBe(1)
+    expect(slotOf(after)).toBe(1)
+    expect(shape(after)).toBe(shape(before))
+  })
+
+  it('says Held while the drop back to a lower stack waits out the 2 s hold', () => {
+    const { defs, state } = stacked()
+    untilAction(state, defs)
+    expect(state.hero.stackState?.activeId).toBe('group')
+    state.hero.hp = 1
+    expect(summarizeStack(state).reason).toMatch(/^Held · dropping back in \d\.\d s$/)
   })
 })

@@ -6,6 +6,8 @@ import { MASTERY_RETURNS, routeMastery } from '../persist/world.ts'
 import { routes } from '../content/world.ts'
 import { MOMENTUM_CAP, bagIsFull, lootCapacityOf, type ExpeditionState } from '../sim/expedition.ts'
 import { readCollapsed, writeCollapsed } from './runDockState.ts'
+import { StackPicker } from './combat/StackBar.tsx'
+import { hasStacks, summarizeStack } from './combat/stackSummary.ts'
 import { HoldActions } from './HoldActions.tsx'
 import { Kpi, KpiRow } from './Kit.tsx'
 import { escapeNowFromUi, expeditionWaiting, setAutoEscapeFromUi, setRepeatRouteFromUi, useSaveStatus } from './store.ts'
@@ -50,6 +52,7 @@ export function RunDockView({
   const mastery = routeMastery(hero, expedition.id)
   const status = statusText(expedition, waiting)
   const routeName = routes[expedition.id]?.name ?? expedition.id
+  const stackShown = fight !== null ? hasStacks(fight) : (hero?.ruleStacks ?? []).length > 0
   const holdReason = fight !== null ? 'Available between fights.' : 'Available once the next fight is over.'
   return (
     <aside className="run-dock" aria-label="Run dock" data-collapsed={collapsed}>
@@ -58,6 +61,15 @@ export function RunDockView({
           <strong className="run-dock-status" title={status}>
             {status}
           </strong>
+          {stackShown && fight !== null ? (
+            <span className="run-dock-stack" data-testid="dock-stack" title={summarizeStack(fight).reason}>
+              Stack: {summarizeStack(fight).activeName}
+            </span>
+          ) : stackShown ? (
+            <span className="run-dock-stack" data-testid="dock-stack-slot" aria-hidden="true">
+              &nbsp;
+            </span>
+          ) : null}
           <span className="run-dock-hp">
             <progress className={`hp-${tone}`} max={maxHp} value={hp} aria-label="Hero HP" />
             <span className="run-dock-hp-num" data-testid="dock-hp">
@@ -95,6 +107,12 @@ export function RunDockView({
             <Kpi compact label="Gold carried" value={`${expedition.carriedGold} g`} tone="gold" testId="dock-gold" />
             <Kpi compact label="Enemies left" value={enemiesLeft === null ? '–' : enemiesLeft} testId="dock-enemies" />
           </KpiRow>
+          {fight !== null && hasStacks(fight) ? (
+            <div className="run-dock-stack-picker" data-testid="dock-stack-picker">
+              <small className="muted">Rule stack · {summarizeStack(fight).reason}</small>
+              <StackPicker combat={fight} />
+            </div>
+          ) : null}
           <div className="button-row">
             <button type="button" className="btn-danger" disabled={fight === null} title={fight === null ? 'Only during a fight.' : undefined} onClick={escapeNowFromUi}>
               Escape now

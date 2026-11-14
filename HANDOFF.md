@@ -1,15 +1,16 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-15)
-- **Current Goal:** Step 13.8 rule stacks. Parts 1 (sim), 2 (save/persist) and 3 (editor UI) are done and pushed; Part 4 (fight bar, picker, dock chip) is next. Step 13.7 batches 1-6 are closed.
-- **Recent Changes & Files Touched (Part 3):**
-  - `src/ui/character/Rules.tsx`: stack tab row (Default + stacks, Auto / Manual only tags, New stack disabled at 4 with "A hero can have at most 4 stacks."), per-stack name, "Switch to this stack when" trigger, Move up/down, Duplicate, inline Delete confirm, one Save rules for all stacks and rows. A hero with no stacks sees no tab row, only New stack and a Help note. The form is keyed on loadout plus stack count (so the "Rules saved." line resets when the count changes).
-  - New `src/ui/character/ConditionList.tsx` (condition editor extracted from the row editor, same aria-labels) and `src/ui/character/stackEdit.ts` (pure add/duplicate/delete/move/patch). Tests in `src/ui/character/stackEditor.test.tsx`. CSS appended to `src/ui/kit.css` (`.stack-*`).
-  - Docs: Step 13.8 Part 3 done in `doc/IMPLEMENTATION_PLAN.md`; one New line in `CHANGELOG.md`.
+- **Current Goal:** Step 13.8 Rule stacks is done (parts 1-4). Step 13.7 playtest fixes (feedback of 2026-11-11) are in. Next is the user's playtest, then closing 13.7/13.8 into a 0.x.0 changelog heading.
+- **Recent Changes & Files Touched:**
+  - Step 13.8 part 4: `src/ui/combat/StackBar.tsx` (bar, picker) and `stackSummary.ts` (`summarizeStack`), wired into `FightView.tsx` under the hero card and into `RunDock.tsx` (folded chip in a reserved line, unfolded picker). CSS under `rs-*` classes in `combat.css` and `runDock.css` (`.stack-bar` already belongs to the editor in `kit.css`). `pickStackFromUi` in `store.ts` now acts on the live run's fight when there is one. Tests in `fightControls.test.tsx` and `runDock.test.tsx`.
+  - Parts 1-3: sim `src/sim/stacks.ts`, save and persist, editor in `src/ui/character/Rules.tsx`.
+  - Another session left uncommitted Craft modifier picker work in `src/ui/town/Craft.tsx`, `src/ui/kit.css` and one CHANGELOG line; it was not part of the part 4 commit.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - One commit per finished part, pushed to `origin/main`, no force-push. Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
-  - Guards byte-identical (reference CSV, warden, causeway, hollows, built, telegraph, elites, cinder). Nothing in sim or content changed in Part 3.
-  - Stacks: 3 extra + Default, 12 rows each, 2 s hold switching down, manual pick lasts until Auto or the fight ends.
-- **Not verified:** Part 3 browser check was DOM-driven (pane hidden, screenshots flaky); tab row scrolls inside itself at 375 px, page does not scroll sideways.
-- **Exact Next Step (Part 4):** new `src/ui/combat/StackBar.tsx` under the hero card in `FightView.tsx`, rendered only when the hero has extra stacks: "Stack: <name>" plus reason ("Auto · <trigger>", "Default · no trigger passed", "Manual · until the fight ends", "Held · dropping back in N s"); picker of toggle buttons with `aria-pressed` (Auto + each stack, at least 44 px, wrap at 375); a "Next action" Tag in a fixed-width slot for a pending pick; fixed min-height with an ellipsized reason (no layout shift); run dock chip "Stack: <name>" folded and the picker unfolded; tests in `fightControls.test.tsx` and `runDock.test.tsx`; live browser fight check. Store already has `pickStackFromUi`.
+  - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
+  - Guards stay byte-identical (reference CSV, warden, causeway, hollows, built, telegraph, elites, cinder).
+  - Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
+  - A stack pick takes effect at the next action and lasts until the fight ends or Auto; "Held" countdown is asked of `pickStack` at the moment the hold ends (no duplicated sim logic).
+- **Not verified:** stacks in a real 375 px browser fight (checked with injected markup only) and Auto release in the live UI (covered by tests); the Tyrant at Power 68 and Cinder Scar items; defeat-rest start refusal; Full / Nearly full note; contract pending line; shop bag-room line; keyboard focus ring; true HP regen rate; the 300-run reference matrix diff never completed.
+- **Exact Next Step:** (1) User playtest of rule stacks and of the Causeway, Hollows and Cinder Scar. (2) Optional harness `--matrix stacks` balance comparison. (3) After the playtest, close Step 13.7 and 13.8 into a `## 0.x.0 · date · name` changelog heading.

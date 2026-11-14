@@ -204,3 +204,24 @@
     grid-row: 2;
   }
 }
+
+/* The active stack chip sits in its own reserved line under the status, so a switch never shifts the dock. */
+.run-dock-stack {
+  min-height: 1.3em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.run-dock-stack-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s1);
+}
+
+.run-dock-stack-picker .rs-bar-reason {
+  min-height: 1.4em;
+}

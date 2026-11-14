@@ -263,7 +263,8 @@ export function saveRulesFromUi(drafts: readonly RowDraft[], stackDrafts?: reado
  * fight. An unknown id or a fight that is over changes nothing.
  */
 export function pickStackFromUi(id: string | null): void {
-  const combat = snapshot.combat
+  // A live run's fight wins over the scenario fight: it is the one the fight view and the run dock show.
+  const combat = saveStatus.save.expedition?.combat ?? snapshot.combat
   if (combat.outcome !== 'ongoing') return
   try {
     setManualStack(combat, defs, id)
