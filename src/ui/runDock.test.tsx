@@ -109,6 +109,30 @@ describe('the run dock', () => {
     expect(running().outcome).toBe('ongoing')
   })
 
+  it('shows the fight number, its name and the enemies, with room kept between fights', () => {
+    stubStorage()
+    createHeroFromUi({ name: 'Ash', race: 'human', classId: 'warrior' })
+    startExpeditionFromUi('splintered-road')
+    const { save } = getSaveStatus()
+    const hero = selectedHero(save)
+    const combat = createCombat(setupForScenario(WARRIOR_VS_STANDARD_ID), gameDefs(), 1)
+    const base = running()
+    const html = (expedition: typeof base) =>
+      renderToStaticMarkup(
+        <RunDockView expedition={expedition} hero={hero === null ? null : { ...hero, stopAfterFights: 5 }} waiting={false} collapsed={false} onToggle={() => undefined} onOpenMap={() => undefined} />,
+      )
+    const fighting = html({ ...base, combat, history: [{ index: 0, encounterId: 'old-one', seed: 1, outcome: 'victory', durationMs: 1000 }] })
+    expect(fighting).toContain('Fight now')
+    expect(fighting).toContain('#2 / 5')
+    expect(fighting).toContain(combat.enemies[0]?.name ?? 'missing')
+    const between = html({ ...base, combat: null, history: [{ index: 0, encounterId: 'old-one', seed: 1, outcome: 'retreat', durationMs: 1000 }] })
+    expect(between).toContain('Last fight')
+    expect(between).toContain('#1 / 5')
+    expect(between).toContain('old one (escaped)')
+    expect(between).toContain('data-testid="dock-foes"')
+    expect(html({ ...base, combat: null, history: [] })).toContain('None yet')
+  })
+
   describe('the rule stack chip and picker', () => {
     function withStacks(inCombat: boolean, stacked: boolean): string[] {
       stubStorage()

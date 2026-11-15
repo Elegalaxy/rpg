@@ -225,3 +225,15 @@
 .run-dock-stack-picker .rs-bar-reason {
   min-height: 1.4em;
 }
+
+/* Fight number and enemies: one line each, space always reserved so nothing jumps between fights. */
+.run-dock-fight {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.run-dock-foes {
+  min-height: 1.3em;
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}

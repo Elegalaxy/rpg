@@ -16,6 +16,13 @@ function encounterLabel(id: string): string {
   return id.replace(/-/g, ' ')
 }
 
+/** "Fracture Shardling ×2" style list of the enemies in the current fight. */
+function foeSummary(enemies: { name: string }[]): string {
+  const counts = new Map<string, number>()
+  for (const enemy of enemies) counts.set(enemy.name, (counts.get(enemy.name) ?? 0) + 1)
+  return [...counts].map(([name, count]) => (count > 1 ? `${name} ×${count}` : name)).join(', ')
+}
+
 function statusText(expedition: ExpeditionState, waiting: boolean): string {
   if (waiting) return 'Waiting for you'
   if (expedition.phase === 'combat' || expedition.combat !== null) {
@@ -53,7 +60,13 @@ export function RunDockView({
   const status = statusText(expedition, waiting)
   const routeName = routes[expedition.id]?.name ?? expedition.id
   const stackShown = fight !== null ? hasStacks(fight) : (hero?.ruleStacks ?? []).length > 0
-  const holdReason = fight !== null ? 'Available between fights.' : 'Available once the next fight is over.'
+  const last = expedition.history[expedition.history.length - 1]
+  const fightNo = fight !== null ? expedition.history.length + 1 : last === undefined ? null : expedition.history.length
+  const fightId = fight !== null ? expedition.current?.encounterId : last?.encounterId
+  const outcome = last === undefined ? '' : last.outcome === 'retreat' ? 'escaped' : last.outcome
+  const fightLabel = fightId === undefined ? null : fight !== null ? encounterLabel(fightId) : `${encounterLabel(fightId)} (${outcome})`
+  const foes = fight === null ? null : foeSummary(fight.enemies)
+  const holdReason =fight !== null ? 'Available between fights.' : 'Available once the next fight is over.'
   return (
     <aside className="run-dock" aria-label="Run dock" data-collapsed={collapsed}>
       <div className="run-dock-main">
@@ -93,6 +106,14 @@ export function RunDockView({
         <div id="run-dock-details" className="run-dock-details">
           <p className="run-dock-route">
             <small className="muted">Route</small> <strong data-testid="dock-route">{routeName}</strong>
+          </p>
+          <p className="run-dock-fight" data-testid="dock-fight">
+            <small className="muted">{fightNo === null ? 'Fight' : fight !== null ? 'Fight now' : 'Last fight'}</small>{' '}
+            <strong>{fightNo === null ? 'None yet' : `#${fightNo}${hero?.stopAfterFights != null ? ` / ${hero.stopAfterFights}` : ''}`}</strong>
+            {fightLabel !== null ? <span> · {fightLabel}</span> : null}
+          </p>
+          <p className="run-dock-foes muted" data-testid="dock-foes">
+            {foes ?? ' '}
           </p>
           <KpiRow label="Run status">
             <Kpi

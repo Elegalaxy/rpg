@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
 
+- Improved: the run dock shows the fight number (with your fight limit when set), the fight's name and its enemies, or the last fight's name and result between fights (Step 13.9, dock).
 - New: a "Stop after fights" standing order: after that many fights in one run the hero walks home and secures the loot instead of pushing on, live or while away; the run bar shows "Fight 3 / 10" (Step 13.9, part 2).
 - Improved: on the Map during a run, Push on, Return to town and Auto-escape stay pinned above the fight while you scroll, the fight sits right under them, and the extra numbers are folded under Run details (Step 13.9, part 1).
 - Improved: the What's new page no longer shows plan step tags such as "(Step 13.8, part 4)" (Step 13.7, polish).
