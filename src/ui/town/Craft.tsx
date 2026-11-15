@@ -24,6 +24,7 @@ import {
 import { wearerOf } from '../../persist/equipment.ts'
 import { ITEM_MODIFIERS, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { QualityHelp } from './QualityHelp.tsx'
+import { Ranks } from './Ranks.tsx'
 import { Sockets } from './Sockets.tsx'
 import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeAllFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
 
@@ -329,6 +330,8 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
 
       <Sockets accepts={accepts} />
 
+      <Ranks accepts={accepts} />
+
       <h4>Queue (all shops)</h4>
       {queue.length === 0 ? <p>Nothing is being made.</p> : null}
       <ul className="shop-rows" aria-label="Craft queue">
@@ -343,7 +346,9 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
                   ? `Upgrade ${itemName(job.item)}`
                   : job.kind === 'socket'
                     ? `Open socket on ${itemName(job.item)}`
-                    : `Infuse ${itemName(job.item)}`
+                    : job.kind === 'infuse'
+                      ? `Infuse ${itemName(job.item)}`
+                      : `Rank up ${ITEM_MODIFIERS[job.item.modifiers[job.modifierIndex] ?? '']?.name ?? 'modifier'} on ${itemName(job.item)}`
             }
             effect={
               job.kind === 'craft'
@@ -352,7 +357,9 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
                   ? `lvl ${job.item.itemLevel} → ${job.item.itemLevel + 1}`
                   : job.kind === 'socket'
                     ? `lvl ${job.item.itemLevel} · ${job.materialId}`
-                    : `lvl ${job.item.itemLevel} · ${ITEM_MODIFIERS[job.modifierId]?.name ?? job.modifierId}`
+                    : job.kind === 'infuse'
+                      ? `lvl ${job.item.itemLevel} · ${ITEM_MODIFIERS[job.modifierId]?.name ?? job.modifierId}`
+                      : `lvl ${job.item.itemLevel} · rank ${job.toRank - 1} → ${job.toRank}`
             }
             pills={
               index === 0 ? (

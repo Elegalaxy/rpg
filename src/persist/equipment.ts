@@ -1,5 +1,5 @@
 import { developmentItems, itemBase, itemName } from '../content/items.ts'
-import { ITEM_MODIFIERS, equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
+import { ITEM_MODIFIERS, modifierRankAt, modifierTextAt, rankName, equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
 import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats, type HeroDerivedStats } from '../sim/stats.ts'
 import { renaissanceActive } from '../sim/progression.ts'
@@ -88,18 +88,28 @@ function replacedPiece(item: ItemInstance | null | undefined): ReplacedPiece | n
 /** The modifiers that leave the hero and those that arrive, from the whole worn set before and after. */
 function modifierNotes(before: readonly ItemInstance[], after: readonly ItemInstance[]): string[] {
   const count = (items: readonly ItemInstance[]) => {
-    const tally: { [id: string]: number } = {}
-    for (const item of items) for (const id of item.modifiers) tally[id] = (tally[id] ?? 0) + 1
+    const tally: { [key: string]: number } = {}
+    for (const item of items)
+      item.modifiers.forEach((id, index) => {
+        const key = `${id}|${modifierRankAt(item, index)}`
+        tally[key] = (tally[key] ?? 0) + 1
+      })
     return tally
   }
   const was = count(before)
   const now = count(after)
   const notes: string[] = []
-  for (const id of Object.keys(was)) {
-    if ((now[id] ?? 0) < (was[id] ?? 0)) notes.push(`Loses ${ITEM_MODIFIERS[id]?.name ?? id}: ${ITEM_MODIFIERS[id]?.text ?? ''}`)
+  const label = (key: string) => {
+    const [id = '', rankText = '1'] = key.split('|')
+    const rank = Number(rankText)
+    const modifier = ITEM_MODIFIERS[id]
+    return `${modifier?.name ?? id}${rank > 1 ? ` ${rankName(rank)}` : ''}: ${modifier === undefined ? '' : modifierTextAt(modifier, rank)}`
   }
-  for (const id of Object.keys(now)) {
-    if ((was[id] ?? 0) < (now[id] ?? 0)) notes.push(`Gains ${ITEM_MODIFIERS[id]?.name ?? id}: ${ITEM_MODIFIERS[id]?.text ?? ''}`)
+  for (const key of Object.keys(was)) {
+    if ((now[key] ?? 0) < (was[key] ?? 0)) notes.push(`Loses ${label(key)}`)
+  }
+  for (const key of Object.keys(now)) {
+    if ((was[key] ?? 0) < (now[key] ?? 0)) notes.push(`Gains ${label(key)}`)
   }
   return notes
 }

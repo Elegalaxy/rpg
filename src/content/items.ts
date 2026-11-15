@@ -3,6 +3,8 @@ import {
   ITEM_MAX_DURABILITY,
   ITEM_MODIFIERS,
   emptyEquipment,
+  modifierRankAt,
+  rankName,
   type Equipment,
   type ItemBase,
   type ItemInstance,
@@ -56,7 +58,10 @@ export function itemBase(baseId: string): ItemBase | undefined {
 /** The item's name with its modifiers in front, such as `Keen Bow`. */
 export function itemName(item: ItemInstance): string {
   const base = itemBase(item.baseId)?.name ?? item.baseId
-  const prefix = item.modifiers.map((id) => ITEM_MODIFIERS[id]?.name ?? id)
+  const prefix = item.modifiers.map((id, index) => {
+    const rank = modifierRankAt(item, index)
+    return `${ITEM_MODIFIERS[id]?.name ?? id}${rank > 1 ? ` ${rankName(rank)}` : ''}`
+  })
   const name = [...prefix, base].join(' ')
   return item.socketed === true && item.modifiers.length < 2 ? `${name} (open socket)` : name
 }

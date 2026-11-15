@@ -6,7 +6,7 @@ import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { contracts as contractTable, type ContractDef } from '../content/contracts.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { applyHeroUpdates } from './heroUpdates.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, rankable, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
@@ -90,6 +90,22 @@ export type CraftJob =
       slot?: EquipmentSlotId
       /** The second modifier the item gets. */
       modifierId: string
+      materialId: string
+      remainingMs: number
+      seedIndex: number
+      rank: number
+    }
+
+  | {
+      id: string
+      kind: 'rank'
+      heroId: string
+      item: ItemInstance
+      slot?: EquipmentSlotId
+      /** Which of the item's modifiers is raised: 0 is the first, 1 the socket. */
+      modifierIndex: number
+      /** The rank it reaches, 2 or 3. */
+      toRank: number
       materialId: string
       remainingMs: number
       seedIndex: number
@@ -345,13 +361,21 @@ function assertItem(value: unknown, label: string): asserts value is ItemInstanc
   check(value.socketed === undefined || typeof value.socketed === 'boolean', `${label} socket flag must be true or false`)
   check(value.modifiers.length <= MAX_ITEM_MODIFIERS, `${label} holds ${value.modifiers.length} modifiers, at most ${MAX_ITEM_MODIFIERS}`)
   check(new Set(value.modifiers).size === value.modifiers.length, `${label} holds the same modifier twice`)
+  if (value.modifierRanks !== undefined) {
+    check(Array.isArray(value.modifierRanks) && value.modifierRanks.length <= value.modifiers.length, `${label} has more modifier ranks than modifiers`)
+    value.modifierRanks.forEach((rank: unknown, index: number) => {
+      check(typeof rank === 'number' && Number.isInteger(rank) && rank >= 1 && rank <= MODIFIER_RANK_MAX, `${label} modifier rank must be a whole number from 1 to ${MODIFIER_RANK_MAX}`)
+      const modifier = ITEM_MODIFIERS[(value.modifiers as string[])[index] ?? '']
+      check(rank === 1 || (modifier !== undefined && rankable(modifier)), `${label} has a rank on a modifier that cannot be ranked`)
+    })
+  }
   check(value.modifiers.length < 2 || value.socketed === true, `${label} has a second modifier but no socket`)
 }
 
 function assertJob(value: unknown): asserts value is CraftJob {
   check(isRecord(value), 'craft job must be an object')
   check(typeof value.id === 'string' && value.id.length > 0, 'craft job is missing an id')
-  check(['craft', 'upgrade', 'socket', 'infuse'].includes(String(value.kind)), 'craft job kind must be craft, upgrade, socket or infuse')
+  check(['craft', 'upgrade', 'socket', 'infuse', 'rank'].includes(String(value.kind)), 'craft job kind must be craft, upgrade, socket, infuse or rank')
   check(typeof value.heroId === 'string', 'craft job is missing a hero')
   check(typeof value.materialId === 'string', 'craft job is missing a material')
   whole(value.remainingMs, 'craft job time')
@@ -369,6 +393,11 @@ function assertJob(value: unknown): asserts value is CraftJob {
     )
     check(value.chained === undefined || value.chained === true, 'craft job chained flag must be true or absent')
     if (value.kind === 'infuse') check(typeof value.modifierId === 'string' && ITEM_MODIFIERS[value.modifierId] !== undefined, 'infuse job has an unknown modifier')
+    if (value.kind === 'rank') {
+      whole(value.modifierIndex, 'rank job modifier slot')
+      check(value.modifierIndex < MAX_ITEM_MODIFIERS && value.modifierIndex < (value.item as ItemInstance).modifiers.length, 'rank job names a modifier the item does not have')
+      check(value.toRank === 2 || value.toRank === 3, 'rank job must go to rank 2 or 3')
+    }
     check(value.kind === 'upgrade' || value.chained === undefined, 'only an upgrade job can be chained')
   }
 }

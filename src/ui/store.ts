@@ -8,7 +8,7 @@ import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarn
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { trainHero } from '../persist/training.ts'
-import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueInfuse, queueSocket, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
+import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueInfuse, queueRankUp, queueSocket, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
@@ -959,6 +959,12 @@ export function queueInfuseFromUi(itemId: string, modifierId: string, materialId
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   return applyTown(queueInfuse(saveStatus.save, hero.id, itemId, modifierId, materialId), 'infuse queued')
+}
+
+export function queueRankUpFromUi(itemId: string, index: number, materialId: string): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(queueRankUp(saveStatus.save, hero.id, itemId, index, materialId), 'rank up queued')
 }
 
 export function buyRecipeFromUi(modifierId: string): string | null {

@@ -36,6 +36,8 @@ export type ItemInstance = {
   modifiers: string[]
   /** True once a socket was opened (Step 13.10): the item can then hold a second modifier. Absent means no socket. */
   socketed?: boolean
+  /** The rank (1 to 3) of each modifier, in the order of `modifiers` (Step 13.10 part 4). Absent means every one is rank I. */
+  modifierRanks?: number[]
   /** Set on a hero's heirloom: its level follows that hero's level, up to `cap`. Only that hero can use it. */
   heirloom?: { heroId: string; cap: number }
 }
@@ -306,6 +308,44 @@ export type ModifierRequirement = { discoveryId: string } | { enemyId: string }
 /** The same modifier counts at most this many times across equipped gear (GAME_DESIGN §8, Batch C). */
 export const MODIFIER_STACK_CAP = 2
 
+/** Modifier ranks I to III. A rank multiplies the numeric bonuses of its modifier (GAME_DESIGN §9, "Gold sinks"). */
+export const MODIFIER_RANK_MAX = 3
+export const MODIFIER_RANK_MULTIPLIER: readonly number[] = [1, 1, 1.2, 1.4]
+const ROMAN = ['', 'I', 'II', 'III']
+
+/** `I`, `II` or `III`. */
+export function rankName(rank: number): string {
+  return ROMAN[rank] ?? String(rank)
+}
+
+/** The rank of the modifier in this slot of the item: 1 when no rank is stored. */
+export function modifierRankAt(item: ItemInstance, index: number): number {
+  return item.modifierRanks?.[index] ?? 1
+}
+
+/** Flat point bonuses keep one decimal when scaled; every other bonus is a fraction and keeps four. */
+const FLAT_BONUS_KEYS: readonly string[] = ['accuracyBonus', 'evasionBonus', 'equipmentHealingPower', 'magicalStatusResistanceBonus']
+
+/** One bonus value at a rank. Rank I (and anything unknown) returns the value untouched. */
+export function scaledBonus(key: string, value: number, rank: number): number {
+  const factor = MODIFIER_RANK_MULTIPLIER[rank]
+  if (rank <= 1 || factor === undefined) return value
+  const digits = FLAT_BONUS_KEYS.includes(key) ? 10 : 10_000
+  return Math.round(value * factor * digits) / digits
+}
+
+/** Whether a modifier has numeric bonuses a rank can raise (Hauler's has only bag room, so it has none). */
+export function rankable(modifier: ItemModifier): boolean {
+  return Object.keys(modifier.bonus).length > 0
+}
+
+/** The modifier's effect line at a rank: every number in the rank I text scaled and rounded to one decimal. */
+export function modifierTextAt(modifier: ItemModifier, rank: number): string {
+  const factor = MODIFIER_RANK_MULTIPLIER[rank]
+  if (rank <= 1 || factor === undefined) return modifier.text
+  return modifier.text.replace(/\d+(\.\d+)?/g, (digits) => String(Math.round(Number(digits) * factor * 10) / 10))
+}
+
 /** An item holds one modifier, or two once it has a socket (GAME_DESIGN §9, "Gold sinks"). */
 export const MAX_ITEM_MODIFIERS = 2
 
@@ -486,13 +526,16 @@ export function statBonusesFor(equipment: Equipment): StatBonuses {
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = equipment[slot]
     if (item === null) continue
-    for (const id of item.modifiers) {
+    for (let index = 0; index < item.modifiers.length; index += 1) {
+      const id = item.modifiers[index] ?? ''
       const modifier = ITEM_MODIFIERS[id]
       if (modifier === undefined) continue
       seen[id] = (seen[id] ?? 0) + 1
       if (seen[id] > MODIFIER_STACK_CAP) continue
+      const rank = modifierRankAt(item, index)
       for (const key of Object.keys(modifier.bonus) as (keyof StatBonuses)[]) {
-        total[key] = (total[key] ?? 0) + (modifier.bonus[key] ?? 0)
+        const value = modifier.bonus[key] ?? 0
+        total[key] = (total[key] ?? 0) + (rank > 1 ? scaledBonus(key, value, rank) : value)
       }
     }
   }

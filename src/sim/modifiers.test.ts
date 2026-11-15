@@ -9,6 +9,10 @@ import {
   modifierCapNotes,
   modifierCounts,
   modifierFits,
+  modifierTextAt,
+  rankName,
+  rankable,
+  scaledBonus,
   statBonusesFor,
   type Equipment,
   type EquipmentSlotId,
@@ -302,5 +306,56 @@ describe('two modifiers on one item (the second socket)', () => {
     const base = (id: string) => (id === 'x' ? sword : undefined)
     const socketed: ItemInstance = { ...item('i', ['keen', 'sturdy']), baseId: 'x', socketed: true }
     expect(equipBlock(emptyEquipment(), socketed, 'mainHand', 5, base)).toBe('Sturdy needs level 6. This hero is level 5.')
+  })
+})
+
+describe('modifier ranks', () => {
+  function ranked(slots: Partial<{ [slot in EquipmentSlotId]: { modifiers: string[]; ranks?: number[] } }>): Equipment {
+    const equipment = worn({})
+    for (const slot of Object.keys(slots) as EquipmentSlotId[]) {
+      const entry = slots[slot]
+      if (entry === undefined) continue
+      equipment[slot] = { ...item(slot, entry.modifiers), socketed: true, ...(entry.ranks === undefined ? {} : { modifierRanks: entry.ranks }) }
+    }
+    return equipment
+  }
+
+  it('leaves rank I untouched: an absent list and a list of ones give exactly the old numbers', () => {
+    const plain = statBonusesFor(worn({ mainHand: ['keen'], chest: ['sturdy'], accessory0: ['bloodbound'] }))
+    expect(statBonusesFor(ranked({ mainHand: { modifiers: ['keen'] }, chest: { modifiers: ['sturdy'], ranks: [1] }, accessory0: { modifiers: ['bloodbound'], ranks: [1] } }))).toEqual(plain)
+  })
+
+  it('scales the numbers by 1.2 and 1.4 with the decided rounding', () => {
+    expect(scaledBonus('critChanceBonus', 0.02, 2)).toBe(0.024)
+    expect(scaledBonus('critChanceBonus', 0.02, 3)).toBe(0.028)
+    expect(scaledBonus('accuracyBonus', 3, 2)).toBe(3.6)
+    expect(scaledBonus('accuracyBonus', 3, 3)).toBe(4.2)
+    expect(scaledBonus('equipmentHealingPower', 12, 3)).toBe(16.8)
+    expect(scaledBonus('lifestealFraction', 0.05, 2)).toBe(0.06)
+    expect(scaledBonus('lifestealFraction', 0.05, 3)).toBe(0.07)
+    expect(scaledBonus('maxHpBonus', 0.04, 1)).toBe(0.04)
+    const bonus = statBonusesFor(ranked({ mainHand: { modifiers: ['keen', 'precise'], ranks: [2, 3] } }))
+    expect(bonus.critChanceBonus).toBe(0.024)
+    expect(bonus.accuracyBonus).toBe(4.2)
+  })
+
+  it('counts the stack cap in modifiers, not ranks, in slot order', () => {
+    const equipment = ranked({
+      mainHand: { modifiers: ['keen'], ranks: [3] },
+      accessory0: { modifiers: ['keen'], ranks: [1] },
+      accessory1: { modifiers: ['keen'], ranks: [3] },
+    })
+    // Slot order is mainHand, accessory0, accessory1: the third piece is over the cap whatever its rank.
+    expect(statBonusesFor(equipment).critChanceBonus).toBeCloseTo(0.028 + 0.02, 10)
+    expect(modifierCapNotes(equipment)).toEqual(['Keen is on 3 pieces, but only 2 count.'])
+  })
+
+  it('writes the effect text at a rank and knows that Hauler cannot be ranked', () => {
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 1)).toBe('+2 points critical chance')
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 2)).toBe('+2.4 points critical chance')
+    expect(modifierTextAt(ITEM_MODIFIERS.kindled!, 3)).toBe('+7% maximum HP, +11.2 Healing Power')
+    expect(rankable(ITEM_MODIFIERS.hauler!)).toBe(false)
+    expect(rankable(ITEM_MODIFIERS.keen!)).toBe(true)
+    expect(rankName(3)).toBe('III')
   })
 })

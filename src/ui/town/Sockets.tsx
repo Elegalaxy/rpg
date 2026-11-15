@@ -16,7 +16,7 @@ import {
   socketTargets,
 } from '../../persist/crafting.ts'
 import { purseOf } from '../../persist/save.ts'
-import { ITEM_MODIFIERS, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { ITEM_MODIFIERS, modifierFits, modifierRankAt, rankName, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
@@ -38,7 +38,10 @@ const SLOT_NAMES: { [slot in EquipmentSlotId]: string } = {
 
 /** The modifier names on an item, then an empty socket when there is room for a second one. */
 function modifierLine(item: ItemInstance): string {
-  const names = item.modifiers.map((id) => ITEM_MODIFIERS[id]?.name ?? id)
+  const names = item.modifiers.map((id, index) => {
+    const rank = modifierRankAt(item, index)
+    return `${ITEM_MODIFIERS[id]?.name ?? id}${rank > 1 ? ` ${rankName(rank)}` : ''}`
+  })
   if (item.socketed === true && names.length < 2) names.push('empty socket')
   return names.length === 0 ? 'None' : names.join(' + ')
 }

@@ -2,7 +2,7 @@ import { enemies } from '../content/enemies.ts'
 import { itemBase, itemName } from '../content/items.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { nodes } from '../content/world.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, appliesToText, modifierRankAt, rankName, rankable, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { selectedHero } from './character.ts'
@@ -28,6 +28,10 @@ export const SOCKET_GOLD_PER_LEVEL = 40
 export const SOCKET_MATERIAL_COST = 8
 /** The materials a socket can be paid with. */
 export const SOCKET_MATERIALS: readonly string[] = ['riftglass', 'duskiron', 'cinderite']
+/** Gold per level the modifier needs, to reach rank II and rank III (GAME_DESIGN section 9). */
+export const RANK_GOLD_PER_LEVEL: { readonly [toRank: number]: number } = { 2: 30, 3: 60 }
+/** Units of material a rank-up costs: any material for II, a rare one (`SOCKET_MATERIALS`) for III. */
+export const RANK_MATERIAL_COST: { readonly [toRank: number]: number } = { 2: 6, 3: 10 }
 /** Gold per item level to infuse a second modifier. */
 export const INFUSE_GOLD_PER_LEVEL = 10
 /** Units of any material an infuse job costs. */
@@ -419,7 +423,7 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       notice: { jobId: job.id, baseId: job.baseId, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
-  if (job.kind === 'socket' || job.kind === 'infuse') {
+  if (job.kind === 'socket' || job.kind === 'infuse' || job.kind === 'rank') {
     const result = afterItemJob(job)
     const owner = heroes.find((entry) => entry.id === job.heroId)
     const slot = job.slot
@@ -428,7 +432,12 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       back && slot !== undefined
         ? heroes.map((entry) => (entry.id === job.heroId ? { ...entry, equipment: { ...entry.equipment, [slot]: result } } : entry))
         : keep(result)
-    const text = job.kind === 'socket' ? `${itemName(job.item)} now has a socket.` : `${itemName(job.item)} was infused: ${itemName(result)}.`
+    const text =
+      job.kind === 'socket'
+        ? `${itemName(job.item)} now has a socket.`
+        : job.kind === 'infuse'
+          ? `${itemName(job.item)} was infused: ${itemName(result)}.`
+          : `${itemName(job.item)} was ranked up: ${itemName(result)}.`
     return { save: { ...save, heroes: placed }, notice: { jobId: job.id, baseId: job.item.baseId, text } }
   }
   const returned = afterUpgrade(job)
@@ -516,6 +525,40 @@ export function infuseCheck(save: SaveData, hero: SavedHero, item: ItemInstance 
   return spend(hero.purse, materialId, INFUSE_MATERIAL_COST, infuseGold(item.itemLevel))
 }
 
+/** The gold a rank-up to this rank costs for this modifier: its minimum level times 30 (II) or 60 (III). */
+export function rankGold(modifierId: string, toRank: number): number {
+  return (ITEM_MODIFIERS[modifierId]?.minLevel ?? 1) * (RANK_GOLD_PER_LEVEL[toRank] ?? 0)
+}
+
+/** The materials a rank-up to this rank accepts. */
+export function rankMaterials(toRank: number): string[] {
+  return toRank >= 3 ? [...SOCKET_MATERIALS] : materialIds()
+}
+
+/** Why the modifier in this slot of the item cannot be raised one rank with this material, or null. */
+export function rankCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, index: number, materialId: string): string | null {
+  const shut = closed(save)
+  if (shut !== null) return shut
+  if (item === undefined) return 'That item is not in the archive or worn by this hero.'
+  const id = item.modifiers[index]
+  const modifier = id === undefined ? undefined : ITEM_MODIFIERS[id]
+  if (id === undefined || modifier === undefined) return `${itemName(item)} has no modifier in that slot.`
+  if (!rankable(modifier)) return `${modifier.name} has no number a rank could raise.`
+  const current = modifierRankAt(item, index)
+  if (current >= MODIFIER_RANK_MAX) return `${modifier.name} is already rank ${rankName(MODIFIER_RANK_MAX)}.`
+  if (hero.progress.level < modifier.minLevel) return `${modifier.name} needs level ${modifier.minLevel}. This hero is level ${hero.progress.level}.`
+  const toRank = current + 1
+  if (!rankMaterials(toRank).includes(materialId)) return toRank >= 3 ? 'Rank III needs riftglass, duskiron or cinderite.' : pickMaterialText()
+  return spend(hero.purse, materialId, RANK_MATERIAL_COST[toRank] ?? 0, rankGold(id, toRank))
+}
+
+/** The item with its modifier ranks replaced. A list of only rank I is dropped, so unranked items stay as they were. */
+function withRanks(item: ItemInstance, ranks: number[]): ItemInstance {
+  const { modifierRanks: _old, ...rest } = item
+  const filled = item.modifiers.map((_id, index) => ranks[index] ?? 1)
+  return filled.every((rank) => rank === 1) ? rest : { ...rest, modifierRanks: filled }
+}
+
 type JobItem = { item: ItemInstance; slot: EquipmentSlotId | null }
 
 /** The item a socket or infuse job works on: from the archive, or worn by the hero. Null when it is neither. */
@@ -583,10 +626,41 @@ export function queueInfuse(save: SaveData, heroId: string, itemId: string, modi
   return queueItemJob(save, hero, found, job, materialId, INFUSE_MATERIAL_COST, infuseGold(found.item.itemLevel))
 }
 
-/** The item a finished socket or infuse job hands back. */
-function afterItemJob(job: Extract<CraftJob, { kind: 'socket' | 'infuse' }>): ItemInstance {
+/** Pay for a Rank up job (one modifier, one rank) and queue it. */
+export function queueRankUp(save: SaveData, heroId: string, itemId: string, index: number, materialId: string): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  const found = jobItem(hero, itemId)
+  const problem = rankCheck(save, hero, found?.item, index, materialId)
+  if (problem !== null || found === null) return { ok: false, reason: problem ?? 'That item is not in the archive or worn by this hero.' }
+  const toRank = modifierRankAt(found.item, index) + 1
+  const job: CraftJob = {
+    id: nextJobId(hero.purse),
+    kind: 'rank',
+    heroId,
+    item: found.item,
+    ...(found.slot === null ? {} : { slot: found.slot }),
+    modifierIndex: index,
+    toRank,
+    materialId,
+    remainingMs: CRAFT_MS,
+    seedIndex: hero.purse.craftCounter,
+    rank: proficiencyRank(hero.craftXp),
+  }
+  return queueItemJob(save, hero, found, job, materialId, RANK_MATERIAL_COST[toRank] ?? 0, rankGold(found.item.modifiers[index] ?? '', toRank))
+}
+
+/** The item a finished socket, infuse or rank job hands back. */
+function afterItemJob(job: Extract<CraftJob, { kind: 'socket' | 'infuse' | 'rank' }>): ItemInstance {
   if (job.kind === 'socket') return { ...job.item, socketed: true }
-  return { ...job.item, socketed: true, modifiers: [job.item.modifiers[0] ?? job.modifierId, job.modifierId].slice(0, MAX_ITEM_MODIFIERS) }
+  if (job.kind === 'rank') {
+    const ranks = job.item.modifiers.map((_id, index) => modifierRankAt(job.item, index))
+    ranks[job.modifierIndex] = job.toRank
+    return withRanks(job.item, ranks)
+  }
+  const infused: ItemInstance = { ...job.item, socketed: true, modifiers: [job.item.modifiers[0] ?? job.modifierId, job.modifierId].slice(0, MAX_ITEM_MODIFIERS) }
+  // The new second modifier starts at rank I.
+  return withRanks(infused, [modifierRankAt(job.item, 0), 1])
 }
 
 /** True when any hero has a job queued. */

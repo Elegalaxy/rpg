@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
 
+- New: modifier ranks: raise a modifier on a worn or stored item from rank I to II (+20%) or III (+40%) in the crafting queue for gold by the modifier's level and materials; rank III takes riftglass, duskiron or cinderite (Step 13.10, part 4).
 - New: open a socket on a worn or stored item at hero level 10 (item level x 40 gold and 8 riftglass, duskiron or cinderite), then Infuse a second, different modifier (item level x 10 gold and 6 materials); both take 30 seconds in the crafting queue and both modifiers count (Step 13.10, part 3).
 - New: a Trainer in Greyhaven sells up to three drills per level, each worth a tenth of the level's XP for level x 40 gold, then x 80, then x 120 (Step 13.10, part 2).
 - Balance: the rest after a defeat is 30 seconds instead of 5 minutes, since the rescue fee, lost loot and durability loss already cost enough (Step 13.9, defeat rest).
