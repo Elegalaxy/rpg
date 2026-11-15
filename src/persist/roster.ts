@@ -90,6 +90,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     repeatRoute: true,
     repeatLimit: 0,
     stopAfterFights: null,
+    drillsThisLevel: 0,
     bagFullOrder: DEFAULT_BAG_FULL_ORDER,
     awayRouteId: null,
     awayRun: null,

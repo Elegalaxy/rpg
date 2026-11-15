@@ -7,6 +7,7 @@ import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../pers
 import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
+import { trainHero } from '../persist/training.ts'
 import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
@@ -940,6 +941,12 @@ export function queueCraftFromUi(request: CraftRequest): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   return applyTown(queueCraft(saveStatus.save, hero.id, request), 'craft queued')
+}
+
+export function trainHeroFromUi(): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(trainHero(saveStatus.save, hero.id), 'trained hero')
 }
 
 export function buyRecipeFromUi(modifierId: string): string | null {

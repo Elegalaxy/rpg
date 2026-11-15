@@ -27,6 +27,8 @@ export const DEFAULT_PUSH_ON_PERCENT = 50
 export type BagFullOrder = 'home' | 'ask'
 export const BAG_FULL_ORDERS: readonly BagFullOrder[] = ['home', 'ask']
 /** The run limits the preparation offers. 0 is no limit. */
+/** Trainer drills a hero can buy within one level (GAME_DESIGN §9, "Gold sinks"). */
+export const MAX_DRILLS_PER_LEVEL = 3
 export const REPEAT_LIMITS: readonly number[] = [0, 1, 3, 5, 10, 25]
 export const DEFAULT_BAG_FULL_ORDER: BagFullOrder = 'home'
 /** The usual retreat threshold: 40% of maximum HP. */
@@ -189,6 +191,8 @@ export type SavedHero = {
   repeatLimit: number
   /** Standing order: after this many fights in one run (1 to 99) the hero walks home instead of pushing on. Null is no limit. */
   stopAfterFights: number | null
+  /** Trainer drills bought at the current level (0 to 3). Back to 0 whenever the level rises. */
+  drillsThisLevel: number
   /** Standing order while away: when fewer than 4 bag room is free, walk home (`home`) or hold for the player (`ask`). */
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the hero has no run as the player leaves. Null never starts one. */
@@ -423,6 +427,10 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     value.stopAfterFights === null || (typeof value.stopAfterFights === 'number' && Number.isInteger(value.stopAfterFights) && value.stopAfterFights >= 1 && value.stopAfterFights <= 99),
     `${label} stop-after-fights must be a whole number from 1 to 99, or null`,
   )
+  check(
+    typeof value.drillsThisLevel === 'number' && Number.isInteger(value.drillsThisLevel) && value.drillsThisLevel >= 0 && value.drillsThisLevel <= MAX_DRILLS_PER_LEVEL,
+    `${label} drills this level must be a whole number from 0 to ${MAX_DRILLS_PER_LEVEL}`,
+  )
   check(value.bagFullOrder === 'home' || value.bagFullOrder === 'ask', `${label} bag-full order must be home or ask`)
   check(value.awayRouteId === null || typeof value.awayRouteId === 'string', `${label} away route must be a route id or null`)
   check(isRecord(value.routeReturns), `${label} route returns must be an object`)
@@ -544,6 +552,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.repeatRoute === undefined) hero.repeatRoute = true
     if (hero.repeatLimit === undefined) hero.repeatLimit = 0
     if (hero.stopAfterFights === undefined) hero.stopAfterFights = null
+    if (hero.drillsThisLevel === undefined) hero.drillsThisLevel = 0
     if (hero.bagFullOrder === undefined) hero.bagFullOrder = DEFAULT_BAG_FULL_ORDER
     if (hero.awayRouteId === undefined) hero.awayRouteId = null
     if (hero.awayRun === undefined) hero.awayRun = null

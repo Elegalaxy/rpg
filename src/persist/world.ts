@@ -18,11 +18,11 @@ import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { packFromStash } from './preparation.ts'
 import { itemBase } from '../content/items.ts'
-import { awardXp } from '../sim/progression.ts'
 import { EQUIPMENT_SLOT_IDS, applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress, refreshBoard } from './contracts.ts'
 import { defeatRecordId } from './crafting.ts'
 import { scaleHeirlooms } from './reincarnation.ts'
+import { withXp } from './training.ts'
 import { purseOf, reachMilestone, updatePurse, type SaveData, type SavedHero } from './save.ts'
 
 export type NodeState = 'locked' | 'discovered' | 'cleared'
@@ -379,7 +379,7 @@ export function settleExpedition(save: SaveData, now: number | null = null): Sav
       ? {
           ...hero,
           equipment: applyDurability(hero.equipment, expedition.equipment),
-          progress: awardXp(hero.progress, expedition.xpEarned ?? 0),
+          ...withXp(hero, expedition.xpEarned ?? 0),
           ...unlockedRanks(hero, expedition),
           bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
           ...(expedition.outcome === 'defeat' && now !== null && expedition.recoveryMs > 0 ? { recoveryUntil: now + expedition.recoveryMs } : {}),

@@ -1158,9 +1158,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.9
 - Goal: gold and materials turn into power, and the grind gets shorter (rules in GAME_DESIGN §9 "Gold sinks"). No sim change except part 4.
 - Parts: (1) docs only. (2) Trainer drills: `drillsThisLevel` on `SavedHero`, `trainHero` in persist, a Trainer place in Town. (3) Second modifier socket: `MAX_ITEM_MODIFIERS`, `ItemInstance.socketed`, queued Open socket and Infuse jobs, Infuse panel in Craft, save validation. (4) Modifier ranks (touches `src/sim/economy.ts`; rank I must change nothing; stop after part 3 if the guards cannot stay byte-identical).
-- Part 1 status: `done`. Part 2: `todo`. Part 3: `todo`. Part 4: `todo`.
+- Part 1 status: `done`. Part 2: `done`. Part 3: `todo`. Part 4: `todo`.
 - Progress:
   - 2026-11-16: Part 1 done. Rules written in GAME_DESIGN §9 "Gold sinks: trainer, sockets, ranks"; the Batch C "one modifier per item" lines in §8 and the Rift Hollows table note point to the socket rule. No max hero level exists, so the drill's max-level refusal is not built.
+  - 2026-11-16: Part 2 done. `src/persist/training.ts` (`trainHero`, `trainCheck`, `drillInfo`, `drillXp`, `drillPrice`, `withXp`), `SavedHero.drillsThisLevel` (old saves load with 0, no version bump, validated in `assertHero`, `MAX_DRILLS_PER_LEVEL` in `save.ts`), `withXp` replaces the direct `awardXp` in the run settle (`world.ts`) and contract payout (`contracts.ts`) so any level-up resets the count; reincarnation resets it. New Trainer place in `content/places.ts` and `Trainer` in `ui/town/Town.tsx` (key-value row, disabled button with the reason shown under it). Drill XP is `round(10%)`: 351 at level 17. Browser: Trainer shows the refusal during a run at 800 and 375 px; a real drill was not clicked (the only hero was on an expedition).
 
 ## 8. Risks, and what would reveal them early
 

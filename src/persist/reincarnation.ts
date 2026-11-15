@@ -184,6 +184,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     echoRank: 0,
     fightRank: 0,
     bossLossThisLife: false,
+    drillsThisLevel: 0,
     legacy: hero.legacy + preview.total,
     lives,
     claimedBonuses: [...hero.claimedBonuses, ...preview.bonuses.map((bonus) => bonus.id)],

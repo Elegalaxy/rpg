@@ -3,7 +3,7 @@ import type { ItemBase } from '../sim/economy.ts'
 import { itemBase } from './items.ts'
 
 /** Greyhaven's places. Each gear shop buys, sells, repairs, crafts, and upgrades only its own kind of item. */
-export type PlaceId = 'weaponsmith' | 'armorer' | 'jeweler' | 'potion-shop' | 'trading-post' | 'enchanter' | 'contract-board' | 'bank'
+export type PlaceId = 'weaponsmith' | 'armorer' | 'jeweler' | 'potion-shop' | 'trading-post' | 'trainer' | 'enchanter' | 'contract-board' | 'bank'
 
 export type PlaceDef = {
   id: PlaceId
@@ -20,6 +20,7 @@ export const PLACES: readonly PlaceDef[] = [
   { id: 'jeweler', name: 'Jeweler', blurb: 'Rings and charms: buy, sell, repair, craft, and upgrade.', gear: ['accessory'] },
   { id: 'potion-shop', name: 'Potion Shop', blurb: 'Potions, antidotes, and smoke for the road.' },
   { id: 'trading-post', name: 'Trading Post', blurb: 'Sells your materials for gold.' },
+  { id: 'trainer', name: 'Trainer', blurb: 'Paid drills that give a part of the next level, up to three a level.' },
   { id: 'enchanter', name: 'Enchanter', blurb: 'Teaches modifier recipes. A recipe is learned once for every hero.' },
   { id: 'contract-board', name: 'Contract Board', blurb: 'Work for the town, paid on completion.' },
   { id: 'bank', name: 'Bank', blurb: 'Settle the debts left by rescues.' },

@@ -30,6 +30,7 @@ const LATER_HERO_FIELDS = [
   'bagFullOrder',
   'repeatLimit',
   'stopAfterFights',
+  'drillsThisLevel',
   'awayRun',
   'routeReturns',
   'updates',
@@ -82,6 +83,7 @@ describe('a save from the first version of the game', () => {
       repeatRoute: true,
       bagFullOrder: 'home',
       repeatLimit: 0,
+      drillsThisLevel: 0,
       awayRun: null,
       routeReturns: {},
     })

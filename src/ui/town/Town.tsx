@@ -7,7 +7,8 @@ import { materialSources } from '../../content/materialSources.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { recipePrice, recipesForSale, supplyLock } from '../../persist/crafting.ts'
-import { purseOf, type SaveData } from '../../persist/save.ts'
+import { MAX_DRILLS_PER_LEVEL, purseOf, type SaveData } from '../../persist/save.ts'
+import { drillInfo, trainCheck } from '../../persist/training.ts'
 import { previewEquip, wearerOf } from '../../persist/equipment.ts'
 import { previewBuy, repairAllCost } from '../../persist/town.ts'
 import { GearChanges } from './GearChanges.tsx'
@@ -29,6 +30,7 @@ import {
   repairOneFromUi,
   sellItemFromUi,
   sellMaterialFromUi,
+  trainHeroFromUi,
   useSaveStatus,
 } from '../store.ts'
 import { Contracts } from './Contracts.tsx'
@@ -417,6 +419,48 @@ function Enchanter() {
   )
 }
 
+/** The Trainer: up to three paid drills a level, each a tenth of the level's XP. */
+function Trainer() {
+  const { save } = useSaveStatus()
+  const { run, messages } = useMessages()
+  const hero = selectedHero(save)
+  if (hero === null) return <p>Select a hero to train.</p>
+  const info = drillInfo(hero)
+  const refusal = trainCheck(save, hero)
+  const level = hero.progress.level
+  return (
+    <>
+      <KpiRow label="Next drill">
+        <Kpi compact label="XP gained" value={<span data-testid="drill-xp">+{info.xp}</span>} />
+        <Kpi compact tone="gold" label="Price" value={<span data-testid="drill-price">{info.left === 0 ? '-' : info.price}</span>} />
+        <Kpi compact label="Drills left" value={<span data-testid="drill-left">{info.left} of {MAX_DRILLS_PER_LEVEL}</span>} />
+        <Kpi compact label="Level" value={level} />
+      </KpiRow>
+      <button
+        type="button"
+        className="btn-primary"
+        disabled={refusal !== null}
+        aria-describedby={refusal === null ? undefined : 'drill-why'}
+        onClick={() => run(trainHeroFromUi(), `Drilled for ${info.xp} XP.`)}
+      >
+        Drill <Tag kind="gold">{info.left === 0 ? 'none left' : `${info.price} gold`}</Tag>
+      </button>
+      {refusal === null ? null : (
+        <p id="drill-why" data-testid="drill-why" className="muted">
+          {refusal}
+        </p>
+      )}
+      <p>
+        <Help label="About drills">
+          A drill gives a tenth of the XP this level needs. The first costs {level * 40} gold, the second {level * 80} and the third {level * 120}; the count starts again at every level.
+          Skill and attribute points arrive as with any XP.
+        </Help>
+      </p>
+      {messages}
+    </>
+  )
+}
+
 function Bank() {
   const { save } = useSaveStatus()
   const { run, messages } = useMessages()
@@ -467,6 +511,7 @@ export function Town({ place: id }: { place: PlaceId }) {
       {place.gear !== undefined ? <GearShop place={place} /> : null}
       {id === 'potion-shop' ? <PotionShop /> : null}
       {id === 'trading-post' ? <TradingPost /> : null}
+      {id === 'trainer' ? <Trainer /> : null}
       {id === 'enchanter' ? <Enchanter /> : null}
       {id === 'contract-board' ? <Contracts /> : null}
       {id === 'bank' ? <Bank /> : null}

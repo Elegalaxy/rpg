@@ -2,11 +2,11 @@ import { encounters } from '../content/encounters.ts'
 import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
 import { nodes, routes } from '../content/world.ts'
 import type { ExpeditionState } from '../sim/expedition.ts'
-import { awardXp } from '../sim/progression.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { scaleHeirlooms } from './reincarnation.ts'
 import type { RosterResult } from './roster.ts'
+import { withXp } from './training.ts'
 import { contractFor, purseOf, updatePurse, type ActiveContract, type SaveData, type SavedHero } from './save.ts'
 
 /** Base seed for contract rolls. Each hero and roll index derives its own stream from it. */
@@ -116,7 +116,7 @@ export function collectContract(save: SaveData, heroId: string, contractId: stri
   const collected = scaleHeirlooms(
     {
       ...save,
-      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, progress: awardXp(entry.progress, reward.xp), purse: paid } : entry)),
+      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, ...withXp(entry, reward.xp), purse: paid } : entry)),
     },
     heroId,
   )

@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
 
+- New: a Trainer in Greyhaven sells up to three drills per level, each worth a tenth of the level's XP for level x 40 gold, then x 80, then x 120 (Step 13.10, part 2).
 - Balance: the rest after a defeat is 30 seconds instead of 5 minutes, since the rescue fee, lost loot and durability loss already cost enough (Step 13.9, defeat rest).
 - Improved: the run dock shows the fight number (with your fight limit when set), the fight's name and its enemies, or the last fight's name and result between fights (Step 13.9, dock).
 - New: a "Stop after fights" standing order: after that many fights in one run the hero walks home and secures the loot instead of pushing on, live or while away; the run bar shows "Fight 3 / 10" (Step 13.9, part 2).
