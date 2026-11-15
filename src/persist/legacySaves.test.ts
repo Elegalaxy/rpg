@@ -29,6 +29,7 @@ const LATER_HERO_FIELDS = [
   'repeatRoute',
   'bagFullOrder',
   'repeatLimit',
+  'stopAfterFights',
   'awayRun',
   'routeReturns',
   'updates',

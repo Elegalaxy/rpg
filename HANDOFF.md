@@ -1,16 +1,14 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code (2026-11-15)
-- **Current Goal:** Step 13.8 Rule stacks is done (parts 1-4). Step 13.7 playtest fixes (feedback of 2026-11-11) are in. Next is the user's playtest, then closing 13.7/13.8 into a 0.x.0 changelog heading.
+- **Last Updated By:** Claude Code (2026-11-16)
+- **Current Goal:** Step 13.9 Run screen layout and fight limit is done (parts 1-2). Step 13.7/13.8 still wait for the user's playtest, then closing into a 0.x.0 changelog heading.
 - **Recent Changes & Files Touched:**
-  - Step 13.8 part 4: `src/ui/combat/StackBar.tsx` (bar, picker) and `stackSummary.ts` (`summarizeStack`), wired into `FightView.tsx` under the hero card and into `RunDock.tsx` (folded chip in a reserved line, unfolded picker). CSS under `rs-*` classes in `combat.css` and `runDock.css` (`.stack-bar` already belongs to the editor in `kit.css`). `pickStackFromUi` in `store.ts` now acts on the live run's fight when there is one. Tests in `fightControls.test.tsx` and `runDock.test.tsx`.
-  - Parts 1-3: sim `src/sim/stacks.ts`, save and persist, editor in `src/ui/character/Rules.tsx`.
-  - Craft modifier picker (eb071c5 + mobile row fix): radio list with each modifier's effect and unlock level in `src/ui/town/Craft.tsx` and `kit.css`; browser-checked at 1024 and 375 px.
+  - Part 1 (UI): `src/ui/map/ExpeditionPanel.tsx` Running panel split into `RunBar` (sticky: status, Push on, Return to town, Auto-escape), `FightArea` directly under it, `RunHeadline` (HP, Fights won, Loot bag, Carried gold) and `RunDetails` (collapsed `Collapsible`, banked/run gold, momentum, standing orders, Carrying/Safe pouch/Secured, Supplies). CSS `.run-bar` / `.run-area` at the end of `kit.css`. `Collapsible` got optional `persistKey` (localStorage, try/catch). Run dock is not shown on the Map, so no collision; the status header does not really stick, so the bar uses `top: 0`.
+  - Part 2: standing order "Stop after N fights". `SavedHero.stopAfterFights` (`number | null`, 1-99) in `save.ts`/`roster.ts`/`preparation.ts` (draft field optional); `fightLimitReached` in `world.ts`; offline `decideAtHold` (before the HP floor, `walkedHomeFights` in summary and `ordersLine`); live walk-home in `advanceExpedition` (`store.ts`); input next to Push on and "Fight n / N" in the bar. Rule in GAME_DESIGN (offline standing orders). Tests: `preparation.test.ts`, `offline.test.ts`, `src/ui/map/fightLimit.test.tsx`, runTruth bar test.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
-  - Guards stay byte-identical (reference CSV, warden, causeway, hollows, built, telegraph, elites, cinder).
-  - Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
-  - A stack pick takes effect at the next action and lasts until the fight ends or Auto; "Held" countdown is asked of `pickStack` at the moment the hold ends (no duplicated sim logic).
-- **Not verified:** stacks in a real 375 px browser fight (checked with injected markup only) and Auto release in the live UI (covered by tests); the Tyrant at Power 68 and Cinder Scar items; defeat-rest start refusal; Full / Nearly full note; contract pending line; shop bag-room line; keyboard focus ring; true HP regen rate; the 300-run reference matrix diff never completed.
-- **Exact Next Step:** (1) User playtest of rule stacks and of the Causeway, Hollows and Cinder Scar. (2) Optional harness `--matrix stacks` balance comparison. (3) After the playtest, close Step 13.7 and 13.8 into a `## 0.x.0 · date · name` changelog heading.
+  - One commit per finished part, pushed to `origin/main`, no force-push. Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
+  - Fight limit counts `history.length` of the current run; a repeat is a new run and counts from 0; a repeat still needs the route cleared.
+  - The sim (`src/sim`) was not touched; guards byte-identical.
+- **Not verified:** the live auto walk-home in a real browser fight (the pane's clock ran very slowly; covered by `fightLimit.test.tsx`); the 375 px bar (166 px tall, measured, no horizontal overflow) with a fight limit shown; plus earlier items: stacks in a real 375 px fight, Tyrant at Power 68, Cinder Scar items, defeat-rest start refusal, keyboard focus ring, true HP regen rate, 300-run matrix diff.
+- **Exact Next Step:** (1) User playtest of the sticky run bar, Run details and the fight limit, plus rule stacks, Causeway, Hollows, Cinder Scar. (2) After the playtest, close Steps 13.7, 13.8 and 13.9 into a `## 0.x.0 · date · name` changelog heading.

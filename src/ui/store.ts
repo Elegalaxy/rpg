@@ -13,7 +13,7 @@ import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
-import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold } from '../persist/world.ts'
+import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, fightLimitReached } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition } from '../sim/expedition.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
@@ -445,7 +445,12 @@ export function advanceExpedition(count: number): void {
   const fights = expedition.history.length
   const phase = expedition.phase
   for (let index = 0; index < count; index += 1) {
-    if (shouldHold(expedition, pushedAt)) break
+    if (shouldHold(expedition, pushedAt)) {
+      // The "Stop after N fights" order: the run walks home on its own instead of waiting for the player.
+      if (!fightLimitReached(expedition, selectedHero(saveStatus.save)?.stopAfterFights ?? null)) break
+      returnToTown(expedition)
+      debugLog('[ui]', 'fight limit reached, walking home', { fight: expedition.encounterIndex })
+    }
     const inFight = expedition.combat
     const before = expedition.history.length
     stepExpedition(expedition, defs)

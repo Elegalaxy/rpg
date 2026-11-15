@@ -15,6 +15,7 @@ import {
   finishOffline,
   offlineDone,
   replayMs,
+  ordersLine,
   runOffline,
   withView,
 } from './offline.ts'
@@ -174,6 +175,35 @@ describe('an expedition while away', () => {
     expect(away.summary.heroes[0]!.stopped).toBe('supplies')
     expect(away.summary.heroes[0]!.runs).toBe(1)
     expect(away.save.expedition).toBeNull()
+  })
+
+  describe('the fight limit', () => {
+    it('walks home after N fights, ahead of the push-on order, and says so', () => {
+      const away = runOffline(running(withHero(strongHero(), { repeatRoute: false, stopAfterFights: 2 })), 30 * MINUTE, true)
+      expect(away.save.expedition?.history).toHaveLength(2)
+      expect(away.save.expedition?.outcome).toBe('returned')
+      expect(away.summary.heroes[0]!.walkedHomeFights).toBe(1)
+      expect(ordersLine(away.summary.heroes[0]!)).toContain('because the fight limit was reached')
+    })
+
+    it('counts each repeated run from 0 again', () => {
+      const away = runOffline(running(withHero(strongHero(), { stopAfterFights: 2, repeatLimit: 3, clearedNodeIds: ['splintered-road'] })), 120 * MINUTE, true)
+      const hero = away.summary.heroes[0]!
+      expect(hero.runs).toBe(3)
+      expect(hero.stopped).toBe('runLimit')
+      expect(hero.fightsWon).toBe(6)
+      expect(hero.walkedHomeFights).toBe(3)
+    })
+
+    it('changes nothing when no limit is set, and gives the same result in uneven chunks', () => {
+      const free = runOffline(running(withHero(strongHero(), { repeatRoute: false })), 30 * MINUTE, true)
+      expect(free.save.expedition?.history).toHaveLength(6)
+      expect(free.summary.heroes[0]!.walkedHomeFights).toBeUndefined()
+      const limited = withHero(strongHero(), { repeatRoute: false, stopAfterFights: 2 })
+      const state = createOffline(running(limited), 30 * MINUTE, true)
+      while (!offlineDone(state)) advanceOffline(state, 777)
+      expect(finishOffline(state).save.expedition?.history).toHaveLength(2)
+    })
   })
 
   it('walks home at the push-on percent and keeps going above it', () => {

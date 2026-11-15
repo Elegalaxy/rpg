@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 
 import { selectedHero } from '../../persist/character.ts'
 import {
+  STOP_AFTER_MAX,
+  STOP_AFTER_MIN,
   RETREAT_MAX_PERCENT,
   RETREAT_MIN_PERCENT,
   canPickCurse,
@@ -187,6 +189,23 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </div>
         <div className="controls">
           <label>
+            Stop after fights{' '}
+            <input
+              aria-label="Stop after fights"
+              value={draft.stopAfterFights ?? ''}
+              inputMode="numeric"
+              size={4}
+              placeholder="No limit"
+              onChange={(event) => patch({ stopAfterFights: event.target.value })}
+            />
+          </label>
+          <Help label="About the fight limit">
+            {STOP_AFTER_MIN} to {STOP_AFTER_MAX}. Empty means no limit. After this many fights in one run the hero walks home and secures the loot instead of pushing on. It also
+            applies while you watch. A repeated run starts counting again.
+          </Help>
+        </div>
+        <div className="controls">
+          <label>
             Start a run when I leave{' '}
             <select aria-label="Away route" value={draft.awayRouteId} onChange={(event) => patch({ awayRouteId: event.target.value })}>
               <option value="">Never (only continue a run I started)</option>
@@ -238,6 +257,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             ? 'If you have no run when you leave, nothing starts. If a run is out, after each fight'
             : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}. After each fight`}{' '} the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
           and the bag is not nearly full, otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
+          {(draft.stopAfterFights ?? '').trim() === '' ? '' : `A run walks home after ${draft.stopAfterFights?.trim()} fights. `}
           {draft.repeatRoute
             ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'
             : 'Back in town it stops and waits for you.'}
@@ -446,6 +466,10 @@ function DiscoveredLine() {
 /** The pinned strip of a run: what is happening, Push on / Return, and Auto-escape. It stays in view while the fight scrolls. */
 function RunBar({ expedition }: { expedition: ExpeditionState }) {
   const waiting = expeditionWaiting()
+  const { save } = useSaveStatus()
+  const limit = selectedHero(save)?.stopAfterFights ?? null
+  // The fight being fought or walked to; between fights and on the way home it is the fight that just ended.
+  const fightNumber = Math.min(expedition.history.length + (waiting || expedition.returning ? 0 : 1), limit ?? 0)
   return (
     <div className="run-bar" role="group" aria-label="Run controls">
       <div className="run-bar-status">
@@ -466,6 +490,11 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
           </p>
         )}
       </div>
+      {limit === null ? null : (
+        <p className="run-bar-limit" data-testid="fight-limit">
+          Fight {fightNumber} / {limit}
+        </p>
+      )}
       <div className="run-bar-actions">
         <HoldActions waiting={waiting} whyDisabled="Available once the fight is over." />
         {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
@@ -533,9 +562,9 @@ function RunDetails({ expedition }: { expedition: ExpeditionState }) {
         <Kpi label="Regen" value={`+${Math.round(hpRegenRate(expedition) * 100) / 100}/s`} note="HP between fights" />
       </KpiRow>
       <p className="muted" data-testid="standing-orders">
-        <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, repeat {hero?.repeatRoute === true ? 'on' : 'off'}.
+        <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, {typeof hero?.stopAfterFights === 'number' ? `stop after ${hero.stopAfterFights} ${hero.stopAfterFights === 1 ? 'fight' : 'fights'}` : 'no fight limit'}, repeat {hero?.repeatRoute === true ? 'on' : 'off'}.
         <Help label="About standing orders">
-          They apply when you are away. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
+          Push on and repeat apply when you are away; the fight limit applies while you watch too. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
         </Help>
       </p>
       {pendingContracts.length > 0 ? (

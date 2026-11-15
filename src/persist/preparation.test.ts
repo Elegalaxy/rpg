@@ -22,9 +22,24 @@ function hero(save: SaveData) {
 
 describe('preparation', () => {
   it('starts from the usual defaults, per class', () => {
-    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, repeatLimit: 0, bagFullOrder: 'home', awayRouteId: '' })
+    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, repeatLimit: 0, stopAfterFights: '', bagFullOrder: 'home', awayRouteId: '' })
     expect(draftFor(hero(heroSave('cleric'))).vow).toBe('zeal')
     expect(draftFor(hero(heroSave('ranger'))).specialAmmo).toBe('6')
+  })
+
+  it('checks the stop-after-fights order, blank meaning no limit and a missing field keeping the setting', () => {
+    const warrior = hero(heroSave('warrior'))
+    const base = draftFor(warrior)
+    const result = (stopAfterFights: string) => checkPreparation(warrior, { ...base, stopAfterFights })
+    expect(result('10')).toMatchObject({ ok: true, hero: { stopAfterFights: 10 } })
+    expect(result('1')).toMatchObject({ ok: true, hero: { stopAfterFights: 1 } })
+    expect(result('99')).toMatchObject({ ok: true, hero: { stopAfterFights: 99 } })
+    expect(result('')).toMatchObject({ ok: true, hero: { stopAfterFights: null } })
+    for (const bad of ['0', '100', 'abc', '2.5', '-1']) {
+      expect(result(bad), bad).toMatchObject({ ok: false, errors: [expect.stringMatching(/Stop after fights must be a whole number from 1 to 99/)] })
+    }
+    const { stopAfterFights: _left, ...without } = base
+    expect(checkPreparation({ ...warrior, stopAfterFights: 7 }, without)).toMatchObject({ ok: true, hero: { stopAfterFights: 7 } })
   })
 
   it('checks the retreat threshold', () => {

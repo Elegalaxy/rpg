@@ -410,6 +410,14 @@ export function shouldHold(expedition: ExpeditionState, pushedAt: number | null)
   )
 }
 
+/**
+ * The "Stop after N fights" order: this run has fought its N fights, so the hero walks home instead of pushing on.
+ * Counts every fight in the run's history. A repeat is a new run and starts again from 0. A null limit never stops.
+ */
+export function fightLimitReached(expedition: ExpeditionState, limit: number | null): boolean {
+  return limit !== null && expedition.history.length >= limit
+}
+
 export type OutcomeSummary = {
   title: string
   lines: string[]

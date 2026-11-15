@@ -66,6 +66,7 @@ function withHero(): SaveData {
     repeatRoute: true,
     bagFullOrder: 'home',
     repeatLimit: 0,
+    stopAfterFights: null,
     awayRouteId: null,
     awayRun: null,
     routeReturns: {},

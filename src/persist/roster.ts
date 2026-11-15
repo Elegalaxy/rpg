@@ -89,6 +89,7 @@ export function createHero(save: SaveData, request: NewHero): RosterResult {
     pushOnHpPercent: DEFAULT_PUSH_ON_PERCENT,
     repeatRoute: true,
     repeatLimit: 0,
+    stopAfterFights: null,
     bagFullOrder: DEFAULT_BAG_FULL_ORDER,
     awayRouteId: null,
     awayRun: null,

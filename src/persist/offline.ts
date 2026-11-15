@@ -10,7 +10,7 @@ import { isComplete } from './contracts.ts'
 import { advanceCrafting } from './crafting.ts'
 import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData, type SavedHero } from './save.ts'
-import { beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold } from './world.ts'
+import { beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, fightLimitReached } from './world.ts'
 
 /** The most time a catch-up replays: eight hours (GAME_DESIGN §11). */
 export const OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
@@ -49,6 +49,7 @@ export type HeroAwaySummary = {
   pushedOn?: number
   walkedHomeHp?: number
   walkedHomeBag?: number
+  walkedHomeFights?: number
 }
 
 /** The "while you were away" report: shared facts, and one row per hero that ran. The selected hero is first. */
@@ -71,11 +72,13 @@ export function ordersLine(hero: HeroAwaySummary): string {
   const pushed = hero.pushedOn ?? 0
   const hp = hero.walkedHomeHp ?? 0
   const bag = hero.walkedHomeBag ?? 0
-  if (pushed + hp + bag === 0) return ''
+  const fights = hero.walkedHomeFights ?? 0
+  if (pushed + hp + bag + fights === 0) return ''
   const parts: string[] = []
   if (pushed > 0) parts.push(`pushed on ${pushed} ${pushed === 1 ? 'time' : 'times'}`)
   if (hp > 0) parts.push(`walked home ${hp} ${hp === 1 ? 'time' : 'times'} because HP was under the push-on limit`)
   if (bag > 0) parts.push(`walked home ${bag} ${bag === 1 ? 'time' : 'times'} because the bag was nearly full`)
+  if (fights > 0) parts.push(`walked home ${fights} ${fights === 1 ? 'time' : 'times'} because the fight limit was reached`)
   return `Standing orders for ${hero.heroName}: ${parts.join(', ')}.`
 }
 
@@ -343,6 +346,11 @@ function decideAtHold(ctx: Ctx): void {
   if (expedition === null || hero === null) return
   const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
   const summary = ctx.lane.summary
+  if (fightLimitReached(expedition, hero.stopAfterFights)) {
+    summary.walkedHomeFights = (summary.walkedHomeFights ?? 0) + 1
+    returnToTown(expedition)
+    return
+  }
   if (hpPercent < hero.pushOnHpPercent) {
     summary.walkedHomeHp = (summary.walkedHomeHp ?? 0) + 1
     returnToTown(expedition)
