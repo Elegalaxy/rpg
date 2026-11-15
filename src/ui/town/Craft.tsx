@@ -24,6 +24,7 @@ import {
 import { wearerOf } from '../../persist/equipment.ts'
 import { ITEM_MODIFIERS, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { QualityHelp } from './QualityHelp.tsx'
+import { Sockets } from './Sockets.tsx'
 import { devCraftingKit, getCraftNotices, queueCraftFromUi, queueUpgradeAllFromUi, queueUpgradeFromUi, useSaveStatus } from '../store.ts'
 
 const MATERIALS = Object.keys(MATERIAL_QUALITY)
@@ -326,6 +327,8 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         })}
       </ul>
 
+      <Sockets accepts={accepts} />
+
       <h4>Queue (all shops)</h4>
       {queue.length === 0 ? <p>Nothing is being made.</p> : null}
       <ul className="shop-rows" aria-label="Craft queue">
@@ -336,12 +339,20 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
             name={
               job.kind === 'craft'
                 ? `Craft ${itemBases[job.baseId]?.name ?? job.baseId}`
-                : `Upgrade ${itemName(job.item)}`
+                : job.kind === 'upgrade'
+                  ? `Upgrade ${itemName(job.item)}`
+                  : job.kind === 'socket'
+                    ? `Open socket on ${itemName(job.item)}`
+                    : `Infuse ${itemName(job.item)}`
             }
             effect={
               job.kind === 'craft'
                 ? `lvl ${job.itemLevel}${job.modifierId === null ? '' : ` · ${ITEM_MODIFIERS[job.modifierId]?.name}`}`
-                : `lvl ${job.item.itemLevel} → ${job.item.itemLevel + 1}`
+                : job.kind === 'upgrade'
+                  ? `lvl ${job.item.itemLevel} → ${job.item.itemLevel + 1}`
+                  : job.kind === 'socket'
+                    ? `lvl ${job.item.itemLevel} · ${job.materialId}`
+                    : `lvl ${job.item.itemLevel} · ${ITEM_MODIFIERS[job.modifierId]?.name ?? job.modifierId}`
             }
             pills={
               index === 0 ? (

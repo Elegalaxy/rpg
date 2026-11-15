@@ -6,7 +6,7 @@ import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { contracts as contractTable, type ContractDef } from '../content/contracts.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { applyHeroUpdates } from './heroUpdates.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
@@ -64,6 +64,32 @@ export type CraftJob =
       slot?: EquipmentSlotId
       /** True when another upgrade job for the same item follows: this job hands its result on instead of returning the item. Absent in older saves. */
       chained?: true
+      materialId: string
+      remainingMs: number
+      seedIndex: number
+      rank: number
+    }
+  | {
+      id: string
+      kind: 'socket'
+      heroId: string
+      /** Held here while the job runs, like an upgrade's item. */
+      item: ItemInstance
+      slot?: EquipmentSlotId
+      /** The riftglass, duskiron or cinderite that paid for it. */
+      materialId: string
+      remainingMs: number
+      seedIndex: number
+      rank: number
+    }
+  | {
+      id: string
+      kind: 'infuse'
+      heroId: string
+      item: ItemInstance
+      slot?: EquipmentSlotId
+      /** The second modifier the item gets. */
+      modifierId: string
       materialId: string
       remainingMs: number
       seedIndex: number
@@ -316,12 +342,16 @@ function assertItem(value: unknown, label: string): asserts value is ItemInstanc
   check(value.durability <= value.maxDurability, `${label} durability is above its maximum`)
   stringList(value.modifiers, `${label} modifiers`)
   for (const id of value.modifiers) check(ITEM_MODIFIERS[id] !== undefined, `${label} has an unknown modifier ${describeValue(id)}`)
+  check(value.socketed === undefined || typeof value.socketed === 'boolean', `${label} socket flag must be true or false`)
+  check(value.modifiers.length <= MAX_ITEM_MODIFIERS, `${label} holds ${value.modifiers.length} modifiers, at most ${MAX_ITEM_MODIFIERS}`)
+  check(new Set(value.modifiers).size === value.modifiers.length, `${label} holds the same modifier twice`)
+  check(value.modifiers.length < 2 || value.socketed === true, `${label} has a second modifier but no socket`)
 }
 
 function assertJob(value: unknown): asserts value is CraftJob {
   check(isRecord(value), 'craft job must be an object')
   check(typeof value.id === 'string' && value.id.length > 0, 'craft job is missing an id')
-  check(value.kind === 'craft' || value.kind === 'upgrade', 'craft job kind must be craft or upgrade')
+  check(['craft', 'upgrade', 'socket', 'infuse'].includes(String(value.kind)), 'craft job kind must be craft, upgrade, socket or infuse')
   check(typeof value.heroId === 'string', 'craft job is missing a hero')
   check(typeof value.materialId === 'string', 'craft job is missing a material')
   whole(value.remainingMs, 'craft job time')
@@ -338,6 +368,8 @@ function assertJob(value: unknown): asserts value is CraftJob {
       'craft job slot is unknown',
     )
     check(value.chained === undefined || value.chained === true, 'craft job chained flag must be true or absent')
+    if (value.kind === 'infuse') check(typeof value.modifierId === 'string' && ITEM_MODIFIERS[value.modifierId] !== undefined, 'infuse job has an unknown modifier')
+    check(value.kind === 'upgrade' || value.chained === undefined, 'only an upgrade job can be chained')
   }
 }
 

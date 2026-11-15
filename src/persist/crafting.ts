@@ -1,8 +1,8 @@
 import { enemies } from '../content/enemies.ts'
-import { itemBase } from '../content/items.ts'
+import { itemBase, itemName } from '../content/items.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { nodes } from '../content/world.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, appliesToText, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { selectedHero } from './character.ts'
@@ -20,6 +20,18 @@ export function upgradeMaterialCost(materialId: string): number {
   return UPGRADE_MATERIAL_COST_BY_MATERIAL[materialId] ?? UPGRADE_MATERIAL_COST
 }
 export const CRAFT_MS = 30_000
+/** The hero level that unlocks sockets (GAME_DESIGN section 9, "Gold sinks"). */
+export const SOCKET_MIN_HERO_LEVEL = 10
+/** Gold per item level to open a socket. */
+export const SOCKET_GOLD_PER_LEVEL = 40
+/** Units of a rare material an open-socket job costs. */
+export const SOCKET_MATERIAL_COST = 8
+/** The materials a socket can be paid with. */
+export const SOCKET_MATERIALS: readonly string[] = ['riftglass', 'duskiron', 'cinderite']
+/** Gold per item level to infuse a second modifier. */
+export const INFUSE_GOLD_PER_LEVEL = 10
+/** Units of any material an infuse job costs. */
+export const INFUSE_MATERIAL_COST = 6
 type UpgradeJob = Extract<CraftJob, { kind: 'upgrade' }>
 export const MAX_RANK = 10
 /** Percentage points of quality an upgrade adds, by the material spent (GAME_DESIGN crafting). */
@@ -407,6 +419,18 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       notice: { jobId: job.id, baseId: job.baseId, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
+  if (job.kind === 'socket' || job.kind === 'infuse') {
+    const result = afterItemJob(job)
+    const owner = heroes.find((entry) => entry.id === job.heroId)
+    const slot = job.slot
+    const back = slot !== undefined && owner !== undefined && owner.equipment[slot] === null
+    const placed =
+      back && slot !== undefined
+        ? heroes.map((entry) => (entry.id === job.heroId ? { ...entry, equipment: { ...entry.equipment, [slot]: result } } : entry))
+        : keep(result)
+    const text = job.kind === 'socket' ? `${itemName(job.item)} now has a socket.` : `${itemName(job.item)} was infused: ${itemName(result)}.`
+    return { save: { ...save, heroes: placed }, notice: { jobId: job.id, baseId: job.item.baseId, text } }
+  }
   const returned = afterUpgrade(job)
   const name = itemBase(job.item.baseId)?.name ?? job.item.baseId
   if (job.chained === true) {
@@ -431,6 +455,138 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       text: `${name} was upgraded to item level ${returned.itemLevel}.`,
     },
   }
+}
+
+/** A worn or archive item an Open socket or Infuse job can take, and the slot it is worn in (null for the archive). */
+export type SocketTarget = { item: ItemInstance; slot: EquipmentSlotId | null }
+
+/** The items an Open socket or Infuse job can take: worn items first in slot order, then the archive. Items held by a queued job are left out. */
+export function socketTargets(hero: SavedHero): SocketTarget[] {
+  const worn = EQUIPMENT_SLOT_IDS.flatMap((slot) => {
+    const item = hero.equipment[slot]
+    return item === null ? [] : [{ item, slot }]
+  })
+  return [...worn, ...hero.purse.archive.map((item) => ({ item, slot: null }))]
+}
+
+export function socketGold(itemLevel: number): number {
+  return itemLevel * SOCKET_GOLD_PER_LEVEL
+}
+
+export function infuseGold(itemLevel: number): number {
+  return itemLevel * INFUSE_GOLD_PER_LEVEL
+}
+
+function levelBlock(hero: SavedHero): string | null {
+  return hero.progress.level < SOCKET_MIN_HERO_LEVEL ? `Sockets need hero level ${SOCKET_MIN_HERO_LEVEL}. This hero is level ${hero.progress.level}.` : null
+}
+
+/** Why a socket cannot be opened on this item with this material, or null. */
+export function socketCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, materialId: string): string | null {
+  const shut = closed(save)
+  if (shut !== null) return shut
+  if (item === undefined) return 'That item is not in the archive or worn by this hero.'
+  const low = levelBlock(hero)
+  if (low !== null) return low
+  if (item.socketed === true) return `${itemName(item)} already has a socket.`
+  if (!SOCKET_MATERIALS.includes(materialId)) return 'A socket needs riftglass, duskiron or cinderite.'
+  return spend(hero.purse, materialId, SOCKET_MATERIAL_COST, socketGold(item.itemLevel))
+}
+
+/** Why this modifier cannot be infused into the item with this material, or null. */
+export function infuseCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, modifierId: string, materialId: string): string | null {
+  const shut = closed(save)
+  if (shut !== null) return shut
+  if (item === undefined) return 'That item is not in the archive or worn by this hero.'
+  const low = levelBlock(hero)
+  if (low !== null) return low
+  if (item.socketed !== true) return `${itemName(item)} has no socket yet. Open one first.`
+  if (item.modifiers.length < 1) return `${itemName(item)} has no first modifier. Infuse adds a second one.`
+  const modifier = ITEM_MODIFIERS[modifierId]
+  if (modifier === undefined) return 'Pick a modifier to infuse.'
+  if (!save.account.recipes.includes(modifierId)) return `You have not learned the ${modifier.name} recipe.`
+  const locked = recipeLock(save, modifierId)
+  if (locked !== null) return `The ${modifier.name} recipe is locked. ${locked}`
+  if (hero.progress.level < modifier.minLevel) return `${modifier.name} needs level ${modifier.minLevel}. This hero is level ${hero.progress.level}.`
+  const base = itemBase(item.baseId)
+  if (base === undefined || !modifierFits(modifier, base)) return `${modifier.name} can only go on ${appliesToText(modifier)}.`
+  if (item.modifiers[0] === modifierId) return `${modifier.name} is already the first modifier. Pick a different one.`
+  if (item.modifiers[1] === modifierId) return `${itemName(item)} already has ${modifier.name} in its socket.`
+  if (MATERIAL_QUALITY[materialId] === undefined) return pickMaterialText()
+  return spend(hero.purse, materialId, INFUSE_MATERIAL_COST, infuseGold(item.itemLevel))
+}
+
+type JobItem = { item: ItemInstance; slot: EquipmentSlotId | null }
+
+/** The item a socket or infuse job works on: from the archive, or worn by the hero. Null when it is neither. */
+function jobItem(hero: SavedHero, itemId: string): JobItem | null {
+  const archived = hero.purse.archive.find((entry) => entry.id === itemId)
+  if (archived !== undefined) return { item: archived, slot: null }
+  const slot = wornSlot(hero, itemId)
+  const worn = slot === null ? undefined : (hero.equipment[slot] ?? undefined)
+  return slot === null || worn === undefined ? null : { item: worn, slot }
+}
+
+/** Take the item out of its slot or the archive, put the job last in the queue and pay for it. */
+function queueItemJob(save: SaveData, hero: SavedHero, found: JobItem, job: CraftJob, materialId: string, quantity: number, gold: number): RosterResult {
+  const paid = charge(hero.purse, materialId, quantity, gold)
+  const purse: Purse = {
+    ...paid,
+    craftCounter: paid.craftCounter + 1,
+    archive: paid.archive.filter((entry) => entry.id !== found.item.id),
+    craftQueue: [...paid.craftQueue, job],
+  }
+  const equipment = found.slot === null ? hero.equipment : { ...hero.equipment, [found.slot]: null }
+  return { ok: true, save: { ...save, heroes: save.heroes.map((entry) => (entry.id === hero.id ? { ...entry, equipment, purse } : entry)) } }
+}
+
+/** Pay for an Open socket job and queue it. The item leaves its slot or the archive until the job ends. */
+export function queueSocket(save: SaveData, heroId: string, itemId: string, materialId: string): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  const found = jobItem(hero, itemId)
+  const problem = socketCheck(save, hero, found?.item, materialId)
+  if (problem !== null || found === null) return { ok: false, reason: problem ?? 'That item is not in the archive or worn by this hero.' }
+  const job: CraftJob = {
+    id: nextJobId(hero.purse),
+    kind: 'socket',
+    heroId,
+    item: found.item,
+    ...(found.slot === null ? {} : { slot: found.slot }),
+    materialId,
+    remainingMs: CRAFT_MS,
+    seedIndex: hero.purse.craftCounter,
+    rank: proficiencyRank(hero.craftXp),
+  }
+  return queueItemJob(save, hero, found, job, materialId, SOCKET_MATERIAL_COST, socketGold(found.item.itemLevel))
+}
+
+/** Pay for an Infuse job and queue it. Infusing an item that already has a second modifier replaces that one. */
+export function queueInfuse(save: SaveData, heroId: string, itemId: string, modifierId: string, materialId: string): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  const found = jobItem(hero, itemId)
+  const problem = infuseCheck(save, hero, found?.item, modifierId, materialId)
+  if (problem !== null || found === null) return { ok: false, reason: problem ?? 'That item is not in the archive or worn by this hero.' }
+  const job: CraftJob = {
+    id: nextJobId(hero.purse),
+    kind: 'infuse',
+    heroId,
+    item: found.item,
+    ...(found.slot === null ? {} : { slot: found.slot }),
+    modifierId,
+    materialId,
+    remainingMs: CRAFT_MS,
+    seedIndex: hero.purse.craftCounter,
+    rank: proficiencyRank(hero.craftXp),
+  }
+  return queueItemJob(save, hero, found, job, materialId, INFUSE_MATERIAL_COST, infuseGold(found.item.itemLevel))
+}
+
+/** The item a finished socket or infuse job hands back. */
+function afterItemJob(job: Extract<CraftJob, { kind: 'socket' | 'infuse' }>): ItemInstance {
+  if (job.kind === 'socket') return { ...job.item, socketed: true }
+  return { ...job.item, socketed: true, modifiers: [job.item.modifiers[0] ?? job.modifierId, job.modifierId].slice(0, MAX_ITEM_MODIFIERS) }
 }
 
 /** True when any hero has a job queued. */

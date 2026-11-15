@@ -5,6 +5,7 @@ import {
   MODIFIER_STACK_CAP,
   appliesToText,
   emptyEquipment,
+  equipBlock,
   modifierCapNotes,
   modifierCounts,
   modifierFits,
@@ -269,5 +270,37 @@ describe('the Cinder Scar modifiers', () => {
     const gear = worn({ head: ['emberward'], chest: ['emberward'], accessory0: ['emberward'] })
     expect(statBonusesFor(gear).magicalStatusResistanceBonus).toBe(20)
     expect(modifierCapNotes(gear)).toEqual(['Emberward is on 3 pieces, but only 2 count.'])
+  })
+})
+
+describe('two modifiers on one item (the second socket)', () => {
+  function pair(slots: Partial<{ [slot in EquipmentSlotId]: string[] }>): Equipment {
+    const equipment = worn({})
+    for (const slot of Object.keys(slots) as EquipmentSlotId[]) equipment[slot] = { ...item(slot, slots[slot] ?? []), socketed: true }
+    return equipment
+  }
+
+  it('applies both modifiers of one item', () => {
+    const bonus = statBonusesFor(pair({ mainHand: ['keen', 'precise'] }))
+    expect(bonus.critChanceBonus).toBeCloseTo(0.02, 10)
+    expect(bonus.accuracyBonus).toBe(3)
+    expect(modifierCounts(pair({ mainHand: ['keen', 'precise'] }))).toEqual([
+      { id: 'keen', worn: 1, counted: 1 },
+      { id: 'precise', worn: 1, counted: 1 },
+    ])
+  })
+
+  it('still counts a modifier at most twice across pieces, whichever socket it sits in', () => {
+    const equipment = pair({ mainHand: ['keen', 'precise'], accessory0: ['precise', 'keen'], accessory1: ['keen'], offHand: ['precise'] })
+    const bonus = statBonusesFor(equipment)
+    expect(bonus.critChanceBonus).toBeCloseTo(0.04, 10)
+    expect(bonus.accuracyBonus).toBe(6)
+    expect(modifierCapNotes(equipment)).toEqual(['Keen is on 3 pieces, but only 2 count.', 'Precise is on 3 pieces, but only 2 count.'])
+  })
+
+  it('blocks wearing an item whose second modifier needs a higher level', () => {
+    const base = (id: string) => (id === 'x' ? sword : undefined)
+    const socketed: ItemInstance = { ...item('i', ['keen', 'sturdy']), baseId: 'x', socketed: true }
+    expect(equipBlock(emptyEquipment(), socketed, 'mainHand', 5, base)).toBe('Sturdy needs level 6. This hero is level 5.')
   })
 })

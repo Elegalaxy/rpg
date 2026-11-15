@@ -3,7 +3,7 @@ import type { ItemInstance } from '../../sim/economy.ts'
 export type ItemGroup = { item: ItemInstance; count: number }
 
 function keyOf(item: ItemInstance): string {
-  return JSON.stringify([item.baseId, item.itemLevel, item.quality, item.durability, item.maxDurability, [...item.modifiers].sort(), item.heirloom ?? null])
+  return JSON.stringify([item.baseId, item.itemLevel, item.quality, item.durability, item.maxDurability, [...item.modifiers].sort(), item.socketed ?? false, item.heirloom ?? null])
 }
 
 /** Identical items (same base, level, quality, wear, modifiers) become one entry with a count. The first of each kind stands for the group. */

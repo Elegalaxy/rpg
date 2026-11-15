@@ -34,6 +34,8 @@ export type ItemInstance = {
   durability: number
   maxDurability: number
   modifiers: string[]
+  /** True once a socket was opened (Step 13.10): the item can then hold a second modifier. Absent means no socket. */
+  socketed?: boolean
   /** Set on a hero's heirloom: its level follows that hero's level, up to `cap`. Only that hero can use it. */
   heirloom?: { heroId: string; cap: number }
 }
@@ -303,6 +305,9 @@ export type ModifierRequirement = { discoveryId: string } | { enemyId: string }
 
 /** The same modifier counts at most this many times across equipped gear (GAME_DESIGN §8, Batch C). */
 export const MODIFIER_STACK_CAP = 2
+
+/** An item holds one modifier, or two once it has a socket (GAME_DESIGN §9, "Gold sinks"). */
+export const MAX_ITEM_MODIFIERS = 2
 
 const TYPE_NAMES: { readonly [type in ItemBase['type']]: string } = {
   weapon: 'weapons',

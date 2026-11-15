@@ -57,7 +57,8 @@ export function itemBase(baseId: string): ItemBase | undefined {
 export function itemName(item: ItemInstance): string {
   const base = itemBase(item.baseId)?.name ?? item.baseId
   const prefix = item.modifiers.map((id) => ITEM_MODIFIERS[id]?.name ?? id)
-  return [...prefix, base].join(' ')
+  const name = [...prefix, base].join(' ')
+  return item.socketed === true && item.modifiers.length < 2 ? `${name} (open socket)` : name
 }
 
 /** The Q-reference loadout for each class (§7): preferred weapon, off-hand, and armor. */
