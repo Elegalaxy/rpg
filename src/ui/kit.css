@@ -879,7 +879,20 @@ table.away-table {
     grid-template-columns: auto 1fr auto;
     padding-block: var(--s1);
   }
+  .craft-modifier input {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .craft-modifier-name {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .craft-modifier-level {
+    grid-row: 1;
+    grid-column: 3;
+  }
   .craft-modifier-effect {
+    grid-row: 2;
     grid-column: 2 / 4;
   }
 }

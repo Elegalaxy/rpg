@@ -5,7 +5,7 @@
 - **Recent Changes & Files Touched:**
   - Step 13.8 part 4: `src/ui/combat/StackBar.tsx` (bar, picker) and `stackSummary.ts` (`summarizeStack`), wired into `FightView.tsx` under the hero card and into `RunDock.tsx` (folded chip in a reserved line, unfolded picker). CSS under `rs-*` classes in `combat.css` and `runDock.css` (`.stack-bar` already belongs to the editor in `kit.css`). `pickStackFromUi` in `store.ts` now acts on the live run's fight when there is one. Tests in `fightControls.test.tsx` and `runDock.test.tsx`.
   - Parts 1-3: sim `src/sim/stacks.ts`, save and persist, editor in `src/ui/character/Rules.tsx`.
-  - Another session left uncommitted Craft modifier picker work in `src/ui/town/Craft.tsx`, `src/ui/kit.css` and one CHANGELOG line; it was not part of the part 4 commit.
+  - Craft modifier picker (eb071c5 + mobile row fix): radio list with each modifier's effect and unlock level in `src/ui/town/Craft.tsx` and `kit.css`; browser-checked at 1024 and 375 px.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
   - No shared vault between heroes. One commit per finished part, pushed to `origin/main`, no force-push.
