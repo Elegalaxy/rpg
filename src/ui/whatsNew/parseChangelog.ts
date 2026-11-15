@@ -26,14 +26,22 @@ export type ChangeSection = {
   entries: ChangeEntry[]
 }
 
-const BULLET = /^- ([A-Za-z]+)(?: \(([^)]*)\))?: (.+)$/
+/** Plan-step tags such as `(Step 13.8, part 4)` or `(Steps 12.6, 13.1-13.4)` are for developers; the page hides them. */
+export function stripPlanRefs(text: string): string {
+  return text
+    .replace(/\s*\(Steps?\s[^)]*\)/g, '')
+    .replace(/\s+([.,;:])/g, '$1')
+    .trim()
+}
+
+const BULLET =/^- ([A-Za-z]+)(?: \(([^)]*)\))?: (.+)$/
 
 function parseHeading(heading: string): Omit<ChangeSection, 'intro' | 'entries'> {
   if (/^Unreleased\b/.test(heading)) {
-    const title = heading.replace(/^Unreleased\s*:?\s*/, '')
+    const title = stripPlanRefs(heading.replace(/^Unreleased\s*:?\s*/, ''))
     return { heading, unreleased: true, version: 'Unreleased', date: '', title }
   }
-  const parts = heading.split(' · ').map((part) => part.trim())
+  const parts = stripPlanRefs(heading).split(' · ').map((part) => part.trim())
   if (parts.length >= 3) return { heading, unreleased: false, version: parts[0] ?? '', date: parts[1] ?? '', title: parts.slice(2).join(' · ') }
   return { heading, unreleased: false, version: parts[0] ?? heading, date: '', title: parts.slice(1).join(' · ') }
 }
@@ -44,7 +52,7 @@ export function parseChangelog(source: string): ChangeSection[] {
   let current: ChangeSection | null = null
   const intro: string[] = []
   const close = () => {
-    if (current !== null) current.intro = intro.join(' ').trim()
+    if (current !== null) current.intro = stripPlanRefs(intro.join(' '))
     intro.length = 0
   }
   for (const raw of source.split(/\r?\n/)) {
@@ -59,7 +67,7 @@ export function parseChangelog(source: string): ChangeSection[] {
     const bullet = BULLET.exec(line)
     if (bullet !== null) {
       const [, category = '', suffix = '', text = ''] = bullet
-      current.entries.push({ category, planned: /planned/i.test(suffix), text })
+      current.entries.push({ category, planned: /planned/i.test(suffix), text: stripPlanRefs(text) })
     } else if (line.trim() !== '' && !line.startsWith('- ') && current.entries.length === 0 && line !== '---') {
       intro.push(line.trim())
     }

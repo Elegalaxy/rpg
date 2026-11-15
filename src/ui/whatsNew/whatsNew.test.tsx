@@ -46,6 +46,21 @@ describe('parser details', () => {
   })
 })
 
+describe('plan-step tags stay out of the page', () => {
+  it('strips (Step ...) tags from entries, titles and intros', () => {
+    const [section] = parseChangelog('## 0.1.0 · 2026-11-01 · Big zone (Steps 12.6, 13.1-13.4)\n\nSee Step notes (Step 2).\n\n- New: a thing (Step 13.8, part 4).\n')
+    expect(section?.title).toBe('Big zone')
+    expect(section?.entries[0]?.text).toBe('a thing.')
+    expect(section?.intro).toBe('See Step notes.')
+  })
+
+  it('leaves no plan-step wording in the rendered page', () => {
+    const html = renderToStaticMarkup(<WhatsNewView sections={parseChangelog(source)} />)
+    expect(html).not.toMatch(/\(Steps? \d/)
+    expect(html).not.toMatch(/batch(es)? \d/i)
+  })
+})
+
 describe('WhatsNewView', () => {
   it('renders tagged entries, filter counts, and expands only the first section', () => {
     const html = renderToStaticMarkup(<WhatsNewView sections={parseChangelog(source)} />)
