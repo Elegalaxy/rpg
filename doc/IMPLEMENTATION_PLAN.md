@@ -1153,6 +1153,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. `RunBar`, `RunHeadline` and `RunDetails` in `src/ui/map/ExpeditionPanel.tsx` (the old Running panel is split into them); sticky CSS in `kit.css` (`.run-bar`, `top: 0`; the run dock is not shown on the Map and the status header does not really stick, so no offset is needed); `Collapsible` gained an optional `persistKey` (localStorage, try/catch). Same data-testids kept (loot-bag, gold-carried, gold-banked, gold-run, momentum, standing-orders, unsecured, safe-pouch, supplies, travel-status). Checked in the browser pane at desktop and 375 px (the bar is 166 px tall there).
   - 2026-11-16: Part 2 done. Rule in GAME_DESIGN offline section ("Stop after N fights"). `SavedHero.stopAfterFights` (`number | null`, 1 to 99; old saves load with null, no version bump; validated in `assertHero`), `fightLimitReached` in `world.ts`, checked first in offline `decideAtHold` (new `walkedHomeFights` in the away summary and `ordersLine`) and in the live loop `advanceExpedition` in `store.ts` (walks home on its own at the hold). Count is per run (`history.length`); a repeat is a new run and counts from 0. Preparation draft field `stopAfterFights?` (blank = none; optional so older callers keep the setting), input next to Push on, "Fight n / N" in the run bar. The sim is untouched. Tests: `preparation.test.ts`, `offline.test.ts` (limit, repeat, chunk-equality, no-limit unchanged), new `src/ui/map/fightLimit.test.tsx`.
 
+### Step 13.10: Gold sinks, trainer, sockets and ranks
+- Status: `in progress`
+- Depends on: 13.9
+- Goal: gold and materials turn into power, and the grind gets shorter (rules in GAME_DESIGN §9 "Gold sinks"). No sim change except part 4.
+- Parts: (1) docs only. (2) Trainer drills: `drillsThisLevel` on `SavedHero`, `trainHero` in persist, a Trainer place in Town. (3) Second modifier socket: `MAX_ITEM_MODIFIERS`, `ItemInstance.socketed`, queued Open socket and Infuse jobs, Infuse panel in Craft, save validation. (4) Modifier ranks (touches `src/sim/economy.ts`; rank I must change nothing; stop after part 3 if the guards cannot stay byte-identical).
+- Part 1 status: `done`. Part 2: `todo`. Part 3: `todo`. Part 4: `todo`.
+- Progress:
+  - 2026-11-16: Part 1 done. Rules written in GAME_DESIGN §9 "Gold sinks: trainer, sockets, ranks"; the Batch C "one modifier per item" lines in §8 and the Rift Hollows table note point to the socket rule. No max hero level exists, so the drill's max-level refusal is not built.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
