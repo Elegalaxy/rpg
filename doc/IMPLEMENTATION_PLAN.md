@@ -1143,6 +1143,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-15: Part 3 done. Stack editor in `src/ui/character/Rules.tsx`: tab row (Default plus stacks, Auto / Manual only tags, New stack disabled at 4 with the reason), per-stack name, "Switch to this stack when" trigger via the extracted `ConditionList.tsx`, Move up/down, Duplicate, inline Delete confirm, one Save rules for everything; pure edits in `stackEdit.ts`; a hero with no stacks sees only a New stack button and Help. Tests in `stackEditor.test.tsx`.
   - 2026-11-15: Part 4 done. `src/ui/combat/StackBar.tsx` under the hero card (only when the hero has extra stacks): "Stack: <name>", one reason line (Auto with the trigger text from the last `stackChanged`, Default, Manual, Held with a countdown asked of `pickStack` at the moment the hold ends), and an Auto / Default / each stack picker of aria-pressed toggles at least 44 px tall with a fixed "Next action" slot. Run dock: a reserved "Stack: <name>" chip line while folded (only in combat), the same picker unfolded. `pickStackFromUi` now acts on the live run's fight when there is one. Classes are `rs-*` because `.stack-bar` already exists in `kit.css`. Tests in `fightControls.test.tsx` and `runDock.test.tsx`. Browser: a real Group/Default switch both ways with the log naming each, a manual pin that held; Auto release and 375 px were checked in tests and with injected markup only.
 
+### Step 13.9: Run screen layout and fight limit
+- Status: `in progress` (part 1 done)
+- Depends on: 13.8
+- Goal: on the Map tab during a run, the controls and the fight are in view together, and the details stop being a wall of text. Then a standing order that stops the run after N fights.
+- Parts: (1) UI only: a sticky run bar (status, Push on, Return to town, Auto-escape) above the fight; fight directly under it; one headline row (HP, Fights won, Loot bag, Carried gold); banked gold, run gold, momentum, standing orders, Carrying / Safe pouch / Secured and Supplies folded into a collapsed Run details (open state kept in localStorage only). (2) Sim, persist and UI: standing order "Stop after N fights" (design in GAME_DESIGN first).
+- Part 1 status: `done`. Part 2: `todo`.
+- Progress:
+  - 2026-11-16: Part 1 done. `RunBar`, `RunHeadline` and `RunDetails` in `src/ui/map/ExpeditionPanel.tsx` (the old Running panel is split into them); sticky CSS in `kit.css` (`.run-bar`, `top: 0`; the run dock is not shown on the Map and the status header does not really stick, so no offset is needed); `Collapsible` gained an optional `persistKey` (localStorage, try/catch). Same data-testids kept (loot-bag, gold-carried, gold-banked, gold-run, momentum, standing-orders, unsecured, safe-pouch, supplies, travel-status). Checked in the browser pane at desktop and 375 px (the bar is 166 px tall there).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |

@@ -54,6 +54,21 @@ describe('the run panel tells the truth', () => {
     expect(html).toContain('Standing orders')
   })
 
+  it('pins the run bar above the fight and folds the details under it', () => {
+    startRun()
+    const html = renderToStaticMarkup(<ExpeditionPanel />)
+    const bar = html.indexOf('class="run-bar"')
+    const headline = html.indexOf('aria-label="Run status"')
+    const details = html.indexOf('data-testid="run-details"')
+    expect(bar).toBeGreaterThan(-1)
+    expect(headline).toBeGreaterThan(bar)
+    expect(details).toBeGreaterThan(headline)
+    expect(html).toContain('Run details')
+    // The headline row holds only four numbers; the rest live inside the fold.
+    expect(html.slice(headline, details)).not.toContain('Banked gold')
+    expect(html.slice(details)).toContain('Banked gold')
+  })
+
   it('says Full when the bag is at capacity and Nearly full below it', () => {
     const run = startRun()
     const capacity = run.lootCapacity ?? 20

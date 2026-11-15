@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
 
+- Improved: on the Map during a run, Push on, Return to town and Auto-escape stay pinned above the fight while you scroll, the fight sits right under them, and the extra numbers are folded under Run details (Step 13.9, part 1).
 - Improved: the What's new page no longer shows plan step tags such as "(Step 13.8, part 4)" (Step 13.7, polish).
 - New: the fight view shows which rule stack is active and why, and you can pin a stack or go back to Auto while watching; the run dock shows the active stack too (Step 13.8, part 4).
 - New: you can build extra rule stacks that switch by trigger, for example one for groups and one for single targets, with a tab for each and a Switch-when condition list (Step 13.8, part 3).

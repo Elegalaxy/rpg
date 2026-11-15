@@ -23,6 +23,7 @@ import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { MOMENTUM_CAP, SUPPLY_SLOT_COUNT, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
+import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { HoldActions } from '../HoldActions.tsx'
 import { DurabilityGrid, Kpi, KpiRow, Tag } from '../Kit.tsx'
@@ -442,7 +443,63 @@ function DiscoveredLine() {
   )
 }
 
-function Running({ expedition }: { expedition: ExpeditionState }) {
+/** The pinned strip of a run: what is happening, Push on / Return, and Auto-escape. It stays in view while the fight scrolls. */
+function RunBar({ expedition }: { expedition: ExpeditionState }) {
+  const waiting = expeditionWaiting()
+  return (
+    <div className="run-bar" role="group" aria-label="Run controls">
+      <div className="run-bar-status">
+        {waiting ? (
+          <p className="run-bar-text" data-testid="travel-status">
+            <strong>The fight is over.</strong>
+            <Help label="Push on or return">
+              Pushing on adds momentum and loot but risks everything you carry. Returning secures what you carry and clears momentum.
+            </Help>
+          </p>
+        ) : (
+          <p className="run-bar-text" data-testid="travel-status">
+            {expedition.phase === 'combat'
+              ? `Fight ${expedition.encounterIndex + 1} is under way.`
+              : expedition.returning
+                ? 'Walking back to Greyhaven.'
+                : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} s (${travelSpeedup()}× faster).`}
+          </p>
+        )}
+      </div>
+      <div className="run-bar-actions">
+        <HoldActions waiting={waiting} whyDisabled="Available once the fight is over." />
+        {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
+          <span className="run-bar-escape">
+            <button type="button" aria-pressed={expedition.autoEscapeOff !== true} onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}>
+              Auto-escape: {expedition.autoEscapeOff === true ? 'Off' : 'On'}
+            </button>
+            <Help label="About auto-escape">
+              When on, the hero tries to escape once HP falls to your retreat setting. Switch it off to fight on; it also stops a pending retry.
+            </Help>
+          </span>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+/** One row of the numbers that matter at a glance. Everything else is under Run details. */
+function RunHeadline({ expedition }: { expedition: ExpeditionState }) {
+  const carried = expedition.unsecured.reduce((sum, stack) => sum + stack.quantity, 0)
+  const resource = expedition.hero
+  const hpFraction = resource.maxHp > 0 ? resource.hp / resource.maxHp : 0
+  return (
+    <KpiRow label="Run status">
+      <Kpi label="HP" value={`${Math.round(resource.hp)}/${Math.round(resource.maxHp)}`} tone={hpFraction < 0.4 ? 'bad' : hpFraction < 0.7 ? 'warn' : 'good'} />
+      <Kpi label="Fights won" value={expedition.history.filter((entry) => entry.outcome === 'victory').length} />
+      <Kpi label="Loot bag" value={`${carried}/${lootCapacityOf(expedition)}`} testId="loot-bag" note={bagIsFull(expedition) ? (carried >= lootCapacityOf(expedition) ? 'Full' : 'Nearly full') : undefined} tone={bagIsFull(expedition) ? 'warn' : undefined} />
+      <Kpi label="Carried gold" value={`${expedition.carriedGold} g`} tone="gold" testId="gold-carried" />
+    </KpiRow>
+  )
+}
+
+/** Everything that is not needed to watch the fight, folded away. */
+function RunDetails({ expedition }: { expedition: ExpeditionState }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const pendingContracts = pendingContractProgress(save, expedition)
@@ -451,74 +508,35 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
   const legFight = expedition.current ?? expedition.opening[expedition.encounterIndex] ?? null
   const legEnemies = legFight === null ? [] : legFight.enemies
   const goldOnly = legEnemies.length > 0 && legEnemies.every((enemy) => enemy.materialId === undefined) && legEnemies.some((enemy) => (enemy.gold ?? 0) > 0)
-  const waiting = expeditionWaiting()
-  const carried = expedition.unsecured.reduce((sum, stack) => sum + stack.quantity, 0)
   const pouch = safePouch(expedition.unsecured)
   const resource = expedition.hero
-  const hpFraction = resource.maxHp > 0 ? resource.hp / resource.maxHp : 0
   // During a fight the carried supplies change at once; the run's own slots catch up when the fight ends.
   const fight = expedition.combat
   const held = fight !== null ? fight.hero.supplies.map(supplyName) : expedition.supplySlots.flatMap((slot) => (slot === null ? [] : [supplyName(slot.id)]))
   const usedNow = fight === null ? [] : fight.log.flatMap((event) => (event.type === 'supplyUse' && event.actorId === fight.hero.id ? [event.supplyId] : []))
   const usedIds = [...expedition.consumedSupplyIds, ...usedNow]
   return (
-    <section aria-label="Expedition">
-      <h3>Expedition</h3>
-      {waiting ? (
-        <div className="callout" role="group" aria-label="Push on or return">
-          <p>
-            The fight is over.
-            <Help label="Push on or return">
-              Pushing on adds momentum and loot but risks everything you carry. Returning secures what you carry and clears momentum.
-            </Help>
-          </p>
-          <HoldActions waiting />
-        </div>
-      ) : (
-        <p className="callout" data-testid="travel-status">
-          {expedition.phase === 'combat'
-            ? `Fight ${expedition.encounterIndex + 1} is under way.`
-            : expedition.returning
-              ? 'Walking back to Greyhaven.'
-              : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} seconds (played ${travelSpeedup()}× faster).`}
-        </p>
-      )}
-      {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
-        <p>
-          <button
-            type="button"
-            aria-pressed={expedition.autoEscapeOff !== true}
-            onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}
-          >
-            Auto-escape: {expedition.autoEscapeOff === true ? 'Off' : 'On'}
-          </button>
-          <Help label="About auto-escape">
-            When on, the hero tries to escape once HP falls to your retreat setting. Switch it off to fight on; it also stops a pending retry.
-          </Help>
-        </p>
-      ) : null}
-      <KpiRow label="Run status">
-        <Kpi label="HP" value={`${Math.round(resource.hp)}/${Math.round(resource.maxHp)}`} note={`+${Math.round(hpRegenRate(expedition) * 100) / 100} HP/s between fights`} tone={hpFraction < 0.4 ? 'bad' : hpFraction < 0.7 ? 'warn' : 'good'} />
-        {resource.classResourceId.length > 0 ? (
-          <Kpi label={resource.classResourceId} value={`${Math.round(resource.classResource)}/${resource.classResourceMax}`} />
-        ) : null}
-        <Kpi label="Momentum" value={`${expedition.momentum}/${MOMENTUM_CAP}`} testId="momentum" />
-        <Kpi label="Fights won" value={expedition.history.filter((entry) => entry.outcome === 'victory').length} />
-        <Kpi label="Loot bag" value={`${carried}/${lootCapacityOf(expedition)}`} testId="loot-bag" note={bagIsFull(expedition) ? (carried >= lootCapacityOf(expedition) ? 'Full' : 'Nearly full') : undefined} tone={bagIsFull(expedition) ? 'warn' : undefined} />
-      </KpiRow>
-      <KpiRow label="Run gold">
-        <Kpi label="Carried gold" value={`${expedition.carriedGold} g`} tone="gold" testId="gold-carried" note="With you. Pays the rescue fee." />
-        <Kpi label="Banked gold" value={`${expedition.depositedGold} g`} testId="gold-banked" note="Safe in town. The purse reads 0 meanwhile." />
+    <Collapsible summary="Run details" persistKey="rpg.runDetailsOpen" testId="run-details">
+      <KpiRow label="Run numbers">
+        <Kpi label="Banked gold" value={`${expedition.depositedGold} g`} testId="gold-banked" />
         <Kpi
           label="Run gold"
           value={`${runGold >= 0 ? '+' : '−'}${Math.abs(runGold)} g`}
           tone={runGold > 0 ? 'good' : undefined}
           testId="gold-run"
-          note={goldOnly ? 'This leg drops gold only.' : 'Dropped on this run so far.'}
+          note={goldOnly ? 'Gold only on this leg' : undefined}
         />
+        <Kpi label="Momentum" value={`${expedition.momentum}/${MOMENTUM_CAP}`} testId="momentum" />
+        {resource.classResourceId.length > 0 ? (
+          <Kpi label={resource.classResourceId} value={`${Math.round(resource.classResource)}/${resource.classResourceMax}`} />
+        ) : null}
+        <Kpi label="Regen" value={`+${Math.round(hpRegenRate(expedition) * 100) / 100}/s`} note="HP between fights" />
       </KpiRow>
       <p className="muted" data-testid="standing-orders">
-        <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, repeat {hero?.repeatRoute === true ? 'on' : 'off'}. They apply when you are away.
+        <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, repeat {hero?.repeatRoute === true ? 'on' : 'off'}.
+        <Help label="About standing orders">
+          They apply when you are away. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
+        </Help>
       </p>
       {pendingContracts.length > 0 ? (
         <ul className="muted" data-testid="pending-contracts" aria-label="Contract progress this run">
@@ -572,7 +590,7 @@ function Running({ expedition }: { expedition: ExpeditionState }) {
         </div>
         <DiscoveredLine />
       </div>
-    </section>
+    </Collapsible>
   )
 }
 
@@ -661,10 +679,19 @@ export function ExpeditionPanel() {
   const expedition = save.expedition
   if (expedition !== null) {
     return (
-      <>
-        {expedition.outcome === 'ongoing' ? <Running expedition={expedition} /> : <Ended expedition={expedition} />}
-        <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} expedition={expedition} />
-      </>
+      expedition.outcome === 'ongoing' ? (
+        <section aria-label="Expedition" className="run-area">
+          <RunBar expedition={expedition} />
+          <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} expedition={expedition} />
+          <RunHeadline expedition={expedition} />
+          <RunDetails expedition={expedition} />
+        </section>
+      ) : (
+        <>
+          <Ended expedition={expedition} />
+          <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} expedition={expedition} />
+        </>
+      )
     )
   }
   if (hero === null) return null
