@@ -1533,16 +1533,16 @@ describe('splintered road expedition', () => {
     }
   })
 
-  it('stores a 5 minute recovery and does not tick it', () => {
+  it('stores a 30 second recovery and does not tick it', () => {
     const state = enterDefeatFight(defs, 51)
     expect(state.recoveryMs).toBe(0)
     forceDefeat(state, defs)
     expect(state.outcome).toBe('defeat')
-    expect(state.recoveryMs).toBe(300_000)
+    expect(state.recoveryMs).toBe(30_000)
     stepExpedition(state, defs)
     stepExpedition(state, defs)
     console.log('[sim]', 'recovery', { recoveryMs: state.recoveryMs, outcome: state.outcome })
-    expect(state.recoveryMs).toBe(300_000)
+    expect(state.recoveryMs).toBe(30_000)
     expect(state.outcome).toBe('defeat')
   })
 
@@ -1663,7 +1663,7 @@ describe('splintered road expedition', () => {
     expect(resumed.carriedGold).toBe(0)
     expect(resumed.depositedGold).toBe(100)
     expect(resumed.debt).toBe(15)
-    expect(resumed.recoveryMs).toBe(300_000)
+    expect(resumed.recoveryMs).toBe(30_000)
     expect(resumed.bossLossThisLife).toBe(true)
     expect(resumedFeet).toEqual({
       slot: 'feet',

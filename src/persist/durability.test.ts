@@ -16,7 +16,7 @@ function withHero(): SaveData {
   return made.save
 }
 
-/** A run that was lost: every piece lost 10 durability and the 5-minute rest is owed. */
+/** A run that was lost: every piece lost 10 durability and the 30-second rest is owed. */
 function lostRun(save: SaveData): SaveData {
   const hero = selectedHero(save)
   if (hero === null) throw new Error('no hero')

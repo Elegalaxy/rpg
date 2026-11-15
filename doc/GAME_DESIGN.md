@@ -2066,12 +2066,12 @@ First-playable defeat, decided 2026-10-24:
 - Each equipped piece, including both accessories and an off-hand, starts at 100 durability and loses 10 on defeat. The loss stops at 0. A piece at 0 stays equipped and is marked disabled. Nothing is destroyed. This mark does not change the fight that was just lost.
 - A slot that holds an item still holds it after defeat, and items already consumed stay consumed. Unused supplies go back to the hero's stash when the run is settled, after a return or a defeat.
 - The rescue fee is 25 gold, paid from gold the hero is carrying. Unpaid gold is added to debt. Debt is only stored. Deposited gold is not spent. Soul Debt's extra 50% is a racial node, not this base fee.
-- The hero must wait 5 minutes before the next expedition. The wait is stored on the defeat. It does not tick inside the lost expedition.
+- The hero must wait 30 seconds before the next expedition (it was 5 minutes until 2026-11-16; playtest: too punishing on top of the rescue fee, lost loot and durability loss). The wait is stored on the defeat. It does not tick inside the lost expedition.
 
 Durability carry-through, decided 2026-11-13 (playtest fix):
 
 - A run starts with each piece at the durability the saved item has, not at 100. Settling writes the end value back, so wear accumulates until the player repairs the piece. The harness has no saved items and still starts every piece at 100.
-- A run cannot start while any equipped piece is disabled (durability 0), or while the 5-minute recovery after a defeat has not passed. The refusal names the piece or the minutes left. This holds for a live start and for an away start.
+- A run cannot start while any equipped piece is disabled (durability 0), or while the 30-second recovery after a defeat has not passed. The refusal names the piece or the minutes left. This holds for a live start and for an away start.
 - The recovery wait is stored on the hero as the time it ends, set when the defeated run is settled.
 
 ### Batch C: loot safety, bag, rules, modifiers (decided 2026-11-07)

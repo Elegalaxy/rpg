@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
 
+- Balance: the rest after a defeat is 30 seconds instead of 5 minutes, since the rescue fee, lost loot and durability loss already cost enough (Step 13.9, defeat rest).
 - Improved: the run dock shows the fight number (with your fight limit when set), the fight's name and its enemies, or the last fight's name and result between fights (Step 13.9, dock).
 - New: a "Stop after fights" standing order: after that many fights in one run the hero walks home and secures the loot instead of pushing on, live or while away; the run bar shows "Fight 3 / 10" (Step 13.9, part 2).
 - Improved: on the Map during a run, Push on, Return to town and Auto-escape stay pinned above the fight while you scroll, the fight sits right under them, and the extra numbers are folded under Run details (Step 13.9, part 1).
@@ -22,7 +23,7 @@ Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and
 - Tech: rule stacks are saved with each hero, carried into runs and away replays, pruned when you unequip a skill, and cleared on reincarnation; the Going in panel shows the stack count (Step 13.8, part 2).
 - Tech: rule stacks in the combat sim — a hero can switch between named sets of automation rows by trigger (Step 13.8, part 1).
 - Fixed: gear no longer returns to 100% durability at the start of every run, so wear carries over and repair matters again (Step 13.7, batch 1).
-- Improved: a run cannot start while a worn piece is disabled or the 5-minute rest after a defeat is pending, and the reason is shown (Step 13.7, batch 1).
+- Improved: a run cannot start while a worn piece is disabled or the rest after a defeat is pending, and the reason is shown (Step 13.7, batch 1).
 - Fixed: the live fight is numbered from the run, and fights played while you were away show as "Fight N · played while away" chips (Step 13.7, batch 2).
 - Fixed: the loot bag says "Full" at capacity and "Nearly full" below it (Step 13.7, batch 2).
 - Improved: the run panel shows Carried gold, Banked gold and gold dropped this run, so the purse reading 0 during a run is explained (Step 13.7, batch 2).

@@ -82,7 +82,7 @@ describe('outcome summary', () => {
     expedition.equipment = [{ slot: 'chest', itemId: 'x', durability: 90, maxDurability: 100, disabled: false }]
     expedition.carriedGold = 0
     expedition.debt = 25
-    expedition.recoveryMs = 300_000
+    expedition.recoveryMs = 30_000
     expedition.bossLossThisLife = true
     const summary = outcomeSummary(expedition)
     expect(summary.title).toBe('Defeated')
@@ -93,7 +93,7 @@ describe('outcome summary', () => {
       'Loot kept (secured): 4 hide.',
       'Gear damaged: chest 90/100.',
       'Rescue fee: 25 gold. Gold you carry now: 0. Debt: 25.',
-      'Recovery wait: 5 minutes.',
+      'Recovery wait: 30 s.',
       'A boss defeated you this life. You can now reincarnate.',
     ])
   })

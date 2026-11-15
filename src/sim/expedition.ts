@@ -163,7 +163,7 @@ export const DEFEAT_DURABILITY_LOSS = 10
 /** Paid from carried gold on defeat. The unpaid part is added to debt. */
 export const RESCUE_FEE = 25
 /** Stored wait after defeat. This expedition does not tick it down. */
-export const DEFEAT_RECOVERY_MS = 300_000
+export const DEFEAT_RECOVERY_MS = 30_000
 const ESCAPE_ZONE_BONUS = 0
 const ESCAPE_MOMENTUM_BONUS = 0
 

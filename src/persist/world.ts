@@ -501,7 +501,7 @@ export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
       lines.push(`Gear damaged: ${worn.map((entry) => `${entry.slot} ${entry.durability}/${entry.maxDurability}${entry.disabled ? ' (disabled)' : ''}`).join(', ')}.`)
     }
     lines.push(`Rescue fee: ${rescueFee(expedition)} gold. Gold you carry now: ${expedition.carriedGold}. Debt: ${expedition.debt}.`)
-    lines.push(`Recovery wait: ${Math.round(expedition.recoveryMs / 60_000)} minutes.`)
+    lines.push(`Recovery wait: ${recoveryText(expedition.recoveryMs)}.`)
     if (expedition.bossLossThisLife) lines.push('A boss defeated you this life. You can now reincarnate.')
     return { title: 'Defeated', lines }
   }
