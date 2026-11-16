@@ -1,16 +1,15 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-16)
-- **Current Goal:** Step 13.15 (away rules follow Auto run) is done, parts 1 to 4. Next is the user's playtest, then closing 13.12 to 13.15 into a `## 0.x.0` changelog heading.
-- **Recent Changes & Files Touched (UI and persist only; sim, harness, content defs, saves and snapshots untouched):**
-  - Part 1 docs: GAME_DESIGN §11 "Away rules for a run"; plan Step 13.15.
-  - Part 2: `persist/offline.ts` lane modes (`auto`, `away`, `hold`), stops `held` and `autoLimit`, `awayBanner`, `createOffline(..., autoFights)`; `persist/world.ts` `autoRerunRefusal` (shared with the live `afterAutoRun` in `ui/store.ts`); `finishCatchUp` carries the session count and sets the Auto run notice. Tests: `persist/offline.away.test.ts` (new), `offline.test.ts` (old away-order tests now use `runOwn`), `ui/map/autoRun.test.tsx` (0 durability at the live rerun).
-  - Part 3: `ui/AwayPanel.tsx` banner list (`away-banner-<heroId>`), new status tags; `ui/AwayPanel.test.tsx`.
-  - Part 4: `ui/map/ExpeditionPanel.tsx` texts (groups, Help, "What will happen"); `expedition.test.tsx`.
+- **Current Goal:** Step 13.16 (harness check for the gold sinks) is done. Next is the user's call on whether the numbers need tuning.
+- **Recent Changes & Files Touched (harness and docs only; sim, content numbers, saves and snapshots untouched):**
+  - `src/harness/modded.ts` (new): rows arrived, plain, socket, rank2, rank3, temper, rank3-top, stack for a level-17 hero on the 7 Causeway fights. Gear is built with `queueSocket`, `queueInfuse`, `queueRankUp` and `advanceCrafting` from `persist/crafting.ts`; costs read from the purse.
+  - `src/harness/modded.test.ts` (new); `src/harness/cli.ts`: `--matrix modded` writes `reports/modded-seed<seed>.csv` (gitignored).
+  - `tests/architecture.test.ts`: `harness/modded.ts` and its test may import persist (the only exception to "harness must not import persist").
+  - Docs: plan Step 13.16, CHANGELOG Tech line.
 - **Active Decisions / Constraints:**
-  - Auto run is the one switch for continuing a run while away; Auto off holds at Push on (only the per-run fight limit walks home). The away route starts only with no run at all.
-  - Auto lanes ignore `repeatRoute`, the cleared-route rule and `repeatLimit`. Background heroes continue only on their away route or with their own Auto run on (such a hero now becomes a lane).
-  - Auto run's session count continues from the live count when the replay starts.
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`.
-- **Not verified:** a real away replay and the return banner in the browser (only static tests); an ended-uncollected defeat still shows "Defeated" on every return (old behaviour, unchanged).
-- **Exact Next Step:** (1) User playtest: leave mid-run with Auto run off and on, and with an away route. (2) Close Steps 13.12 to 13.15 into a `## 0.x.0 · date · name` changelog heading.
+  - Second modifiers only on weapon, off-hand and both accessories; armor has only Sturdy and Nimble open at level 17 and both are already at the stack cap of 2.
+  - Rank III needs riftglass or better, so it also carries temper 3 (cinderite: 5).
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`.
+- **Result (seed 1, runs 100):** see the plan Step 13.16 and the session report. Win rates are saturated at 100% on six of seven fights; only the level-22 Colossus moves, and only the full stack moves it.
+- **Exact Next Step:** User reads the numbers and decides whether single sinks are too weak (they change HP left by 0 to 3 points) before any tuning; tuning goes in GAME_DESIGN first.

@@ -255,7 +255,9 @@ function importRule(layer: Layer, absFile: string, spec: string): string | null 
 
   if (layer === 'harness') {
     if (resolvedLayer === 'ui') return forbidden(spec, 'src/harness must not import src/ui')
-    if (resolvedLayer === 'persist') return forbidden(spec, 'src/harness must not import src/persist')
+    // Step 13.16: the gold-sink matrix builds its gear with the game's own crafting code, so these two files may read persist.
+    const craftsWithGame = /[\\/]harness[\\/]modded(\.test)?\.ts$/.test(absFile)
+    if (resolvedLayer === 'persist' && !craftsWithGame) return forbidden(spec, 'src/harness must not import src/persist')
     return null
   }
 

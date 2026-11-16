@@ -1188,6 +1188,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.16: Harness check for the gold sinks
+- Status: `done`
+- Depends on: 13.11
+- Goal: measure whether stacking the gold sinks (second modifier socket, ranks I to III, tempers) makes the Drowned Causeway noticeably easier for a level-17 hero. Harness only: no change to `src/sim`, content numbers, the reference matrix, or the existing matrices.
+- Parts: (1) `src/harness/modded.ts` (`--matrix modded`, CSV `reports/modded-seed<seed>.csv`), rows built with the persist crafting jobs (`queueSocket`, `queueInfuse`, `queueRankUp`, `advanceCrafting`), test `modded.test.ts`. (2) Read the numbers and report; any tuning is the user's call and goes in GAME_DESIGN first.
+- Progress:
+  - 2026-11-16: Part 1 done. Rows: arrived (reference), plain, socket, rank2, rank3, temper, rank3-top, stack. Seed 1, 100 runs: six of the seven Causeway fights are won 100% on every row; single sinks move mean HP left by 0 to 3 points, the full stack by 2 to 5 points and the level-22 Colossus from 0-2% to 8-44% wins. `tests/architecture.test.ts` lets `harness/modded.ts` and its test import persist.
+
 ### Step 13.15: Away rules follow Auto run
 - Status: `done`
 - Depends on: 13.14
