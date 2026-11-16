@@ -1,15 +1,16 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code implementer (2026-11-16)
-- **Current Goal:** Step 13.16 (harness check for the gold sinks) is done. Next is the user's call on whether the numbers need tuning.
-- **Recent Changes & Files Touched (harness and docs only; sim, content numbers, saves and snapshots untouched):**
-  - `src/harness/modded.ts` (new): rows arrived, plain, socket, rank2, rank3, temper, rank3-top, stack for a level-17 hero on the 7 Causeway fights. Gear is built with `queueSocket`, `queueInfuse`, `queueRankUp` and `advanceCrafting` from `persist/crafting.ts`; costs read from the purse.
-  - `src/harness/modded.test.ts` (new); `src/harness/cli.ts`: `--matrix modded` writes `reports/modded-seed<seed>.csv` (gitignored).
-  - `tests/architecture.test.ts`: `harness/modded.ts` and its test may import persist (the only exception to "harness must not import persist").
-  - Docs: plan Step 13.16, CHANGELOG Tech line.
+- **Last Updated By:** Claude Code implementer (2026-11-17)
+- **Current Goal:** Step 13.17 (gold sinks retune) is done, parts 1 to 4, pushed to `origin/main`. Next is the user's decision on the missed `infuse-rift` target, then a playtest and closing 13.12 to 13.17 into a `## 0.x.0` changelog heading.
+- **Recent Changes & Files Touched:**
+  - Part 1 docs: GAME_DESIGN §9 (ranks 1.0 / 1.5 / 2.0, `TEMPER_PER_POINT = 0.15`, drills 20% from level 10, "Retune (Step 13.17)" note with measured results); plan Step 13.17.
+  - Part 2: `sim/economy.ts` (rank multipliers, temper per point, factor rounded to two decimals); `ui/town/Ranks.tsx` help text from the constants; `ui/town/materialEffect.ts` comment; `ui/town/groupItems.ts` key includes `modifierTempers`; tests recomputed in `sim/modifiers.test.ts`, `persist/crafting.test.ts`, `persist/ranks.test.ts`, `ui/town/Ranks.test.tsx`, `Sockets.test.tsx`, `groupItems.test.ts`.
+  - Part 3: `harness/modded.ts` rows `infuse-rift`, `stack-rift` (riftglass only) and `modded.test.ts`.
+  - Part 4: `persist/training.ts` (`DRILL_BOOST_LEVEL = 10`, `DRILL_BOOST_XP_FRACTION = 0.2`), `training.test.ts`, Trainer text in `ui/town/Town.tsx`.
 - **Active Decisions / Constraints:**
-  - Second modifiers only on weapon, off-hand and both accessories; armor has only Sturdy and Nimble open at level 17 and both are already at the stack cap of 2.
-  - Rank III needs riftglass or better, so it also carries temper 3 (cinderite: 5).
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`.
-- **Result (seed 1, runs 100):** see the plan Step 13.16 and the session report. Win rates are saturated at 100% on six of seven fights; only the level-22 Colossus moves, and only the full stack moves it.
-- **Exact Next Step:** User reads the numbers and decides whether single sinks are too weak (they change HP left by 0 to 3 points) before any tuning; tuning goes in GAME_DESIGN first.
+  - Prices unchanged. Guard runs, `--matrix causeway` and `--matrix cinder` are byte-identical to before; `plain` and `arrived` rows of the modded matrix too.
+  - Existing tempered or ranked items get stronger in saves (no save change).
+  - Measured (seed 1, 100 runs): `stack-rift` Colossus warrior 75, assassin 53, ranger 55, mage 37, cleric 97%; `causeway-deep` HP left +6.1 points; `rank3` 10 to 27%; `infuse-rift` only about +2 points over `socket` (target 5 MISSED). Not tuned further.
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`.
+- **Not verified:** the new numbers in the browser (Ranks and Trainer text only by static tests).
+- **Exact Next Step:** (1) User decides whether to raise the rank I second-modifier effect or accept `infuse-rift`. (2) Playtest ranks, tempers and drills. (3) Close Steps 13.12 to 13.17 into a `## 0.x.0 · date · name` changelog heading.

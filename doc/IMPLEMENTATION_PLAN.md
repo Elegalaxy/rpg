@@ -1189,7 +1189,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.17: Gold sinks retune
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.16
 - Goal: make the gold sinks matter on the Drowned Causeway for a level-17 hero. Ranks multiply 1.0 / 1.5 / 2.0, `TEMPER_PER_POINT = 0.15`, trainer drills give 20% of a level from level 10 (rules in GAME_DESIGN §9, "Gold sinks" and its Retune note). No tuning beyond this; a missed target is reported.
 - Parts: (1) docs only. (2) `sim/economy.ts` numbers, Ranks help text, test expectations, grouping key fix in `ui/town/groupItems.ts`, byte-for-byte check of the causeway and cinder matrices. (3) `harness/modded.ts` rows `infuse-rift` and `stack-rift`, measurement. (4) Drills: `persist/training.ts` (`DRILL_BOOST_LEVEL`, `drillXp`), Trainer text.
@@ -1197,6 +1197,8 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-17: Part 1 done. Rules and targets recorded in GAME_DESIGN §9.
   - 2026-11-17: Part 2 done. `sim/economy.ts` (`MODIFIER_RANK_MULTIPLIER` 1 / 1.5 / 2, `TEMPER_PER_POINT` 0.15, factor rounded to two decimals), Ranks help text from the constants, test expectations recomputed, `groupItems` key now includes tempers. `--matrix causeway` and `--matrix cinder` (seed 1, 20 runs) are byte-identical to the 010bd59 output (apart from the timing line); the golden and reference tests pass.
+  - 2026-11-17: Part 3 done. Rows `infuse-rift` and `stack-rift` appended to `harness/modded.ts` (all riftglass), test extended. Seed 1 / 100 runs and seed 2 / 50 runs: `plain` and `arrived` byte-identical to 010bd59; `stack-rift` Colossus (warrior, assassin, ranger, mage, cleric) 75 / 53 / 55 / 37 / 97%; `causeway-deep` HP left +6.1 points over plain (+4.9 seed 2); `rank3` Colossus 27 / 26 / 19 / 10 / 16%; `infuse-rift` only +2 points over `socket` on average (target 5 MISSED). Details in GAME_DESIGN §9 Retune note.
+  - 2026-11-17: Part 4 done. `persist/training.ts` `DRILL_BOOST_LEVEL = 10`, `drillXp` 20% from level 10 (701 XP at level 17), Trainer text, tests.
 
 ### Step 13.16: Harness check for the gold sinks
 - Status: `done`
