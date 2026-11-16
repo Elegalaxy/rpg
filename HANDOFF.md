@@ -1,14 +1,17 @@
 # Project Handoff State
 
-- **Last Updated By:** Cursor (2026-11-16)
-- **Current Goal:** Gear shops (Weaponsmith, Armorer, Jeweler) show one job at a time so the counter is understandable on arrival. Playtest of drills, sockets, and ranks is still waiting.
+- **Last Updated By:** Claude Code (2026-11-16)
+- **Current Goal:** Step 13.11 is done (parts 1-5): timed queueable Trainer drills and material temper. Next is the user's playtest, then closing 13.7 to 13.11 into a 0.x.0 changelog heading.
 - **Recent Changes & Files Touched:**
-  - `src/ui/town/Town.tsx`: gear job bar (Buy, Sell, Repair, Craft, Upgrade, Sockets, Ranks, Queue). Repair and Queue show a count when something is waiting.
-  - `src/ui/town/Craft.tsx`: `part` draws one crafting job; omitted still draws the whole page.
-  - `src/ui/theme.css`: `.gear-jobs` sticks under the place tabs on a wide screen.
-  - `CHANGELOG.md`: one Improved line under Unreleased.
+  - Part 1 docs: GAME_DESIGN §9 (Trainer timing, Temper), the wrong "cancel and refund" line fixed, plan Step 13.11.
+  - Part 2: `SavedHero.training` and `DRILL_MS` (`persist/save.ts`), `heroAway`, `trainHero` (queues), `advanceTraining` (`persist/training.ts`), called beside `advanceCrafting` in `ui/store.ts` and `persist/offline.ts`; reincarnation blocked while drills queued; Trainer queue in `ui/town/Town.tsx`.
+  - Part 3: `modifierTempers`, `TEMPER_PER_POINT`, `scaledBonus(key, value, rank, temper)`, `modifierTextAt(..., temper)` in `sim/economy.ts`; `assertItem` validation.
+  - Part 4: `temperGrade`, `withTempers` in `persist/crafting.ts`: craft sets slot 0, Infuse slot 1, Rank up max(old, grade), Open socket also lifts quality.
+  - Part 5: `ui/town/materialEffect.ts`, pickers in Craft, Sockets, Ranks; compare notes in `persist/equipment.ts`.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - One commit per finished stage or main function, pushed to `origin/main` before the next one starts. No force-push. Every game-changing commit adds a line under `Unreleased`.
-  - Guards stay byte-identical. An item in a queued job takes no other socket, infuse, or rank job until it returns. Hauler's cannot be ranked. Drill XP is rounded half up.
-- **Exact Next Step:** User playtest of the gear job bar, drills, sockets, and ranks. After that, close Steps 13.7 to 13.10 into a `## 0.x.0` changelog heading.
+  - One commit per finished part, pushed to `origin/main`, no force-push. Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
+  - Queueing a drill is still refused while the hero is away; a queue made at home pauses while away. Max 3 queued at once. Offline catch-up advances drills in the same chunks as crafting.
+  - Temper is the material grade (scrap 0 to cinderite 5), +3% per point; Hauler's gets none. Rank I with temper 0 runs the old arithmetic (guards byte-identical at seed 1, 5 runs, all eight matrices).
+- **Not verified:** a drill finishing in the browser across a tab change; Sockets and Ranks pickers in a browser (tests only); the 300-run matrix diff; an elites variant with tempered gear.
+- **Exact Next Step:** (1) User playtest: drills (queue, away pause) and tempered crafting at level 17. (2) Optional harness `--matrix elites` variant with tempered gear (ADD rows only). (3) Close Steps 13.7 to 13.11 into a `## 0.x.0 · date · name` changelog heading.

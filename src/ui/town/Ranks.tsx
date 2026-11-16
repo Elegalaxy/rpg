@@ -2,14 +2,15 @@ import { useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
-import { CRAFT_MS, RANK_MATERIAL_COST, rankCheck, rankGold, rankMaterials, socketTargets } from '../../persist/crafting.ts'
+import { CRAFT_MS, RANK_MATERIAL_COST, rankCheck, rankGold, rankMaterials, socketTargets, temperGrade } from '../../persist/crafting.ts'
 import { purseOf } from '../../persist/save.ts'
-import { ITEM_MODIFIERS, MODIFIER_RANK_MAX, modifierRankAt, modifierTextAt, rankName, rankable, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { ITEM_MODIFIERS, MODIFIER_RANK_MAX, modifierRankAt, modifierTemperAt, modifierTextAt, rankName, rankable, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
 import { queueRankUpFromUi, useSaveStatus } from '../store.ts'
 import { groupItems } from './groupItems.ts'
+import { temperText } from './materialEffect.ts'
 
 const SLOT_NAMES: { [slot in EquipmentSlotId]: string } = {
   mainHand: 'Main hand',
@@ -68,6 +69,8 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
               const toRank = current + 1
               const material = materialFor(item, index, toRank)
               const block = rankCheck(save, hero, item, index, material)
+              const oldTemper = modifierTemperAt(item, index)
+              const newTemper = Math.max(oldTemper, temperGrade(id, material))
               return (
                 <ShopRow
                   key={`${item.id}:${index}`}
@@ -83,7 +86,9 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
                       <dt>Rank</dt>
                       <dd>{maxed ? `${rankName(current)} (highest)` : `${rankName(current)} → ${rankName(toRank)}`}</dd>
                       <dt>Effect</dt>
-                      <dd data-testid="rank-effect">{maxed ? modifierTextAt(modifier, current) : `${modifierTextAt(modifier, current)} → ${modifierTextAt(modifier, toRank)}`}</dd>
+                      <dd data-testid="rank-effect">{maxed ? modifierTextAt(modifier, current, oldTemper) : `${modifierTextAt(modifier, current, oldTemper)} → ${modifierTextAt(modifier, toRank, newTemper)}`}</dd>
+                      <dt>Temper</dt>
+                      <dd data-testid="rank-temper">{maxed || newTemper === oldTemper ? `${temperText(oldTemper)}${maxed ? '' : ' (kept)'}` : `${temperText(oldTemper)} → ${temperText(newTemper)}`}</dd>
                       <dt>Time</dt>
                       <dd>{CRAFT_MS / 1000} s</dd>
                     </dl>

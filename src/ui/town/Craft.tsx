@@ -17,12 +17,14 @@ import {
   craftGold,
   proficiencyRank,
   qualityRange,
+  temperGrade,
   upgradeGold,
   upgradedQuality,
   upgradeCheck,
 } from '../../persist/crafting.ts'
 import { wearerOf } from '../../persist/equipment.ts'
 import { ITEM_MODIFIERS, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { temperText } from './materialEffect.ts'
 import { QualityHelp } from './QualityHelp.tsx'
 import { Ranks } from './Ranks.tsx'
 import { Sockets } from './Sockets.tsx'
@@ -228,7 +230,15 @@ export function Craft({ accepts = () => true, part }: { accepts?: (baseId: strin
         <ShopRow
           testId="craft-summary"
           name="Craft"
-          effect={`Quality ${range === null ? 'none' : `${percent(range.low)} to ${percent(range.high)}`} · ${CRAFT_MS / 1000} s`}
+          effect={
+            <>
+              {`Quality ${range === null ? 'none' : `${percent(range.low)} to ${percent(range.high)}`} · ${CRAFT_MS / 1000} s`}
+              <dl className="upgrade-facts">
+                <dt>Temper</dt>
+                <dd data-testid="craft-temper">{shownModifier === '' ? 'none (no modifier)' : temperText(temperGrade(shownModifier, materialId))}</dd>
+              </dl>
+            </>
+          }
           costs={[
             [
               { kind: 'mat', amount: CRAFT_MATERIAL_COST, label: materialId },

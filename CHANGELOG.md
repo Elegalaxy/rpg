@@ -21,6 +21,7 @@ Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and
 - Improved: a Trainer drill now takes 45 seconds and you can queue up to three; each drill's XP lands when it finishes, the queue waits while the hero is away, and reincarnation waits for it (Step 13.11, part 2).
 - Tech: items can carry a temper per modifier (0 to 5) that adds 3% of the modifier's strength per point, up to x1.55 at rank III; nothing applies one yet, and untempered items are unchanged (Step 13.11, part 3).
 - Balance: the material you spend now tempers a modifier: crafting, Infuse and Rank up bind its grade (scrap 0 to cinderite 5), each point adding 3% to that modifier's numbers (up to x1.55 at rank III), and Open socket also raises the item's quality like an upgrade (Step 13.11, part 4).
+- Improved: the Craft, Open socket, Infuse and Rank up pickers show what the chosen material does before you spend it (Temper +15%, Quality +5 up to 120%), and the gear compare notes name a modifier's temper (Step 13.11, part 5).
 - New: a Trainer in Greyhaven sells up to three drills per level, each worth a tenth of the level's XP for level x 40 gold, then x 80, then x 120 (Step 13.10, part 2).
 - Balance: the rest after a defeat is 30 seconds instead of 5 minutes, since the rescue fee, lost loot and durability loss already cost enough (Step 13.9, defeat rest).
 - Improved: the run dock shows the fight number (with your fight limit when set), the fight's name and its enemies, or the last fight's name and result between fights (Step 13.9, dock).

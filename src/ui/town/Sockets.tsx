@@ -14,6 +14,7 @@ import {
   socketCheck,
   socketGold,
   socketTargets,
+  temperGrade,
 } from '../../persist/crafting.ts'
 import { purseOf } from '../../persist/save.ts'
 import { ITEM_MODIFIERS, modifierFits, modifierRankAt, rankName, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
@@ -22,6 +23,7 @@ import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
 import { queueInfuseFromUi, queueSocketFromUi, useSaveStatus } from '../store.ts'
 import { groupItems } from './groupItems.ts'
+import { qualityEffectText, temperText } from './materialEffect.ts'
 
 const MATERIALS = Object.keys(MATERIAL_QUALITY)
 
@@ -115,6 +117,17 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                       <dd>{item.itemLevel}</dd>
                       <dt>Modifiers</dt>
                       <dd data-testid="socket-modifiers">{modifierLine(item)}</dd>
+                      {!socketed ? (
+                        <>
+                          <dt>Quality</dt>
+                          <dd data-testid="socket-quality">{qualityEffectText(gem)}</dd>
+                        </>
+                      ) : (
+                        <>
+                          <dt>Temper</dt>
+                          <dd data-testid="infuse-temper">{pickedModifier === '' ? 'none' : temperText(temperGrade(pickedModifier, mat))}</dd>
+                        </>
+                      )}
                       <dt>Time</dt>
                       <dd>{CRAFT_MS / 1000} s</dd>
                     </dl>

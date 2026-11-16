@@ -1,5 +1,5 @@
 import { developmentItems, itemBase, itemName } from '../content/items.ts'
-import { ITEM_MODIFIERS, modifierRankAt, modifierTextAt, rankName, equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
+import { ITEM_MODIFIERS, modifierRankAt, modifierTemperAt, modifierTextAt, TEMPER_PER_POINT, rankName, equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
 import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats, type HeroDerivedStats } from '../sim/stats.ts'
 import { renaissanceActive } from '../sim/progression.ts'
@@ -91,7 +91,7 @@ function modifierNotes(before: readonly ItemInstance[], after: readonly ItemInst
     const tally: { [key: string]: number } = {}
     for (const item of items)
       item.modifiers.forEach((id, index) => {
-        const key = `${id}|${modifierRankAt(item, index)}`
+        const key = `${id}|${modifierRankAt(item, index)}|${modifierTemperAt(item, index)}`
         tally[key] = (tally[key] ?? 0) + 1
       })
     return tally
@@ -100,10 +100,12 @@ function modifierNotes(before: readonly ItemInstance[], after: readonly ItemInst
   const now = count(after)
   const notes: string[] = []
   const label = (key: string) => {
-    const [id = '', rankText = '1'] = key.split('|')
+    const [id = '', rankText = '1', temperText = '0'] = key.split('|')
     const rank = Number(rankText)
+    const temper = Number(temperText)
     const modifier = ITEM_MODIFIERS[id]
-    return `${modifier?.name ?? id}${rank > 1 ? ` ${rankName(rank)}` : ''}: ${modifier === undefined ? '' : modifierTextAt(modifier, rank)}`
+    const tempered = temper > 0 ? ` (temper +${Math.round(temper * TEMPER_PER_POINT * 100)}%)` : ''
+    return `${modifier?.name ?? id}${rank > 1 ? ` ${rankName(rank)}` : ''}${tempered}: ${modifier === undefined ? '' : modifierTextAt(modifier, rank, temper)}`
   }
   for (const key of Object.keys(was)) {
     if ((now[key] ?? 0) < (was[key] ?? 0)) notes.push(`Loses ${label(key)}`)
