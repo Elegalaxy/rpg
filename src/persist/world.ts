@@ -456,13 +456,13 @@ export type HoldVerdict = 'fights' | 'hp' | 'bag' | 'ask' | 'push'
 
 /**
  * The one decision both the away replay and a live Auto run use at a hold, so they cannot drift.
- * Order: the fight limit, then the push-on HP floor, then a nearly full bag.
+ * Order: the fight limit, then the push-on HP floor, then a nearly full bag (skipped with the `keep` order).
  */
 export function decideHold(expedition: ExpeditionState, hero: Pick<SavedHero, 'stopAfterFights' | 'pushOnHpPercent' | 'bagFullOrder'>): HoldVerdict {
   if (fightLimitReached(expedition, hero.stopAfterFights)) return 'fights'
   const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
   if (hpPercent < hero.pushOnHpPercent) return 'hp'
-  if (bagIsFull(expedition)) return hero.bagFullOrder === 'ask' ? 'ask' : 'bag'
+  if (hero.bagFullOrder !== 'keep' && bagIsFull(expedition)) return hero.bagFullOrder === 'ask' ? 'ask' : 'bag'
   return 'push'
 }
 

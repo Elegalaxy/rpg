@@ -261,14 +261,15 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         <div className="controls">
           <label>
             When the bag is nearly full{' '}
-            <select aria-label="Bag full order" value={draft.bagFullOrder} onChange={(event) => patch({ bagFullOrder: event.target.value === 'ask' ? 'ask' : 'home' })}>
+            <select aria-label="Bag full order" value={draft.bagFullOrder} onChange={(event) => patch({ bagFullOrder: event.target.value === 'ask' ? 'ask' : event.target.value === 'keep' ? 'keep' : 'home' })}>
               <option value="home">Walk home</option>
               <option value="ask">Hold and wait for me</option>
+              <option value="keep">Keep going (loot that does not fit is lost)</option>
             </select>
           </label>
           <Help label="About a full bag">
             The bag counts as full when fewer than 4 room is free. Walk home returns and secures the loot. Hold and wait stops the run at that point, also while you
-            are away, until you come back and choose.
+            are away, until you come back and choose. Keep going ignores a full bag and pushes on: gold, XP and momentum still count, but loot that does not fit is lost.
           </Help>
         </div>
         <div className="controls">
@@ -292,7 +293,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           {draft.awayRouteId === ''
             ? 'If you have no run when you leave, nothing starts. If a run is out, after each fight'
             : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}. After each fight`}{' '} the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
-          and the bag is not nearly full, otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
+          {draft.bagFullOrder === 'keep' ? '' : 'and the bag is not nearly full, '}otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
           {(draft.stopAfterFights ?? '').trim() === '' ? '' : `A run walks home after ${draft.stopAfterFights?.trim()} fights. `}
           {draft.repeatRoute
             ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'

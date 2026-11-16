@@ -2120,7 +2120,7 @@ Bigger bag:
 
 When the bag is nearly full:
 
-- "Full" means fewer than 4 free room. Hero setting `bagFullOrder`: `home` (walk home, default) or `ask` (hold and wait for the player). No courier option.
+- "Full" means fewer than 4 free room. Hero setting `bagFullOrder`: `home` (walk home, default), `ask` (hold and wait for the player) or `keep` (decided 2026-11-17, user: keep going with a full bag, for farming XP and gold on a route whose materials are not wanted). With `keep` the bag check at a hold is skipped, so the hero pushes on as usual; loot that does not fit is lost exactly as it is when a bag fills mid-fight (older materials stay, the newest quantity that does not fit is lost), while gold, XP and momentum are unaffected. The other stop rules still win first (the per-run fight limit, the push-on HP floor, the Auto run total limit). The same decision serves live, Auto run and away runs. No courier option.
 
 Rule conditions (new): hero HP in points, target HP in points, missing HP, skill is ready, fight time. Enemy rank and boss phase are shown in the picker. AND/OR groups are unchanged. Each rule gets a plain-language summary and a Duplicate button.
 

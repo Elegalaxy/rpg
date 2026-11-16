@@ -215,7 +215,7 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   if (draft.supplies.length > SUPPLY_SLOT_COUNT) errors.push(`Pack at most ${SUPPLY_SLOT_COUNT} supplies.`)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
   if (!REPEAT_LIMITS.includes(draft.repeatLimit)) errors.push(`Pick a run limit of ${REPEAT_LIMITS.join(', ')} (0 is no limit).`)
-  if (!BAG_FULL_ORDERS.includes(draft.bagFullOrder)) errors.push('Pick what to do when the bag is nearly full: walk home or ask.')
+  if (!BAG_FULL_ORDERS.includes(draft.bagFullOrder)) errors.push('Pick what to do when the bag is nearly full: walk home, ask or keep going.')
   if (draft.awayRouteId !== '' && routes[draft.awayRouteId] === undefined) errors.push('Pick a route Greyhaven knows for away runs, or none.')
   if (errors.length > 0) return { ok: false, errors }
   return {

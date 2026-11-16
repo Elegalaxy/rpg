@@ -23,9 +23,9 @@ export const MAX_SLOTS = 5
 export const DEFAULT_CARRY_GOLD = 25
 /** Standing orders for time away: push on while HP is at least this percent. */
 export const DEFAULT_PUSH_ON_PERCENT = 50
-/** What a run does when the bag is nearly full: walk home, or hold and wait for the player. */
-export type BagFullOrder = 'home' | 'ask'
-export const BAG_FULL_ORDERS: readonly BagFullOrder[] = ['home', 'ask']
+/** What a run does when the bag is nearly full: walk home, hold and wait for the player, or keep going (loot that does not fit is lost). */
+export type BagFullOrder = 'home' | 'ask' | 'keep'
+export const BAG_FULL_ORDERS: readonly BagFullOrder[] = ['home', 'ask', 'keep']
 /** The run limits the preparation offers. 0 is no limit. */
 /** Trainer drills a hero can buy within one level (GAME_DESIGN §9, "Gold sinks"). */
 export const MAX_DRILLS_PER_LEVEL = 3
@@ -527,7 +527,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
       check(typeof drill.xp === 'number' && Number.isInteger(drill.xp) && drill.xp >= 1, `${label} each queued drill needs whole XP of at least 1`)
     }
   }
-  check(value.bagFullOrder === 'home' || value.bagFullOrder === 'ask', `${label} bag-full order must be home or ask`)
+  check(value.bagFullOrder === 'home' || value.bagFullOrder === 'ask' || value.bagFullOrder === 'keep', `${label} bag-full order must be home, ask or keep`)
   check(value.awayRouteId === null || typeof value.awayRouteId === 'string', `${label} away route must be a route id or null`)
   check(isRecord(value.routeReturns), `${label} route returns must be an object`)
   for (const [routeId, count] of Object.entries(value.routeReturns)) whole(count, `${label} safe returns on ${routeId}`)

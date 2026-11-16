@@ -153,11 +153,20 @@ describe('Auto run in the save', () => {
     if (parsed.ok) expect(parsed.data.heroes[0]).toMatchObject({ autoRun: true, autoRunMaxFights: 100 })
   })
 
+  it('saves and loads the keep-going bag order', () => {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    const heroes = made.save.heroes.map((entry) => ({ ...entry, bagFullOrder: 'keep' as const }))
+    const parsed = parseSave(serializeSave({ ...made.save, heroes }))
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) expect(parsed.data.heroes[0]?.bagFullOrder).toBe('keep')
+  })
+
   it('loads a save without the fields and refuses bad values', () => {
     const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
     if (!made.ok) throw new Error(made.reason)
     expect(parseSave(serializeSave(made.save)).ok).toBe(true)
-    for (const bad of [{ autoRunMaxFights: 0 }, { autoRunMaxFights: 10000 }, { autoRunMaxFights: 1.5 }, { autoRun: 'yes' }]) {
+    for (const bad of [{ autoRunMaxFights: 0 }, { autoRunMaxFights: 10000 }, { autoRunMaxFights: 1.5 }, { autoRun: 'yes' }, { bagFullOrder: 'forever' }]) {
       const heroes = made.save.heroes.map((entry) => ({ ...entry, ...bad }))
       expect(parseSave(JSON.stringify({ ...made.save, heroes })).ok).toBe(false)
     }
@@ -172,5 +181,16 @@ describe('the shared hold decision', () => {
     expect(decideHold(run, orders)).toBe('push')
     expect(decideHold(run, { ...orders, pushOnHpPercent: 51 })).toBe('hp')
     expect(decideHold(run, { ...orders, stopAfterFights: 2, pushOnHpPercent: 51 })).toBe('fights')
+  })
+
+  it('keeps going with a full bag under the keep order, while the other stop rules still win', async () => {
+    const { decideHold } = await import('../../persist/world.ts')
+    const full = { history: [{}, {}], hero: { hp: 50, maxHp: 100 }, unsecured: [{ materialId: 'hide', quantity: 26 }], lootCapacity: 26 } as never
+    const orders = { stopAfterFights: null, pushOnHpPercent: 50, bagFullOrder: 'home' as const }
+    expect(decideHold(full, orders)).toBe('bag')
+    expect(decideHold(full, { ...orders, bagFullOrder: 'ask' })).toBe('ask')
+    expect(decideHold(full, { ...orders, bagFullOrder: 'keep' })).toBe('push')
+    expect(decideHold(full, { ...orders, bagFullOrder: 'keep', pushOnHpPercent: 51 })).toBe('hp')
+    expect(decideHold(full, { ...orders, bagFullOrder: 'keep', stopAfterFights: 2 })).toBe('fights')
   })
 })
