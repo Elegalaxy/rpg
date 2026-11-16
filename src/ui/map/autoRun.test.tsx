@@ -5,7 +5,7 @@ import { routes } from '../../content/world.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { createHero } from '../../persist/roster.ts'
 import { newSave, parseSave, serializeSave, type SavedHero } from '../../persist/save.ts'
-import { advanceExpedition, commitSave, expeditionWaiting, getSaveStatus, pushOnFromUi, setAutoRunFromUi, startExpeditionFromUi } from '../store.ts'
+import { advanceExpedition, commitSave, expeditionWaiting, getAutoNotice, getSaveStatus, pushOnFromUi, setAutoRunFromUi, startExpeditionFromUi } from '../store.ts'
 import { ExpeditionPanel } from './ExpeditionPanel.tsx'
 
 /** Start a Road run for a level 40 Warrior (wins every fight) with the given hero settings. */
@@ -13,7 +13,7 @@ function startRun(patch: Partial<SavedHero>) {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
   if (!made.ok) throw new Error(made.reason)
   const attributes = { strength: 400, vitality: 400, agility: 100, intellect: 10, spirit: 100 }
-  const cleared = [...(routes['splintered-road']?.nodeIds ?? [])]
+  const cleared = patch.clearedNodeIds ?? [...(routes['splintered-road']?.nodeIds ?? [])]
   const heroes = made.save.heroes.map((hero) => ({ ...hero, clearedNodeIds: cleared, progress: { ...hero.progress, level: 40, attributes }, ...patch }))
   commitSave({ ...made.save, heroes }, 'test', false)
   vi.spyOn(globalThis.crypto, 'getRandomValues').mockImplementation(((array: Uint32Array) => {
@@ -85,8 +85,8 @@ describe('Auto run in a live run', () => {
     expect(getSaveStatus().save.expedition).toBe(run)
   }, 120_000)
 
-  it('repeats a cleared route on its own and counts fights across runs', () => {
-    const first = startRun({ autoRun: true, repeatRoute: true, pushOnHpPercent: 1, stopAfterFights: 1, autoRunMaxFights: 3 })
+  it('reruns the route on its own, even uncleared and with repeat off, and counts fights across reruns', () => {
+    const first = startRun({ autoRun: true, repeatRoute: false, clearedNodeIds: [], pushOnHpPercent: 1, stopAfterFights: 1, autoRunMaxFights: 3 })
     play(() => getSaveStatus().save.expedition !== first)
     const second = getSaveStatus().save.expedition
     expect(second).not.toBeNull()
@@ -104,6 +104,33 @@ describe('Auto run in a live run', () => {
     expect(runs.size).toBe(3)
     expect(getSaveStatus().save.expedition?.history).toHaveLength(1)
   }, 240_000)
+
+  it('stops and switches off on a defeat, starting nothing', () => {
+    const weak = { strength: 1, vitality: 1, agility: 1, intellect: 1, spirit: 1 }
+    const run = startRun({ autoRun: true, repeatRoute: true, retreatAtMost: null, pushOnHpPercent: 1 })
+    const heroes = getSaveStatus().save.heroes.map((entry) => ({ ...entry, progress: { ...entry.progress, level: 1, attributes: weak } }))
+    expect(heroes.length).toBe(1)
+    // A fresh weak hero cannot survive the Road without retreating.
+    commitSave({ ...getSaveStatus().save, heroes, expedition: null }, 'test', false)
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    const doomed = getSaveStatus().save.expedition
+    expect(doomed).not.toBeNull()
+    expect(run).not.toBe(doomed)
+    play(() => doomed?.outcome !== 'ongoing')
+    expect(doomed?.outcome).toBe('defeat')
+    expect(hero()?.autoRun).toBe(false)
+    expect(getSaveStatus().save.expedition).toBe(doomed)
+    expect(getAutoNotice()).toContain('defeated')
+  }, 120_000)
+
+  it('stops and says why when the rerun cannot start', () => {
+    const run = startRun({ autoRun: true, repeatRoute: false, pushOnHpPercent: 1, stopAfterFights: 1, packedSupplies: ['healing-draught'] })
+    play(() => getSaveStatus().save.expedition !== run)
+    expect(getSaveStatus().save.expedition).toBeNull()
+    expect(hero()?.autoRun).toBe(false)
+    expect(getAutoNotice()).toContain('packed supplies')
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Auto run stopped')
+  }, 120_000)
 
   it('can be switched off mid-run to take manual control, and Push on still works', () => {
     const run = startRun({ autoRun: true, repeatRoute: false, pushOnHpPercent: 1 })

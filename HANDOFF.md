@@ -5,7 +5,7 @@
 - **Recent Changes & Files Touched (13.14):**
   - Docs: GAME_DESIGN section 11 "Auto run", plan Step 13.14.
   - `SavedHero.autoRun`, `autoRunMaxFights` (optional, validated, no version bump) in `persist/save.ts`; draft fields in `persist/preparation.ts`.
-  - `decideHold` and `routeCleared` in `persist/world.ts`, shared by `persist/offline.ts` (away) and `advanceExpedition` in `ui/store.ts` (live). `afterAutoRun` settles and repeats a cleared route, or switches Auto run off at the session limit or a defeat. `autoFights` count is in memory.
+  - `decideHold` and `routeCleared` in `persist/world.ts`, shared by `persist/offline.ts` (away) and `advanceExpedition` in `ui/store.ts` (live). `afterAutoRun` settles and reruns the same route on any startable route (independent of `repeatRoute`), or switches Auto run off at the session limit, a defeat or a refused start (`getAutoNotice` shows why). `autoFights` count is in memory.
   - UI: preparation fieldset and run bar toggle/status (`ui/map/ExpeditionPanel.tsx`), dock chip and checkbox (`ui/RunDock.tsx`), sidebar gold total (`ui/GoldLine.tsx`, `ui/goldTotals.ts`).
   - Tests: `ui/map/autoRun.test.tsx`, `ui/goldLine.test.tsx`; `preparation.test.ts` default draft gained two fields.
 - **Active Decisions / Constraints:**

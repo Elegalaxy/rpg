@@ -14,7 +14,7 @@ import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { packFromStash, savePreparation, type PreparationDraft } from '../persist/preparation.ts'
-import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold, routeCleared } from '../persist/world.ts'
+import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
@@ -411,6 +411,13 @@ export function expeditionWaiting(): boolean {
 /** Fights fought since Auto run was switched on, across repeated runs. In memory only: switching it on or off, or a reload, starts at 0. */
 let autoFights = 0
 
+/** Why Auto run last stopped by itself (a refused rerun, a defeat or the limit), for the Map. In memory only. */
+let autoNotice: string | null = null
+
+export function getAutoNotice(): string | null {
+  return autoNotice
+}
+
 /** The Auto run session count, for the run bar. */
 export function getAutoFights(): number {
   return autoFights
@@ -425,6 +432,7 @@ function setHeroAutoRun(save: SaveData, on: boolean): SaveData {
 /** Switch the selected hero's Auto run on or off, saved. Either way the session count restarts at 0. */
 export function setAutoRunFromUi(on: boolean): void {
   autoFights = 0
+  autoNotice = null
   debugLog('[ui]', 'auto run', { on })
   commitSave(setHeroAutoRun(saveStatus.save, on), 'auto run toggled')
 }
@@ -439,14 +447,24 @@ function afterAutoRun(expedition: ExpeditionState): void {
   const hero = selectedHero(saveStatus.save)
   if (hero === null || hero.autoRun !== true) return
   if (expedition.outcome === 'defeat' || autoLimitReached(hero.autoRunMaxFights)) {
+    autoNotice = expedition.outcome === 'defeat' ? 'Auto run stopped: the hero was defeated.' : 'Auto run stopped: the total fight limit was reached.'
     autoFights = 0
     saveStatus = { ...saveStatus, save: setHeroAutoRun(saveStatus.save, false) }
     commitSave(saveStatus.save, 'auto run ended')
     return
   }
-  if (expedition.outcome !== 'returned' || !hero.repeatRoute) return
-  if (!routeCleared(hero, expedition.id) || packFromStash(hero).missing.length > 0) return
-  settleAndRepeatFromUi()
+  if (expedition.outcome !== 'returned') return
+  // Rerun the same route on any route the hero can start: the normal start checks decide, and a refusal stops Auto run.
+  const routeId = expedition.id
+  settleExpeditionFromUi()
+  const settled = selectedHero(saveStatus.save)
+  const missing = settled === null ? [] : packFromStash(settled).missing
+  const reason = missing.length > 0 ? 'The packed supplies are not in the stash.' : startExpeditionFromUi(routeId)
+  if (reason === null) return
+  autoFights = 0
+  autoNotice = `Auto run stopped: ${reason}`
+  saveStatus = { ...saveStatus, save: setHeroAutoRun(saveStatus.save, false) }
+  commitSave(saveStatus.save, 'auto run ended')
 }
 
 /** Places discovered during this run, for the run's panels. In memory only. */

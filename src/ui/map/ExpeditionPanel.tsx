@@ -38,6 +38,7 @@ import {
   setAutoEscapeFromUi,
   setAutoRunFromUi,
   getAutoFights,
+  getAutoNotice,
   savePreparationFromUi,
   setPreparationProblem,
   settleExpeditionFromUi,
@@ -175,10 +176,15 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
       </div>
       <fieldset className="away-box" data-testid="auto-run-box">
         <legend>Auto run</legend>
+        {getAutoNotice() === null ? null : (
+          <p className="muted" role="status" data-testid="auto-run-notice">
+            {getAutoNotice()}
+          </p>
+        )}
         <div className="controls">
           <label>
             <input type="checkbox" aria-label="Auto run" checked={draft.autoRun === true} onChange={(event) => patch({ autoRun: event.target.checked })} />
-            Keep going without Push on
+            Auto run: keeps pushing on and reruns this route
           </label>
           <label>
             Stop after total fights{' '}
@@ -193,8 +199,8 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </label>
           <Help label="About Auto run">
             While on, the hero decides after each fight the way it does while you are away: it walks home when the fight limit or the push-on HP below is reached or
-            the bag is nearly full (or waits, if the bag order below says so), otherwise it pushes on. When a run ends safely and the route is cleared, the next
-            run starts by itself if "Run a cleared route again" is on. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
+            the bag is nearly full (or waits, if the bag order below says so), otherwise it pushes on. When a run ends safely, the same route starts again by itself,
+            on any route you can start (cleared or not). A defeat, a refused start or a missing supply stops it. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
             Auto run was switched on, over repeated runs; at the limit the hero walks home and Auto run switches itself off. You can switch it off at any moment.
           </Help>
         </div>
@@ -542,7 +548,7 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
               Auto run: {autoOn ? 'On' : 'Off'}
             </button>
             <Help label="About Auto run">
-              When on, the hero pushes on or walks home after each fight by your standing orders, and repeats a cleared route. Switch it off to take over; Push on and Return
+              When on, the hero pushes on or walks home after each fight by your standing orders, and reruns this route after each safe return. Switch it off to take over; Push on and Return
               always work.
             </Help>
           </span>

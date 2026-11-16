@@ -155,7 +155,7 @@ export function RunDockView({
           <div className="run-dock-repeat">
             <label>
               <input type="checkbox" data-testid="dock-auto-run" checked={hero?.autoRun === true} onChange={(event) => setAutoRunFromUi(event.target.checked)} />
-              Auto run (push on and repeat by itself)
+              Auto run: keeps pushing on and reruns this route
             </label>
           </div>
           <div className="run-dock-repeat">
