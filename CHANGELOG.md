@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Improved: fights played while you were away are labelled "AFK run" on the fight chips.
+
 ## 0.12.0 · 2026-11-16 · Gear wear, Auto run and the rule chain editor (Steps 13.12-13.14)
 
 - Improved: socket and rank lists on a gear shop stay open. The job tab is the section, so there is nothing to expand.

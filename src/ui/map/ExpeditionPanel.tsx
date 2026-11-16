@@ -418,9 +418,9 @@ function FightArea({ live, escapePending, expedition }: { live: ExpeditionState[
             type="button"
             className={entry.outcome === 'victory' ? 'btn-good' : 'btn-danger'}
             disabled
-            title="This fight was played while you were away, so there is no log to replay."
+            title="This fight was played on an AFK run, so there is no log to replay."
           >
-            Fight {entry.index + 1} · played while away{entry.outcome === 'retreat' ? ' · ↩ Escaped' : ''}
+            Fight {entry.index + 1} · AFK run{entry.outcome === 'retreat' ? ' · ↩ Escaped' : ''}
           </button>
         ))}
         {fights.map((entry) => (
