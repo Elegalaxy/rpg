@@ -61,3 +61,198 @@
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* ---- Rule chain: rule nodes joined by "else", ending in the Fallback ---- */
+
+.rc-chain {
+  margin: var(--s2) 0;
+}
+
+.rc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-item {
+  position: relative;
+  padding-bottom: var(--s5);
+}
+
+.rc-item:last-child {
+  padding-bottom: 0;
+}
+
+.rc-else {
+  position: absolute;
+  bottom: 0;
+  left: var(--s4);
+  display: flex;
+  align-items: center;
+  height: var(--s5);
+  padding-left: var(--s3);
+  border-left: 2px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.rc-node {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.rc-node--open {
+  border-color: var(--accent);
+}
+
+.rc-node--blank {
+  border-style: dashed;
+}
+
+.rc-node-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--s2) var(--s3);
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.rc-node-btn:focus-visible,
+.rc-add:focus-visible,
+.rc-router-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.rc-num {
+  flex: none;
+  min-width: 1.4rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rc-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.rc-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* A fixed-height slot, so a badge appearing or going never moves the sentence. */
+.rc-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1);
+  min-height: 1.6rem;
+}
+
+.rc-sentence {
+  color: var(--muted);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.rc-used {
+  flex: none;
+  min-width: 4.5rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.rc-edit {
+  padding: var(--s2) var(--s3) var(--s3);
+  border-top: 1px solid var(--border);
+}
+
+.rc-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+
+.rc-controls select {
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.rc-edit ul.rule-conditions {
+  margin-left: 0;
+}
+
+.rc-edit .rule-add {
+  margin-left: 0;
+}
+
+.rc-edit button,
+.rc-edit select,
+.rc-edit input {
+  min-height: 44px;
+}
+
+.rc-tools {
+  display: flex;
+  margin: var(--s3) 0 0;
+}
+
+.rc-add {
+  min-height: 44px;
+}
+
+.rc-add-reason {
+  margin-left: var(--s2);
+}
+
+.rc-removed,
+.rc-empty {
+  margin: var(--s2) 0;
+  padding: var(--s2) var(--s3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.rc-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.rc-empty-actions button,
+.rc-removed button {
+  min-height: 44px;
+}
+
+.rc-fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--chip);
+}
+
+.rc-fallback-label {
+  font-weight: 700;
+}
+
+.rc-fallback-text {
+  color: var(--muted);
+}

@@ -6,12 +6,9 @@ import {
   MAX_RULE_STACKS,
   MAX_STACK_NAME_LENGTH,
   RESOURCE_NAMES,
-  TARGET_LABELS,
   draftsFromRows,
   draftsFromStacks,
   ruleSkillIds,
-  skillName,
-  summarizeRule,
   summarizeTrigger,
   validateRules,
   validateStacks,
@@ -19,13 +16,12 @@ import {
   type StackDraft,
 } from '../../persist/loadout.ts'
 import type { SavedHero } from '../../persist/save.ts'
-import { TARGET_PRIORITIES, type TargetPriority } from '../../sim/types.ts'
-import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { Tag } from '../Kit.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
 import { ConditionList } from './ConditionList.tsx'
+import { RuleChain } from './RuleChain.tsx'
 import { addStack, deleteStack, duplicateStack, hasTrigger, moveStack, patchStack } from './stackEdit.ts'
 
 function copyRow(row: RowDraft): RowDraft {
@@ -34,11 +30,13 @@ function copyRow(row: RowDraft): RowDraft {
 
 const DEFAULT_TAB = 'default'
 
-export function RulesForm({ hero, initialTab = DEFAULT_TAB }: { hero: SavedHero; initialTab?: string }) {
+export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = null }: { hero: SavedHero; initialTab?: string; initialOpenRule?: number | null }) {
   const [rows, setRows] = useState<RowDraft[]>(() => draftsFromRows(hero.priorityRows))
   const [stacks, setStacks] = useState<StackDraft[]>(() => draftsFromStacks(hero.ruleStacks))
   const [tab, setTab] = useState<string>(initialTab)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [openRule, setOpenRule] = useState<number | null>(initialOpenRule)
+  const [removedRule, setRemovedRule] = useState<{ tab: string; index: number; row: RowDraft } | null>(null)
   const [errors, setErrors] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
   const skillIds = ruleSkillIds(hero)
@@ -82,6 +80,8 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB }: { hero: SavedHero;
   function selectTab(id: string): void {
     setTab(id)
     setConfirmDelete(false)
+    setOpenRule(null)
+    setRemovedRule(null)
   }
 
   function createStack(): void {
@@ -89,6 +89,8 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB }: { hero: SavedHero;
     updateStacks(next)
     setTab(next[next.length - 1]!.id)
     setConfirmDelete(false)
+    setOpenRule(null)
+    setRemovedRule(null)
   }
 
   function save(): void {
@@ -97,6 +99,7 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB }: { hero: SavedHero;
     const problem = saveRulesFromUi(rows, keepStacks ? stacks : undefined)
     setErrors(problem)
     setSaved(problem.length === 0)
+    setRemovedRule(null)
   }
 
   const liveRules = validateRules(hero, rows)
@@ -236,96 +239,38 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB }: { hero: SavedHero;
             The hero tries rule 1 first, then the next, and uses the first skill whose conditions pass. {RESOURCE_NAMES[hero.classId]} is this class resource.
           </Help>
         </p>
-        <ol className="rule-list">
-          {activeRows.map((row, index) => (
-            <li key={index} className="rule-item">
-              <div className="rule-head">
-                <span className="rule-num" aria-hidden="true">
-                  {index + 1}
-                </span>
-                <label>
-                  Skill{' '}
-                  <select aria-label={`Rule ${index + 1} skill`} value={row.skillId} onChange={(event) => patchRow(index, { skillId: event.target.value })}>
-                    <option value="">Pick a skill</option>
-                    {skillIds.map((id) => (
-                      <option key={id} value={id}>
-                        {skillName(id)}
-                      </option>
-                    ))}
-                  </select>
-                </label>{' '}
-                <label>
-                  Target{' '}
-                  <select
-                    aria-label={`Rule ${index + 1} target`}
-                    value={row.targetPriority}
-                    onChange={(event) => patchRow(index, { targetPriority: event.target.value as '' | TargetPriority })}
-                  >
-                    <option value="">Default target</option>
-                    {TARGET_PRIORITIES.map((priority) => (
-                      <option key={priority} value={priority}>
-                        {TARGET_LABELS[priority]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span className="rule-tools">
-                  <button type="button" aria-label={`Move rule ${index + 1} up`} disabled={index === 0} onClick={() => move(index, -1)}>
-                    ↑
-                  </button>{' '}
-                  <button
-                    type="button"
-                    aria-label={`Move rule ${index + 1} down`}
-                    disabled={index === activeRows.length - 1}
-                    onClick={() => move(index, 1)}
-                  >
-                    ↓
-                  </button>{' '}
-                  <button
-                    type="button"
-                    aria-label={`Duplicate rule ${index + 1}`}
-                    disabled={activeRows.length >= MAX_PRIORITY_ROWS}
-                    title={activeRows.length >= MAX_PRIORITY_ROWS ? `A hero can have at most ${MAX_PRIORITY_ROWS} rules.` : undefined}
-                    onClick={() => update([...activeRows.slice(0, index + 1), copyRow(row), ...activeRows.slice(index + 1)])}
-                  >
-                    Duplicate
-                  </button>{' '}
-                  <button type="button" aria-label={`Remove rule ${index + 1}`} onClick={() => update(activeRows.filter((_, at) => at !== index))}>
-                    Remove
-                  </button>
-                </span>
-              </div>
-              <p className="rule-summary" aria-label={`Rule ${index + 1} summary`}>
-                {summarizeRule(row, hero.classId)}
-              </p>
-              <Collapsible
-                defaultOpen={row.conditions.length === 0}
-                summary={
-                  <>
-                    <strong>Conditions</strong>
-                    <span className="fold-count">{row.conditions.length}</span>
-                  </>
-                }
-              >
-                <ConditionList
-                  conditions={row.conditions}
-                  onChange={(next) => patchRow(index, { conditions: next })}
-                  classId={hero.classId}
-                  skillIds={skillIds}
-                  label={`Rule ${index + 1}`}
-                  removeLabel={(n) => `Remove condition ${n} from rule ${index + 1}`}
-                />
-              </Collapsible>
-            </li>
-          ))}
-        </ol>
-        <button
-          type="button"
-          disabled={activeRows.length >= MAX_PRIORITY_ROWS}
-          onClick={() => update([...activeRows, { skillId: '', conditions: [], targetPriority: '', kept: [] }])}
-        >
-          Add rule
-        </button>
+        <RuleChain
+          hero={hero}
+          rows={activeRows}
+          stackId={stack === undefined ? DEFAULT_TAB : stack.id}
+          skillIds={skillIds}
+          open={openRule}
+          counts={null}
+          removed={removedRule !== null && removedRule.tab === tab}
+          onOpen={setOpenRule}
+          onPatch={patchRow}
+          onMove={move}
+          onDuplicate={(index) => {
+            update([...activeRows.slice(0, index + 1), copyRow(activeRows[index]!), ...activeRows.slice(index + 1)])
+            setOpenRule(index + 1)
+          }}
+          onRemove={(index) => {
+            setRemovedRule({ tab, index, row: activeRows[index]! })
+            setOpenRule(null)
+            update(activeRows.filter((_, at) => at !== index))
+          }}
+          onAdd={() => {
+            update([...activeRows, { skillId: '', conditions: [], targetPriority: '', kept: [] }])
+            setOpenRule(activeRows.length)
+          }}
+          onUndo={() => {
+            if (removedRule === null) return
+            const at = Math.min(removedRule.index, activeRows.length)
+            update([...activeRows.slice(0, at), removedRule.row, ...activeRows.slice(at)])
+            setRemovedRule(null)
+            setOpenRule(at)
+          }}
+        />
       </div>{' '}
       <button type="button" disabled={!liveOk} onClick={save}>
         Save rules

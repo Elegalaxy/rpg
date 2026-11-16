@@ -49,12 +49,14 @@ describe('loadout and rules screens without a hero', () => {
 })
 
 describe('rules screen telegraph hint', () => {
-  it('explains a telegraph condition under its row', () => {
+  it('explains a telegraph condition in the open rule', () => {
     const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
     if (!made.ok) throw new Error(made.reason)
     const hero = selectedHero(made.save)
     if (hero === null) throw new Error('no hero')
-    const html = renderToStaticMarkup(<RulesForm hero={hero} />)
+    const telegraphRow = hero.priorityRows.findIndex((row) => (row.conditions ?? []).some((condition) => condition.kind === 'telegraph'))
+    expect(telegraphRow).toBeGreaterThanOrEqual(0)
+    const html = renderToStaticMarkup(<RulesForm hero={hero} initialOpenRule={telegraphRow} />)
     expect(html).toContain('Watches every enemy. Answer with Shield Brace, Ward, Mana Ward, Fade Back or Ward Charm.')
   })
 })
