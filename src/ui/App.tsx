@@ -4,6 +4,7 @@ import { xpToNextLevel } from '../sim/stats.ts'
 import { selectedHero } from '../persist/character.ts'
 import { statLines, statsFor } from '../persist/equipment.ts'
 import { nextHint, type Tab } from '../persist/guidance.ts'
+import { GoldLine } from './GoldLine.tsx'
 import { contractFor, purseOf, type SaveData } from '../persist/save.ts'
 import { isComplete } from '../persist/contracts.ts'
 import { PLACES as PLACE_LIST, dealsIn, type PlaceDef } from '../content/places.ts'
@@ -204,10 +205,7 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
             </option>
           ))}
         </select>
-        <span>
-          Gold {purseOf(save).gold}
-          {purseOf(save).debt > 0 ? ` · Debt ${purseOf(save).debt}` : ''}
-        </span>
+        <GoldLine save={save} />
       </div>
       {hero !== null ? (
         <div className="xp-row" title={`${hero.progress.xp} / ${need} XP to level ${hero.progress.level + 1}`}>

@@ -1189,14 +1189,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.14: Auto run for live farming
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.12
 - Goal: the hero keeps playing a route without a Push on click per fight, with an optional session fight limit (rules in GAME_DESIGN §11, "Auto run"). No sim or harness change.
 - Parts: (1) docs only. (2) `autoRun` and `autoRunMaxFights` on `SavedHero`, one shared hold decision used by live and offline, live loop and repeat, preparation/run bar/dock UI, tests. (3) Sidebar gold shows carried, banked and purse during a run.
-- Part 1 status: `done`. Part 2: `done`. Part 3: `todo`.
+- Part 1 status: `done`. Part 2: `done`. Part 3: `done`.
 - Progress:
   - 2026-11-16: Part 1 done. Rules recorded in GAME_DESIGN §11.
   - 2026-11-16: Part 2 done. `SavedHero.autoRun` and `autoRunMaxFights` (optional, validated, no version bump); `decideHold` and `routeCleared` in `persist/world.ts`, used by both `offline.ts` and the live loop (`advanceExpedition` in `ui/store.ts`); in-memory `autoFights` count; `afterAutoRun` settles and repeats a cleared route, or switches Auto run off at the session limit or a defeat. UI: preparation fieldset, run bar status and toggle, dock chip and checkbox, reworded standing-orders line. Tests in `ui/map/autoRun.test.tsx`; `preparation.test.ts` default draft gained the two fields. Sim and harness unchanged.
+  - 2026-11-16: Part 3 done. `GoldLine` (`ui/GoldLine.tsx`) and `goldTotals` (`ui/goldTotals.ts`) in the sidebar header: total = carried + banked + purse, with a "N carried · N banked" line on a run only. Test in `ui/goldLine.test.tsx`. Browser (dev server, port 5391): Auto run toggle in preparation, run bar status and toggle, dock chip, reload keeps it, sidebar split, 375 px no overflow, 44 px toggle. A full multi-run Auto run was not watched in the browser (covered by `autoRun.test.tsx`).
 
 ### Step 13.13: Rule chain view and templates
 - Status: `in progress`

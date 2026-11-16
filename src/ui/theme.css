@@ -302,6 +302,22 @@ header[aria-label='Status'] {
   gap: var(--s2) var(--s3);
 }
 
+.gold-line {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gold-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.gold-split {
+  font-size: 0.8rem;
+}
+
 .xp-row {
   display: flex;
   align-items: center;
@@ -410,6 +426,10 @@ nav[aria-label='Main'] button {
   .sidebar header[aria-label='Status'] {
     padding: 0 0 var(--s4);
     background: transparent;
+  }
+
+  .sidebar .gold-line {
+    align-items: flex-start;
   }
 
   .sidebar .status-row {

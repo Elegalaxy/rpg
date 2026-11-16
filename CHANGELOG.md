@@ -12,6 +12,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ## Unreleased: durability wear (Step 13.12)
 
 - Improved: socket and rank lists on a gear shop stay open. The job tab is the section, so there is nothing to expand.
+- Improved: while a run is out the sidebar shows the gold you own in total, with a second line for what is carried and what is banked, instead of 0 (Step 13.14, part 3).
 - New: Auto run. Switch it on in the preparation, the run bar or the run dock and the hero pushes on or walks home after each fight by your standing orders, and repeats a cleared route, until you switch it off or reach an optional total fight limit (Step 13.14, part 2).
 - Balance: every worn piece now loses 1 durability for each 3 fights won in a run (an elite or boss win counts as 2), taken when you return; defeat still costs 10 on top, and repair prices are unchanged (Step 13.12, part 2).
 - New: the Priority rules screen shows your rules as a chain: each rule is a card with its skill, its plain sentence, how often it fired this fight, and an "else" arrow down to the Fallback. Tap a card to edit it in place, and a removed rule can be undone (Step 13.13, part 3).
