@@ -472,6 +472,19 @@ nav[aria-label='Main'] button {
   border-bottom: 1px solid var(--border);
 }
 
+/* Wide town and hero screens scroll a long page. Keep the section tabs in reach. */
+@media (min-width: 900px) {
+  .content .subtabs {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    margin-right: calc(-1 * var(--s5));
+    margin-left: calc(-1 * var(--s5));
+    padding: var(--s3) var(--s5);
+    background: var(--bg);
+  }
+}
+
 .subtabs button {
   min-height: var(--control-h);
 }
@@ -528,6 +541,11 @@ button.btn-primary {
   background: var(--accent);
   color: var(--accent-fg);
   font-weight: 600;
+}
+
+/* Gold tags are amber. On an amber button that price disappears, so it uses the button text colour. */
+button.btn-primary .tag-gold {
+  color: inherit;
 }
 
 button.btn-good {

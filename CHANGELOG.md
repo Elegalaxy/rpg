@@ -13,6 +13,8 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
 
+- Improved: on a wide screen the town and hero section tabs stay pinned while the page scrolls, so a shop can be switched without returning to the top.
+- Improved: a gold price written on an amber button uses the button text colour, so the Trainer drill price stays readable.
 - New: modifier ranks: raise a modifier on a worn or stored item from rank I to II (+20%) or III (+40%) in the crafting queue for gold by the modifier's level and materials; rank III takes riftglass, duskiron or cinderite (Step 13.10, part 4).
 - New: open a socket on a worn or stored item at hero level 10 (item level x 40 gold and 8 riftglass, duskiron or cinderite), then Infuse a second, different modifier (item level x 10 gold and 6 materials); both take 30 seconds in the crafting queue and both modifiers count (Step 13.10, part 3).
 - New: a Trainer in Greyhaven sells up to three drills per level, each worth a tenth of the level's XP for level x 40 gold, then x 80, then x 120 (Step 13.10, part 2).
