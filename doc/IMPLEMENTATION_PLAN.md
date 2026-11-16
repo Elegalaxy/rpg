@@ -1205,6 +1205,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Part status: 1 `done`.
 - Progress:
   - 2026-11-16: Part 1 done. Rules and the template table recorded in GAME_DESIGN §7.
+  - 2026-11-16: Part 2 done. `ui/character/chainModel.ts`: `buildChain`, `buildRouter`, `buildRules`, `ruleFireCounts`, `fireCount`, `stackFireTotal`, `fallbackText`; tests in `chainModel.test.ts`.
 
 ## 8. Risks, and what would reveal them early
 
