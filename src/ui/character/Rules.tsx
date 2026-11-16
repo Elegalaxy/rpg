@@ -15,7 +15,9 @@ import {
   type RowDraft,
   type StackDraft,
 } from '../../persist/loadout.ts'
-import type { SavedHero } from '../../persist/save.ts'
+import { applyTemplate, templatesFor } from '../../persist/ruleTemplates.ts'
+import type { SaveData, SavedHero } from '../../persist/save.ts'
+import type { RuleTemplate } from '../../content/ruleTemplates.ts'
 import { Help } from '../Help.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
@@ -24,13 +26,26 @@ import { buildRouter } from './chainModel.ts'
 import { useFireCounts } from './useFireCounts.ts'
 import { RuleChain } from './RuleChain.tsx'
 import { DEFAULT_TAB, RuleRouter } from './RuleRouter.tsx'
+import { TemplatePicker } from './TemplatePicker.tsx'
 import { addStack, deleteStack, duplicateStack, moveStack, patchStack } from './stackEdit.ts'
 
 function copyRow(row: RowDraft): RowDraft {
   return { ...row, conditions: row.conditions.map((condition) => ({ ...condition })), kept: [...(row.kept ?? [])] }
 }
 
-export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = null }: { hero: SavedHero; initialTab?: string; initialOpenRule?: number | null }) {
+export function RulesForm({
+  hero,
+  initialTab = DEFAULT_TAB,
+  initialOpenRule = null,
+  initialPicker = false,
+  save: saveProp,
+}: {
+  hero: SavedHero
+  initialTab?: string
+  initialOpenRule?: number | null
+  initialPicker?: boolean
+  save?: SaveData
+}) {
   const [rows, setRows] = useState<RowDraft[]>(() => draftsFromRows(hero.priorityRows))
   const [stacks, setStacks] = useState<StackDraft[]>(() => draftsFromStacks(hero.ruleStacks))
   const [tab, setTab] = useState<string>(initialTab)
@@ -40,6 +55,12 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
   const [errors, setErrors] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
   const skillIds = ruleSkillIds(hero)
+  const [pickerOpen, setPickerOpen] = useState(initialPicker)
+  const [replacing, setReplacing] = useState<RuleTemplate | null>(null)
+  const [notes, setNotes] = useState<string[]>([])
+  const status = useSaveStatus()
+  const known = saveProp ?? status.save
+  const options = templatesFor(hero, { ...known, heroes: [...known.heroes.filter((entry) => entry.id !== hero.id), hero] })
   const counts = useFireCounts(hero.id)
 
   const stack = stacks.find((entry) => entry.id === tab)
@@ -94,6 +115,26 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
     setRemovedRule(null)
   }
 
+  function applyChosen(template: RuleTemplate): void {
+    const applied = applyTemplate(hero, template, stacks)
+    if (applied.stack !== null) {
+      const next = [...stacks, applied.stack]
+      updateStacks(next)
+      selectTab(applied.stack.id)
+    } else {
+      update(applied.rows)
+      setOpenRule(null)
+    }
+    setNotes(applied.notes)
+    setReplacing(null)
+    setPickerOpen(false)
+  }
+
+  function chooseTemplate(template: RuleTemplate): void {
+    if (template.kind === 'rows' && activeRows.length > 0) setReplacing(template)
+    else applyChosen(template)
+  }
+
   function save(): void {
     // A hero with no stacks saves exactly as before; stacks are written only when there are some to write or to clear.
     const keepStacks = stacks.length > 0 || hero.ruleStacks.length > 0
@@ -112,6 +153,9 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
       <h2>Priority rules — {hero.name}</h2>
       <div className="stack-bar">
         {stacks.length > 0 ? <RuleRouter entries={buildRouter(hero, stacks)} selected={tab} counts={counts} onSelect={selectTab} /> : null}
+        <button type="button" className="stack-new" aria-expanded={pickerOpen} onClick={() => setPickerOpen(!pickerOpen)}>
+          Templates
+        </button>
         <button type="button" className="stack-new" disabled={atStackLimit} title={atStackLimit ? limitText : undefined} onClick={createStack}>
           New stack
         </button>
@@ -120,6 +164,20 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
         </Help>
         {atStackLimit ? <span className="muted-inline">{limitText}</span> : null}
       </div>
+      {pickerOpen ? (
+        <TemplatePicker
+          options={options}
+          atStackLimit={atStackLimit}
+          replacing={replacing === null ? null : { template: replacing, ruleCount: activeRows.length, chainName: stack === undefined ? 'Default' : stack.name }}
+          onApply={chooseTemplate}
+          onConfirmReplace={() => replacing !== null && applyChosen(replacing)}
+          onCancelReplace={() => setReplacing(null)}
+          onClose={() => {
+            setPickerOpen(false)
+            setReplacing(null)
+          }}
+        />
+      ) : null}
       <div id="stack-panel" role={stacks.length > 0 ? 'tabpanel' : undefined} aria-labelledby={stack === undefined ? 'stack-tab-default' : `stack-tab-${stack.id}`}>
         {stack !== undefined ? (
           <div className="stack-card" data-testid="stack-card">
@@ -235,6 +293,7 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
             update([...activeRows, { skillId: '', conditions: [], targetPriority: '', kept: [] }])
             setOpenRule(activeRows.length)
           }}
+          onStartTemplate={() => setPickerOpen(true)}
           onUndo={() => {
             if (removedRule === null) return
             const at = Math.min(removedRule.index, activeRows.length)
@@ -243,6 +302,19 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
             setOpenRule(at)
           }}
         />
+        {notes.length > 0 ? (
+          <div className="rc-notes" role="status" data-testid="template-notes">
+            <strong>Still to fill in</strong>
+            <ul>
+              {notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+            <button type="button" onClick={() => setNotes([])}>
+              Dismiss
+            </button>
+          </div>
+        ) : null}
       </div>{' '}
       <button type="button" disabled={!liveOk} onClick={save}>
         Save rules

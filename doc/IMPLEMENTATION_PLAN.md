@@ -1213,7 +1213,8 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 3 done. `RuleNode.tsx`, `RuleChain.tsx`, `rc-*` classes in `character.css`; `Rules.tsx` renders the chain (one node open at a time, Remove with Undo, Add rule off at 12 with the reason, Fallback node, empty state). `RulesForm` takes `initialOpenRule` for tests; the telegraph hint test opens that rule. Aria-labels kept.
   - 2026-11-16: Part 4 done. `RuleRouter.tsx` replaces the tab row (tab roles and ids kept, `DEFAULT_TAB` moved here); tests in `RuleRouter.test.tsx`.
   - 2026-11-16: Part 5 done. `useFireCounts.ts` (`countsFor`, `useFireCounts`) reads the live combat log through the existing `subscribe` and `getSnapshot` (store.ts untouched); the chain and router show it, "—" without a log for that hero.
-  - 2026-11-16: Part 6 done. `src/content/ruleTemplates.ts` (10 templates, plain data) and `src/persist/ruleTemplates.ts` (`templatesFor`, `templateUnlocked`, `applyTemplate`); unlocks read `defeatedEnemyIds` and the account defeat records through the enemy defs (telegraph, swarm, phased boss). Tests in `ruleTemplates.test.ts`; architecture test passes.
+  - 2026-11-16: Part 6 done. `src/content/ruleTemplates.ts` (10 templates, plain data) and `src/persist/ruleTemplates.ts` (`templatesFor`, `templateUnlocked`, `applyTemplate`); unlocks read `defeatedEnemyIds` and the account defeat records through the enemy defs (telegraph, swarm, phased boss). Tests in `ruleTemplates.test.ts`; architecture test passes.
+  - 2026-11-16: Part 7 done. `TemplatePicker.tsx` (cards grouped by situation, 44px targets, locked or stack-limit cards disabled with the reason, replace-rules confirm); `Rules.tsx` opens it from a Templates button and the empty state, shows a "Still to fill in" note list after applying. Browser-checked at 1024 and 375 wide.
 
 ## 8. Risks, and what would reveal them early
 

@@ -37,15 +37,17 @@ export function RuleNode({ rule, row, rowCount, open, used, classId, skillIds, o
           {number}
         </span>
         <span className="rc-main">
-          <span className="rc-title">{rule.title}</span>
-          <span className="rc-badges">
-            {rule.alwaysReady ? <Tag kind="info">Always when ready</Tag> : null}
-            {rule.shadowedBy !== null ? (
-              <Tag kind="bad" title={`Rule ${rule.shadowedBy} uses the same skill with no conditions, so this rule is never reached.`}>
-                Never reached: rule {rule.shadowedBy} always wins
-              </Tag>
-            ) : null}
-            {rule.blank ? <Tag kind="bad">Needs a skill</Tag> : null}
+          <span className="rc-headline">
+            <span className="rc-title">{rule.title}</span>
+            <span className="rc-badges">
+              {rule.alwaysReady ? <Tag kind="info">Always when ready</Tag> : null}
+              {rule.shadowedBy !== null ? (
+                <Tag kind="bad" title={`Rule ${rule.shadowedBy} uses the same skill with no conditions, so this rule is never reached.`}>
+                  Never reached: rule {rule.shadowedBy} always wins
+                </Tag>
+              ) : null}
+              {rule.blank ? <Tag kind="bad">Needs a skill</Tag> : null}
+            </span>
           </span>
           <span className="rc-sentence" aria-label={`Rule ${number} summary`}>
             {rule.sentence}
