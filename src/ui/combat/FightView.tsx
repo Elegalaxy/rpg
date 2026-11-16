@@ -24,6 +24,12 @@ function titleCase(text: string): string {
   return text.replace(/-/g, ' ').replace(/^./, (first) => first.toUpperCase())
 }
 
+/** Whole numbers stay whole; anything else is one decimal, so HP never prints as 30.400000000000034. */
+function shownHp(value: number): string {
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
 const JUST_USED_MS = 4000
 
 /** The hero's carried supplies for this fight, live: what is left, what has been used, and a flash when one was just used. */
@@ -110,7 +116,7 @@ function EscapeBanner({ combat }: { combat: CombatState }) {
         <>
           <Tag kind={last.success ? 'good' : 'gold'}>{last.success ? `✓ Escaped at ${(last.timeMs / 1000).toFixed(1)} s` : '⚠ Escape failed'}</Tag>
           <span className="muted">
-            HP {last.hp}/{last.maxHp} · roll {Math.floor(last.roll * 100)}% vs {last.chancePercent}%
+            HP {shownHp(last.hp)}/{shownHp(last.maxHp)} · roll {Math.floor(last.roll * 100)}% vs {last.chancePercent}%
           </span>
         </>
       )}

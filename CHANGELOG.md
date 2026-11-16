@@ -12,6 +12,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ## Unreleased
 
 - Improved: fights played while you were away are labelled "AFK run" on the fight chips.
+- Fixed: the escape banner no longer shows HP as a long float such as 30.400000000000034.
 
 ## 0.12.0 · 2026-11-16 · Gear wear, Auto run and the rule chain editor (Steps 13.12-13.14)
 

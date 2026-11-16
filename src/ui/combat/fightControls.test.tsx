@@ -91,6 +91,8 @@ describe('the fight view controls', () => {
     const html = renderToStaticMarkup(<FightView combat={state} title="test" />)
     expect(html).toContain('Escaped at 6.0 s')
     expect(html).toContain('roll 12% vs 55%')
+    state.log.push({ ...base, timeMs: 7000, success: false, hp: 30.400000000000034, maxHp: 275.40000000000003 })
+    expect(renderToStaticMarkup(<FightView combat={state} title="test" />)).toContain('HP 30.4/275.4')
   })
 })
 
