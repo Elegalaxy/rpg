@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: the preparation panel is grouped by who uses each setting: Every run, Pack for the road, Standing orders (push on, fight limit, full bag), Auto run, and While you are away (start route, repeat).
 - New: a "Keep going" choice for a nearly full bag: the run pushes on instead of walking home or waiting, gold and XP still count, and loot that does not fit is lost; it works live, with Auto run and while you are away.
 - Improved: fights played while you were away are labelled "AFK run" on the fight chips.
 - Fixed: the escape banner no longer shows HP as a long float such as 30.400000000000034.

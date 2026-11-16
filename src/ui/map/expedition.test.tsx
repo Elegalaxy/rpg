@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { selectedHero } from '../../persist/character.ts'
+import { newSave } from '../../persist/save.ts'
 import {
   advanceExpedition,
   commitSave,
@@ -171,5 +172,22 @@ describe('the expedition panel', () => {
     expect(expedition().id).toBe('splintered-road')
     expect(expedition().outcome).toBe('ongoing')
     expect(expedition().history).toHaveLength(0)
+  })
+
+  it('groups the preparation by who uses each setting', () => {
+    commitSave(newSave(), 'test', false) // an earlier test leaves a run out
+    expect(createHeroFromUi({ name: 'Bo', race: 'human', classId: 'warrior' })).toBeNull()
+    const html = renderToStaticMarkup(<ExpeditionPanel />)
+    const order = ['Every run', 'Pack for the road', 'Standing orders', 'Auto run (while you watch)', 'While you are away'].map((legend) => html.indexOf(`<legend>${legend}</legend>`))
+    expect(order.every((index) => index >= 0)).toBe(true)
+    expect(order).toEqual([...order].sort((a, b) => a - b))
+    const box = (id: string) => html.slice(html.indexOf(`data-testid="${id}"`))
+    // The three standing orders sit in their own group, the away route and repeat in the away group.
+    expect(box('standing-orders-box').indexOf('aria-label="Bag full order"')).toBeGreaterThan(0)
+    expect(box('standing-orders-box').indexOf('aria-label="Push on percent"')).toBeGreaterThan(0)
+    expect(box('away-box').indexOf('aria-label="Away route"')).toBeGreaterThan(0)
+    expect(html.indexOf('aria-label="Away route"')).toBeGreaterThan(html.indexOf('data-testid="away-box"'))
+    expect(html.indexOf('aria-label="Bag full order"')).toBeLessThan(html.indexOf('data-testid="away-box"'))
+    expect(html.indexOf('aria-label="Gold to carry"')).toBeLessThan(html.indexOf('<legend>Standing orders</legend>'))
   })
 })

@@ -98,231 +98,103 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   return (
     <section aria-label="Preparation">
       <h3>Preparation — {hero.name}</h3>
-      <div className="controls">
-        <label>
-          Retreat when HP is at most (%){' '}
-          <input
-            aria-label="Retreat threshold percent"
-            value={draft.retreatPercent}
-            inputMode="numeric"
-            size={4}
-            onChange={(event) => patch({ retreatPercent: event.target.value })}
-          />
-        </label>{' '}
-        <small>
-          {RETREAT_MIN_PERCENT} to {RETREAT_MAX_PERCENT}. Empty never retreats.
-        </small>
-      </div>
-      {hero.classId === 'cleric' ? (
+      <fieldset className="away-box" data-testid="every-run-box">
+        <legend>Every run</legend>
+        <p className="muted">Used by every run you start, whether you play it by hand, with Auto run or while you are away.</p>
         <div className="controls">
           <label>
-            Vow{' '}
-            <select aria-label="Vow" value={draft.vow} onChange={(event) => patch({ vow: event.target.value })}>
-              {CLERIC_VOWS.map((vow) => (
-                <option key={vow} value={vow}>
-                  {VOW_LABELS[vow]}
-                </option>
-              ))}
-            </select>
-          </label>{' '}
-          <Help label="About vows">Your vow is locked for the whole expedition.</Help>
-        </div>
-      ) : null}
-      {canPickCurse(hero) ? (
-        <div className="controls">
-          <label>
-            Curse{' '}
-            <select aria-label="Curse" value={draft.curse} onChange={(event) => patch({ curse: event.target.value })}>
-              <option value="">None</option>
-              {CURSES.map((curse) => (
-                <option key={curse} value={curse}>
-                  {CURSE_LABELS[curse]}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ) : null}
-      {hero.classId === 'ranger' ? (
-        <div className="controls">
-          <label>
-            Special arrows in the quiver{' '}
+            Retreat when HP is at most (%){' '}
             <input
-              aria-label="Special arrows"
-              value={draft.specialAmmo}
+              aria-label="Retreat threshold percent"
+              value={draft.retreatPercent}
               inputMode="numeric"
-              size={3}
-              onChange={(event) => patch({ specialAmmo: event.target.value })}
+              size={4}
+              onChange={(event) => patch({ retreatPercent: event.target.value })}
             />
           </label>{' '}
-          <small>0 to {limit}.</small>
+          <small>
+            {RETREAT_MIN_PERCENT} to {RETREAT_MAX_PERCENT}. Empty never retreats.
+          </small>
         </div>
-      ) : null}
-      <div className="controls">
-        <label>
-          Gold to carry{' '}
-          <input
-            aria-label="Gold to carry"
-            value={draft.carryGold}
-            inputMode="numeric"
-            size={5}
-            onChange={(event) => patch({ carryGold: event.target.value })}
-          />
-        </label>
-        <Help label="About carried gold">
-          The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat. While a run is out your purse shows 0: the run panel
-          lists what you carry and what is banked.
-        </Help>
-      </div>
-      <fieldset className="away-box" data-testid="auto-run-box">
-        <legend>Auto run</legend>
-        {getAutoNotice() === null ? null : (
-          <p className="muted" role="status" data-testid="auto-run-notice">
-            {getAutoNotice()}
-          </p>
-        )}
+        {hero.classId === 'cleric' ? (
+          <div className="controls">
+            <label>
+              Vow{' '}
+              <select aria-label="Vow" value={draft.vow} onChange={(event) => patch({ vow: event.target.value })}>
+                {CLERIC_VOWS.map((vow) => (
+                  <option key={vow} value={vow}>
+                    {VOW_LABELS[vow]}
+                  </option>
+                ))}
+              </select>
+            </label>{' '}
+            <Help label="About vows">Your vow is locked for the whole expedition.</Help>
+          </div>
+        ) : null}
+        {canPickCurse(hero) ? (
+          <div className="controls">
+            <label>
+              Curse{' '}
+              <select aria-label="Curse" value={draft.curse} onChange={(event) => patch({ curse: event.target.value })}>
+                <option value="">None</option>
+                {CURSES.map((curse) => (
+                  <option key={curse} value={curse}>
+                    {CURSE_LABELS[curse]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
+        {hero.classId === 'ranger' ? (
+          <div className="controls">
+            <label>
+              Special arrows in the quiver{' '}
+              <input
+                aria-label="Special arrows"
+                value={draft.specialAmmo}
+                inputMode="numeric"
+                size={3}
+                onChange={(event) => patch({ specialAmmo: event.target.value })}
+              />
+            </label>{' '}
+            <small>0 to {limit}.</small>
+          </div>
+        ) : null}
         <div className="controls">
           <label>
-            <input type="checkbox" aria-label="Auto run" checked={draft.autoRun === true} onChange={(event) => patch({ autoRun: event.target.checked })} />
-            Auto run: keeps pushing on and reruns this route
-          </label>
-          <label>
-            Stop after total fights{' '}
+            Gold to carry{' '}
             <input
-              aria-label="Auto run fight limit"
-              value={draft.autoRunMaxFights ?? ''}
+              aria-label="Gold to carry"
+              value={draft.carryGold}
               inputMode="numeric"
               size={5}
-              placeholder="No limit"
-              onChange={(event) => patch({ autoRunMaxFights: event.target.value })}
+              onChange={(event) => patch({ carryGold: event.target.value })}
             />
           </label>
-          <Help label="About Auto run">
-            While on, the hero decides after each fight the way it does while you are away: it walks home when the fight limit or the push-on HP below is reached or
-            the bag is nearly full (or waits, if the bag order below says so), otherwise it pushes on. When a run ends safely, the same route starts again by itself,
-            on any route you can start (cleared or not). A defeat, a refused start or a missing supply stops it. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
-            Auto run was switched on, over repeated runs; at the limit the hero walks home and Auto run switches itself off. You can switch it off at any moment.
+          <Help label="About carried gold">
+            The rest of your gold stays deposited and safe. Carried gold pays the rescue fee after a defeat. While a run is out your purse shows 0: the run panel
+            lists what you carry and what is banked.
           </Help>
         </div>
+        {hero.echoRank > 0 ? (
+          <div className="controls">
+            <label>
+              Fractured Warden Echo rank{' '}
+              <input
+                aria-label="Echo rank"
+                value={draft.fightRank}
+                inputMode="numeric"
+                size={3}
+                onChange={(event) => patch({ fightRank: event.target.value })}
+              />
+            </label>{' '}
+            <Help label="About Echo ranks">
+              Choose 0 to {hero.echoRank}. Each rank multiplies the boss HP, Power, Armor, and Resistance by 1.12. A victory unlocks the next rank.
+            </Help>
+          </div>
+        ) : null}
       </fieldset>
-      <fieldset className="away-box">
-        <legend>While you are away</legend>
-        <p className="muted">
-          Your run keeps going when you close the page or hide the tab, for up to 8 hours. These two settings decide what the hero does between fights while
-          you are not watching.
-        </p>
-        <div className="controls">
-          <label>
-            Push on while HP is at least (%){' '}
-            <input
-              aria-label="Push on percent"
-              value={draft.pushOnPercent}
-              inputMode="numeric"
-              size={4}
-              onChange={(event) => patch({ pushOnPercent: event.target.value })}
-            />
-          </label>
-        </div>
-        <div className="controls">
-          <label>
-            Stop after fights{' '}
-            <input
-              aria-label="Stop after fights"
-              value={draft.stopAfterFights ?? ''}
-              inputMode="numeric"
-              size={4}
-              placeholder="No limit"
-              onChange={(event) => patch({ stopAfterFights: event.target.value })}
-            />
-          </label>
-          <Help label="About the fight limit">
-            {STOP_AFTER_MIN} to {STOP_AFTER_MAX}. Empty means no limit. After this many fights in one run the hero walks home and secures the loot instead of pushing on. It also
-            applies while you watch. A repeated run starts counting again.
-          </Help>
-        </div>
-        <div className="controls">
-          <label>
-            Start a run when I leave{' '}
-            <select aria-label="Away route" value={draft.awayRouteId} onChange={(event) => patch({ awayRouteId: event.target.value })}>
-              <option value="">Never (only continue a run I started)</option>
-              {Object.values(routes).map((route) => (
-                <option key={route.id} value={route.id}>
-                  {route.name}
-                  {route.nodeIds.every((id) => id === 'greyhaven' || hero.clearedNodeIds.includes(id)) ? '' : ' (not cleared yet)'}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Help label="About starting while away">
-            If you have no run when you close the page or hide the tab (for at least 5 seconds), the hero starts this route on its own, using the packed
-            supplies and carried gold below. The route must be one the hero has cleared.
-          </Help>
-        </div>
-        <div className="controls">
-          <label>
-            When the bag is nearly full{' '}
-            <select aria-label="Bag full order" value={draft.bagFullOrder} onChange={(event) => patch({ bagFullOrder: event.target.value === 'ask' ? 'ask' : event.target.value === 'keep' ? 'keep' : 'home' })}>
-              <option value="home">Walk home</option>
-              <option value="ask">Hold and wait for me</option>
-              <option value="keep">Keep going (loot that does not fit is lost)</option>
-            </select>
-          </label>
-          <Help label="About a full bag">
-            The bag counts as full when fewer than 4 room is free. Walk home returns and secures the loot. Hold and wait stops the run at that point, also while you
-            are away, until you come back and choose. Keep going ignores a full bag and pushes on: gold, XP and momentum still count, but loot that does not fit is lost.
-          </Help>
-        </div>
-        <div className="controls">
-          <label>
-            <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
-            Run a cleared route again
-          </label>
-          <label>
-            Run limit{' '}
-            <select aria-label="Run limit" value={draft.repeatLimit} onChange={(event) => patch({ repeatLimit: Number(event.target.value) })}>
-              {REPEAT_LIMITS.map((limit) => (
-                <option key={limit} value={limit}>
-                  {limit === 0 ? 'No limit' : `${limit} ${limit === 1 ? 'run' : 'runs'}`}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <p data-testid="away-plan">
-          <strong>What will happen:</strong>{' '}
-          {draft.awayRouteId === ''
-            ? 'If you have no run when you leave, nothing starts. If a run is out, after each fight'
-            : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}. After each fight`}{' '} the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
-          {draft.bagFullOrder === 'keep' ? '' : 'and the bag is not nearly full, '}otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
-          {(draft.stopAfterFights ?? '').trim() === '' ? '' : `A run walks home after ${draft.stopAfterFights?.trim()} fights. `}
-          {draft.repeatRoute
-            ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'
-            : 'Back in town it stops and waits for you.'}
-        </p>
-        <ul className="away-facts">
-          <li>Your retreat setting still applies in every fight.</li>
-          <li>It stops for good on a defeat, when the packed supplies run out, or after 8 hours.</li>
-          <li>Fights won while away give half the loot and gold. XP, contracts and discoveries are not reduced.</li>
-          <li>Heroes you did not select run their own away route too, and heroes without one rest. Every hero keeps crafting.</li>
-        </ul>
-      </fieldset>
-      {hero.echoRank > 0 ? (
-        <div className="controls">
-          <label>
-            Fractured Warden Echo rank{' '}
-            <input
-              aria-label="Echo rank"
-              value={draft.fightRank}
-              inputMode="numeric"
-              size={3}
-              onChange={(event) => patch({ fightRank: event.target.value })}
-            />
-          </label>{' '}
-          <Help label="About Echo ranks">
-            Choose 0 to {hero.echoRank}. Each rank multiplies the boss HP, Power, Armor, and Resistance by 1.12. A victory unlocks the next rank.
-          </Help>
-        </div>
-      ) : null}
       <fieldset className="supply-pack">
         <legend>Pack for the road</legend>
         <p>
@@ -370,6 +242,146 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             Empty the backpack
           </button>
         ) : null}
+      </fieldset>
+      <fieldset className="away-box" data-testid="standing-orders-box">
+        <legend>Standing orders</legend>
+        <p className="muted">
+          Used by Auto run and while you are away: what the hero does between fights. A run you play by hand ignores them, except the fight limit, which also
+          applies while you watch.
+        </p>
+        <div className="controls">
+          <label>
+            Push on while HP is at least (%){' '}
+            <input
+              aria-label="Push on percent"
+              value={draft.pushOnPercent}
+              inputMode="numeric"
+              size={4}
+              onChange={(event) => patch({ pushOnPercent: event.target.value })}
+            />
+          </label>
+        </div>
+        <div className="controls">
+          <label>
+            Stop after fights{' '}
+            <input
+              aria-label="Stop after fights"
+              value={draft.stopAfterFights ?? ''}
+              inputMode="numeric"
+              size={4}
+              placeholder="No limit"
+              onChange={(event) => patch({ stopAfterFights: event.target.value })}
+            />
+          </label>
+          <Help label="About the fight limit">
+            {STOP_AFTER_MIN} to {STOP_AFTER_MAX}. Empty means no limit. After this many fights in one run the hero walks home and secures the loot instead of pushing on. It also
+            applies while you watch. A repeated run starts counting again.
+          </Help>
+        </div>
+        <div className="controls">
+          <label>
+            When the bag is nearly full{' '}
+            <select aria-label="Bag full order" value={draft.bagFullOrder} onChange={(event) => patch({ bagFullOrder: event.target.value === 'ask' ? 'ask' : event.target.value === 'keep' ? 'keep' : 'home' })}>
+              <option value="home">Walk home</option>
+              <option value="ask">Hold and wait for me</option>
+              <option value="keep">Keep going (loot that does not fit is lost)</option>
+            </select>
+          </label>
+          <Help label="About a full bag">
+            The bag counts as full when fewer than 4 room is free. Walk home returns and secures the loot. Hold and wait stops the run at that point, also while you
+            are away, until you come back and choose. Keep going ignores a full bag and pushes on: gold, XP and momentum still count, but loot that does not fit is lost.
+          </Help>
+        </div>
+      </fieldset>
+      <fieldset className="away-box" data-testid="auto-run-box">
+        <legend>Auto run (while you watch)</legend>
+        <p className="muted">Uses your standing orders live and reruns this route on its own, so you can farm without pressing Push on.</p>
+        {getAutoNotice() === null ? null : (
+          <p className="muted" role="status" data-testid="auto-run-notice">
+            {getAutoNotice()}
+          </p>
+        )}
+        <div className="controls">
+          <label>
+            <input type="checkbox" aria-label="Auto run" checked={draft.autoRun === true} onChange={(event) => patch({ autoRun: event.target.checked })} />
+            Auto run: keeps pushing on and reruns this route
+          </label>
+          <label>
+            Stop after total fights{' '}
+            <input
+              aria-label="Auto run fight limit"
+              value={draft.autoRunMaxFights ?? ''}
+              inputMode="numeric"
+              size={5}
+              placeholder="No limit"
+              onChange={(event) => patch({ autoRunMaxFights: event.target.value })}
+            />
+          </label>
+          <Help label="About Auto run">
+            While on, the hero decides after each fight the way it does while you are away: it walks home when the fight limit or the push-on HP above is reached or
+            the bag is nearly full (or waits, if the bag order above says so), otherwise it pushes on. When a run ends safely, the same route starts again by itself,
+            on any route you can start (cleared or not). A defeat, a refused start or a missing supply stops it. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
+            Auto run was switched on, over repeated runs; at the limit the hero walks home and Auto run switches itself off. You can switch it off at any moment.
+          </Help>
+        </div>
+      </fieldset>
+      <fieldset className="away-box" data-testid="away-box">
+        <legend>While you are away</legend>
+        <p className="muted">
+          Your run keeps going when you close the page or hide the tab, for up to 8 hours, following your standing orders. These settings decide whether a run
+          starts and whether it repeats.
+        </p>
+        <div className="controls">
+          <label>
+            Start a run when I leave{' '}
+            <select aria-label="Away route" value={draft.awayRouteId} onChange={(event) => patch({ awayRouteId: event.target.value })}>
+              <option value="">Never (only continue a run I started)</option>
+              {Object.values(routes).map((route) => (
+                <option key={route.id} value={route.id}>
+                  {route.name}
+                  {route.nodeIds.every((id) => id === 'greyhaven' || hero.clearedNodeIds.includes(id)) ? '' : ' (not cleared yet)'}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Help label="About starting while away">
+            If you have no run when you close the page or hide the tab (for at least 5 seconds), the hero starts this route on its own, using the packed
+            supplies and carried gold above. The route must be one the hero has cleared.
+          </Help>
+        </div>
+        <div className="controls">
+          <label>
+            <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
+            Run a cleared route again
+          </label>
+          <label>
+            Run limit{' '}
+            <select aria-label="Run limit" value={draft.repeatLimit} onChange={(event) => patch({ repeatLimit: Number(event.target.value) })}>
+              {REPEAT_LIMITS.map((limit) => (
+                <option key={limit} value={limit}>
+                  {limit === 0 ? 'No limit' : `${limit} ${limit === 1 ? 'run' : 'runs'}`}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p data-testid="away-plan">
+          <strong>What will happen:</strong>{' '}
+          {draft.awayRouteId === ''
+            ? 'If you have no run when you leave, nothing starts. If a run is out, after each fight'
+            : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}. After each fight`}{' '} the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
+          {draft.bagFullOrder === 'keep' ? '' : 'and the bag is not nearly full, '}otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
+          {(draft.stopAfterFights ?? '').trim() === '' ? '' : `A run walks home after ${draft.stopAfterFights?.trim()} fights. `}
+          {draft.repeatRoute
+            ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'
+            : 'Back in town it stops and waits for you.'}
+        </p>
+        <ul className="away-facts">
+          <li>Your retreat setting still applies in every fight.</li>
+          <li>It stops for good on a defeat, when the packed supplies run out, or after 8 hours.</li>
+          <li>Fights won while away give half the loot and gold. XP, contracts and discoveries are not reduced.</li>
+          <li>Heroes you did not select run their own away route too, and heroes without one rest. Every hero keeps crafting.</li>
+        </ul>
       </fieldset>
       <button type="button" disabled={!checked.ok} onClick={save}>
         Save preparation
