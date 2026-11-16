@@ -13,6 +13,7 @@ import {
   rankName,
   TEMPER_PER_POINT,
   rankable,
+  bonusFactor,
   scaledBonus,
   statBonusesFor,
   type Equipment,
@@ -326,18 +327,18 @@ describe('modifier ranks', () => {
     expect(statBonusesFor(ranked({ mainHand: { modifiers: ['keen'] }, chest: { modifiers: ['sturdy'], ranks: [1] }, accessory0: { modifiers: ['bloodbound'], ranks: [1] } }))).toEqual(plain)
   })
 
-  it('scales the numbers by 1.2 and 1.4 with the decided rounding', () => {
-    expect(scaledBonus('critChanceBonus', 0.02, 2)).toBe(0.024)
-    expect(scaledBonus('critChanceBonus', 0.02, 3)).toBe(0.028)
-    expect(scaledBonus('accuracyBonus', 3, 2)).toBe(3.6)
-    expect(scaledBonus('accuracyBonus', 3, 3)).toBe(4.2)
-    expect(scaledBonus('equipmentHealingPower', 12, 3)).toBe(16.8)
-    expect(scaledBonus('lifestealFraction', 0.05, 2)).toBe(0.06)
-    expect(scaledBonus('lifestealFraction', 0.05, 3)).toBe(0.07)
+  it('scales the numbers by 1.5 and 2.0 with the decided rounding', () => {
+    expect(scaledBonus('critChanceBonus', 0.02, 2)).toBe(0.03)
+    expect(scaledBonus('critChanceBonus', 0.02, 3)).toBe(0.04)
+    expect(scaledBonus('accuracyBonus', 3, 2)).toBe(4.5)
+    expect(scaledBonus('accuracyBonus', 3, 3)).toBe(6)
+    expect(scaledBonus('equipmentHealingPower', 12, 3)).toBe(24)
+    expect(scaledBonus('lifestealFraction', 0.05, 2)).toBe(0.075)
+    expect(scaledBonus('lifestealFraction', 0.05, 3)).toBe(0.1)
     expect(scaledBonus('maxHpBonus', 0.04, 1)).toBe(0.04)
     const bonus = statBonusesFor(ranked({ mainHand: { modifiers: ['keen', 'precise'], ranks: [2, 3] } }))
-    expect(bonus.critChanceBonus).toBe(0.024)
-    expect(bonus.accuracyBonus).toBe(4.2)
+    expect(bonus.critChanceBonus).toBe(0.03)
+    expect(bonus.accuracyBonus).toBe(6)
   })
 
   it('counts the stack cap in modifiers, not ranks, in slot order', () => {
@@ -347,14 +348,14 @@ describe('modifier ranks', () => {
       accessory1: { modifiers: ['keen'], ranks: [3] },
     })
     // Slot order is mainHand, accessory0, accessory1: the third piece is over the cap whatever its rank.
-    expect(statBonusesFor(equipment).critChanceBonus).toBeCloseTo(0.028 + 0.02, 10)
+    expect(statBonusesFor(equipment).critChanceBonus).toBeCloseTo(0.04 + 0.02, 10)
     expect(modifierCapNotes(equipment)).toEqual(['Keen is on 3 pieces, but only 2 count.'])
   })
 
   it('writes the effect text at a rank and knows that Hauler cannot be ranked', () => {
     expect(modifierTextAt(ITEM_MODIFIERS.keen!, 1)).toBe('+2 points critical chance')
-    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 2)).toBe('+2.4 points critical chance')
-    expect(modifierTextAt(ITEM_MODIFIERS.kindled!, 3)).toBe('+7% maximum HP, +11.2 Healing Power')
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 2)).toBe('+3 points critical chance')
+    expect(modifierTextAt(ITEM_MODIFIERS.kindled!, 3)).toBe('+10% maximum HP, +16 Healing Power')
     expect(rankable(ITEM_MODIFIERS.hauler!)).toBe(false)
     expect(rankable(ITEM_MODIFIERS.keen!)).toBe(true)
     expect(rankName(3)).toBe('III')
@@ -372,7 +373,7 @@ describe('modifier temper', () => {
   }
 
   it('leaves rank I with no temper untouched: absent, empty and zero lists give the old numbers', () => {
-    expect(TEMPER_PER_POINT).toBe(0.03)
+    expect(TEMPER_PER_POINT).toBe(0.15)
     const plain = statBonusesFor(tempered(['keen', 'precise'], undefined, undefined))
     expect(statBonusesFor(tempered(['keen', 'precise'], undefined, [0, 0]))).toEqual(plain)
     expect(statBonusesFor(tempered(['keen', 'precise'], [1, 1], []))).toEqual(plain)
@@ -380,27 +381,35 @@ describe('modifier temper', () => {
     expect(scaledBonus('accuracyBonus', 3, 1)).toBe(3)
   })
 
-  it('adds 3 points of multiplier per temper point to the rank multiplier', () => {
-    expect(scaledBonus('critChanceBonus', 0.02, 1, 5)).toBe(0.023)
-    expect(scaledBonus('critChanceBonus', 0.02, 1, 3)).toBe(0.0218)
-    expect(scaledBonus('critChanceBonus', 0.02, 3, 5)).toBe(0.031)
-    expect(scaledBonus('critChanceBonus', 0.02, 2, 2)).toBe(0.0252)
-    expect(scaledBonus('accuracyBonus', 10, 3, 5)).toBe(15.5)
-    expect(scaledBonus('maxHpBonus', 0.04, 3, 5)).toBe(0.062)
+  it('adds 15 points of multiplier per temper point to the rank multiplier', () => {
+    expect(scaledBonus('critChanceBonus', 0.02, 1, 5)).toBe(0.035)
+    expect(scaledBonus('critChanceBonus', 0.02, 1, 3)).toBe(0.029)
+    expect(scaledBonus('critChanceBonus', 0.02, 3, 5)).toBe(0.055)
+    expect(scaledBonus('critChanceBonus', 0.02, 2, 2)).toBe(0.036)
+    expect(scaledBonus('accuracyBonus', 10, 3, 5)).toBe(27.5)
+    expect(scaledBonus('maxHpBonus', 0.04, 3, 5)).toBe(0.11)
     expect(scaledBonus('critChanceBonus', 0.02, 9, 5)).toBe(0.02)
+  })
+
+  it('rounds the factor to two decimals and caps it at 2.75', () => {
+    expect(bonusFactor(1, 5)).toBe(1.75)
+    expect(bonusFactor(3, 5)).toBe(2.75)
+    expect(bonusFactor(3, 3)).toBe(2.45)
+    expect(bonusFactor(2, 0)).toBe(1.5)
+    expect(bonusFactor(9, 2)).toBeUndefined()
   })
 
   it('applies a temper per slot through statBonusesFor and the cap still counts pieces', () => {
     const bonus = statBonusesFor(tempered(['keen', 'precise'], [3, 1], [5, 0]))
-    expect(bonus.critChanceBonus).toBe(0.031)
+    expect(bonus.critChanceBonus).toBe(0.055)
     expect(bonus.accuracyBonus).toBe(3)
     const only = statBonusesFor(tempered(['keen'], undefined, [5]))
-    expect(only.critChanceBonus).toBe(0.023)
+    expect(only.critChanceBonus).toBe(0.035)
   })
 
   it('writes the effect text with the temper', () => {
-    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 1, 5)).toBe('+2.3 points critical chance')
-    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 3, 5)).toBe('+3.1 points critical chance')
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 1, 5)).toBe('+3.5 points critical chance')
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 3, 5)).toBe('+5.5 points critical chance')
     expect(modifierTextAt(ITEM_MODIFIERS.keen!, 1, 0)).toBe('+2 points critical chance')
   })
 })

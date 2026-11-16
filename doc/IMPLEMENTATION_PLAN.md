@@ -1193,9 +1193,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.16
 - Goal: make the gold sinks matter on the Drowned Causeway for a level-17 hero. Ranks multiply 1.0 / 1.5 / 2.0, `TEMPER_PER_POINT = 0.15`, trainer drills give 20% of a level from level 10 (rules in GAME_DESIGN §9, "Gold sinks" and its Retune note). No tuning beyond this; a missed target is reported.
 - Parts: (1) docs only. (2) `sim/economy.ts` numbers, Ranks help text, test expectations, grouping key fix in `ui/town/groupItems.ts`, byte-for-byte check of the causeway and cinder matrices. (3) `harness/modded.ts` rows `infuse-rift` and `stack-rift`, measurement. (4) Drills: `persist/training.ts` (`DRILL_BOOST_LEVEL`, `drillXp`), Trainer text.
-- Part status: 1 `done`. 2 `todo`. 3 `todo`. 4 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `todo`. 4 `todo`.
 - Progress:
   - 2026-11-17: Part 1 done. Rules and targets recorded in GAME_DESIGN §9.
+  - 2026-11-17: Part 2 done. `sim/economy.ts` (`MODIFIER_RANK_MULTIPLIER` 1 / 1.5 / 2, `TEMPER_PER_POINT` 0.15, factor rounded to two decimals), Ranks help text from the constants, test expectations recomputed, `groupItems` key now includes tempers. `--matrix causeway` and `--matrix cinder` (seed 1, 20 runs) are byte-identical to the 010bd59 output (apart from the timing line); the golden and reference tests pass.
 
 ### Step 13.16: Harness check for the gold sinks
 - Status: `done`

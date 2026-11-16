@@ -1,7 +1,7 @@
 import { UPGRADE_QUALITY_POINTS, upgradeCapFor } from '../../persist/crafting.ts'
 import { TEMPER_PER_POINT } from '../../sim/economy.ts'
 
-/** The temper a material binds as a percent of the modifier's strength: `+15%` for cinderite, `none` for scrap. */
+/** The temper a material binds as a percent of the modifier's strength: `+75%` for cinderite, `none` for scrap. */
 export function temperText(grade: number): string {
   return grade > 0 ? `+${Math.round(grade * TEMPER_PER_POINT * 100)}%` : 'none'
 }

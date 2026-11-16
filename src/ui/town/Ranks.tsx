@@ -4,7 +4,7 @@ import { itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { CRAFT_MS, RANK_MATERIAL_COST, rankCheck, rankGold, rankMaterials, socketTargets, temperGrade } from '../../persist/crafting.ts'
 import { purseOf } from '../../persist/save.ts'
-import { ITEM_MODIFIERS, MODIFIER_RANK_MAX, modifierRankAt, modifierTemperAt, modifierTextAt, rankName, rankable, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_RANK_MULTIPLIER, modifierRankAt, modifierTemperAt, modifierTextAt, rankName, rankable, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
 import { queueRankUpFromUi, useSaveStatus } from '../store.ts'
@@ -23,6 +23,11 @@ const SLOT_NAMES: { [slot in EquipmentSlotId]: string } = {
 }
 
 /** Rank up: raise one modifier of a worn or stored item from rank I to II to III for gold and materials. */
+/** The rise a rank gives over rank I, as a whole percent (50 for rank II). */
+function rankPercent(rank: number): number {
+  return Math.round(((MODIFIER_RANK_MULTIPLIER[rank] ?? 1) - 1) * 100)
+}
+
 export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => boolean }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
@@ -52,7 +57,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
       <h4>
         Modifier ranks
         <Help label="About ranks">
-          A modifier starts at rank I. Rank II raises its numbers by 20% and rank III by 40%, for gold by the modifier's level and materials; rank III asks for riftglass, duskiron or cinderite. Each rank-up takes {CRAFT_MS / 1000} s in the crafting queue. The stack cap counts pieces, not ranks.
+          A modifier starts at rank I. Rank II raises its numbers by {rankPercent(2)}% and rank III by {rankPercent(3)}%, for gold by the modifier's level and materials; rank III asks for riftglass, duskiron or cinderite. Each rank-up takes {CRAFT_MS / 1000} s in the crafting queue. The stack cap counts pieces, not ranks.
         </Help>
       </h4>
       {rows.length === 0 ? (

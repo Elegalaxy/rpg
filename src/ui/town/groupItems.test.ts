@@ -21,6 +21,12 @@ describe('grouping duplicates', () => {
     expect(groups.map((group) => [group.item.id, group.count])).toEqual([['a', 2], ['c', 1], ['d', 1], ['e', 1]])
   })
 
+  it('keeps items apart that differ in socket, ranks or tempers', () => {
+    const base = { modifiers: ['keen', 'precise'] }
+    const groups = groupItems([item('a', base), item('b', { ...base, modifierTempers: [5, 0] }), item('c', { ...base, modifierRanks: [2, 1] }), item('d', { ...base, socketed: true }), item('e', { ...base, modifierTempers: [5, 0] })])
+    expect(groups.map((group) => [group.item.id, group.count])).toEqual([['a', 1], ['b', 2], ['c', 1], ['d', 1]])
+  })
+
   it('counts repeated names in order of first appearance', () => {
     expect(countNames(['Draught', 'Antidote', 'Draught'])).toEqual([['Draught', 2], ['Antidote', 1]])
   })

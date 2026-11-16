@@ -346,11 +346,11 @@ describe('modifiers in play', () => {
     expect(purseOf(finish(ok(queueCraft(stocked(4), 'hero-1', { ...bow, baseId: 'armor-heavy-chest', itemLevel: 4, materialId: 'cinderite', modifierId: 'hauler' })))).archive[0]).not.toHaveProperty('modifierTempers')
   })
 
-  it('a tempered craft hits harder when worn: Keen with cinderite is +2.3 points', () => {
+  it('a tempered craft hits harder when worn: Keen with cinderite is +3.5 points', () => {
     const save = crafted('keen', 1, 'cinderite')
     const before = statsFor(hero(save))!
     const after = statsFor(hero(ok(equipFromArchive(save, 'hero-1', 'craft-hero-1-1'))))!
-    expect(after.critChance - before.critChance).toBeCloseTo(0.023, 10)
+    expect(after.critChance - before.critChance).toBeCloseTo(0.035, 10)
   })
 
   it('adds a modifier bonus to the derived stats when the item is equipped', () => {

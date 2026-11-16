@@ -101,7 +101,7 @@ describe('rank up', () => {
     const withNew = { ...base, heroes: base.heroes.map((h) => ({ ...h, equipment: { ...h.equipment, accessory0: { ...newItem('ring', 'accessory-ring', 1), modifiers: ['keen'] } } })) }
     const preview = previewEquip(withNew, 'hero-1', 'ring2', 'accessory0')
     const text = JSON.stringify(preview)
-    expect(text).toContain('Gains Keen II: +2.4 points critical chance')
+    expect(text).toContain('Gains Keen II: +3 points critical chance')
     expect(text).toContain('Loses Keen: +2 points critical chance')
   })
 
@@ -109,7 +109,7 @@ describe('rank up', () => {
     const base = stocked(17, { ...newItem('ring2', 'accessory-ring', 5), modifiers: ['keen'], modifierTempers: [5] })
     const withNew = { ...base, heroes: base.heroes.map((h) => ({ ...h, equipment: { ...h.equipment, accessory0: { ...newItem('ring', 'accessory-ring', 1), modifiers: ['keen'] } } })) }
     const text = JSON.stringify(previewEquip(withNew, 'hero-1', 'ring2', 'accessory0'))
-    expect(text).toContain('Gains Keen (temper +15%): +2.3 points critical chance')
+    expect(text).toContain('Gains Keen (temper +75%): +3.5 points critical chance')
     expect(text).toContain('Loses Keen: +2 points critical chance')
   })
 })

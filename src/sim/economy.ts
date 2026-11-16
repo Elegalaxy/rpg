@@ -312,11 +312,11 @@ export const MODIFIER_STACK_CAP = 2
 
 /** Modifier ranks I to III. A rank multiplies the numeric bonuses of its modifier (GAME_DESIGN §9, "Gold sinks"). */
 export const MODIFIER_RANK_MAX = 3
-export const MODIFIER_RANK_MULTIPLIER: readonly number[] = [1, 1, 1.2, 1.4]
+export const MODIFIER_RANK_MULTIPLIER: readonly number[] = [1, 1, 1.5, 2.0]
 /** The highest temper: the grade of the best material (cinderite). */
 export const MODIFIER_TEMPER_MAX = 5
 /** Each temper point adds this to the multiplier of the modifier's numeric bonuses (GAME_DESIGN §9, "Temper"). */
-export const TEMPER_PER_POINT = 0.03
+export const TEMPER_PER_POINT = 0.15
 const ROMAN = ['', 'I', 'II', 'III']
 
 /** `I`, `II` or `III`. */
@@ -337,7 +337,9 @@ export function modifierTemperAt(item: ItemInstance, index: number): number {
 /** The multiplier of a modifier at a rank and temper, or undefined for a rank that does not exist. */
 export function bonusFactor(rank: number, temper = 0): number | undefined {
   const base = MODIFIER_RANK_MULTIPLIER[rank]
-  return base === undefined ? undefined : base + temper * TEMPER_PER_POINT
+  if (base === undefined) return undefined
+  if (temper <= 0) return base
+  return Math.round((base + temper * TEMPER_PER_POINT) * 100) / 100
 }
 
 /** Flat point bonuses keep one decimal when scaled; every other bonus is a fraction and keeps four. */

@@ -58,6 +58,6 @@ describe('the Sockets panel', () => {
     commitSave(updatePurse(getSaveStatus().save, { materials: { cinderite: 20 } }), 'test')
     const infuse = renderToStaticMarkup(<Sockets />)
     expect(infuse).toContain('<dt>Temper</dt>')
-    expect(infuse).toContain('+15%')
+    expect(infuse).toContain('+75%')
   })
 })
