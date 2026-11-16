@@ -21,6 +21,7 @@ import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
 import { ConditionList } from './ConditionList.tsx'
 import { buildRouter } from './chainModel.ts'
+import { useFireCounts } from './useFireCounts.ts'
 import { RuleChain } from './RuleChain.tsx'
 import { DEFAULT_TAB, RuleRouter } from './RuleRouter.tsx'
 import { addStack, deleteStack, duplicateStack, moveStack, patchStack } from './stackEdit.ts'
@@ -39,6 +40,7 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
   const [errors, setErrors] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
   const skillIds = ruleSkillIds(hero)
+  const counts = useFireCounts(hero.id)
 
   const stack = stacks.find((entry) => entry.id === tab)
   const stackIndex = stack === undefined ? -1 : stacks.indexOf(stack)
@@ -109,7 +111,7 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
     <section aria-label="Priority rules">
       <h2>Priority rules — {hero.name}</h2>
       <div className="stack-bar">
-        {stacks.length > 0 ? <RuleRouter entries={buildRouter(hero, stacks)} selected={tab} counts={null} onSelect={selectTab} /> : null}
+        {stacks.length > 0 ? <RuleRouter entries={buildRouter(hero, stacks)} selected={tab} counts={counts} onSelect={selectTab} /> : null}
         <button type="button" className="stack-new" disabled={atStackLimit} title={atStackLimit ? limitText : undefined} onClick={createStack}>
           New stack
         </button>
@@ -215,7 +217,7 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
           stackId={stack === undefined ? DEFAULT_TAB : stack.id}
           skillIds={skillIds}
           open={openRule}
-          counts={null}
+          counts={counts}
           removed={removedRule !== null && removedRule.tab === tab}
           onOpen={setOpenRule}
           onPatch={patchRow}
