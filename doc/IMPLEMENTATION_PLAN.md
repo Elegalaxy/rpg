@@ -1197,6 +1197,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-16: Part 1 done. Rules recorded in GAME_DESIGN §11.
 
+### Step 13.13: Rule chain view and templates
+- Status: `in progress`
+- Depends on: 13.12
+- Goal: the hero rule editor reads as a decision chain (router, rule nodes, fallback) with starter templates (rules in GAME_DESIGN §7 "Rule chain view and templates"). Data model, saves and sim unchanged.
+- Parts: (1) docs only. (2) `ui/character/chainModel.ts` (`buildChain`, `ruleFireCounts`). (3) `RuleChain.tsx` and `RuleNode.tsx` wired into `Rules.tsx`. (4) Stack router replacing the tab row. (5) Fire counts from the live combat log. (6) Template data (`content/ruleTemplates.ts`, `persist/ruleTemplates.ts`). (7) `TemplatePicker.tsx`. (8) Close: HANDOFF, status, browser check.
+- Part status: 1 `done`.
+- Progress:
+  - 2026-11-16: Part 1 done. Rules and the template table recorded in GAME_DESIGN §7.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |

@@ -1936,6 +1936,30 @@ Decided 2026-11-15 (Step 13.8). A stack is an extra named set of priority rows o
 - Editing stacks in a fight (`setRuleStacks`) is logged like a rules change. If the active stack was deleted the hero falls back to Default; a deleted manual stack clears the manual pick; a stack list that fails to parse is rejected and the old stacks stay.
 - A combat saved before stacks existed has none and loads as before. Saving, the editor, the fight controls and reincarnation (which clears stacks) come in later parts.
 
+#### Rule chain view and templates
+
+Decided 2026-11-16 (Step 13.13, user approved the planner's defaults). Presentation and starter scaffolds only: the saved rows, stacks, validation and the sim are unchanged.
+
+- **Chain view.** The editor shows one chain at a time (Default or one stack) as an ordered list of rule nodes joined by "else" connectors, ending in a non-interactive Fallback node. A node reads: the number and skill name (primary), the rule sentence and target override (secondary), and a "Used N×" slot (tertiary, always reserved, "—" with no data). A row with no conditions shows "Always when ready". When an earlier unconditional row names the same skill, the later row says it is shadowed (it can never be reached). Tapping a node opens it in place into the existing skill, target and condition controls with Move, Duplicate and Remove; one node is open at a time. Remove offers an inline Undo. Add rule sits before the Fallback and is off at 12 rules, with the reason.
+- **Fallback node.** What the hero does when no row passes: a weapon basic attack, except the Mage, who casts Arcane Bolt when it is affordable and ready and otherwise waits for Mana.
+- **Stack router.** When extra stacks exist, one row per stack in priority order shows its trigger sentence, an Auto or Manual only tag and the fire count, ending in "Otherwise: Default". Each row selects that chain. The stack card (name, Switch-when editor, Move, Duplicate, Delete with confirm) stays above the selected chain.
+- **Fire counts.** "Used N×" counts `priority` events with decision `use` for that row in the fight currently running, attributing rows to a stack by walking `stackChanged` events. Without a log it reads "—". Nothing is saved.
+- **Templates are scaffolds, never solutions.** Every template has at least one blank (an empty threshold that validation refuses to save, or an empty skill slot with a hint) and a one-line trade-off on its card. A template uses only the hero's own skills (`ruleSkillIds`); a row naming a skill the hero lacks becomes a blank slot with a generic hint that names no other skill. At most 4 rows and at most one condition per row. Applying a template writes into the draft only (a new stack for a stack template; the selected chain's rows for a rows template, with a confirm when those rows are not empty); nothing is saved until Save rules, and the result keeps no link to the template.
+- **Unlocks** come from existing save fields only: the hero's `defeatedEnemyIds` and the account's defeat records read through the enemy definitions, never a new save field. Each class has 1 to 2 templates open from the start. Locked cards are disabled and show the unlock hint.
+
+| Template | Class | Kind | Blank | Trade-off | Unlock |
+| --- | --- | --- | --- | --- | --- |
+| Fury engine | Warrior | rows | Fury threshold | No guard and no heal. | open |
+| Hold the line | Warrior | rows | telegraph time, HP threshold | Safe, but nothing deals damage until you add it. | defeat an enemy that telegraphs |
+| Mark then cut | Assassin | rows | payoff skill slot | Steady damage with no finisher. | open |
+| Many blades | Assassin | stack | enemy count | Wastes Mark and has no finisher. | defeat a swarm enemy (group fight) |
+| Open strong | Ranger | rows | Readiness threshold, skill slot for when it runs dry | Strong opener, then nothing planned. | open |
+| Don't get hit | Ranger | stack | telegraph time | Only dodges and traps, no damage. | defeat an enemy that telegraphs |
+| Mana budget | Mage | rows | Mana thresholds | No area damage and no ward. | open |
+| Crowd burn | Mage | stack | enemy count | Burns Mana with no recovery row. | defeat a swarm enemy |
+| Patient vow | Cleric | rows | HP threshold | Lasts long, kills slowly, no Faith plan. | open |
+| Boss turn | any | stack | skill slot | Starts empty: you decide the boss plan. | defeat a boss that has phases |
+
 ### Provisional MVP active skills
 
 These are a first broad roster for mechanical review. Names and effects are not final.
