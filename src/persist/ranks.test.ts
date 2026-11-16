@@ -143,3 +143,23 @@ describe('saves with tempers', () => {
     expect(parseSave(withItem(keenBow({ modifierTempers: [1, 1] }))).ok).toBe(false)
   })
 })
+
+describe('temper from rank-ups', () => {
+  const bowOf = (save: SaveData) => purseOf(save).archive[0]!
+
+  it('sets the temper to the larger of the old one and the material grade', () => {
+    const up = (item: ItemInstance, material: string) => finish(ok(queueRankUp(stocked(17, item), 'hero-1', 'bow', 0, material)))
+    expect(bowOf(up(keenBow(), 'shard')).modifierTempers).toEqual([2])
+    expect(bowOf(up(keenBow({ modifierTempers: [4] }), 'shard')).modifierTempers).toEqual([4])
+    expect(bowOf(up(keenBow({ modifierTempers: [1] }), 'riftglass')).modifierTempers).toEqual([3])
+    expect(bowOf(up(keenBow(), 'scrap'))).not.toHaveProperty('modifierTempers')
+    expect(bowOf(up(keenBow({ modifierRanks: [2] }), 'cinderite'))).toMatchObject({ modifierRanks: [3], modifierTempers: [5] })
+  })
+
+  it('touches only the ranked slot and a tempered item keeps the other slot', () => {
+    const two = keenBow({ socketed: true, modifiers: ['keen', 'precise'], modifierTempers: [0, 3] })
+    const done = finish(ok(queueRankUp(stocked(17, two), 'hero-1', 'bow', 0, 'duskiron')))
+    expect(bowOf(done).modifierTempers).toEqual([4, 3])
+    expect(bowOf(done).modifierRanks).toEqual([2, 1])
+  })
+})

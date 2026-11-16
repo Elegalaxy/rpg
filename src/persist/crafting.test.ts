@@ -330,10 +330,28 @@ describe('chained upgrades and Queue all', () => {
 })
 
 describe('modifiers in play', () => {
-  function crafted(modifierId: string, level: number): SaveData {
-    const queued = ok(queueCraft(stocked(level), 'hero-1', { ...bow, baseId: 'weapon-one-handed', itemLevel: 1, modifierId }))
+  /** Scrap has temper grade 0, so these checks see the plain modifier numbers. */
+  function crafted(modifierId: string, level: number, materialId = 'scrap'): SaveData {
+    const queued = ok(queueCraft(stocked(level), 'hero-1', { ...bow, baseId: 'weapon-one-handed', itemLevel: 1, materialId, modifierId }))
     return finish(queued)
   }
+
+  it('binds the craft material grade as slot 0 temper, and never writes a zero temper', () => {
+    const plain = purseOf(crafted('keen', 1)).archive[0]!
+    expect(plain).not.toHaveProperty('modifierTempers')
+    expect(purseOf(crafted('keen', 1, 'cinderite')).archive[0]!.modifierTempers).toEqual([5])
+    expect(purseOf(crafted('keen', 1, 'shard')).archive[0]!.modifierTempers).toEqual([2])
+    expect(purseOf(finish(ok(queueCraft(stocked(1), 'hero-1', { ...bow, materialId: 'cinderite' })))).archive[0]).not.toHaveProperty('modifierTempers')
+    // Hauler has no numbers to raise, so no temper is stored.
+    expect(purseOf(finish(ok(queueCraft(stocked(4), 'hero-1', { ...bow, baseId: 'armor-heavy-chest', itemLevel: 4, materialId: 'cinderite', modifierId: 'hauler' })))).archive[0]).not.toHaveProperty('modifierTempers')
+  })
+
+  it('a tempered craft hits harder when worn: Keen with cinderite is +2.3 points', () => {
+    const save = crafted('keen', 1, 'cinderite')
+    const before = statsFor(hero(save))!
+    const after = statsFor(hero(ok(equipFromArchive(save, 'hero-1', 'craft-hero-1-1'))))!
+    expect(after.critChance - before.critChance).toBeCloseTo(0.023, 10)
+  })
 
   it('adds a modifier bonus to the derived stats when the item is equipped', () => {
     const save = crafted('keen', 1)

@@ -2,7 +2,7 @@ import { enemies } from '../content/enemies.ts'
 import { itemBase, itemName } from '../content/items.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { nodes } from '../content/world.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, appliesToText, modifierRankAt, rankName, rankable, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, appliesToText, modifierRankAt, modifierTemperAt, rankName, rankable, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { selectedHero } from './character.ts'
@@ -417,9 +417,10 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       maxDurability: 100,
       modifiers: job.modifierId === null ? [] : [job.modifierId],
     }
+    const tempered = job.modifierId === null ? item : withTempers(item, [temperGrade(job.modifierId, job.materialId)])
     const name = itemBase(job.baseId)?.name ?? job.baseId
     return {
-      save: { ...save, heroes: keep(item) },
+      save: { ...save, heroes: keep(tempered) },
       notice: { jobId: job.id, baseId: job.baseId, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
@@ -559,6 +560,19 @@ function withRanks(item: ItemInstance, ranks: number[]): ItemInstance {
   return filled.every((rank) => rank === 1) ? rest : { ...rest, modifierRanks: filled }
 }
 
+/** The temper a material binds into a modifier: its grade, or 0 when the modifier has no numbers a temper could raise. */
+export function temperGrade(modifierId: string, materialId: string): number {
+  const modifier = ITEM_MODIFIERS[modifierId]
+  return modifier !== undefined && rankable(modifier) ? (UPGRADE_QUALITY_POINTS[materialId] ?? 0) : 0
+}
+
+/** The item with its modifier tempers replaced. A list of only zeros is dropped, so untempered items stay as they were. */
+function withTempers(item: ItemInstance, tempers: number[]): ItemInstance {
+  const { modifierTempers: _old, ...rest } = item
+  const filled = item.modifiers.map((_id, index) => tempers[index] ?? 0)
+  return filled.every((temper) => temper === 0) ? rest : { ...rest, modifierTempers: filled }
+}
+
 type JobItem = { item: ItemInstance; slot: EquipmentSlotId | null }
 
 /** The item a socket or infuse job works on: from the archive, or worn by the hero. Null when it is neither. */
@@ -652,15 +666,19 @@ export function queueRankUp(save: SaveData, heroId: string, itemId: string, inde
 
 /** The item a finished socket, infuse or rank job hands back. */
 function afterItemJob(job: Extract<CraftJob, { kind: 'socket' | 'infuse' | 'rank' }>): ItemInstance {
-  if (job.kind === 'socket') return { ...job.item, socketed: true }
+  // The socket's material also lifts quality as an upgrade would (riftglass +3 up to 112%, duskiron +4 up to 116%, cinderite +5 up to 120%).
+  if (job.kind === 'socket') return { ...job.item, socketed: true, quality: upgradedQuality(job.item.quality, job.materialId) }
+  const tempers = job.item.modifiers.map((_id, index) => modifierTemperAt(job.item, index))
   if (job.kind === 'rank') {
     const ranks = job.item.modifiers.map((_id, index) => modifierRankAt(job.item, index))
     ranks[job.modifierIndex] = job.toRank
-    return withRanks(job.item, ranks)
+    const grade = temperGrade(job.item.modifiers[job.modifierIndex] ?? '', job.materialId)
+    tempers[job.modifierIndex] = Math.max(tempers[job.modifierIndex] ?? 0, grade)
+    return withTempers(withRanks(job.item, ranks), tempers)
   }
   const infused: ItemInstance = { ...job.item, socketed: true, modifiers: [job.item.modifiers[0] ?? job.modifierId, job.modifierId].slice(0, MAX_ITEM_MODIFIERS) }
-  // The new second modifier starts at rank I.
-  return withRanks(infused, [modifierRankAt(job.item, 0), 1])
+  // The new second modifier starts at rank I, with the temper of the infuse material.
+  return withTempers(withRanks(infused, [modifierRankAt(job.item, 0), 1]), [tempers[0] ?? 0, temperGrade(job.modifierId, job.materialId)])
 }
 
 /** True when any hero has a job queued. */

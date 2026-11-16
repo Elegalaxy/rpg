@@ -76,7 +76,8 @@ describe('open socket', () => {
     expect(advanceCrafting(queued, CRAFT_MS - 10).finished).toEqual([])
     const done = advanceCrafting(queued, CRAFT_MS)
     expect(done.finished[0]?.text).toMatch(/now has a socket/)
-    expect(purseOf(done.save).archive).toEqual([{ ...worn, socketed: true }])
+    // Riftglass also lifts quality by 3 points, up to its 112% cap.
+    expect(purseOf(done.save).archive).toEqual([{ ...worn, socketed: true, quality: 1.12 }])
     expect(hero(done.save).craftXp).toBe(1)
   })
 
@@ -112,7 +113,7 @@ describe('infuse', () => {
     expect(purseOf(queued).craftQueue[0]).toMatchObject({ kind: 'infuse', modifierId: 'precise', remainingMs: CRAFT_MS })
     const done = advanceCrafting(queued, CRAFT_MS)
     const item = purseOf(done.save).archive[0]!
-    expect(item).toMatchObject({ id: 'bow', socketed: true, modifiers: ['keen', 'precise'], quality: 1.07, itemLevel: 17 })
+    expect(item).toMatchObject({ id: 'bow', socketed: true, modifiers: ['keen', 'precise'], quality: 1.1, itemLevel: 17 })
     expect(itemName(item)).toBe('Keen Precise Bow')
     expect(() => assertSaveData(done.save)).not.toThrow()
   })
@@ -207,5 +208,50 @@ describe('saves with sockets', () => {
     const raw = JSON.parse(serializeSave(queued)) as { heroes: { purse: { craftQueue: { item: ItemInstance }[] } }[] }
     raw.heroes[0]!.purse.craftQueue[0]!.item.modifiers = ['keen', 'precise']
     expect(parseSave(JSON.stringify(raw)).ok).toBe(false)
+  })
+})
+
+describe('temper from sockets and infusing', () => {
+  const socketedWith = (item: ItemInstance, gem = 'riftglass') => advanceCrafting(ok(queueSocket(stocked(17, item), 'hero-1', 'bow', gem)), CRAFT_MS).save
+  const bowOf = (save: SaveData) => purseOf(save).archive[0]!
+
+  it('opening a socket also lifts quality like an upgrade: +3, +4 or +5 points up to 112%, 116%, 120%', () => {
+    expect(bowOf(socketedWith(keenBow({ quality: 1.0 }), 'riftglass')).quality).toBeCloseTo(1.03, 10)
+    expect(bowOf(socketedWith(keenBow({ quality: 1.0 }), 'duskiron')).quality).toBeCloseTo(1.04, 10)
+    expect(bowOf(socketedWith(keenBow({ quality: 1.0 }), 'cinderite')).quality).toBeCloseTo(1.05, 10)
+    expect(bowOf(socketedWith(keenBow({ quality: 1.1 }), 'riftglass')).quality).toBe(1.12)
+    expect(bowOf(socketedWith(keenBow({ quality: 1.1 }), 'duskiron')).quality).toBeCloseTo(1.14, 10)
+    expect(bowOf(socketedWith(keenBow({ quality: 1.17 }), 'duskiron')).quality).toBe(1.17)
+    expect(bowOf(socketedWith(keenBow({ quality: 1.18 }), 'cinderite')).quality).toBe(1.2)
+    expect(bowOf(socketedWith(keenBow({ quality: 1.14 }), 'cinderite')).quality).toBeCloseTo(1.19, 10)
+  })
+
+  it('opening a socket does not temper the first modifier', () => {
+    expect(bowOf(socketedWith(keenBow(), 'cinderite'))).not.toHaveProperty('modifierTempers')
+  })
+
+  it('Infuse binds slot 1 temper from its material, leaving slot 0 alone', () => {
+    const base = socketedWith(keenBow({ modifierTempers: [2] }))
+    expect(bowOf(base).modifierTempers).toEqual([2])
+    const infused = advanceCrafting(ok(queueInfuse(base, 'hero-1', 'bow', 'precise', 'cinderite')), CRAFT_MS).save
+    expect(bowOf(infused).modifierTempers).toEqual([2, 5])
+    const plain = advanceCrafting(ok(queueInfuse(socketedWith(keenBow()), 'hero-1', 'bow', 'precise', 'duskiron')), CRAFT_MS).save
+    expect(bowOf(plain).modifierTempers).toEqual([0, 4])
+    const none = advanceCrafting(ok(queueInfuse(socketedWith(keenBow()), 'hero-1', 'bow', 'precise', 'scrap')), CRAFT_MS).save
+    expect(bowOf(none)).not.toHaveProperty('modifierTempers')
+  })
+
+  it('re-infusing resets slot 1 to rank I with the temper of the new material', () => {
+    const first = advanceCrafting(ok(queueInfuse(socketedWith(keenBow()), 'hero-1', 'bow', 'precise', 'cinderite')), CRAFT_MS).save
+    const ranked = { ...first, heroes: first.heroes.map((h) => ({ ...h, purse: { ...h.purse, archive: h.purse.archive.map((i) => ({ ...i, modifierRanks: [1, 3] })) } })) }
+    const again = advanceCrafting(ok(queueInfuse(ranked, 'hero-1', 'bow', 'vicious', 'hide')), CRAFT_MS).save
+    expect(bowOf(again).modifierTempers).toEqual([0, 1])
+    expect(bowOf(again)).not.toHaveProperty('modifierRanks')
+  })
+
+  it('an upgrade keeps the tempers', () => {
+    const base = socketedWith(keenBow({ itemLevel: 10, modifierTempers: [4] }))
+    const upgraded = advanceCrafting(ok(queueUpgrade(base, 'hero-1', 'bow', 'scrap')), CRAFT_MS).save
+    expect(bowOf(upgraded).modifierTempers).toEqual([4])
   })
 })
