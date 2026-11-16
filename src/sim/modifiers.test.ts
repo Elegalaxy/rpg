@@ -11,6 +11,7 @@ import {
   modifierFits,
   modifierTextAt,
   rankName,
+  TEMPER_PER_POINT,
   rankable,
   scaledBonus,
   statBonusesFor,
@@ -358,4 +359,49 @@ describe('modifier ranks', () => {
     expect(rankable(ITEM_MODIFIERS.keen!)).toBe(true)
     expect(rankName(3)).toBe('III')
   })
+describe('modifier temper', () => {
+  function tempered(modifiers: string[], ranks: number[] | undefined, tempers: number[] | undefined): Equipment {
+    const equipment = worn({})
+    equipment.mainHand = {
+      ...item('mainHand', modifiers),
+      socketed: true,
+      ...(ranks === undefined ? {} : { modifierRanks: ranks }),
+      ...(tempers === undefined ? {} : { modifierTempers: tempers }),
+    }
+    return equipment
+  }
+
+  it('leaves rank I with no temper untouched: absent, empty and zero lists give the old numbers', () => {
+    expect(TEMPER_PER_POINT).toBe(0.03)
+    const plain = statBonusesFor(tempered(['keen', 'precise'], undefined, undefined))
+    expect(statBonusesFor(tempered(['keen', 'precise'], undefined, [0, 0]))).toEqual(plain)
+    expect(statBonusesFor(tempered(['keen', 'precise'], [1, 1], []))).toEqual(plain)
+    expect(scaledBonus('critChanceBonus', 0.02, 1, 0)).toBe(0.02)
+    expect(scaledBonus('accuracyBonus', 3, 1)).toBe(3)
+  })
+
+  it('adds 3 points of multiplier per temper point to the rank multiplier', () => {
+    expect(scaledBonus('critChanceBonus', 0.02, 1, 5)).toBe(0.023)
+    expect(scaledBonus('critChanceBonus', 0.02, 1, 3)).toBe(0.0218)
+    expect(scaledBonus('critChanceBonus', 0.02, 3, 5)).toBe(0.031)
+    expect(scaledBonus('critChanceBonus', 0.02, 2, 2)).toBe(0.0252)
+    expect(scaledBonus('accuracyBonus', 10, 3, 5)).toBe(15.5)
+    expect(scaledBonus('maxHpBonus', 0.04, 3, 5)).toBe(0.062)
+    expect(scaledBonus('critChanceBonus', 0.02, 9, 5)).toBe(0.02)
+  })
+
+  it('applies a temper per slot through statBonusesFor and the cap still counts pieces', () => {
+    const bonus = statBonusesFor(tempered(['keen', 'precise'], [3, 1], [5, 0]))
+    expect(bonus.critChanceBonus).toBe(0.031)
+    expect(bonus.accuracyBonus).toBe(3)
+    const only = statBonusesFor(tempered(['keen'], undefined, [5]))
+    expect(only.critChanceBonus).toBe(0.023)
+  })
+
+  it('writes the effect text with the temper', () => {
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 1, 5)).toBe('+2.3 points critical chance')
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 3, 5)).toBe('+3.1 points critical chance')
+    expect(modifierTextAt(ITEM_MODIFIERS.keen!, 1, 0)).toBe('+2 points critical chance')
+  })
+})
 })

@@ -6,7 +6,7 @@ import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { contracts as contractTable, type ContractDef } from '../content/contracts.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { applyHeroUpdates } from './heroUpdates.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, rankable, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_TEMPER_MAX, rankable, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
@@ -375,6 +375,12 @@ function assertItem(value: unknown, label: string): asserts value is ItemInstanc
       const modifier = ITEM_MODIFIERS[(value.modifiers as string[])[index] ?? '']
       check(rank === 1 || (modifier !== undefined && rankable(modifier)), `${label} has a rank on a modifier that cannot be ranked`)
     })
+  }
+  if (value.modifierTempers !== undefined) {
+    check(Array.isArray(value.modifierTempers) && value.modifierTempers.length <= value.modifiers.length, `${label} has more modifier tempers than modifiers`)
+    for (const temper of value.modifierTempers as unknown[]) {
+      check(typeof temper === 'number' && Number.isInteger(temper) && temper >= 0 && temper <= MODIFIER_TEMPER_MAX, `${label} modifier temper must be a whole number from 0 to ${MODIFIER_TEMPER_MAX}`)
+    }
   }
   check(value.modifiers.length < 2 || value.socketed === true, `${label} has a second modifier but no socket`)
 }

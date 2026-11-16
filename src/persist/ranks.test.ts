@@ -125,3 +125,21 @@ describe('saves with ranks', () => {
     expect(parseSave(withItem({ ...newItem('c', 'armor-heavy-chest', 10), modifiers: ['hauler'], modifierRanks: [2] })).ok).toBe(false)
   })
 })
+
+describe('saves with tempers', () => {
+  const withItem = (item: ItemInstance) => JSON.stringify(updatePurse(stocked(), { archive: [item] }))
+
+  it('round-trips a temper and loads an item without one', () => {
+    const loaded = parseSave(withItem(keenBow({ modifierTempers: [5] })))
+    if (!loaded.ok) throw new Error(loaded.reason)
+    expect(purseOf(loaded.data).archive[0]!.modifierTempers).toEqual([5])
+    expect(parseSave(withItem(keenBow())).ok).toBe(true)
+  })
+
+  it('rejects a temper above 5, below 0, fractional, or more tempers than modifiers', () => {
+    expect(parseSave(withItem(keenBow({ modifierTempers: [6] }))).ok).toBe(false)
+    expect(parseSave(withItem(keenBow({ modifierTempers: [-1] }))).ok).toBe(false)
+    expect(parseSave(withItem(keenBow({ modifierTempers: [1.5] }))).ok).toBe(false)
+    expect(parseSave(withItem(keenBow({ modifierTempers: [1, 1] }))).ok).toBe(false)
+  })
+})

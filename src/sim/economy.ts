@@ -38,6 +38,8 @@ export type ItemInstance = {
   socketed?: boolean
   /** The rank (1 to 3) of each modifier, in the order of `modifiers` (Step 13.10 part 4). Absent means every one is rank I. */
   modifierRanks?: number[]
+  /** The temper (0 to 5) of each modifier, in the order of `modifiers`: the grade of the material it was bound with (Step 13.11). Absent means every one is 0. */
+  modifierTempers?: number[]
   /** Set on a hero's heirloom: its level follows that hero's level, up to `cap`. Only that hero can use it. */
   heirloom?: { heroId: string; cap: number }
 }
@@ -311,6 +313,10 @@ export const MODIFIER_STACK_CAP = 2
 /** Modifier ranks I to III. A rank multiplies the numeric bonuses of its modifier (GAME_DESIGN §9, "Gold sinks"). */
 export const MODIFIER_RANK_MAX = 3
 export const MODIFIER_RANK_MULTIPLIER: readonly number[] = [1, 1, 1.2, 1.4]
+/** The highest temper: the grade of the best material (cinderite). */
+export const MODIFIER_TEMPER_MAX = 5
+/** Each temper point adds this to the multiplier of the modifier's numeric bonuses (GAME_DESIGN §9, "Temper"). */
+export const TEMPER_PER_POINT = 0.03
 const ROMAN = ['', 'I', 'II', 'III']
 
 /** `I`, `II` or `III`. */
@@ -323,13 +329,24 @@ export function modifierRankAt(item: ItemInstance, index: number): number {
   return item.modifierRanks?.[index] ?? 1
 }
 
+/** The temper of the modifier in this slot of the item: 0 when none is stored. */
+export function modifierTemperAt(item: ItemInstance, index: number): number {
+  return item.modifierTempers?.[index] ?? 0
+}
+
+/** The multiplier of a modifier at a rank and temper, or undefined for a rank that does not exist. */
+export function bonusFactor(rank: number, temper = 0): number | undefined {
+  const base = MODIFIER_RANK_MULTIPLIER[rank]
+  return base === undefined ? undefined : base + temper * TEMPER_PER_POINT
+}
+
 /** Flat point bonuses keep one decimal when scaled; every other bonus is a fraction and keeps four. */
 const FLAT_BONUS_KEYS: readonly string[] = ['accuracyBonus', 'evasionBonus', 'equipmentHealingPower', 'magicalStatusResistanceBonus']
 
-/** One bonus value at a rank. Rank I (and anything unknown) returns the value untouched. */
-export function scaledBonus(key: string, value: number, rank: number): number {
-  const factor = MODIFIER_RANK_MULTIPLIER[rank]
-  if (rank <= 1 || factor === undefined) return value
+/** One bonus value at a rank and temper. Rank I with no temper (and anything unknown) returns the value untouched. */
+export function scaledBonus(key: string, value: number, rank: number, temper = 0): number {
+  const factor = bonusFactor(rank, temper)
+  if ((rank <= 1 && temper <= 0) || factor === undefined) return value
   const digits = FLAT_BONUS_KEYS.includes(key) ? 10 : 10_000
   return Math.round(value * factor * digits) / digits
 }
@@ -339,10 +356,10 @@ export function rankable(modifier: ItemModifier): boolean {
   return Object.keys(modifier.bonus).length > 0
 }
 
-/** The modifier's effect line at a rank: every number in the rank I text scaled and rounded to one decimal. */
-export function modifierTextAt(modifier: ItemModifier, rank: number): string {
-  const factor = MODIFIER_RANK_MULTIPLIER[rank]
-  if (rank <= 1 || factor === undefined) return modifier.text
+/** The modifier's effect line at a rank and temper: every number in the rank I text scaled and rounded to one decimal. */
+export function modifierTextAt(modifier: ItemModifier, rank: number, temper = 0): string {
+  const factor = bonusFactor(rank, temper)
+  if ((rank <= 1 && temper <= 0) || factor === undefined) return modifier.text
   return modifier.text.replace(/\d+(\.\d+)?/g, (digits) => String(Math.round(Number(digits) * factor * 10) / 10))
 }
 
@@ -533,9 +550,10 @@ export function statBonusesFor(equipment: Equipment): StatBonuses {
       seen[id] = (seen[id] ?? 0) + 1
       if (seen[id] > MODIFIER_STACK_CAP) continue
       const rank = modifierRankAt(item, index)
+      const temper = modifierTemperAt(item, index)
       for (const key of Object.keys(modifier.bonus) as (keyof StatBonuses)[]) {
         const value = modifier.bonus[key] ?? 0
-        total[key] = (total[key] ?? 0) + (rank > 1 ? scaledBonus(key, value, rank) : value)
+        total[key] = (total[key] ?? 0) + (rank > 1 || temper > 0 ? scaledBonus(key, value, rank, temper) : value)
       }
     }
   }
