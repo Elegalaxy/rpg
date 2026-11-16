@@ -50,6 +50,17 @@ function withHero(save: SaveData, change: Record<string, unknown>): SaveData {
   return { ...save, heroes: save.heroes.map((hero) => ({ ...hero, ...change })) }
 }
 
+/**
+ * Replay a run as the lane's own away run: the repeat, cleared-route, run-limit and standing orders apply, as for a
+ * run started by the away route or a background hero on its away route. A manual run would hold at Push on.
+ */
+function runOwn(save: SaveData, awayMs: number, crafting: boolean) {
+  const state = createOffline(save, awayMs, crafting)
+  for (const lane of state.lanes) lane.ownRun = true
+  advanceOffline(state, state.stepsLeft)
+  return finishOffline(state)
+}
+
 describe('how much time is replayed', () => {
   it('ignores short absences and a clock that went backwards, and stops at eight hours', () => {
     expect(replayMs(OFFLINE_MIN_MS - 1)).toBe(0)
@@ -87,7 +98,7 @@ describe('crafting while away', () => {
 
 describe('an expedition while away', () => {
   it('does not change the save it is given, and runs the same way twice', () => {
-    const save = running()
+    const save = running(withHero(strongHero(), { autoRun: true }))
     const text = serializeSave(save)
     const first = runOffline(save, 20 * MINUTE, true)
     expect(serializeSave(save)).toBe(text)
@@ -96,7 +107,7 @@ describe('an expedition while away', () => {
   })
 
   it('gives the same result whether it is replayed in one call or in uneven chunks', () => {
-    const save = running()
+    const save = running(withHero(strongHero(), { autoRun: true }))
     const whole = runOffline(save, 15 * MINUTE, true)
     const state = createOffline(save, 15 * MINUTE, true)
     const chunks = [1, 7, 250, 3_000, 41, 12_345, 999]
@@ -116,7 +127,7 @@ describe('an expedition while away', () => {
     const live = structuredClone(save)
     const steps = 2_500
     for (let step = 0; step < steps; step += 1) stepExpedition(live.expedition!, defs)
-    const away = runOffline(save, steps * STEP_MS, true)
+    const away = runOwn(save, steps * STEP_MS, true)
     // Only the loot differs: a fight may end in this window, and the offline rate halves its drop.
     const awayRun = { ...away.save.expedition!, carriedGold: live.expedition!.carriedGold, unsecured: live.expedition!.unsecured }
     expect(awayRun).toEqual(live.expedition)
@@ -136,7 +147,7 @@ describe('an expedition while away', () => {
     expect(liveGold).toBeGreaterThan(1)
     expect(Object.values(liveLoot).reduce((sum, n) => sum + n, 0)).toBeGreaterThan(1)
 
-    const away = runOffline(save, steps * STEP_MS, true).save.expedition!
+    const away = runOwn(save, steps * STEP_MS, true).save.expedition!
     expect(away.history).toHaveLength(1)
     expect(away.carriedGold - startGold).toBe(Math.floor(liveGold * OFFLINE_LOOT_RATE + 0.5))
     const awayLoot = Object.fromEntries(away.unsecured.map((stack) => [stack.materialId, stack.quantity]))
@@ -145,7 +156,7 @@ describe('an expedition while away', () => {
   })
 
   it('runs the cleared route again and again while the orders say repeat', () => {
-    const away = runOffline(running(), 40 * MINUTE, true)
+    const away = runOwn(running(), 40 * MINUTE, true)
     expect(away.summary.heroes[0]!.runs).toBeGreaterThan(1)
     expect(away.summary.heroes[0]!.fightsWon).toBeGreaterThan(away.summary.heroes[0]!.runs)
     expect(away.summary.heroes[0]!.defeated).toBe(false)
@@ -157,21 +168,21 @@ describe('an expedition while away', () => {
   })
 
   it('stops after the first safe return when repeat is off, leaving the run to close on the Map', () => {
-    const away = runOffline(running(withHero(strongHero(), { repeatRoute: false })), 40 * MINUTE, true)
+    const away = runOwn(running(withHero(strongHero(), { repeatRoute: false })), 40 * MINUTE, true)
     expect(away.summary.heroes[0]!.stopped).toBe('returned')
     expect(away.summary.heroes[0]!.runs).toBe(1)
     expect(away.save.expedition?.outcome).toBe('returned')
   })
 
   it('does not repeat a route the hero has not cleared, or without the packed supplies', () => {
-    const cautious = runOffline(running(withHero(strongHero(), { pushOnHpPercent: 100 })), 40 * MINUTE, true)
+    const cautious = runOwn(running(withHero(strongHero(), { pushOnHpPercent: 100 })), 40 * MINUTE, true)
     expect(cautious.summary.heroes[0]!.stopped).toBe('uncleared')
     expect(cautious.summary.heroes[0]!.runs).toBe(1)
     expect(cautious.save.heroes[0]!.clearedNodeIds).not.toContain('splintered-road')
     expect(cautious.save.expedition).toBeNull()
 
     const noStash = withHero(strongHero(), { packedSupplies: ['healing-draught'] })
-    const away = runOffline(running(noStash), 40 * MINUTE, true)
+    const away = runOwn(running(noStash), 40 * MINUTE, true)
     expect(away.summary.heroes[0]!.stopped).toBe('supplies')
     expect(away.summary.heroes[0]!.runs).toBe(1)
     expect(away.save.expedition).toBeNull()
@@ -179,7 +190,7 @@ describe('an expedition while away', () => {
 
   describe('the fight limit', () => {
     it('walks home after N fights, ahead of the push-on order, and says so', () => {
-      const away = runOffline(running(withHero(strongHero(), { repeatRoute: false, stopAfterFights: 2 })), 30 * MINUTE, true)
+      const away = runOwn(running(withHero(strongHero(), { repeatRoute: false, stopAfterFights: 2 })), 30 * MINUTE, true)
       expect(away.save.expedition?.history).toHaveLength(2)
       expect(away.save.expedition?.outcome).toBe('returned')
       expect(away.summary.heroes[0]!.walkedHomeFights).toBe(1)
@@ -187,7 +198,7 @@ describe('an expedition while away', () => {
     })
 
     it('counts each repeated run from 0 again', () => {
-      const away = runOffline(running(withHero(strongHero(), { stopAfterFights: 2, repeatLimit: 3, clearedNodeIds: ['splintered-road'] })), 120 * MINUTE, true)
+      const away = runOwn(running(withHero(strongHero(), { stopAfterFights: 2, repeatLimit: 3, clearedNodeIds: ['splintered-road'] })), 120 * MINUTE, true)
       const hero = away.summary.heroes[0]!
       expect(hero.runs).toBe(3)
       expect(hero.stopped).toBe('runLimit')
@@ -196,11 +207,12 @@ describe('an expedition while away', () => {
     })
 
     it('changes nothing when no limit is set, and gives the same result in uneven chunks', () => {
-      const free = runOffline(running(withHero(strongHero(), { repeatRoute: false })), 30 * MINUTE, true)
+      const free = runOwn(running(withHero(strongHero(), { repeatRoute: false })), 30 * MINUTE, true)
       expect(free.save.expedition?.history).toHaveLength(6)
       expect(free.summary.heroes[0]!.walkedHomeFights).toBeUndefined()
       const limited = withHero(strongHero(), { repeatRoute: false, stopAfterFights: 2 })
       const state = createOffline(running(limited), 30 * MINUTE, true)
+      for (const lane of state.lanes) lane.ownRun = true
       while (!offlineDone(state)) advanceOffline(state, 777)
       expect(finishOffline(state).save.expedition?.history).toHaveLength(2)
     })
@@ -214,9 +226,9 @@ describe('an expedition while away', () => {
       run.hero.hp = Math.floor(run.hero.maxHp * 0.6)
       return save
     }
-    const cautious = runOffline(atFirstHold(80), 30 * MINUTE, true)
+    const cautious = runOwn(atFirstHold(80), 30 * MINUTE, true)
     expect(cautious.save.expedition?.history).toHaveLength(1)
-    const bold = runOffline(atFirstHold(50), 30 * MINUTE, true)
+    const bold = runOwn(atFirstHold(50), 30 * MINUTE, true)
     expect(bold.save.expedition?.history.length).toBeGreaterThan(1)
   })
 
@@ -232,18 +244,18 @@ describe('an expedition while away', () => {
     }
 
     it('walks home when fewer than 4 room is free and the order is home', () => {
-      const away = runOffline(atFirstHold('home', 17), 30 * MINUTE, true)
+      const away = runOwn(atFirstHold('home', 17), 30 * MINUTE, true)
       expect(away.save.expedition?.outcome).toBe('returned')
       expect(away.save.expedition?.history).toHaveLength(1)
     })
 
     it('keeps pushing on with 4 room free', () => {
-      const away = runOffline(atFirstHold('home', 16), 30 * MINUTE, true)
+      const away = runOwn(atFirstHold('home', 16), 30 * MINUTE, true)
       expect(away.save.expedition?.history.length).toBeGreaterThan(1)
     })
 
     it('holds the run and stops with the ask order, and the hold waits for the player', () => {
-      const away = runOffline(atFirstHold('ask', 17), 30 * MINUTE, true)
+      const away = runOwn(atFirstHold('ask', 17), 30 * MINUTE, true)
       expect(away.summary.heroes[0]!.stopped).toBe('bagFull')
       const run = away.save.expedition!
       expect(run.outcome).toBe('ongoing')
@@ -253,14 +265,14 @@ describe('an expedition while away', () => {
     })
 
     it('counts the run bag room, so a bigger bag is not full yet', () => {
-      const away = runOffline(atFirstHold('home', 17, 26), 30 * MINUTE, true)
+      const away = runOwn(atFirstHold('home', 17, 26), 30 * MINUTE, true)
       expect(away.save.expedition?.history.length).toBeGreaterThan(1)
     })
 
     it('low HP still walks home first', () => {
       const save = atFirstHold('ask', 17)
       save.expedition!.hero.hp = 1
-      const away = runOffline(save, 30 * MINUTE, true)
+      const away = runOwn(save, 30 * MINUTE, true)
       expect(away.summary.heroes[0]!.stopped).not.toBe('bagFull')
       expect(away.save.expedition?.outcome).toBe('returned')
     })
@@ -307,11 +319,11 @@ describe('starting a run while away', () => {
 
 describe('the run limit', () => {
   it('stops after exactly the limit and behaves as before at 0', () => {
-    const limited = runOffline(running(withHero(strongHero(), { repeatLimit: 3 })), 2 * 60 * MINUTE, true)
+    const limited = runOwn(running(withHero(strongHero(), { repeatLimit: 3 })), 2 * 60 * MINUTE, true)
     expect(limited.summary.heroes[0]!.runs).toBe(3)
     expect(limited.summary.heroes[0]!.stopped).toBe('runLimit')
     expect(limited.save.expedition?.outcome).toBe('returned')
-    const free = runOffline(running(withHero(strongHero(), { repeatLimit: 0 })), 2 * 60 * MINUTE, true)
+    const free = runOwn(running(withHero(strongHero(), { repeatLimit: 0 })), 2 * 60 * MINUTE, true)
     expect(free.summary.heroes[0]!.runs).toBeGreaterThan(3)
     expect(free.summary.heroes[0]!.stopped).toBeNull()
   })

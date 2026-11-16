@@ -132,6 +132,18 @@ describe('Auto run in a live run', () => {
     expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Auto run stopped')
   }, 120_000)
 
+  it('switches off and names the piece when a worn piece is at 0 durability at the rerun', () => {
+    const run = startRun({ autoRun: true, repeatRoute: false, pushOnHpPercent: 1, stopAfterFights: 1 })
+    const piece = run.equipment[0]!
+    piece.durability = 0
+    piece.disabled = true
+    play(() => getSaveStatus().save.expedition !== run)
+    expect(getSaveStatus().save.expedition).toBeNull()
+    expect(hero()?.autoRun).toBe(false)
+    expect(getAutoNotice()).toMatch(/Auto run stopped: .+ is at 0 durability\. Repair it\./)
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('at 0 durability')
+  }, 120_000)
+
   it('can be switched off mid-run to take manual control, and Push on still works', () => {
     const run = startRun({ autoRun: true, repeatRoute: false, pushOnHpPercent: 1 })
     setAutoRunFromUi(false)

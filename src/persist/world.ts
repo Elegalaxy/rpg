@@ -466,6 +466,21 @@ export function decideHold(expedition: ExpeditionState, hero: Pick<SavedHero, 's
   return 'push'
 }
 
+/**
+ * Why Auto run cannot rerun a route right now, or null when it can. `save` has no run (the finished one is settled).
+ * The one decision the live loop and the away replay share: the packed supplies must be in the stash, then the
+ * normal start checks (gear, durability, defeat rest, locked nodes). A refusal switches Auto run off.
+ */
+export function autoRerunRefusal(save: SaveData, routeId: string, now: number | null = null): { kind: 'supplies' | 'blocked'; reason: string } | null {
+  const hero = selectedHero(save)
+  if (hero === null) return { kind: 'blocked', reason: 'Select a hero first.' }
+  if (packFromStash(hero).missing.length > 0) return { kind: 'supplies', reason: 'The packed supplies are not in the stash.' }
+  const broken = disabledPieces(hero)
+  if (broken.length > 0) return { kind: 'blocked', reason: `${broken.join(', ')} ${broken.length === 1 ? 'is' : 'are'} at 0 durability. Repair ${broken.length === 1 ? 'it' : 'them'}.` }
+  const check = canStartRoute(save, routeId, now)
+  return check.ok ? null : { kind: 'blocked', reason: check.reason }
+}
+
 /** Every node of the route is in the hero's cleared list: the rule for repeating a route on its own. */
 export function routeCleared(hero: SavedHero, routeId: string): boolean {
   const route = routes[routeId]

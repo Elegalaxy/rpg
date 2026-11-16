@@ -13,8 +13,8 @@ import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOn
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
-import { packFromStash, savePreparation, type PreparationDraft } from '../persist/preparation.ts'
-import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
+import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
+import { autoRerunRefusal, beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
@@ -457,9 +457,8 @@ function afterAutoRun(expedition: ExpeditionState): void {
   // Rerun the same route on any route the hero can start: the normal start checks decide, and a refusal stops Auto run.
   const routeId = expedition.id
   settleExpeditionFromUi()
-  const settled = selectedHero(saveStatus.save)
-  const missing = settled === null ? [] : packFromStash(settled).missing
-  const reason = missing.length > 0 ? 'The packed supplies are not in the stash.' : startExpeditionFromUi(routeId)
+  const refusal = autoRerunRefusal(saveStatus.save, routeId, Date.now())
+  const reason = refusal !== null ? refusal.reason : startExpeditionFromUi(routeId)
   if (reason === null) return
   autoFights = 0
   autoNotice = `Auto run stopped: ${reason}`
@@ -901,6 +900,15 @@ function finishCatchUp(): void {
   offlineState = null
   catchingUp = false
   pushedAt = state.lanes[0]?.pushedAt ?? null
+  // Auto run's session count carries on from what was played while away; if the replay switched it off, say why.
+  const away = summary.heroes[0]
+  autoFights = selectedHero(save)?.autoRun === true ? (state.lanes[0]?.autoFights ?? 0) : 0
+  if (away?.autoRan === true && selectedHero(save)?.autoRun !== true) {
+    autoNotice =
+      away.stopped === 'autoLimit' ? 'Auto run stopped: the total fight limit was reached.' :
+      away.stopped === 'defeat' ? 'Auto run stopped: the hero was defeated.' :
+      `Auto run stopped: ${away.note ?? 'the next run could not start.'}`
+  }
   saveStatus = { ...saveStatus, save }
   commitSave(save, 'offline catch-up', false)
   if (summary.discovered.length > 0) {
@@ -941,7 +949,7 @@ function runCatchUpChunk(): void {
 /** Replay time away in small chunks so the page stays responsive. `crafting` is false when the craft clock already counted it. */
 function beginCatchUp(awayMs: number, crafting: boolean): void {
   if (catchingUp || saveStatus.save.heroes.length === 0 || !(awayMs >= OFFLINE_MIN_MS)) return
-  const state = createOffline(saveStatus.save, awayMs, crafting)
+  const state = createOffline(saveStatus.save, awayMs, crafting, autoFights)
   if (state.stepsLeft <= 0) return
   catchingUp = true
   offlineState = state

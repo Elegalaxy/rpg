@@ -1193,9 +1193,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.14
 - Goal: going AFK no longer turns a manual run into an auto run (rules in GAME_DESIGN §11, "Away rules for a run"). Auto run is the one switch for continuing a run while away; with it off the run waits at Push on; an away route starts only when the hero has no run. No sim or harness change, no save change.
 - Parts: (1) docs only. (2) Replay rules in `persist/offline.ts` (lane modes, shared rerun decision in `persist/world.ts`), tests. (3) Return banner in `OfflineSummary` and `AwayPanel`, tests. (4) Preparation text, tests, browser check, HANDOFF.
-- Part status: 1 `done`. 2 to 4 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 and 4 `todo`.
 - Progress:
   - 2026-11-16: Part 1 done. Rules recorded in GAME_DESIGN §11.
+  - 2026-11-16: Part 2 done. `persist/offline.ts`: each lane has a mode (`auto` by the hero's Auto run, `away` for a run the lane owns, else `hold`); `hold` lanes stop at the next hold with stop `held` (only the fight limit still walks home) and settle nothing; `auto` lanes use `rerun` with the shared `autoRerunRefusal` (`persist/world.ts`, also used by the live `afterAutoRun`) and the session limit, and switch Auto run off at a defeat, a refusal or the limit; `startAwayRun` only for no run at all; background lanes now also include a hero with Auto run on and a run out. `createOffline` takes the live Auto run session count. Tests in `offline.away.test.ts`; the old repeat, run-limit, fight-limit, hold-percent and bag tests in `offline.test.ts` now run through `runOwn` (a lane's own away run) and the two replay-equality tests use Auto run. Live test for a 0 durability piece at the rerun in `ui/map/autoRun.test.tsx`.
 
 ### Step 13.14: Auto run for live farming
 - Status: `done`
