@@ -466,7 +466,7 @@ function Enchanter() {
   )
 }
 
-/** The Trainer: up to three paid drills a level, each a tenth of the level's XP. */
+/** The Trainer: up to three paid drills a level, each a tenth of the level's XP (a fifth from level 10). */
 function Trainer() {
   const { save } = useSaveStatus()
   const { run, messages } = useMessages()
@@ -524,7 +524,7 @@ function Trainer() {
       ) : null}
       <p>
         <Help label="About drills">
-          A drill takes {DRILL_MS / 1000} seconds and gives a tenth of the XP this level needs. You can queue up to three; the XP lands as each one finishes, and the queue waits while the hero is away.
+          A drill takes {DRILL_MS / 1000} seconds and gives a tenth of the XP this level needs, a fifth from level 10. You can queue up to three; the XP lands as each one finishes, and the queue waits while the hero is away.
           The first costs {level * 40} gold, the second {level * 80} and the third {level * 120}; the count starts again at every level.
           Skill and attribute points arrive as with any XP.
         </Help>

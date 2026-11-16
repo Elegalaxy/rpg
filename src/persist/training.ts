@@ -9,12 +9,15 @@ export { DRILL_MS }
 
 /** The share of the level a drill gives, as a fraction of `xpToNextLevel` (GAME_DESIGN §9, "Gold sinks"). */
 export const DRILL_XP_FRACTION = 0.1
+/** From this hero level a drill gives `DRILL_BOOST_XP_FRACTION` of the level instead (Step 13.17). */
+export const DRILL_BOOST_LEVEL = 10
+export const DRILL_BOOST_XP_FRACTION = 0.2
 /** The n-th drill within a level costs `level × DRILL_GOLD_PER_LEVEL × n` gold. */
 export const DRILL_GOLD_PER_LEVEL = 40
 
-/** XP one drill gives at this level: 10% of the level's XP cost, rounded half up, at least 1. */
+/** XP one drill gives at this level: 10% of the level's XP cost, 20% from level 10, rounded half up, at least 1. */
 export function drillXp(level: number): number {
-  return Math.max(1, Math.round(xpToNextLevel(level) * DRILL_XP_FRACTION))
+  return Math.max(1, Math.round(xpToNextLevel(level) * (level >= DRILL_BOOST_LEVEL ? DRILL_BOOST_XP_FRACTION : DRILL_XP_FRACTION)))
 }
 
 /** Gold the next drill costs for a hero who has already done `done` drills this level. */

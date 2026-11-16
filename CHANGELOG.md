@@ -11,7 +11,9 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Balance: trainer drills give a fifth of a level's XP from level 10 (still a tenth below it); prices are unchanged. [13.17]
 - Balance: modifier ranks are stronger (rank II raises a modifier's numbers by 50%, rank III by 100%) and the material you spend tempers it far more (riftglass +45%, cinderite +75% instead of +9% and +15%). Items you already tempered or ranked get stronger too. [13.17]
+- Tech: the modded matrix has two more rows, riftglass-only infuse and a riftglass-only full stack, because riftglass is the best material a level-17 hero holds. [13.17]
 - Tech: a new harness matrix (`--matrix modded`) compares a level-17 hero on the Drowned Causeway with plain gear, a second infused modifier, ranks II and III, and top-grade tempers, building the gear with the game's own crafting code. [13.16]
 - Improved: the preparation panel says that Auto run also decides what happens when you go away (it waits at Push on with Auto run off), and that "Start a run when I leave" only starts a run when you have none (Step 13.15, part 4).
 - Improved: the "While you were away" screen has one clear line per hero: "Auto run kept going while you were away: N fights, N runs" with why it stopped (for example a piece at 0 durability), "Paused at Push on", or "Away route started" (Step 13.15, part 3).
