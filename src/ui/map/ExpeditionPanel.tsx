@@ -632,6 +632,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
   for (const rank of stats.bossRanks) notes.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
   if (stats.retreatedIn !== null) notes.push(`You retreated in fight ${stats.retreatedIn}. That fight gave no loot or momentum.`)
   if (defeated) notes.push(stats.defeatedIn === null ? 'You were defeated.' : `You were defeated in fight ${stats.defeatedIn}. Loot outside the safe pouch was destroyed.`)
+  if (stats.gearWear > 0) notes.push(`Gear wear: -${stats.gearWear} durability on each worn piece.`)
   if (stats.bossLoss) notes.push('A boss defeated you this life. You can now reincarnate.')
   return (
     <section aria-label="Expedition outcome">

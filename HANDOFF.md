@@ -1,17 +1,16 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-16)
-- **Current Goal:** Step 13.11 is done (parts 1-5): timed queueable Trainer drills and material temper. Release 0.11.0 (Steps 13.7-13.11) is closed in CHANGELOG.md. Next is the user's playtest.
+- **Current Goal:** Step 13.12 is done: normal play wears gear (1 durability per 3 fights won, elite or boss win = 2 fights, floor of the run total, applied at settle only). Next is the user's playtest of repair as a routine cost.
 - **Recent Changes & Files Touched:**
-  - Part 1 docs: GAME_DESIGN §9 (Trainer timing, Temper), the wrong "cancel and refund" line fixed, plan Step 13.11.
-  - Part 2: `SavedHero.training` and `DRILL_MS` (`persist/save.ts`), `heroAway`, `trainHero` (queues), `advanceTraining` (`persist/training.ts`), called beside `advanceCrafting` in `ui/store.ts` and `persist/offline.ts`; reincarnation blocked while drills queued; Trainer queue in `ui/town/Town.tsx`.
-  - Part 3: `modifierTempers`, `TEMPER_PER_POINT`, `scaledBonus(key, value, rank, temper)`, `modifierTextAt(..., temper)` in `sim/economy.ts`; `assertItem` validation.
-  - Part 4: `temperGrade`, `withTempers` in `persist/crafting.ts`: craft sets slot 0, Infuse slot 1, Rank up max(old, grade), Open socket also lifts quality.
-  - Part 5: `ui/town/materialEffect.ts`, pickers in Craft, Sockets, Ranks; compare notes in `persist/equipment.ts`.
+  - Docs: GAME_DESIGN §8 "Gear wear in normal play"; plan Step 13.12; CHANGELOG `Unreleased: durability wear (Step 13.12)`.
+  - `src/persist/world.ts`: `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT`, `gearWearOf`, `wornEquipment`; `settleExpedition`, `outcomeStats` (`gearWear`, worn `gear`) and `outcomeSummary` use them.
+  - `src/ui/map/ExpeditionPanel.tsx`: outcome card note "Gear wear: -N durability on each worn piece."
+  - Tests: `src/persist/gearWear.test.ts` (floor, elite/boss weight, defeat stacking, clamp, retreat, away run).
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
   - One commit per finished part, pushed to `origin/main`, no force-push. Every game-changing commit adds a line under `Unreleased` in `CHANGELOG.md`.
-  - Queueing a drill is still refused while the hero is away; a queue made at home pauses while away. Max 3 queued at once. Offline catch-up advances drills in the same chunks as crafting.
-  - Temper is the material grade (scrap 0 to cinderite 5), +3% per point; Hauler's gets none. Rank I with temper 0 runs the old arithmetic (guards byte-identical at seed 1, 5 runs, all eight matrices).
-- **Not verified:** a drill finishing in the browser across a tab change; Sockets and Ranks pickers in a browser (tests only); the 300-run matrix diff; an elites variant with tempered gear.
-- **Exact Next Step:** (1) User playtest: drills (queue, away pause) and tempered crafting at level 17. (2) Optional harness `--matrix elites` variant with tempered gear (ADD rows only). (3) The next game-changing commit starts a new `## Unreleased` section (none is open now).
+  - Wear is persist-only: sim and harness unchanged, guards byte-identical. Repair prices unchanged. Defeat still costs a flat 10, wear stacks.
+  - Wear is floored per run, so runs of 1 to 2 wins wear nothing; away runs that settle each run follow the same rule.
+- **Not verified:** the outcome card note in the browser; no live "wear so far" display and no away-report gear line were added.
+- **Exact Next Step:** (1) User playtest: repair cost over several runs. (2) Tune `WEAR_FIGHTS_PER_POINT` if repair feels too cheap or too dear. (3) Close Step 13.12 into a `## 0.x.0` changelog heading with the next milestone.

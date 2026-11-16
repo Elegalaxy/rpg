@@ -355,6 +355,39 @@ export function routeMastery(hero: SavedHero | null, routeId: string | null): { 
   return { returns, mastered: returns >= MASTERY_RETURNS }
 }
 
+/** Fights won per point of gear wear, and how many fights a won elite or boss fight counts as (GAME_DESIGN §8). */
+export const WEAR_FIGHTS_PER_POINT = 3
+export const WEAR_ELITE_WEIGHT = 2
+
+/** True when the fight the run recorded had an elite or boss enemy. A summon does not count. */
+function isHardFight(expedition: ExpeditionState, encounterId: string): boolean {
+  const fight = expedition.opening.find((def) => def.id === encounterId) ?? expedition.draw.find((def) => def.id === encounterId)
+  if (fight === undefined) return false
+  return fight.enemies.some((enemy) => {
+    const def = enemies[enemy.defId]
+    return def !== undefined && (def.elite === true || def.boss === true)
+  })
+}
+
+/** Durability each equipped piece loses to the fights this run won: floor of the whole run's wear points over 3. */
+export function gearWearOf(expedition: ExpeditionState): number {
+  let points = 0
+  for (const entry of expedition.history) {
+    if (entry.outcome !== 'victory') continue
+    points += isHardFight(expedition, entry.encounterId) ? WEAR_ELITE_WEIGHT : 1
+  }
+  return Math.floor(points / WEAR_FIGHTS_PER_POINT)
+}
+
+/** The run's equipment with the wear taken off. Stops at 0, and a piece at 0 is disabled. */
+export function wornEquipment(expedition: ExpeditionState): ExpeditionState['equipment'] {
+  const wear = gearWearOf(expedition)
+  return expedition.equipment.map((entry) => {
+    const durability = Math.max(0, entry.durability - wear)
+    return { ...entry, durability, disabled: entry.disabled || durability === 0 }
+  })
+}
+
 export function settleExpedition(save: SaveData, now: number | null = null): SaveData {
   const expedition = save.expedition
   if (expedition === null || expedition.outcome === 'ongoing') return save
@@ -378,7 +411,7 @@ export function settleExpedition(save: SaveData, now: number | null = null): Sav
     hero.id === selectedHero(progressed)?.id
       ? {
           ...hero,
-          equipment: applyDurability(hero.equipment, expedition.equipment),
+          equipment: applyDurability(hero.equipment, wornEquipment(expedition)),
           ...withXp(hero, expedition.xpEarned ?? 0),
           ...unlockedRanks(hero, expedition),
           bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
@@ -448,7 +481,9 @@ export type OutcomeStats = {
   /** What the safe pouch saved from a defeat. Already included in `secured`. */
   pouchSaved: { materialId: string; quantity: number }[]
   overflow: number
-  /** Every equipped piece. Wear only changes after a defeat. */
+  /** Durability each piece lost to the fights won (applied when the run is settled). */
+  gearWear: number
+  /** Every equipped piece, as it will be after the wear. */
   gear: GearWear[]
   bossRanks: number[]
   bossLoss: boolean
@@ -470,7 +505,8 @@ export function outcomeStats(expedition: ExpeditionState): OutcomeStats {
     secured: expedition.secured.map((stack) => ({ ...stack })),
     pouchSaved: (expedition.savedByPouch ?? []).map((stack) => ({ ...stack })),
     overflow: expedition.overflow,
-    gear: expedition.equipment.map((entry) => ({ slot: entry.slot, durability: entry.durability, maxDurability: entry.maxDurability, disabled: entry.disabled })),
+    gearWear: gearWearOf(expedition),
+    gear: wornEquipment(expedition).map((entry) => ({ slot: entry.slot, durability: entry.durability, maxDurability: entry.maxDurability, disabled: entry.disabled })),
     bossRanks: bossVictoryRanks(expedition),
     bossLoss: expedition.bossLossThisLife,
   }
@@ -483,6 +519,8 @@ export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
   const lines = [`Fights won: ${victories}.`]
   for (const rank of bossVictoryRanks(expedition)) lines.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
   if ((expedition.xpEarned ?? 0) > 0) lines.push(`Experience earned: ${expedition.xpEarned}.`)
+  const wear = gearWearOf(expedition)
+  if (wear > 0) lines.push(`Gear wear: -${wear} durability on each worn piece.`)
   if (expedition.outcome === 'returned') {
     if (retreated !== undefined) lines.push(`You retreated during fight ${retreated.index + 1}. That fight gave no loot or momentum.`)
     lines.push(`Loot secured: ${lootText(expedition.secured)}.`)
@@ -496,7 +534,7 @@ export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
     lines.push('Loot outside the safe pouch was destroyed, and momentum was cleared.')
     if ((expedition.savedByPouch ?? []).length > 0) lines.push(`Saved by the safe pouch: ${lootText(expedition.savedByPouch ?? [])}.`)
     lines.push(`Loot kept (secured): ${lootText(expedition.secured)}.`)
-    const worn = expedition.equipment.filter((entry) => entry.durability < entry.maxDurability)
+    const worn = wornEquipment(expedition).filter((entry) => entry.durability < entry.maxDurability)
     if (worn.length > 0) {
       lines.push(`Gear damaged: ${worn.map((entry) => `${entry.slot} ${entry.durability}/${entry.maxDurability}${entry.disabled ? ' (disabled)' : ''}`).join(', ')}.`)
     }

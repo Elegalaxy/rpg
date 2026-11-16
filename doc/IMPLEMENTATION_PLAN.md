@@ -1179,13 +1179,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 5 done. `ui/town/materialEffect.ts` (`temperText`, `qualityEffectText`); Craft summary row, Sockets (Quality row for Open socket, Temper row for Infuse) and Ranks (Effect line with the new temper, Temper row, "kept" when the old one is higher) show the effect of the picked material; `modifierNotes` in `persist/equipment.ts` keys on id, rank and temper and names `(temper +15%)`. Tests in `Sockets.test.tsx`, `Ranks.test.tsx`, `ranks.test.ts`. Browser: Craft summary with Keen and cinderite shows Temper +15% at 375 px, no overflow, 44 px button; the Sockets and Ranks rows were checked by rendered-markup tests only (hero level 10 needed).
 
 ### Step 13.12: Gear wear in normal play
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.11
 - Goal: every equipped piece wears 1 durability per 3 fights won (elite or boss win = 2 fights), applied when the run is settled (rules in GAME_DESIGN §8, "Gear wear in normal play"). No sim or harness change.
 - Parts: (1) docs only. (2) `gearWearOf` in `src/persist/world.ts` applied in `settleExpedition`, outcome summary and card lines, tests.
-- Part 1 status: `done`. Part 2: `pending`.
+- Part 1 status: `done`. Part 2: `done`.
 - Progress:
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
+  - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ## 8. Risks, and what would reveal them early
 
