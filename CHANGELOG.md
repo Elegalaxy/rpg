@@ -15,6 +15,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - New: Auto run. Switch it on in the preparation, the run bar or the run dock and the hero pushes on or walks home after each fight by your standing orders, and repeats a cleared route, until you switch it off or reach an optional total fight limit (Step 13.14, part 2).
 - Balance: every worn piece now loses 1 durability for each 3 fights won in a run (an elite or boss win counts as 2), taken when you return; defeat still costs 10 on top, and repair prices are unchanged (Step 13.12, part 2).
 - New: the Priority rules screen shows your rules as a chain: each rule is a card with its skill, its plain sentence, how often it fired this fight, and an "else" arrow down to the Fallback. Tap a card to edit it in place, and a removed rule can be undone (Step 13.13, part 3).
+- Improved: with extra stacks, the stack tabs become a router list in priority order: each stack shows its trigger sentence and an Auto or Manual only tag, ending in "Otherwise: Default" (Step 13.13, part 4).
 
 ## 0.11.0 · 2026-11-11 to 2026-11-16 · Playtest fixes, rule stacks and gold sinks (Steps 13.7-13.11)
 

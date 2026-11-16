@@ -256,3 +256,56 @@
 .rc-fallback-text {
   color: var(--muted);
 }
+
+/* ---- Stack router: one row per stack in priority order, then Otherwise: Default ---- */
+
+.rc-router {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.rc-router-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--s2) var(--s3);
+  text-align: left;
+}
+
+.rc-router-btn[aria-selected='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.rc-router-btn--default {
+  background: var(--chip);
+}
+
+.rc-router-pos {
+  flex: none;
+  min-width: 1.2rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.rc-router-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rc-router-btn .tag {
+  flex: none;
+}
+
+.rc-router-btn .rc-used {
+  min-width: 4rem;
+}

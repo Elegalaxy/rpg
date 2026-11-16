@@ -17,18 +17,17 @@ import {
 } from '../../persist/loadout.ts'
 import type { SavedHero } from '../../persist/save.ts'
 import { Help } from '../Help.tsx'
-import { Tag } from '../Kit.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
 import { ConditionList } from './ConditionList.tsx'
+import { buildRouter } from './chainModel.ts'
 import { RuleChain } from './RuleChain.tsx'
-import { addStack, deleteStack, duplicateStack, hasTrigger, moveStack, patchStack } from './stackEdit.ts'
+import { DEFAULT_TAB, RuleRouter } from './RuleRouter.tsx'
+import { addStack, deleteStack, duplicateStack, moveStack, patchStack } from './stackEdit.ts'
 
 function copyRow(row: RowDraft): RowDraft {
   return { ...row, conditions: row.conditions.map((condition) => ({ ...condition })), kept: [...(row.kept ?? [])] }
 }
-
-const DEFAULT_TAB = 'default'
 
 export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = null }: { hero: SavedHero; initialTab?: string; initialOpenRule?: number | null }) {
   const [rows, setRows] = useState<RowDraft[]>(() => draftsFromRows(hero.priorityRows))
@@ -110,36 +109,7 @@ export function RulesForm({ hero, initialTab = DEFAULT_TAB, initialOpenRule = nu
     <section aria-label="Priority rules">
       <h2>Priority rules — {hero.name}</h2>
       <div className="stack-bar">
-        {stacks.length > 0 ? (
-          <div className="stack-tabs" role="tablist" aria-label="Rule stacks">
-            <button
-              type="button"
-              role="tab"
-              id="stack-tab-default"
-              aria-selected={tab === DEFAULT_TAB}
-              aria-controls="stack-panel"
-              className="stack-tab"
-              onClick={() => selectTab(DEFAULT_TAB)}
-            >
-              Default <Tag kind="plain">Fallback</Tag>
-            </button>
-            {stacks.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                role="tab"
-                id={`stack-tab-${entry.id}`}
-                aria-selected={tab === entry.id}
-                aria-controls="stack-panel"
-                className="stack-tab"
-                title={summarizeTrigger(entry, hero.classId)}
-                onClick={() => selectTab(entry.id)}
-              >
-                {entry.name} <Tag kind={hasTrigger(entry) ? 'info' : 'plain'}>{hasTrigger(entry) ? 'Auto' : 'Manual only'}</Tag>
-              </button>
-            ))}
-          </div>
-        ) : null}
+        {stacks.length > 0 ? <RuleRouter entries={buildRouter(hero, stacks)} selected={tab} counts={null} onSelect={selectTab} /> : null}
         <button type="button" className="stack-new" disabled={atStackLimit} title={atStackLimit ? limitText : undefined} onClick={createStack}>
           New stack
         </button>

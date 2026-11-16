@@ -1208,7 +1208,8 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rules and the template table recorded in GAME_DESIGN §7.
   - 2026-11-16: Part 2 done. `ui/character/chainModel.ts`: `buildChain`, `buildRouter`, `buildRules`, `ruleFireCounts`, `fireCount`, `stackFireTotal`, `fallbackText`; tests in `chainModel.test.ts`.
 
-  - 2026-11-16: Part 3 done. `RuleNode.tsx`, `RuleChain.tsx`, `rc-*` classes in `character.css`; `Rules.tsx` renders the chain (one node open at a time, Remove with Undo, Add rule off at 12 with the reason, Fallback node, empty state). `RulesForm` takes `initialOpenRule` for tests; the telegraph hint test opens that rule. Aria-labels kept.
+  - 2026-11-16: Part 3 done. `RuleNode.tsx`, `RuleChain.tsx`, `rc-*` classes in `character.css`; `Rules.tsx` renders the chain (one node open at a time, Remove with Undo, Add rule off at 12 with the reason, Fallback node, empty state). `RulesForm` takes `initialOpenRule` for tests; the telegraph hint test opens that rule. Aria-labels kept.
+  - 2026-11-16: Part 4 done. `RuleRouter.tsx` replaces the tab row (tab roles and ids kept, `DEFAULT_TAB` moved here); tests in `RuleRouter.test.tsx`.
 
 ## 8. Risks, and what would reveal them early
 
