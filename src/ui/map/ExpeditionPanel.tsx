@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 
 import { selectedHero } from '../../persist/character.ts'
 import {
+  AUTO_RUN_MAX,
+  AUTO_RUN_MIN,
   STOP_AFTER_MAX,
   STOP_AFTER_MIN,
   RETREAT_MAX_PERCENT,
@@ -34,6 +36,8 @@ import { FightView } from '../combat/FightView.tsx'
 import {
   escapeNowFromUi,
   setAutoEscapeFromUi,
+  setAutoRunFromUi,
+  getAutoFights,
   savePreparationFromUi,
   setPreparationProblem,
   settleExpeditionFromUi,
@@ -169,6 +173,32 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           lists what you carry and what is banked.
         </Help>
       </div>
+      <fieldset className="away-box" data-testid="auto-run-box">
+        <legend>Auto run</legend>
+        <div className="controls">
+          <label>
+            <input type="checkbox" aria-label="Auto run" checked={draft.autoRun === true} onChange={(event) => patch({ autoRun: event.target.checked })} />
+            Keep going without Push on
+          </label>
+          <label>
+            Stop after total fights{' '}
+            <input
+              aria-label="Auto run fight limit"
+              value={draft.autoRunMaxFights ?? ''}
+              inputMode="numeric"
+              size={5}
+              placeholder="No limit"
+              onChange={(event) => patch({ autoRunMaxFights: event.target.value })}
+            />
+          </label>
+          <Help label="About Auto run">
+            While on, the hero decides after each fight the way it does while you are away: it walks home when the fight limit or the push-on HP below is reached or
+            the bag is nearly full (or waits, if the bag order below says so), otherwise it pushes on. When a run ends safely and the route is cleared, the next
+            run starts by itself if "Run a cleared route again" is on. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
+            Auto run was switched on, over repeated runs; at the limit the hero walks home and Auto run switches itself off. You can switch it off at any moment.
+          </Help>
+        </div>
+      </fieldset>
       <fieldset className="away-box">
         <legend>While you are away</legend>
         <p className="muted">
@@ -470,6 +500,10 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
   const limit = selectedHero(save)?.stopAfterFights ?? null
   // The fight being fought or walked to; between fights and on the way home it is the fight that just ended.
   const fightNumber = Math.min(expedition.history.length + (waiting || expedition.returning ? 0 : 1), limit ?? 0)
+  const hero = selectedHero(save)
+  const autoOn = hero?.autoRun === true
+  const autoMax = hero?.autoRunMaxFights ?? null
+  const autoFights = getAutoFights()
   return (
     <div className="run-bar" role="group" aria-label="Run controls">
       <div className="run-bar-status">
@@ -495,8 +529,24 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
           Fight {fightNumber} / {limit}
         </p>
       )}
+      {autoOn ? (
+        <p className="run-bar-limit" data-testid="auto-run-status">
+          {autoMax === null ? 'Auto run on' : `Auto run: fight ${Math.min(autoFights, autoMax)} / ${autoMax}`}
+        </p>
+      ) : null}
       <div className="run-bar-actions">
         <HoldActions waiting={waiting} whyDisabled="Available once the fight is over." />
+        {expedition.outcome === 'ongoing' ? (
+          <span className="run-bar-escape">
+            <button type="button" data-testid="auto-run-toggle" aria-pressed={autoOn} onClick={() => setAutoRunFromUi(!autoOn)}>
+              Auto run: {autoOn ? 'On' : 'Off'}
+            </button>
+            <Help label="About Auto run">
+              When on, the hero pushes on or walks home after each fight by your standing orders, and repeats a cleared route. Switch it off to take over; Push on and Return
+              always work.
+            </Help>
+          </span>
+        ) : null}
         {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
           <span className="run-bar-escape">
             <button type="button" aria-pressed={expedition.autoEscapeOff !== true} onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}>
@@ -562,9 +612,10 @@ function RunDetails({ expedition }: { expedition: ExpeditionState }) {
         <Kpi label="Regen" value={`+${Math.round(hpRegenRate(expedition) * 100) / 100}/s`} note="HP between fights" />
       </KpiRow>
       <p className="muted" data-testid="standing-orders">
-        <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, {typeof hero?.stopAfterFights === 'number' ? `stop after ${hero.stopAfterFights} ${hero.stopAfterFights === 1 ? 'fight' : 'fights'}` : 'no fight limit'}, repeat {hero?.repeatRoute === true ? 'on' : 'off'}.
+        <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, {typeof hero?.stopAfterFights === 'number' ? `stop after ${hero.stopAfterFights} ${hero.stopAfterFights === 1 ? 'fight' : 'fights'}` : 'no fight limit'}, repeat {hero?.repeatRoute === true ? 'on' : 'off'}.{' '}
+        {hero?.autoRun === true ? 'Applies live while Auto run is on, and while you are away.' : 'Applies only while you are away (Auto run is off); the fight limit applies live too.'}
         <Help label="About standing orders">
-          Push on and repeat apply when you are away; the fight limit applies while you watch too. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
+          Push on and repeat apply when you are away, and live while Auto run is on; the fight limit applies while you watch too. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
         </Help>
       </p>
       {pendingContracts.length > 0 ? (

@@ -10,7 +10,7 @@ import { StackPicker } from './combat/StackBar.tsx'
 import { hasStacks, summarizeStack } from './combat/stackSummary.ts'
 import { HoldActions } from './HoldActions.tsx'
 import { Kpi, KpiRow } from './Kit.tsx'
-import { escapeNowFromUi, expeditionWaiting, setAutoEscapeFromUi, setRepeatRouteFromUi, useSaveStatus } from './store.ts'
+import { escapeNowFromUi, expeditionWaiting, setAutoEscapeFromUi, setAutoRunFromUi, setRepeatRouteFromUi, useSaveStatus } from './store.ts'
 
 function encounterLabel(id: string): string {
   return id.replace(/-/g, ' ')
@@ -83,6 +83,11 @@ export function RunDockView({
               &nbsp;
             </span>
           ) : null}
+          {hero?.autoRun === true ? (
+            <span className="run-dock-stack" data-testid="dock-auto" title="Auto run is on: the hero pushes on and repeats by your standing orders.">
+              Auto
+            </span>
+          ) : null}
           <span className="run-dock-hp">
             <progress className={`hp-${tone}`} max={maxHp} value={hp} aria-label="Hero HP" />
             <span className="run-dock-hp-num" data-testid="dock-hp">
@@ -146,6 +151,12 @@ export function RunDockView({
             <button type="button" onClick={onOpenMap}>
               Open map
             </button>
+          </div>
+          <div className="run-dock-repeat">
+            <label>
+              <input type="checkbox" data-testid="dock-auto-run" checked={hero?.autoRun === true} onChange={(event) => setAutoRunFromUi(event.target.checked)} />
+              Auto run (push on and repeat by itself)
+            </label>
           </div>
           <div className="run-dock-repeat">
             <label className={mastery.mastered ? undefined : 'is-disabled'}>

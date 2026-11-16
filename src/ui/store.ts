@@ -13,9 +13,9 @@ import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOn
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
-import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
-import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, fightLimitReached } from '../persist/world.ts'
-import { requestEscapeNow, returnToTown, stepExpedition } from '../sim/expedition.ts'
+import { packFromStash, savePreparation, type PreparationDraft } from '../persist/preparation.ts'
+import { beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold, routeCleared } from '../persist/world.ts'
+import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
@@ -174,6 +174,7 @@ export function chooseHero(heroId: string): string | null {
   const result = selectHero(saveStatus.save, heroId)
   if (!result.ok) return result.reason
   backgroundLanes = backgroundLanes.filter((lane) => lane.heroId !== heroId)
+  autoFights = 0
   const promoted = result.save.expedition !== null && saveStatus.save.expedition === null
   if (promoted) {
     // A run the hero kept going in the background is now the live one.
@@ -297,6 +298,7 @@ export function startNewGame(): void {
   const storage = browserStorage()
   if (storage !== null) clearSave(storage)
   saveLogger('new game')
+  autoFights = 0
   saveStatus = { ...saveStatus, save: newSave(), loadError: null, backupKey: null, writeError: null, bytes: null }
   commitSave(saveStatus.save, 'new game')
 }
@@ -314,6 +316,7 @@ export function importSaveFromText(text: string): string | null {
   const parsed = parseSave(text)
   if (!parsed.ok) return `That file is not a usable save: ${parsed.reason}.`
   pushedAt = null
+  autoFights = 0
   finishedFights = []
   discoveryNotices = []
   awayView = { phase: 'idle', progress: 0, summary: null }
@@ -405,6 +408,47 @@ export function expeditionWaiting(): boolean {
   return expedition !== null && shouldHold(expedition, pushedAt)
 }
 
+/** Fights fought since Auto run was switched on, across repeated runs. In memory only: switching it on or off, or a reload, starts at 0. */
+let autoFights = 0
+
+/** The Auto run session count, for the run bar. */
+export function getAutoFights(): number {
+  return autoFights
+}
+
+function setHeroAutoRun(save: SaveData, on: boolean): SaveData {
+  const hero = selectedHero(save)
+  if (hero === null || (hero.autoRun === true) === on) return save
+  return { ...save, heroes: save.heroes.map((entry) => (entry.id === hero.id ? { ...entry, autoRun: on } : entry)) }
+}
+
+/** Switch the selected hero's Auto run on or off, saved. Either way the session count restarts at 0. */
+export function setAutoRunFromUi(on: boolean): void {
+  autoFights = 0
+  debugLog('[ui]', 'auto run', { on })
+  commitSave(setHeroAutoRun(saveStatus.save, on), 'auto run toggled')
+}
+
+/** True when the session limit is set and reached. */
+function autoLimitReached(limit: number | null | undefined): boolean {
+  return limit != null && autoFights >= limit
+}
+
+/** The run ended safely under Auto run: stop for good at the session limit or a defeat, else repeat the route when the orders allow it. */
+function afterAutoRun(expedition: ExpeditionState): void {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null || hero.autoRun !== true) return
+  if (expedition.outcome === 'defeat' || autoLimitReached(hero.autoRunMaxFights)) {
+    autoFights = 0
+    saveStatus = { ...saveStatus, save: setHeroAutoRun(saveStatus.save, false) }
+    commitSave(saveStatus.save, 'auto run ended')
+    return
+  }
+  if (expedition.outcome !== 'returned' || !hero.repeatRoute) return
+  if (!routeCleared(hero, expedition.id) || packFromStash(hero).missing.length > 0) return
+  settleAndRepeatFromUi()
+}
+
 /** Places discovered during this run, for the run's panels. In memory only. */
 let discoveryNotices: string[] = []
 /** Places discovered since the player last opened the Map tab. In memory only. */
@@ -447,14 +491,28 @@ export function advanceExpedition(count: number): void {
   const phase = expedition.phase
   for (let index = 0; index < count; index += 1) {
     if (shouldHold(expedition, pushedAt)) {
-      // The "Stop after N fights" order: the run walks home on its own instead of waiting for the player.
-      if (!fightLimitReached(expedition, selectedHero(saveStatus.save)?.stopAfterFights ?? null)) break
-      returnToTown(expedition)
-      debugLog('[ui]', 'fight limit reached, walking home', { fight: expedition.encounterIndex })
+      const hero = selectedHero(saveStatus.save)
+      const auto = hero?.autoRun === true
+      if (hero === null) break
+      if (auto && autoLimitReached(hero.autoRunMaxFights)) {
+        // The Auto run session limit: walk home. Auto run switches itself off once the run is home.
+        returnToTown(expedition)
+        debugLog('[ui]', 'auto run session limit reached, walking home', { fight: expedition.encounterIndex })
+      } else {
+        // The same decision the away replay makes. Without Auto run only the "Stop after N fights" order acts on its own.
+        const verdict = decideHold(expedition, hero)
+        if (verdict === 'fights' || (auto && (verdict === 'hp' || verdict === 'bag'))) {
+          returnToTown(expedition)
+          debugLog('[ui]', 'walking home on the standing orders', { verdict, fight: expedition.encounterIndex })
+        } else if (auto && verdict === 'push') {
+          pushedAt = expedition.encounterIndex
+        } else break
+      }
     }
     const inFight = expedition.combat
     const before = expedition.history.length
     stepExpedition(expedition, defs)
+    if (expedition.history.length > before && selectedHero(saveStatus.save)?.autoRun === true) autoFights += 1
     if (inFight !== null && expedition.history.length > before) {
       const entry = expedition.history[expedition.history.length - 1]
       if (entry !== undefined) {
@@ -475,6 +533,7 @@ export function advanceExpedition(count: number): void {
   if (expedition.history.length !== fights || expedition.outcome !== 'ongoing') {
     commitSave(saveStatus.save, expedition.outcome === 'ongoing' ? 'encounter end' : 'expedition end', false)
   }
+  if (expedition.outcome !== 'ongoing') afterAutoRun(expedition)
 }
 
 /**

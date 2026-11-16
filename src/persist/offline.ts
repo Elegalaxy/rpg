@@ -1,17 +1,16 @@
-import { bagIsFull, returnToTown } from '../sim/expedition.ts'
+import { returnToTown } from '../sim/expedition.ts'
 import { stepExpedition } from '../sim/expedition.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import { gameDefs } from '../content/scenarios.ts'
-import { routes } from '../content/world.ts'
 
 import { selectedHero } from './character.ts'
 import { isComplete } from './contracts.ts'
 import { advanceCrafting } from './crafting.ts'
 import { advanceTraining } from './training.ts'
 import { packFromStash } from './preparation.ts'
-import { contractFor, purseOf, type SaveData, type SavedHero } from './save.ts'
-import { beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, fightLimitReached } from './world.ts'
+import { contractFor, purseOf, type SaveData } from './save.ts'
+import { beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 
 /** The most time a catch-up replays: eight hours (GAME_DESIGN §11). */
 export const OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
@@ -279,13 +278,6 @@ function applyLootRate(ctx: Ctx): void {
   ctx.lane.baseline = baselineOf(ctx.save)
 }
 
-/** Every node of the route is in the hero's cleared list. */
-function routeCleared(hero: SavedHero, routeId: string): boolean {
-  const route = routes[routeId]
-  if (route === undefined) return false
-  return route.nodeIds.every((id) => id === 'greyhaven' || hero.clearedNodeIds.includes(id))
-}
-
 /** Count the fights an expedition has finished since `seen` of its history entries. */
 function countNewFights(ctx: Ctx, seen: number): number {
   const expedition = ctx.save.expedition
@@ -345,25 +337,26 @@ function decideAtHold(ctx: Ctx): void {
   const expedition = ctx.save.expedition
   const hero = selectedHero(ctx.save)
   if (expedition === null || hero === null) return
-  const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
   const summary = ctx.lane.summary
-  if (fightLimitReached(expedition, hero.stopAfterFights)) {
+  const verdict = decideHold(expedition, hero)
+  if (verdict === 'fights') {
     summary.walkedHomeFights = (summary.walkedHomeFights ?? 0) + 1
     returnToTown(expedition)
     return
   }
-  if (hpPercent < hero.pushOnHpPercent) {
+  if (verdict === 'hp') {
     summary.walkedHomeHp = (summary.walkedHomeHp ?? 0) + 1
     returnToTown(expedition)
     return
   }
-  if (bagIsFull(expedition)) {
+  if (verdict === 'ask') {
     // 'ask' holds the run for the player; replaying stops here and the run waits at this hold.
-    if (hero.bagFullOrder === 'ask') ctx.lane.stopped = 'bagFull'
-    else {
-      summary.walkedHomeBag = (summary.walkedHomeBag ?? 0) + 1
-      returnToTown(expedition)
-    }
+    ctx.lane.stopped = 'bagFull'
+    return
+  }
+  if (verdict === 'bag') {
+    summary.walkedHomeBag = (summary.walkedHomeBag ?? 0) + 1
+    returnToTown(expedition)
     return
   }
   summary.pushedOn = (summary.pushedOn ?? 0) + 1

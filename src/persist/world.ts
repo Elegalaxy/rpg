@@ -12,7 +12,7 @@ import {
   type Route,
   type WorldNode,
 } from '../content/world.ts'
-import { TRAVEL_GAP_MS, rescueFee, type ExpeditionState } from '../sim/expedition.ts'
+import { TRAVEL_GAP_MS, bagIsFull, rescueFee, type ExpeditionState } from '../sim/expedition.ts'
 
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
@@ -449,6 +449,28 @@ export function shouldHold(expedition: ExpeditionState, pushedAt: number | null)
  */
 export function fightLimitReached(expedition: ExpeditionState, limit: number | null): boolean {
   return limit !== null && expedition.history.length >= limit
+}
+
+/** What the standing orders say at a hold: walk home (`fights`, `hp`, `bag`), wait for the player (`ask`, bag full with the hold order), or `push` on. */
+export type HoldVerdict = 'fights' | 'hp' | 'bag' | 'ask' | 'push'
+
+/**
+ * The one decision both the away replay and a live Auto run use at a hold, so they cannot drift.
+ * Order: the fight limit, then the push-on HP floor, then a nearly full bag.
+ */
+export function decideHold(expedition: ExpeditionState, hero: Pick<SavedHero, 'stopAfterFights' | 'pushOnHpPercent' | 'bagFullOrder'>): HoldVerdict {
+  if (fightLimitReached(expedition, hero.stopAfterFights)) return 'fights'
+  const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
+  if (hpPercent < hero.pushOnHpPercent) return 'hp'
+  if (bagIsFull(expedition)) return hero.bagFullOrder === 'ask' ? 'ask' : 'bag'
+  return 'push'
+}
+
+/** Every node of the route is in the hero's cleared list: the rule for repeating a route on its own. */
+export function routeCleared(hero: SavedHero, routeId: string): boolean {
+  const route = routes[routeId]
+  if (route === undefined) return false
+  return route.nodeIds.every((id) => id === 'greyhaven' || hero.clearedNodeIds.includes(id))
 }
 
 export type OutcomeSummary = {

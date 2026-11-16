@@ -238,6 +238,10 @@ export type SavedHero = {
   repeatLimit: number
   /** Standing order: after this many fights in one run (1 to 99) the hero walks home instead of pushing on. Null is no limit. */
   stopAfterFights: number | null
+  /** Live Auto run: at each hold the run decides like the away orders and repeats a cleared route on its own. Absent means off. */
+  autoRun?: boolean
+  /** Auto run session limit: total fights since Auto run was switched on (1 to 9999). Null or absent is no limit. */
+  autoRunMaxFights?: number | null
   /** Trainer drills bought at the current level (0 to 3). Back to 0 whenever the level rises. */
   drillsThisLevel: number
   /** Drills paid for and not yet finished. `queue[0]` is the running drill with `remainingMs` left; each entry's XP was fixed when it was queued. Absent when none. */
@@ -500,6 +504,13 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check(
     value.stopAfterFights === null || (typeof value.stopAfterFights === 'number' && Number.isInteger(value.stopAfterFights) && value.stopAfterFights >= 1 && value.stopAfterFights <= 99),
     `${label} stop-after-fights must be a whole number from 1 to 99, or null`,
+  )
+  check(value.autoRun === undefined || typeof value.autoRun === 'boolean', `${label} auto run must be true or false`)
+  check(
+    value.autoRunMaxFights === undefined ||
+      value.autoRunMaxFights === null ||
+      (typeof value.autoRunMaxFights === 'number' && Number.isInteger(value.autoRunMaxFights) && value.autoRunMaxFights >= 1 && value.autoRunMaxFights <= 9999),
+    `${label} auto run fight limit must be a whole number from 1 to 9999, or null`,
   )
   check(
     typeof value.drillsThisLevel === 'number' && Number.isInteger(value.drillsThisLevel) && value.drillsThisLevel >= 0 && value.drillsThisLevel <= MAX_DRILLS_PER_LEVEL,

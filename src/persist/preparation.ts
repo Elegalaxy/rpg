@@ -29,6 +29,10 @@ export type PreparationDraft = {
   repeatLimit: number
   /** Standing order: stop pushing on after this many fights in a run. Blank is no limit. Left out keeps the hero's setting. */
   stopAfterFights?: string
+  /** Live Auto run switch. Left out keeps the hero's setting. */
+  autoRun?: boolean
+  /** Auto run session fight limit. Blank is no limit. Left out keeps the hero's setting. */
+  autoRunMaxFights?: string
   /** Standing order while away: what to do when the bag is nearly full. */
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the player leaves with no run. An empty string never starts one. */
@@ -41,6 +45,8 @@ export const PUSH_ON_MIN_PERCENT = 1
 export const PUSH_ON_MAX_PERCENT = 100
 export const STOP_AFTER_MIN = 1
 export const STOP_AFTER_MAX = 99
+export const AUTO_RUN_MIN = 1
+export const AUTO_RUN_MAX = 9999
 
 export function draftFor(hero: SavedHero): PreparationDraft {
   return {
@@ -55,6 +61,8 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     repeatRoute: hero.repeatRoute,
     repeatLimit: hero.repeatLimit,
     stopAfterFights: hero.stopAfterFights === null ? '' : String(hero.stopAfterFights),
+    autoRun: hero.autoRun === true,
+    autoRunMaxFights: hero.autoRunMaxFights == null ? '' : String(hero.autoRunMaxFights),
     bagFullOrder: hero.bagFullOrder,
     awayRouteId: hero.awayRouteId ?? '',
   }
@@ -195,6 +203,14 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
     else if (!Number.isInteger(stop) || stop < STOP_AFTER_MIN || stop > STOP_AFTER_MAX) errors.push(`Stop after fights must be a whole number from ${STOP_AFTER_MIN} to ${STOP_AFTER_MAX}, or empty for no limit.`)
     else stopAfterFights = stop
   }
+  let autoRunMaxFights = hero.autoRunMaxFights ?? null
+  if (draft.autoRunMaxFights !== undefined) {
+    const autoText = draft.autoRunMaxFights.trim()
+    const auto = Number(autoText)
+    if (autoText.length === 0) autoRunMaxFights = null
+    else if (!Number.isInteger(auto) || auto < AUTO_RUN_MIN || auto > AUTO_RUN_MAX) errors.push(`Auto run fight limit must be a whole number from ${AUTO_RUN_MIN} to ${AUTO_RUN_MAX}, or empty for no limit.`)
+    else autoRunMaxFights = auto
+  }
   const packedSupplies = draft.supplies.filter((id) => id !== '')
   if (draft.supplies.length > SUPPLY_SLOT_COUNT) errors.push(`Pack at most ${SUPPLY_SLOT_COUNT} supplies.`)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
@@ -217,6 +233,8 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
       repeatRoute: draft.repeatRoute,
       repeatLimit: draft.repeatLimit,
       stopAfterFights,
+      autoRun: draft.autoRun ?? hero.autoRun === true,
+      autoRunMaxFights,
       bagFullOrder: draft.bagFullOrder,
       awayRouteId: draft.awayRouteId === '' ? null : draft.awayRouteId,
     },

@@ -1193,9 +1193,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.12
 - Goal: the hero keeps playing a route without a Push on click per fight, with an optional session fight limit (rules in GAME_DESIGN §11, "Auto run"). No sim or harness change.
 - Parts: (1) docs only. (2) `autoRun` and `autoRunMaxFights` on `SavedHero`, one shared hold decision used by live and offline, live loop and repeat, preparation/run bar/dock UI, tests. (3) Sidebar gold shows carried, banked and purse during a run.
-- Part 1 status: `done`. Part 2: `todo`. Part 3: `todo`.
+- Part 1 status: `done`. Part 2: `done`. Part 3: `todo`.
 - Progress:
   - 2026-11-16: Part 1 done. Rules recorded in GAME_DESIGN §11.
+  - 2026-11-16: Part 2 done. `SavedHero.autoRun` and `autoRunMaxFights` (optional, validated, no version bump); `decideHold` and `routeCleared` in `persist/world.ts`, used by both `offline.ts` and the live loop (`advanceExpedition` in `ui/store.ts`); in-memory `autoFights` count; `afterAutoRun` settles and repeats a cleared route, or switches Auto run off at the session limit or a defeat. UI: preparation fieldset, run bar status and toggle, dock chip and checkbox, reworded standing-orders line. Tests in `ui/map/autoRun.test.tsx`; `preparation.test.ts` default draft gained the two fields. Sim and harness unchanged.
 
 ### Step 13.13: Rule chain view and templates
 - Status: `in progress`
