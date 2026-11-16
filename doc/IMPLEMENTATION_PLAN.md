@@ -1201,11 +1201,11 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 3 done. `GoldLine` (`ui/GoldLine.tsx`) and `goldTotals` (`ui/goldTotals.ts`) in the sidebar header: total = carried + banked + purse, with a "N carried · N banked" line on a run only. Test in `ui/goldLine.test.tsx`. Browser (dev server, port 5391): Auto run toggle in preparation, run bar status and toggle, dock chip, reload keeps it, sidebar split, 375 px no overflow, 44 px toggle. A full multi-run Auto run was not watched in the browser (covered by `autoRun.test.tsx`).
 
 ### Step 13.13: Rule chain view and templates
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.12
 - Goal: the hero rule editor reads as a decision chain (router, rule nodes, fallback) with starter templates (rules in GAME_DESIGN §7 "Rule chain view and templates"). Data model, saves and sim unchanged.
 - Parts: (1) docs only. (2) `ui/character/chainModel.ts` (`buildChain`, `ruleFireCounts`). (3) `RuleChain.tsx` and `RuleNode.tsx` wired into `Rules.tsx`. (4) Stack router replacing the tab row. (5) Fire counts from the live combat log. (6) Template data (`content/ruleTemplates.ts`, `persist/ruleTemplates.ts`). (7) `TemplatePicker.tsx`. (8) Close: HANDOFF, status, browser check.
-- Part status: 1 `done`.
+- Part status: 1 to 8 `done`.
 - Progress:
   - 2026-11-16: Part 1 done. Rules and the template table recorded in GAME_DESIGN §7.
   - 2026-11-16: Part 2 done. `ui/character/chainModel.ts`: `buildChain`, `buildRouter`, `buildRules`, `ruleFireCounts`, `fireCount`, `stackFireTotal`, `fallbackText`; tests in `chainModel.test.ts`.
@@ -1215,6 +1215,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 5 done. `useFireCounts.ts` (`countsFor`, `useFireCounts`) reads the live combat log through the existing `subscribe` and `getSnapshot` (store.ts untouched); the chain and router show it, "—" without a log for that hero.
   - 2026-11-16: Part 6 done. `src/content/ruleTemplates.ts` (10 templates, plain data) and `src/persist/ruleTemplates.ts` (`templatesFor`, `templateUnlocked`, `applyTemplate`); unlocks read `defeatedEnemyIds` and the account defeat records through the enemy defs (telegraph, swarm, phased boss). Tests in `ruleTemplates.test.ts`; architecture test passes.
   - 2026-11-16: Part 7 done. `TemplatePicker.tsx` (cards grouped by situation, 44px targets, locked or stack-limit cards disabled with the reason, replace-rules confirm); `Rules.tsx` opens it from a Templates button and the empty state, shows a "Still to fill in" note list after applying. Browser-checked at 1024 and 375 wide.
+  - 2026-11-16: Part 8 done. HANDOFF rewritten. Verified in the browser pane at 1024 and 375 wide (chain, in-place edit, router, picker, apply with replace confirm, no horizontal overflow). Not verified in a real fight: live "Used N×" counts (unit-tested only). src/sim, content/scenarios.ts and the snapshots are untouched.
 
 ## 8. Risks, and what would reveal them early
 
