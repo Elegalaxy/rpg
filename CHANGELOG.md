@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: the preparation panel says that Auto run also decides what happens when you go away (it waits at Push on with Auto run off), and that "Start a run when I leave" only starts a run when you have none (Step 13.15, part 4).
 - Improved: the "While you were away" screen has one clear line per hero: "Auto run kept going while you were away: N fights, N runs" with why it stopped (for example a piece at 0 durability), "Paused at Push on", or "Away route started" (Step 13.15, part 3).
 - Improved: going away no longer turns a manual run into an auto run. With Auto run off your run waits at Push on until you are back; with Auto run on it keeps going under your standing orders, reruns the route and stops on a defeat, a broken piece, missing supplies or your fight limit; the away route only starts a run when you have none (Step 13.15, part 2).
 - Improved: the preparation panel is grouped by who uses each setting: Every run, Pack for the road, Standing orders (push on, fight limit, full bag), Auto run, and While you are away (start route, repeat).

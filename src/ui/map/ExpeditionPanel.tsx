@@ -246,8 +246,8 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
       <fieldset className="away-box" data-testid="standing-orders-box">
         <legend>Standing orders</legend>
         <p className="muted">
-          Used by Auto run and while you are away: what the hero does between fights. A run you play by hand ignores them, except the fight limit, which also
-          applies while you watch.
+          Used by Auto run (while you watch and while you are away) and by a run that starts when you leave: what the hero does between fights. A run you play by
+          hand with Auto run off ignores them, except the fight limit, which applies while you watch and while you are away.
         </p>
         <div className="controls">
           <label>
@@ -294,8 +294,11 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </div>
       </fieldset>
       <fieldset className="away-box" data-testid="auto-run-box">
-        <legend>Auto run (while you watch)</legend>
-        <p className="muted">Uses your standing orders live and reruns this route on its own, so you can farm without pressing Push on.</p>
+        <legend>Auto run (while you watch and while you are away)</legend>
+        <p className="muted">
+          Uses your standing orders and reruns this route on its own, so you can farm without pressing Push on. It also keeps your run going when you leave. With
+          Auto run off, the hero waits at Push on when you leave.
+        </p>
         {getAutoNotice() === null ? null : (
           <p className="muted" role="status" data-testid="auto-run-notice">
             {getAutoNotice()}
@@ -318,9 +321,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             />
           </label>
           <Help label="About Auto run">
-            While on, the hero decides after each fight the way it does while you are away: it walks home when the fight limit or the push-on HP above is reached or
+            While on, the hero decides after each fight, live and while you are away: it walks home when the fight limit or the push-on HP above is reached or
             the bag is nearly full (or waits, if the bag order above says so), otherwise it pushes on. When a run ends safely, the same route starts again by itself,
-            on any route you can start (cleared or not). A defeat, a refused start or a missing supply stops it. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
+            on any route you can start (cleared or not). A defeat, a refused start (for example a piece at 0 durability) or a missing supply stops it, also while you are away. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
             Auto run was switched on, over repeated runs; at the limit the hero walks home and Auto run switches itself off. You can switch it off at any moment.
           </Help>
         </div>
@@ -328,14 +331,14 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
       <fieldset className="away-box" data-testid="away-box">
         <legend>While you are away</legend>
         <p className="muted">
-          Your run keeps going when you close the page or hide the tab, for up to 8 hours, following your standing orders. These settings decide whether a run
-          starts and whether it repeats.
+          When you close the page or hide the tab, Auto run decides whether your run keeps going (for up to 8 hours). With Auto run off, the hero finishes the
+          fight in progress and waits at Push on until you are back. These settings decide whether a run starts when you have none.
         </p>
         <div className="controls">
           <label>
             Start a run when I leave{' '}
             <select aria-label="Away route" value={draft.awayRouteId} onChange={(event) => patch({ awayRouteId: event.target.value })}>
-              <option value="">Never (only continue a run I started)</option>
+              <option value="">Never</option>
               {Object.values(routes).map((route) => (
                 <option key={route.id} value={route.id}>
                   {route.name}
@@ -345,8 +348,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             </select>
           </label>
           <Help label="About starting while away">
-            If you have no run when you close the page or hide the tab (for at least 5 seconds), the hero starts this route on its own, using the packed
-            supplies and carried gold above. The route must be one the hero has cleared.
+            Only starts a run when you have no run at all when you close the page or hide the tab (for at least 5 seconds): not one that is out, and not a
+            finished one waiting for you on the Map. The hero starts this route on its own, using the packed supplies and carried gold above. The route must be
+            one the hero has cleared. A run started this way follows the standing orders and the repeat settings below.
           </Help>
         </div>
         <div className="controls">
@@ -367,20 +371,32 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
         </div>
         <p data-testid="away-plan">
           <strong>What will happen:</strong>{' '}
+          {draft.autoRun === true
+            ? 'With Auto run on, a run that is out keeps going when you leave: '
+            : 'With Auto run off, a run that is out finishes the fight in progress and waits at Push on until you are back'}
+          {draft.autoRun === true ? (
+            <>
+              after each fight the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
+              {draft.bagFullOrder === 'keep' ? '' : 'and the bag is not nearly full, '}otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
+              {(draft.stopAfterFights ?? '').trim() === '' ? '' : `A run walks home after ${draft.stopAfterFights?.trim()} fights. `}
+              Back in town it runs the same route again, on any route you can start.{' '}
+            </>
+          ) : (
+            <>
+              {(draft.stopAfterFights ?? '').trim() === '' ? '' : `, unless it reaches ${draft.stopAfterFights?.trim()} fights first, then it walks home`}.{' '}
+            </>
+          )}
           {draft.awayRouteId === ''
-            ? 'If you have no run when you leave, nothing starts. If a run is out, after each fight'
-            : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}. After each fight`}{' '} the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
-          {draft.bagFullOrder === 'keep' ? '' : 'and the bag is not nearly full, '}otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
-          {(draft.stopAfterFights ?? '').trim() === '' ? '' : `A run walks home after ${draft.stopAfterFights?.trim()} fights. `}
-          {draft.repeatRoute
-            ? 'Back in town it runs the same route again, repacking your chosen supplies from the stash, as long as every node of the route is cleared.'
-            : 'Back in town it stops and waits for you.'}
+            ? 'If you have no run when you leave, nothing starts.'
+            : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}${
+                draft.autoRun === true ? '' : `, pushes on while HP is at least ${draft.pushOnPercent.trim() === '' ? 'your limit' : `${draft.pushOnPercent}%`}, and ${draft.repeatRoute ? 'runs it again while every node is cleared' : 'stops after the first safe return'}`
+              }.`}
         </p>
         <ul className="away-facts">
           <li>Your retreat setting still applies in every fight.</li>
-          <li>It stops for good on a defeat, when the packed supplies run out, or after 8 hours.</li>
+          <li>It stops for good on a defeat, when a piece is at 0 durability or the packed supplies run out, or after 8 hours.</li>
           <li>Fights won while away give half the loot and gold. XP, contracts and discoveries are not reduced.</li>
-          <li>Heroes you did not select run their own away route too, and heroes without one rest. Every hero keeps crafting.</li>
+          <li>Heroes you did not select keep going only on their own away route or with their own Auto run on; the others wait. Every hero keeps crafting.</li>
         </ul>
       </fieldset>
       <button type="button" disabled={!checked.ok} onClick={save}>
@@ -642,9 +658,9 @@ function RunDetails({ expedition }: { expedition: ExpeditionState }) {
       </KpiRow>
       <p className="muted" data-testid="standing-orders">
         <strong>Standing orders:</strong> push on at {hero?.pushOnHpPercent ?? '?'}% HP or more, {typeof hero?.stopAfterFights === 'number' ? `stop after ${hero.stopAfterFights} ${hero.stopAfterFights === 1 ? 'fight' : 'fights'}` : 'no fight limit'}, repeat {hero?.repeatRoute === true ? 'on' : 'off'}.{' '}
-        {hero?.autoRun === true ? 'Applies live while Auto run is on, and while you are away.' : 'Applies only while you are away (Auto run is off); the fight limit applies live too.'}
+        {hero?.autoRun === true ? 'Applies live and while you are away, because Auto run is on.' : 'Used by a run that starts when you leave (Auto run is off); the fight limit applies live and while you are away too.'}
         <Help label="About standing orders">
-          Push on and repeat apply when you are away, and live while Auto run is on; the fight limit applies while you watch too. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
+          Push on and repeat apply live and while you are away when Auto run is on, and to a run that starts when you leave; the fight limit applies while you watch too. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
         </Help>
       </p>
       {pendingContracts.length > 0 ? (

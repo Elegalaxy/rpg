@@ -1,18 +1,16 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-16)
-- **Current Goal:** Steps 13.13 (rule chain view and templates) and 13.14 (Auto run, sidebar gold) are both done. Next is the user's playtest, then closing 13.12 to 13.14 into a `## 0.x.0` changelog heading.
-- **Recent Changes & Files Touched (13.13, UI only; sim, content defs and snapshots untouched):**
-  - Docs: GAME_DESIGN section 7 "Rule chain view and templates" (template table, unlocks), plan Step 13.13.
-  - `ui/character/chainModel.ts` (`buildChain`, `ruleFireCounts`), `RuleChain.tsx`, `RuleNode.tsx`, `RuleRouter.tsx` (replaces the tab row, keeps tab roles and ids), `TemplatePicker.tsx`, `useFireCounts.ts` (reads the live combat log through the store's `subscribe` and `getSnapshot`), `Rules.tsx` rewired, `rc-*` classes in `character.css`.
-  - `content/ruleTemplates.ts` (10 plain-data templates) and `persist/ruleTemplates.ts` (`templatesFor`, `templateUnlocked`, `applyTemplate`).
-  - Tests: `chainModel`, `RuleChain`, `RuleRouter`, `TemplatePicker`, `useFireCounts` (ui/character) and `persist/ruleTemplates.test.ts`. `RulesForm` takes `initialOpenRule`, `initialPicker`, `save` props for tests.
-- **Changes (13.14):** Auto run toggle and fight limit, live loop decides at each hold, `ui/GoldLine.tsx` sidebar gold total; see plan Step 13.14.
+- **Current Goal:** Step 13.15 (away rules follow Auto run) is done, parts 1 to 4. Next is the user's playtest, then closing 13.12 to 13.15 into a `## 0.x.0` changelog heading.
+- **Recent Changes & Files Touched (UI and persist only; sim, harness, content defs, saves and snapshots untouched):**
+  - Part 1 docs: GAME_DESIGN §11 "Away rules for a run"; plan Step 13.15.
+  - Part 2: `persist/offline.ts` lane modes (`auto`, `away`, `hold`), stops `held` and `autoLimit`, `awayBanner`, `createOffline(..., autoFights)`; `persist/world.ts` `autoRerunRefusal` (shared with the live `afterAutoRun` in `ui/store.ts`); `finishCatchUp` carries the session count and sets the Auto run notice. Tests: `persist/offline.away.test.ts` (new), `offline.test.ts` (old away-order tests now use `runOwn`), `ui/map/autoRun.test.tsx` (0 durability at the live rerun).
+  - Part 3: `ui/AwayPanel.tsx` banner list (`away-banner-<heroId>`), new status tags; `ui/AwayPanel.test.tsx`.
+  - Part 4: `ui/map/ExpeditionPanel.tsx` texts (groups, Help, "What will happen"); `expedition.test.tsx`.
 - **Active Decisions / Constraints:**
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - One commit per finished part, pushed to `origin/main`, no force-push. Release 0.12.0 is closed; the next game-changing commit starts a new `## Unreleased` section. Doc files use CRLF.
-  - Templates are scaffolds: every one has a blank that validation refuses to save, hints never name a skill, applying only edits the draft. A rows template fills the chain you are on (confirm if not empty); a stack template adds a stack.
-  - Unlocks: telegraphing enemy, swarm enemy (the "first group win" stand-in), or a boss with phases, read from `defeatedEnemyIds` and account defeat records. No new save field.
-  - Fire counts follow the rows as they were when they fired, so reordering mid-fight shifts them.
-- **Not verified:** live "Used N×" in a real fight; Auto run over many repeated runs; keyboard walk through the whole chain editor (buttons are native, focus rule is in CSS).
-- **Exact Next Step:** (1) User playtest of the rule chain, router and templates, and of Auto run. (2) Tune template wording or add templates only on feedback. (3) Close Steps 13.12 to 13.14 into a `## 0.x.0 · date · name` changelog heading.
+  - Auto run is the one switch for continuing a run while away; Auto off holds at Push on (only the per-run fight limit walks home). The away route starts only with no run at all.
+  - Auto lanes ignore `repeatRoute`, the cleared-route rule and `repeatLimit`. Background heroes continue only on their away route or with their own Auto run on (such a hero now becomes a lane).
+  - Auto run's session count continues from the live count when the replay starts.
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`.
+- **Not verified:** a real away replay and the return banner in the browser (only static tests); an ended-uncollected defeat still shows "Defeated" on every return (old behaviour, unchanged).
+- **Exact Next Step:** (1) User playtest: leave mid-run with Auto run off and on, and with an away route. (2) Close Steps 13.12 to 13.15 into a `## 0.x.0 · date · name` changelog heading.
