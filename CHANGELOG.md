@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased: durability wear (Step 13.12)
+
+- Balance: every worn piece now loses 1 durability for each 3 fights won in a run (an elite or boss win counts as 2), taken when you return; defeat still costs 10 on top, and repair prices are unchanged (Step 13.12, part 2).
+
 ## 0.11.0 · 2026-11-11 to 2026-11-16 · Playtest fixes, rule stacks and gold sinks (Steps 13.7-13.11)
 
 Source: playtest feedback of 2026-11-11 and the sessions after it: bug fixes, the interface rework, rule stacks, the run bar and fight limit, and new ways to spend gold and materials (Trainer drills, a second modifier socket, modifier ranks and material temper).

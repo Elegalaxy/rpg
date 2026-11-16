@@ -2074,6 +2074,13 @@ Durability carry-through, decided 2026-11-13 (playtest fix):
 - A run cannot start while any equipped piece is disabled (durability 0), or while the 30-second recovery after a defeat has not passed. The refusal names the piece or the minutes left. This holds for a live start and for an away start.
 - The recovery wait is stored on the hero as the time it ends, set when the defeated run is settled.
 
+Gear wear in normal play, decided 2026-11-16 (user):
+
+- Every equipped piece loses 1 durability for each 3 fights won in the run. A won elite or boss fight counts as 2 fights. Wear points are `victories + elite or boss victories`, and the loss is `floor(points / 3)` of the whole run, so there is no per-fight rounding drift: 2 wins = 0, 3 = 1, 2 wins + 1 elite = 1 (4 points), 25 wins = 8. Constants: `WEAR_FIGHTS_PER_POINT = 3`, `WEAR_ELITE_WEIGHT = 2` (persist, not sim).
+- Wear is applied only when the run is settled (safe return, retreat, or defeat), never during the run, so a fight never changes mid-run and the harness (which starts every piece at 100 and never settles) is unaffected. Away and offline runs settle through the same code and wear the same way.
+- On a defeat the flat 10 loss stays and wear stacks with it (wear counts the fights won before the defeat). Durability stops at 0, and a piece at 0 is disabled as before. A run with no victories wears nothing.
+- Why: repair should be a routine gold cost of playing, not only a penalty for dying. Repair prices are unchanged (`repairCost`). The defeat penalty is unchanged.
+
 ### Batch C: loot safety, bag, rules, modifiers (decided 2026-11-07)
 
 Safe pouch (replaces the "send loot home" idea; there is no courier):

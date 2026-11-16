@@ -1178,6 +1178,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 4 done. `temperGrade` (0 for a modifier with no numbers, so Hauler's gets none) and `withTempers` in `persist/crafting.ts`; a finished craft sets slot 0, Infuse sets slot 1 (rank I), Rank up sets `max(old, grade)`, Open socket applies `upgradedQuality` with its material; upgrades and heirlooms keep tempers through the item spread. Tests in `crafting.test.ts`, `sockets.test.ts`, `ranks.test.ts`; the modifier-in-play tests now craft with scrap (grade 0) to keep their plain numbers, and two socket tests expect the quality lift. No sim or harness change, so no guard rerun (harness and content do not import persist).
   - 2026-11-16: Part 5 done. `ui/town/materialEffect.ts` (`temperText`, `qualityEffectText`); Craft summary row, Sockets (Quality row for Open socket, Temper row for Infuse) and Ranks (Effect line with the new temper, Temper row, "kept" when the old one is higher) show the effect of the picked material; `modifierNotes` in `persist/equipment.ts` keys on id, rank and temper and names `(temper +15%)`. Tests in `Sockets.test.tsx`, `Ranks.test.tsx`, `ranks.test.ts`. Browser: Craft summary with Keen and cinderite shows Temper +15% at 375 px, no overflow, 44 px button; the Sockets and Ranks rows were checked by rendered-markup tests only (hero level 10 needed).
 
+### Step 13.12: Gear wear in normal play
+- Status: `in progress`
+- Depends on: 13.11
+- Goal: every equipped piece wears 1 durability per 3 fights won (elite or boss win = 2 fights), applied when the run is settled (rules in GAME_DESIGN §8, "Gear wear in normal play"). No sim or harness change.
+- Parts: (1) docs only. (2) `gearWearOf` in `src/persist/world.ts` applied in `settleExpedition`, outcome summary and card lines, tests.
+- Part 1 status: `done`. Part 2: `pending`.
+- Progress:
+  - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
