@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased: durability wear (Step 13.12)
+## 0.12.0 · 2026-11-16 · Gear wear, Auto run and the rule chain editor (Steps 13.12-13.14)
 
 - Improved: socket and rank lists on a gear shop stay open. The job tab is the section, so there is nothing to expand.
 - Improved: while a run is out the sidebar shows the gold you own in total, with a second line for what is carried and what is banked, instead of 0 (Step 13.14, part 3).

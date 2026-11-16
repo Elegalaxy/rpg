@@ -10,7 +10,7 @@
 - **Changes (13.14):** Auto run toggle and fight limit, live loop decides at each hold, `ui/GoldLine.tsx` sidebar gold total; see plan Step 13.14.
 - **Active Decisions / Constraints:**
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Do not change the golden duel-basic snapshot. Never remove `// admin code`.
-  - One commit per finished part, pushed to `origin/main`, no force-push. A game-changing commit adds a line under `Unreleased`. Doc files use CRLF.
+  - One commit per finished part, pushed to `origin/main`, no force-push. Release 0.12.0 is closed; the next game-changing commit starts a new `## Unreleased` section. Doc files use CRLF.
   - Templates are scaffolds: every one has a blank that validation refuses to save, hints never name a skill, applying only edits the draft. A rows template fills the chain you are on (confirm if not empty); a stack template adds a stack.
   - Unlocks: telegraphing enemy, swarm enemy (the "first group win" stand-in), or a boss with phases, read from `defeatedEnemyIds` and account defeat records. No new save field.
   - Fire counts follow the rows as they were when they fired, so reordering mid-fight shifts them.
