@@ -21,6 +21,7 @@ describe('the Ranks panel', () => {
   it('shows the rank change, the scaled effect, the price and an enabled button', () => {
     setup(keenBow)
     const html = renderToStaticMarkup(<Ranks />)
+    expect(html).not.toContain('<details')
     expect(html).toContain('Keen I on Keen Bow')
     expect(html).toContain('I → II')
     expect(html).toContain('+2 points critical chance → +2.4 points critical chance')

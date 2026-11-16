@@ -5,7 +5,6 @@ import { selectedHero } from '../../persist/character.ts'
 import { CRAFT_MS, RANK_MATERIAL_COST, rankCheck, rankGold, rankMaterials, socketTargets, temperGrade } from '../../persist/crafting.ts'
 import { purseOf } from '../../persist/save.ts'
 import { ITEM_MODIFIERS, MODIFIER_RANK_MAX, modifierRankAt, modifierTemperAt, modifierTextAt, rankName, rankable, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
-import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
 import { queueRankUpFromUi, useSaveStatus } from '../store.ts'
@@ -59,8 +58,11 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
       {rows.length === 0 ? (
         <p>No modifier of this kind can be ranked up yet.</p>
       ) : (
-        <Collapsible testId="rank-list" persistKey="craft-ranks-open" summary={<strong>{rows.length} {rows.length === 1 ? 'modifier' : 'modifiers'} to rank up</strong>}>
-          <ul className="shop-rows" aria-label="Ranks">
+        <>
+          <p>
+            <strong>{rows.length} {rows.length === 1 ? 'modifier' : 'modifiers'} to rank up</strong>
+          </p>
+          <ul className="shop-rows" aria-label="Ranks" data-testid="rank-list">
             {rows.map(({ item, slot, count, index, id }) => {
               const modifier = ITEM_MODIFIERS[id]
               if (modifier === undefined) return null
@@ -125,7 +127,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
               )
             })}
           </ul>
-        </Collapsible>
+        </>
       )}
       {error !== null ? <p role="alert">{error}</p> : null}
     </>

@@ -31,6 +31,7 @@ describe('the Sockets panel', () => {
   it('lists an item with its price, and an enabled Open socket button', () => {
     setup(17, keenBow)
     const html = renderToStaticMarkup(<Sockets />)
+    expect(html).not.toContain('<details')
     expect(html).toContain('Keen Bow')
     expect(html).toContain('480')
     expect(html).toMatch(/<button[^>]*aria-label="Open socket bow"[^>]*>Open socket/)

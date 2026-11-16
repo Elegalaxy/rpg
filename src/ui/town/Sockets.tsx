@@ -18,7 +18,6 @@ import {
 } from '../../persist/crafting.ts'
 import { purseOf } from '../../persist/save.ts'
 import { ITEM_MODIFIERS, modifierFits, modifierRankAt, rankName, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
-import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
 import { queueInfuseFromUi, queueSocketFromUi, useSaveStatus } from '../store.ts'
@@ -90,8 +89,11 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
       ) : rows.length === 0 ? (
         <p>Nothing of this kind to socket.</p>
       ) : (
-        <Collapsible testId="socket-list" persistKey="craft-sockets-open" summary={<strong>{rows.length} {rows.length === 1 ? 'item' : 'items'} to socket or infuse</strong>}>
-          <ul className="shop-rows" aria-label="Sockets">
+        <>
+          <p>
+            <strong>{rows.length} {rows.length === 1 ? 'item' : 'items'} to socket or infuse</strong>
+          </p>
+          <ul className="shop-rows" aria-label="Sockets" data-testid="socket-list">
             {rows.map(({ item, slot, count }) => {
               const socketed = item.socketed === true
               const gem = socketMaterialFor(item)
@@ -193,7 +195,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
               )
             })}
           </ul>
-        </Collapsible>
+        </>
       )}
       {error !== null ? <p role="alert">{error}</p> : null}
     </>
