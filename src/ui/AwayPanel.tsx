@@ -1,4 +1,4 @@
-import { ordersLine, type AwayReport, type HeroAwaySummary } from '../persist/offline.ts'
+import { awayBanner, ordersLine, type AwayReport, type HeroAwaySummary } from '../persist/offline.ts'
 import { routes } from '../content/world.ts'
 import { Tag } from './Kit.tsx'
 import { dismissAway, getAwayView, useSaveStatus } from './store.ts'
@@ -25,12 +25,19 @@ const STOP_LABEL: { [reason: string]: { kind: 'bad' | 'info'; text: string } } =
   supplies: { kind: 'bad', text: 'Out of supplies' },
   blocked: { kind: 'bad', text: 'Could not start' },
   bagFull: { kind: 'info', text: 'Bag full, waiting' },
+  held: { kind: 'info', text: 'Paused at Push on' },
+  autoLimit: { kind: 'info', text: 'Fight limit reached' },
   runLimit: { kind: 'info', text: 'Run limit reached' },
   defeat: { kind: 'bad', text: 'Defeated' },
 }
 
+/** The reasons the banner line already states for a hero, so the list below does not say them twice. */
+const IN_BANNER = ['held', 'autoLimit', 'supplies', 'blocked', 'bagFull']
+
 function stopLine(hero: HeroAwaySummary): string {
   if (hero.stopped === null) return ''
+  if (hero.autoRan === true && IN_BANNER.includes(hero.stopped)) return ''
+  if (hero.stopped === 'held' || hero.stopped === 'autoLimit') return ''
   if (hero.stopped === 'blocked') return `${hero.heroName} stopped: ${hero.note ?? 'the next run could not start.'}`
   return `${hero.heroName} ${STOP_TEXT[hero.stopped] ?? ''}`
 }
@@ -49,10 +56,23 @@ export function AwayReportView({ report }: { report: AwayReport }) {
       : `You were away ${duration(report.awayMs)}.`
   const withMaterials = report.heroes.filter((hero) => Object.keys(hero.materials).length > 0)
   const contracts = report.heroes.reduce((sum, hero) => sum + hero.contractsFinished, 0)
+  const banners = report.heroes.flatMap((hero) => {
+    const line = awayBanner(hero)
+    return line === null ? [] : [{ heroId: hero.heroId, line }]
+  })
   const stops = [...report.heroes.map(ordersLine), ...report.heroes.map(stopLine)].filter((line) => line !== '')
   return (
     <>
       <p>{intro}</p>
+      {banners.length > 0 ? (
+        <ul data-testid="away-banners" aria-label="What happened to each run">
+          {banners.map((banner) => (
+            <li key={banner.heroId} data-testid={`away-banner-${banner.heroId}`}>
+              <strong>{banner.line}</strong>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {report.heroes.length > 0 ? (
         <table className="away-table" aria-label="What each hero did">
           <thead>
