@@ -9,9 +9,9 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased: playtest fixes (Step 13.7, in progress)
+## 0.11.0 · 2026-11-11 to 2026-11-16 · Playtest fixes, rule stacks and gold sinks (Steps 13.7-13.11)
 
-Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
+Source: playtest feedback of 2026-11-11 and the sessions after it: bug fixes, the interface rework, rule stacks, the run bar and fight limit, and new ways to spend gold and materials (Trainer drills, a second modifier socket, modifier ranks and material temper).
 
 - Improved: a weaponsmith, armorer, or jeweler opens one job at a time — Buy, Sell, Repair, Craft, Upgrade, Sockets, Ranks, or Queue — with a count when something is waiting.
 - Improved: on a wide screen the town and hero section tabs stay pinned while the page scrolls, so a shop can be switched without returning to the top.

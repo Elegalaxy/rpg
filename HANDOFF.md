@@ -1,7 +1,7 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code (2026-11-16)
-- **Current Goal:** Step 13.11 is done (parts 1-5): timed queueable Trainer drills and material temper. Next is the user's playtest, then closing 13.7 to 13.11 into a 0.x.0 changelog heading.
+- **Current Goal:** Step 13.11 is done (parts 1-5): timed queueable Trainer drills and material temper. Release 0.11.0 (Steps 13.7-13.11) is closed in CHANGELOG.md. Next is the user's playtest.
 - **Recent Changes & Files Touched:**
   - Part 1 docs: GAME_DESIGN §9 (Trainer timing, Temper), the wrong "cancel and refund" line fixed, plan Step 13.11.
   - Part 2: `SavedHero.training` and `DRILL_MS` (`persist/save.ts`), `heroAway`, `trainHero` (queues), `advanceTraining` (`persist/training.ts`), called beside `advanceCrafting` in `ui/store.ts` and `persist/offline.ts`; reincarnation blocked while drills queued; Trainer queue in `ui/town/Town.tsx`.
@@ -14,4 +14,4 @@
   - Queueing a drill is still refused while the hero is away; a queue made at home pauses while away. Max 3 queued at once. Offline catch-up advances drills in the same chunks as crafting.
   - Temper is the material grade (scrap 0 to cinderite 5), +3% per point; Hauler's gets none. Rank I with temper 0 runs the old arithmetic (guards byte-identical at seed 1, 5 runs, all eight matrices).
 - **Not verified:** a drill finishing in the browser across a tab change; Sockets and Ranks pickers in a browser (tests only); the 300-run matrix diff; an elites variant with tempered gear.
-- **Exact Next Step:** (1) User playtest: drills (queue, away pause) and tempered crafting at level 17. (2) Optional harness `--matrix elites` variant with tempered gear (ADD rows only). (3) Close Steps 13.7 to 13.11 into a `## 0.x.0 · date · name` changelog heading.
+- **Exact Next Step:** (1) User playtest: drills (queue, away pause) and tempered crafting at level 17. (2) Optional harness `--matrix elites` variant with tempered gear (ADD rows only). (3) The next game-changing commit starts a new `## Unreleased` section (none is open now).

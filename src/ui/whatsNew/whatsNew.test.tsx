@@ -30,7 +30,8 @@ describe('parseChangelog on the real CHANGELOG.md', () => {
   })
 
   it('reads the open section and patch headings', () => {
-    expect(sections[0]?.unreleased).toBe(true)
+    // An open section, when there is one, always comes first.
+    expect(sections.findIndex((section) => section.unreleased)).toBeLessThanOrEqual(0)
     const patch = sections.find((section) => !section.unreleased)
     expect(patch?.version).toMatch(/^0\.\d+\.\d+$/)
     expect(patch?.date).not.toBe('')
