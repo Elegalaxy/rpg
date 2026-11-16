@@ -21,7 +21,9 @@ import { PREPARED_MODIFIERS, wardenSetup, type WardenTier } from './warden.ts'
  * The gold sinks at the Drowned Causeway (Step 13.16): sockets, ranks and tempers measured on a level-17
  * hero. Every row builds its gear with the persist crafting jobs the game uses (`queueSocket`,
  * `queueInfuse`, `queueRankUp`, `advanceCrafting`), so costs and effects come from the game's own code.
- * Nothing here changes a design number or any earlier matrix.
+ * Rows `infuse-rift` and `stack-rift` (Step 13.17) use riftglass only, the grade-3 material a level-17 hero
+ * can hold. The harness itself changes no design number and no earlier matrix; the rank and temper numbers
+ * it measures come from `sim/economy.ts`.
  */
 export const MODDED_LEVEL = 17
 
@@ -84,6 +86,12 @@ export const MODDED_ROWS: readonly ModdedRowDef[] = [
     id: 'stack',
     label: 'Everything: cinderite sockets and infuses, then every modifier rank III with cinderite',
     steps: [...sockets('cinderite'), ...infuses('cinderite'), ...ranks('cinderite', true), ...ranks('cinderite', true)],
+  },
+  { id: 'infuse-rift', label: 'Second modifier infused, riftglass socket and riftglass infuse', steps: [...sockets('riftglass'), ...infuses('riftglass')] },
+  {
+    id: 'stack-rift',
+    label: 'Everything with riftglass only: sockets and infuses, then every modifier rank III (II and III with riftglass)',
+    steps: [...sockets('riftglass'), ...infuses('riftglass'), ...ranks('riftglass', true), ...ranks('riftglass', true)],
   },
 ]
 

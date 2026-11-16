@@ -20,7 +20,7 @@ const row = (id: string) => MODDED_ROWS.find((entry) => entry.id === id)!
 
 describe('modded matrix', () => {
   it('lists the planned rows', () => {
-    expect(MODDED_ROWS.map((entry) => entry.id)).toEqual(['arrived', 'plain', 'socket', 'rank2', 'rank3', 'temper', 'rank3-top', 'stack'])
+    expect(MODDED_ROWS.map((entry) => entry.id)).toEqual(['arrived', 'plain', 'socket', 'rank2', 'rank3', 'temper', 'rank3-top', 'stack', 'infuse-rift', 'stack-rift'])
   })
 
   it('keeps every second modifier inside the stack cap on top of the first ones', () => {
@@ -48,6 +48,12 @@ describe('modded matrix', () => {
     const stack = craftedEquipment('mage', row('stack'))
     expect(stack.equipment.accessory1?.modifiers).toEqual(['vicious', 'keen'])
     expect(stack.equipment.accessory1 && modifierRankAt(stack.equipment.accessory1, 1)).toBe(3)
+    const rift = craftedEquipment('mage', row('stack-rift'))
+    expect(rift.equipment.accessory1?.modifiers).toEqual(['vicious', 'keen'])
+    expect(rift.equipment.accessory1 && modifierRankAt(rift.equipment.accessory1, 1)).toBe(3)
+    expect(rift.equipment.accessory1 && modifierTemperAt(rift.equipment.accessory1, 1)).toBe(3)
+    expect(rift.materials).not.toHaveProperty('cinderite')
+    expect(craftedEquipment('mage', row('infuse-rift')).materials).not.toHaveProperty('cinderite')
   })
 
   it('leaves the plain row equal to the Warden-style hero and the reference row to the arrived tier', () => {
