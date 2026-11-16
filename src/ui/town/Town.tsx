@@ -34,7 +34,7 @@ import {
   useSaveStatus,
 } from '../store.ts'
 import { Contracts } from './Contracts.tsx'
-import { Craft } from './Craft.tsx'
+import { Craft, type CraftPart } from './Craft.tsx'
 import { markRecipesSeen, newRecipeIds, useSeenRecipes } from './enchanterSeen.ts'
 import { SupplyCard } from './SupplyCard.tsx'
 
@@ -91,11 +91,26 @@ function PurseLine({ save }: { save: SaveData }) {
   )
 }
 
+/** Jobs on a gear counter. One is open at a time so the counter stays one screen. */
+type GearJob = 'buy' | 'sell' | 'repair' | CraftPart
+
+const GEAR_JOBS: { id: GearJob; label: string; hint: string }[] = [
+  { id: 'buy', label: 'Buy', hint: 'Pieces for sale at this hero’s level. A purchase goes into the archive.' },
+  { id: 'sell', label: 'Sell', hint: 'What you are wearing, and what is in the archive. Archive pieces can be worn from here.' },
+  { id: 'repair', label: 'Repair', hint: 'Damaged pieces of this kind. A broken piece stays equipped and does nothing until it is repaired.' },
+  { id: 'craft', label: 'Craft', hint: 'Make a new piece. Pick the item, the level, the material, and a modifier you know.' },
+  { id: 'upgrade', label: 'Upgrade', hint: 'Raise a piece by one level. It cannot go above the hero’s level.' },
+  { id: 'sockets', label: 'Sockets', hint: 'Open a second socket, then infuse a different modifier.' },
+  { id: 'ranks', label: 'Ranks', hint: 'Raise a modifier already on a piece, from rank I to II to III.' },
+  { id: 'queue', label: 'Queue', hint: 'Jobs being made, from every shop, in order.' },
+]
+
 /** A weaponsmith, armorer, or jeweler: buy, sell, repair, then craft and upgrade, all limited to the shop's kind of item. */
 function GearShop({ place }: { place: PlaceDef }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const { run, messages } = useMessages()
+  const [job, setJob] = useState<GearJob>('buy')
   const closed = save.expedition !== null
   const mine = (item: ItemInstance) => dealsIn(place, item.baseId)
   if (hero === null) return <p>Select a hero to trade here.</p>
@@ -104,8 +119,30 @@ function GearShop({ place }: { place: PlaceDef }) {
   const archived = purseOf(save).archive.filter(mine)
   const damaged = [...worn, ...archived].filter((item) => item.durability < item.maxDurability)
   const repairAllPrice = repairAllCost(hero, mine)
+  const queueCount = purseOf(save).craftQueue.length
+  const current = GEAR_JOBS.find((entry) => entry.id === job) ?? GEAR_JOBS[0]
+  const waiting = (id: GearJob): number => (id === 'repair' ? damaged.length : id === 'queue' ? queueCount : 0)
+  const craftPart = job === 'craft' || job === 'upgrade' || job === 'sockets' || job === 'ranks' || job === 'queue' ? job : null
   return (
     <>
+      <nav className="gear-jobs" aria-label="Gear jobs">
+        {GEAR_JOBS.map((entry) => {
+          const count = waiting(entry.id)
+          return (
+            <button key={entry.id} type="button" aria-pressed={job === entry.id} onClick={() => setJob(entry.id)}>
+              {entry.label}
+              {count > 0 ? (
+                <span className="badge" role="status" aria-label={`${count} waiting`}>
+                  {count}
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
+      </nav>
+      <p className="muted">{current?.hint}</p>
+      {job === 'buy' ? (
+        <>
       <h3>Buy</h3>
       <ul className="shop-rows">
         {shopStock(hero.progress.level, wearerOf(hero))
@@ -123,7 +160,7 @@ function GearShop({ place }: { place: PlaceDef }) {
                   className="btn-primary"
                   disabled={closed || gold < entry.price}
                   aria-label={`Buy ${entry.baseId}`}
-                  onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}. Wear it from the list below.`)}
+                  onClick={() => run(buyItemFromUi(entry.baseId), `Bought ${entry.name}. It is in the archive, under Sell.`)}
                 >
                   Buy
                 </button>
@@ -131,7 +168,11 @@ function GearShop({ place }: { place: PlaceDef }) {
             />
           ))}
       </ul>
+        </>
+      ) : null}
 
+      {job === 'sell' ? (
+        <>
       <h3>Sell</h3>
       {worn.length + archived.length === 0 ? <p>You have nothing of this kind to sell.</p> : null}
       <ul className="shop-rows">
@@ -176,7 +217,11 @@ function GearShop({ place }: { place: PlaceDef }) {
           />
         ))}
       </ul>
+        </>
+      ) : null}
 
+      {job === 'repair' ? (
+        <>
       <h3>Repair</h3>
       {damaged.length === 0 ? <p>Nothing of this kind is damaged.</p> : null}
       <ul className="shop-rows">
@@ -206,9 +251,11 @@ function GearShop({ place }: { place: PlaceDef }) {
           Repair everything worn here <Tag kind="gold">{repairAllPrice} gold</Tag>
         </button>
       ) : null}
-      {messages}
+        </>
+      ) : null}
 
-      <Craft accepts={(baseId) => dealsIn(place, baseId)} />
+      {messages}
+      <Craft accepts={(baseId) => dealsIn(place, baseId)} part={craftPart} />
     </>
   )
 }

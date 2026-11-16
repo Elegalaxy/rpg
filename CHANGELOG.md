@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 Source: playtest feedback of 2026-11-11. The bug fixes, the interface rework and rule stacks are in.
 
+- Improved: a weaponsmith, armorer, or jeweler opens one job at a time — Buy, Sell, Repair, Craft, Upgrade, Sockets, Ranks, or Queue — with a count when something is waiting.
 - Improved: on a wide screen the town and hero section tabs stay pinned while the page scrolls, so a shop can be switched without returning to the top.
 - Improved: a gold price written on an amber button uses the button text colour, so the Trainer drill price stays readable.
 - New: modifier ranks: raise a modifier on a worn or stored item from rank I to II (+20%) or III (+40%) in the crafting queue for gold by the modifier's level and materials; rank III takes riftglass, duskiron or cinderite (Step 13.10, part 4).

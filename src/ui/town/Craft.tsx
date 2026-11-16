@@ -48,8 +48,11 @@ function percent(value: number): string {
 /** The queue list shows this many jobs until the player asks for all of them. */
 const QUEUE_SHOWN = 5
 
-/** Crafting and upgrades. A gear shop passes `accepts` so only its own kind of item shows. The queue is the hero's whole queue. */
-export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => boolean }) {
+/** One job inside a gear shop. Omitted means the whole crafting page, which is what the tests and older callers render. */
+export type CraftPart = 'craft' | 'upgrade' | 'sockets' | 'ranks' | 'queue'
+
+/** Crafting and upgrades. A gear shop passes `accepts` so only its own kind of item shows. The queue is the hero's whole queue. `part` shows one job; `null` keeps the form state mounted but draws nothing. */
+export function Craft({ accepts = () => true, part }: { accepts?: (baseId: string) => boolean; part?: CraftPart | null }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const [baseId, setBaseId] = useState('weapon-one-handed')
@@ -62,10 +65,10 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
   const [error, setError] = useState<string | null>(null)
 
   if (hero === null) {
-    return (
-      <p>Select a hero to craft.</p>
-    )
+    return part === null ? null : <p>Select a hero to craft.</p>
   }
+  if (part === null) return null
+  const show = (id: CraftPart) => part === undefined || part === id
 
   const rank = proficiencyRank(hero.craftXp)
   const level = levelText.trim() === '' ? hero.progress.level : Number(levelText.trim())
@@ -121,6 +124,8 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
 
   return (
     <>
+      {show('craft') ? (
+        <>
       <h3>Crafting</h3>
       <KpiRow label="Crafting status">
         <Kpi compact label="Proficiency rank" value={<span data-testid="rank">{rank}</span>} />
@@ -238,7 +243,11 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
           }
         />
       </ul>
+        </>
+      ) : null}
 
+      {show('upgrade') ? (
+        <>
       <h4>
         Upgrade <QualityHelp />
       </h4>
@@ -327,11 +336,15 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
           )
         })}
       </ul>
+        </>
+      ) : null}
 
-      <Sockets accepts={accepts} />
+      {show('sockets') ? <Sockets accepts={accepts} /> : null}
 
-      <Ranks accepts={accepts} />
+      {show('ranks') ? <Ranks accepts={accepts} /> : null}
 
+      {show('queue') ? (
+        <>
       <h4>Queue (all shops)</h4>
       {queue.length === 0 ? <p>Nothing is being made.</p> : null}
       <ul className="shop-rows" aria-label="Craft queue">
@@ -375,6 +388,8 @@ export function Craft({ accepts = () => true }: { accepts?: (baseId: string) => 
         <button type="button" className="queue-toggle" aria-expanded={showAllJobs} onClick={() => setShowAllJobs(!showAllJobs)}>
           {showAllJobs ? 'Show fewer' : `Show all ${queue.length}`}
         </button>
+      ) : null}
+        </>
       ) : null}
       {notices.length > 0 ? (
         <ul aria-label="Finished jobs">
