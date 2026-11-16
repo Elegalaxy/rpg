@@ -1170,9 +1170,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.10
 - Goal: the drill takes time and can be queued, and the material a player spends on a modifier changes its strength (rules in GAME_DESIGN §9 "Gold sinks", Trainer drills and Temper).
 - Parts: (1) docs only. (2) Timed, queueable drills in a per-hero training queue (`SavedHero.training`, `advanceTraining`, persist and UI, no sim change). (3) Temper math in `src/sim/economy.ts` (`modifierTempers`, `TEMPER_PER_POINT`, `scaledBonus` with a temper; rank I with no temper must change nothing). (4) Bind temper in `src/persist/crafting.ts` (craft, Infuse, Rank up, Open socket quality). (5) Material pickers show the effect; compare notes name the temper.
-- Part 1 status: `done`. Parts 2 to 5: `todo`.
+- Part 1 status: `done`. Part 2: `done`. Parts 3 to 5: `todo`.
 - Progress:
   - 2026-11-16: Part 1 done. Rules recorded in GAME_DESIGN §9; the wrong "cancel and refund" line for socket and infuse jobs is fixed (nothing can be cancelled).
+  - 2026-11-16: Part 2 done. `SavedHero.training` (`{ remainingMs, queue: [{ xp }] }`, validated, no version bump), `DRILL_MS` in `save.ts`, `heroAway`, `drillsQueued`, `anyTraining`, `advanceTraining` in `persist/training.ts`; `trainHero` now queues (gold and count at once, XP fixed), `advanceTraining` runs beside `advanceCrafting` in `ui/store.ts` and `persist/offline.ts`, reincarnation is blocked while drills are queued, Trainer UI shows the queue. Decision: queueing is still refused while the hero is away; offline catch-up advances drills in the same chunks as crafting, so the exact pause point depends on chunk size.
 
 ## 8. Risks, and what would reveal them early
 

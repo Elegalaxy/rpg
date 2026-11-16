@@ -7,7 +7,7 @@ import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../pers
 import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
-import { trainHero } from '../persist/training.ts'
+import { advanceTraining, anyTraining, trainHero } from '../persist/training.ts'
 import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueInfuse, queueRankUp, queueSocket, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
 import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
@@ -749,11 +749,12 @@ export function clearUnseenCrafts(place: PlaceDef): void {
  * combat viewer's speed or pause, so a paused viewer or a tab in the background does not hold it up.
  */
 export function advanceCraftingBy(elapsedMs: number): void {
-  if (!anyCrafting(saveStatus.save) || !(elapsedMs > 0)) return
+  if ((!anyCrafting(saveStatus.save) && !anyTraining(saveStatus.save)) || !(elapsedMs > 0)) return
   const result = advanceCrafting(saveStatus.save, elapsedMs)
-  saveStatus = { ...saveStatus, save: result.save }
-  if (result.finished.length > 0) {
-    craftNotices = [...craftNotices, ...result.finished.map((notice) => notice.text)].slice(-5)
+  const drilled = advanceTraining(result.save, elapsedMs)
+  saveStatus = { ...saveStatus, save: drilled.save }
+  if (result.finished.length > 0 || drilled.finished.length > 0) {
+    craftNotices = [...craftNotices, ...result.finished.map((notice) => notice.text), ...drilled.finished.map((notice) => notice.text)].slice(-5)
     unseenCrafts = [...unseenCrafts, ...result.finished.map((notice) => notice.baseId)]
     commitSave(saveStatus.save, 'craft finished', false)
   }
@@ -767,7 +768,7 @@ function tickCrafting(): void {
   const now = Date.now()
   const elapsed = now - lastCraftTickAt
   lastCraftTickAt = now
-  const crafting = anyCrafting(saveStatus.save)
+  const crafting = anyCrafting(saveStatus.save) || anyTraining(saveStatus.save)
   advanceCraftingBy(elapsed)
   if (crafting || craftNotices.length > 0) {
     saveStatus = { ...saveStatus }

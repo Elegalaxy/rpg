@@ -7,8 +7,8 @@ import { materialSources } from '../../content/materialSources.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { recipePrice, recipesForSale, supplyLock } from '../../persist/crafting.ts'
-import { MAX_DRILLS_PER_LEVEL, purseOf, type SaveData } from '../../persist/save.ts'
-import { drillInfo, trainCheck } from '../../persist/training.ts'
+import { DRILL_MS, MAX_DRILLS_PER_LEVEL, purseOf, type SaveData } from '../../persist/save.ts'
+import { drillInfo, heroAway, trainCheck } from '../../persist/training.ts'
 import { previewEquip, wearerOf } from '../../persist/equipment.ts'
 import { previewBuy, repairAllCost } from '../../persist/town.ts'
 import { GearChanges } from './GearChanges.tsx'
@@ -475,6 +475,8 @@ function Trainer() {
   const info = drillInfo(hero)
   const refusal = trainCheck(save, hero)
   const level = hero.progress.level
+  const queue = hero.training?.queue ?? []
+  const away = heroAway(save, hero)
   return (
     <>
       <KpiRow label="Next drill">
@@ -488,18 +490,42 @@ function Trainer() {
         className="btn-primary"
         disabled={refusal !== null}
         aria-describedby={refusal === null ? undefined : 'drill-why'}
-        onClick={() => run(trainHeroFromUi(), `Drilled for ${info.xp} XP.`)}
+        onClick={() => run(trainHeroFromUi(), `Drill queued: ${info.xp} XP in ${DRILL_MS / 1000} s.`)}
       >
-        Drill <Tag kind="gold">{info.left === 0 ? 'none left' : `${info.price} gold`}</Tag>
+        Queue drill <Tag kind="gold">{info.left === 0 ? 'none left' : `${info.price} gold`}</Tag>
       </button>
       {refusal === null ? null : (
         <p id="drill-why" data-testid="drill-why" className="muted">
           {refusal}
         </p>
       )}
+      {queue.length > 0 ? (
+        <ul className="shop-rows" aria-label="Drill queue">
+          {queue.map((drill, index) => (
+            <ShopRow
+              key={index}
+              testId="drill"
+              name={`Drill ${index + 1}`}
+              effect={<span data-testid="drill-job-xp">+{drill.xp} XP</span>}
+              pills={
+                index > 0 ? (
+                  <Tag kind="plain">Waiting</Tag>
+                ) : away ? (
+                  <Tag kind="plain">Paused: away</Tag>
+                ) : (
+                  <Tag kind="info">
+                    ▶ <span data-testid="drill-left-s">{Math.ceil((hero.training?.remainingMs ?? 0) / 1000)}</span> s left
+                  </Tag>
+                )
+              }
+            />
+          ))}
+        </ul>
+      ) : null}
       <p>
         <Help label="About drills">
-          A drill gives a tenth of the XP this level needs. The first costs {level * 40} gold, the second {level * 80} and the third {level * 120}; the count starts again at every level.
+          A drill takes {DRILL_MS / 1000} seconds and gives a tenth of the XP this level needs. You can queue up to three; the XP lands as each one finishes, and the queue waits while the hero is away.
+          The first costs {level * 40} gold, the second {level * 80} and the third {level * 120}; the count starts again at every level.
           Skill and attribute points arrive as with any XP.
         </Help>
       </p>

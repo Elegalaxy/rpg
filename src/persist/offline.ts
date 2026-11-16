@@ -8,6 +8,7 @@ import { routes } from '../content/world.ts'
 import { selectedHero } from './character.ts'
 import { isComplete } from './contracts.ts'
 import { advanceCrafting } from './crafting.ts'
+import { advanceTraining } from './training.ts'
 import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData, type SavedHero } from './save.ts'
 import { beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, fightLimitReached } from './world.ts'
@@ -416,6 +417,7 @@ export function advanceOffline(state: OfflineState, maxSteps: number): void {
       state.crafts.push(notice.text)
       state.craftBaseIds.push(notice.baseId)
     }
+    state.save = advanceTraining(state.save, budget * STEP_MS).save
   }
   for (const lane of state.lanes) {
     state.save = withView(state.save, lane.heroId, (view) => {

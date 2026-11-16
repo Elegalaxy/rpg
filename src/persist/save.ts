@@ -29,6 +29,8 @@ export const BAG_FULL_ORDERS: readonly BagFullOrder[] = ['home', 'ask']
 /** The run limits the preparation offers. 0 is no limit. */
 /** Trainer drills a hero can buy within one level (GAME_DESIGN §9, "Gold sinks"). */
 export const MAX_DRILLS_PER_LEVEL = 3
+/** How long one Trainer drill takes, in milliseconds (GAME_DESIGN §9, "Gold sinks"). */
+export const DRILL_MS = 45_000
 export const REPEAT_LIMITS: readonly number[] = [0, 1, 3, 5, 10, 25]
 export const DEFAULT_BAG_FULL_ORDER: BagFullOrder = 'home'
 /** The usual retreat threshold: 40% of maximum HP. */
@@ -200,6 +202,9 @@ export const EMPTY_PURCHASES: HeroPurchases = {
   deepPockets: false,
 }
 
+/** A hero's drills (Step 13.11). `queue` has 1 to `MAX_DRILLS_PER_LEVEL` entries; the first is running. */
+export type TrainingQueue = { remainingMs: number; queue: { xp: number }[] }
+
 export type SavedHero = {
   id: string
   name: string
@@ -235,6 +240,8 @@ export type SavedHero = {
   stopAfterFights: number | null
   /** Trainer drills bought at the current level (0 to 3). Back to 0 whenever the level rises. */
   drillsThisLevel: number
+  /** Drills paid for and not yet finished. `queue[0]` is the running drill with `remainingMs` left; each entry's XP was fixed when it was queued. Absent when none. */
+  training?: TrainingQueue
   /** Standing order while away: when fewer than 4 bag room is free, walk home (`home`) or hold for the player (`ask`). */
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the hero has no run as the player leaves. Null never starts one. */
@@ -492,6 +499,17 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     typeof value.drillsThisLevel === 'number' && Number.isInteger(value.drillsThisLevel) && value.drillsThisLevel >= 0 && value.drillsThisLevel <= MAX_DRILLS_PER_LEVEL,
     `${label} drills this level must be a whole number from 0 to ${MAX_DRILLS_PER_LEVEL}`,
   )
+  if (value.training !== undefined) {
+    const training = value.training
+    check(isRecord(training), `${label} training must be an object`)
+    whole(training.remainingMs, `${label} drill time left`)
+    check((training.remainingMs as number) > 0 && (training.remainingMs as number) <= DRILL_MS, `${label} drill time left must be from 1 to ${DRILL_MS}`)
+    check(Array.isArray(training.queue) && training.queue.length >= 1 && training.queue.length <= MAX_DRILLS_PER_LEVEL, `${label} drill queue must hold 1 to ${MAX_DRILLS_PER_LEVEL} drills`)
+    for (const drill of training.queue as unknown[]) {
+      check(isRecord(drill), `${label} each queued drill must be an object`)
+      check(typeof drill.xp === 'number' && Number.isInteger(drill.xp) && drill.xp >= 1, `${label} each queued drill needs whole XP of at least 1`)
+    }
+  }
   check(value.bagFullOrder === 'home' || value.bagFullOrder === 'ask', `${label} bag-full order must be home or ask`)
   check(value.awayRouteId === null || typeof value.awayRouteId === 'string', `${label} away route must be a route id or null`)
   check(isRecord(value.routeReturns), `${label} route returns must be an object`)

@@ -66,6 +66,7 @@ export function legacyPreview(hero: SavedHero): LegacyPreview {
 /** Null when the hero can reincarnate. A boss must have beaten them this life, with its defeat costs paid. */
 export function reincarnationBlock(save: SaveData, hero: SavedHero): string | null {
   if (save.expedition !== null) return 'Finish the expedition first.'
+  if ((hero.training?.queue.length ?? 0) > 0) return 'Wait for the Trainer: drills are queued or running. They finish first.'
   if (!hero.bossLossThisLife) return 'Lose to a boss first. Reincarnation opens after a boss defeats you this life.'
   return null
 }
