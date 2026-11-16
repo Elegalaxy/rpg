@@ -1188,6 +1188,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.15: Away rules follow Auto run
+- Status: `in progress`
+- Depends on: 13.14
+- Goal: going AFK no longer turns a manual run into an auto run (rules in GAME_DESIGN §11, "Away rules for a run"). Auto run is the one switch for continuing a run while away; with it off the run waits at Push on; an away route starts only when the hero has no run. No sim or harness change, no save change.
+- Parts: (1) docs only. (2) Replay rules in `persist/offline.ts` (lane modes, shared rerun decision in `persist/world.ts`), tests. (3) Return banner in `OfflineSummary` and `AwayPanel`, tests. (4) Preparation text, tests, browser check, HANDOFF.
+- Part status: 1 `done`. 2 to 4 `todo`.
+- Progress:
+  - 2026-11-16: Part 1 done. Rules recorded in GAME_DESIGN §11.
+
 ### Step 13.14: Auto run for live farming
 - Status: `done`
 - Depends on: 13.12
