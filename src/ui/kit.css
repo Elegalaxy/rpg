@@ -1199,10 +1199,9 @@ dl.upgrade-facts dd {
   position: sticky;
   top: 0;
   z-index: 4;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s2) var(--s3);
   padding: var(--s2) var(--s3);
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
@@ -1212,16 +1211,30 @@ dl.upgrade-facts dd {
   box-shadow: 0 2px 6px rgb(0 0 0 / 25%);
 }
 
+.run-bar-status {
+  min-width: 0;
+}
+
 .run-bar-text {
   margin: 0;
+  overflow: hidden;
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-bar-meta {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--s3);
 }
 
 .run-bar-actions {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--s2) var(--s3);
 }
@@ -1267,4 +1280,20 @@ dl.upgrade-facts dd {
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+@media (max-width: 899px) {
+  .run-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .run-bar-meta {
+    grid-column: 1;
+    flex-wrap: wrap;
+  }
+
+  .run-bar-actions {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
 }

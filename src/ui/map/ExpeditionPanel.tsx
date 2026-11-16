@@ -522,25 +522,35 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
             </Help>
           </p>
         ) : (
-          <p className="run-bar-text" data-testid="travel-status">
+          <p
+            className="run-bar-text"
+            data-testid="travel-status"
+            title={
+              expedition.phase === 'combat' || expedition.returning
+                ? undefined
+                : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} s (${travelSpeedup()}× faster).`
+            }
+          >
             {expedition.phase === 'combat'
               ? `Fight ${expedition.encounterIndex + 1} is under way.`
               : expedition.returning
                 ? 'Walking back to Greyhaven.'
-                : `Walking to the next fight: ${Math.floor(expedition.travelMs / 1000)} of ${Math.floor(expedition.travelGapMs / 1000)} s (${travelSpeedup()}× faster).`}
+                : `Next fight: ${Math.floor(expedition.travelMs / 1000)} / ${Math.floor(expedition.travelGapMs / 1000)} s · ${travelSpeedup()}×`}
           </p>
         )}
       </div>
-      {limit === null ? null : (
-        <p className="run-bar-limit" data-testid="fight-limit">
-          Fight {fightNumber} / {limit}
-        </p>
-      )}
-      {autoOn ? (
-        <p className="run-bar-limit" data-testid="auto-run-status">
-          {autoMax === null ? 'Auto run on' : `Auto run: fight ${Math.min(autoFights, autoMax)} / ${autoMax}`}
-        </p>
-      ) : null}
+      <div className="run-bar-meta">
+        {limit === null ? null : (
+          <p className="run-bar-limit" data-testid="fight-limit">
+            Fight {fightNumber} / {limit}
+          </p>
+        )}
+        {autoOn ? (
+          <p className="run-bar-limit" data-testid="auto-run-status">
+            {autoMax === null ? 'Auto run on' : `Auto run: fight ${Math.min(autoFights, autoMax)} / ${autoMax}`}
+          </p>
+        ) : null}
+      </div>
       <div className="run-bar-actions">
         <HoldActions waiting={waiting} whyDisabled="Available once the fight is over." />
         {expedition.outcome === 'ongoing' ? (

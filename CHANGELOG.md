@@ -14,6 +14,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - New: a "Keep going" choice for a nearly full bag: the run pushes on instead of walking home or waiting, gold and XP still count, and loot that does not fit is lost; it works live, with Auto run and while you are away.
 - Improved: fights played while you were away are labelled "AFK run" on the fight chips.
 - Fixed: the escape banner no longer shows HP as a long float such as 30.400000000000034.
+- Improved: the run bar keeps Push on, Return, Auto run and Auto-escape in one place while walking, so a fast Auto run does not jump the buttons.
 
 ## 0.12.0 · 2026-11-16 · Gear wear, Auto run and the rule chain editor (Steps 13.12-13.14)
 

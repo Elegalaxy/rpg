@@ -93,4 +93,16 @@ describe('the run panel tells the truth', () => {
       ordersLine({ heroId: 'h', heroName: 'Ash', routeId: null, runs: 0, fightsWon: 0, retreats: 0, defeated: false, xp: 0, levelsGained: 0, gold: 0, materials: {}, contractsFinished: 0, stopped: null, note: null, pushedOn: 3, walkedHomeHp: 1 }),
     ).toBe('Standing orders for Ash: pushed on 3 times, walked home 1 time because HP was under the push-on limit.')
   })
+
+  it('uses a short walking line so the run-bar buttons stay in one row', () => {
+    const run = startRun()
+    run.phase = 'travel'
+    run.returning = false
+    run.travelMs = 13_000
+    run.travelGapMs = 20_000
+    commitSave({ ...getSaveStatus().save, expedition: run }, 'test')
+    const html = renderToStaticMarkup(<ExpeditionPanel />)
+    expect(html).toContain('>Next fight: 13 / 20 s · 8×<')
+    expect(html).toContain('class="run-bar-meta"')
+  })
 })
