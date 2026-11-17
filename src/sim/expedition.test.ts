@@ -23,6 +23,7 @@ import {
   SMOKE_BOMB_ID,
   SPLINTERED_ROAD_ID,
   stepExpedition,
+  MAX_SUPPLY_SLOTS,
   SUPPLY_SLOT_COUNT,
   TRAVEL_GAP_MS,
   type ExpeditionBlueprint,
@@ -1831,6 +1832,21 @@ describe('packed supplies', () => {
     expect(packed.supplySlots).toEqual([{ id: 'healing-draught' }, { id: 'antidote' }, null, null])
     expect(() => createExpedition({ ...fixtureBlueprint(), supplies: ['a', 'b', 'c', 'd', 'e'] }, 1)).toThrow(/at most 4/)
     expect(() => createExpedition({ ...fixtureBlueprint(), supplies: [''] }, 1)).toThrow(/non-empty/)
+  })
+
+  it('a crafted backpack raises the slot count from 4 up to 6 and no further', () => {
+    const plain = createExpedition(fixtureBlueprint(), 1)
+    expect('supplySlotCount' in plain).toBe(false)
+    expect(createExpedition({ ...fixtureBlueprint(), supplySlotCount: 4 }, 1)).toEqual(plain)
+    const five = createExpedition({ ...fixtureBlueprint(), supplySlotCount: 5, supplies: ['a', 'b', 'c', 'd', 'e'] }, 1)
+    expect(five.supplySlots).toHaveLength(5)
+    expect(five.supplySlots[4]).toEqual({ id: 'e' })
+    const six = createExpedition({ ...fixtureBlueprint(), supplySlotCount: MAX_SUPPLY_SLOTS }, 1)
+    expect(six.supplySlots).toHaveLength(6)
+    expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 7 }, 1)).toThrow(/from 4 to 6/)
+    expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 3 }, 1)).toThrow(/from 4 to 6/)
+    expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 5, supplies: ['a', 'b', 'c', 'd', 'e', 'f'] }, 1)).toThrow(/at most 5/)
+    expect(() => assertExpedition({ ...six, supplySlots: [null, null, null] })).toThrow(/4 to 6 supply slots/)
   })
 
   it('carries the slots into each fight and empties the slot of a supply used there', () => {

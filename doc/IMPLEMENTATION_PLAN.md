@@ -1189,14 +1189,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.22: Crafted backpack
-- Status: `in progress`
+- Status: `paused at the part 2 go/no-go` (parts 3 and 4 wait for the user)
 - Depends on: 13.21
 - Goal: the player crafts a pack that raises the road's supply slots from 4 to 5 (Satchel) or 6 (Field Pack) (rules in GAME_DESIGN §9, "Crafted backpack (Step 13.22)"; carried over in §10). Default 4 slots keeps every guard byte-identical.
 - Parts: (1) docs only. (2) Sim `supplySlotCount` on the blueprint, harness `--matrix pack` (4/5/6 slots, seeds 1-3 x 100), measurement and a GO/NO-GO stop before any UI. (3) Persist: `src/persist/pack.ts` (+test), `SavedHero.pack` with a safe default for old saves, the `pack` craft job, reincarnation carry-over, preparation and save validation read the slot count. (4) UI: `PackWorkshop` at the Armorer, preparation supply slots, rule editor and Potion Shop batches read the hero's slots, tests.
-- Part status: 1 `done`. 2 `todo`. 3 `todo`. 4 `todo`.
+- Part status: 1 `done`. 2 `done` (result: NO-GO as designed). 3 `blocked`. 4 `blocked`.
 - Acceptance: guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows, warden, causeway at default slots, seed 1 x 5) byte-identical to origin/main; `tests/architecture.test.ts`, typecheck, lint, npm test, build pass. If 6 slots pushes crafted wins to 95% or more in most elite cells, or more than 10 points over 5 slots, stop after the measurement and report before building the UI.
 - Progress:
   - 2026-11-17: Part 1 done. Rules recorded in GAME_DESIGN §9 (Inventory) and §10 (carries over).
+  - 2026-11-17: Part 2 done. `ExpeditionBlueprint.supplySlotCount` (optional, 4 to 6, `MAX_SUPPLY_SLOTS`; no new state key; `assertExpedition` takes 4 to 6 slots; test in `expedition.test.ts`). `src/harness/pack.ts` + `pack.test.ts` and `--matrix pack` (4/5/6 slots, filler = the tier's main healing supply, plain prepared and crafted prepared, four elites, five classes, rules mode). Measured seeds 1-3 x 100 and recorded in GAME_DESIGN §9: crafted prepared mean 88 > 96 > 98 and cells at 95 or more 5 > 16 > 17 of 20 (4 > 5 > 6 slots); plain prepared mean 58 > 84 > 93. The go/no-go trigger (crafted 95% or more in most cells) is hit, so UI work stops here for the user's decision. Guards at 4 slots identical.
 
 ### Step 13.21: Wider supply tiers
 - Status: `done`

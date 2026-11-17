@@ -81,8 +81,10 @@ export type ExpeditionBlueprint = {
   carriedGold?: number
   /** Deposited gold at the start. Omitted means 0. */
   depositedGold?: number
-  /** Supply ids for the slots, in slot order, at most `SUPPLY_SLOT_COUNT`. Omitted packs none. */
+  /** Supply ids for the slots, in slot order, at most `supplySlotCount`. Omitted packs none. */
   supplies?: readonly string[]
+  /** Supply slots, from `SUPPLY_SLOT_COUNT` up to `MAX_SUPPLY_SLOTS` (a crafted backpack, Step 13.22). Omitted means `SUPPLY_SLOT_COUNT`. */
+  supplySlotCount?: number
   /** Bag room, from `LOOT_CAPACITY` up to `MAX_LOOT_CAPACITY`. Omitted means `LOOT_CAPACITY`. */
   lootCapacity?: number
   /** Durability each equipped piece starts the run with, by slot. Omitted slots start at `EQUIPMENT_DURABILITY_MAX`. */
@@ -143,6 +145,8 @@ export const BAG_FULL_ROOM = 4
 /** Material value order for the safe pouch, rarest last. A material not listed ranks below all of these. */
 export const MATERIAL_RARITY: readonly string[] = ['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron', 'cinderite']
 export const SUPPLY_SLOT_COUNT = 4
+/** The most supply slots a crafted backpack can reach (GAME_DESIGN §9, Step 13.22). */
+export const MAX_SUPPLY_SLOTS = 6
 /** Stored rare-node chance, in percentage points. The road does not roll or spawn a node. */
 export const RARE_NODE_CHANCE_PER_STACK = 2
 /** +5% material quantity per stack already held. Counted in thousandths so 4 × 1.15 is 4.6. */
@@ -564,8 +568,8 @@ function optionalGold(value: unknown, label: string): number {
 }
 
 function assertSupplySlots(slots: unknown): void {
-  if (!Array.isArray(slots) || slots.length !== SUPPLY_SLOT_COUNT) {
-    throw new Error(`expedition needs ${SUPPLY_SLOT_COUNT} supply slots, received ${describeValue(slots)}`)
+  if (!Array.isArray(slots) || slots.length < SUPPLY_SLOT_COUNT || slots.length > MAX_SUPPLY_SLOTS) {
+    throw new Error(`expedition needs ${SUPPLY_SLOT_COUNT} to ${MAX_SUPPLY_SLOTS} supply slots, received ${describeValue(slots)}`)
   }
   for (let index = 0; index < slots.length; index += 1) {
     const slot: unknown = slots[index]
@@ -625,17 +629,26 @@ function assertEquipment(list: unknown): void {
   }
 }
 
-function emptySupplySlots(): SupplySlot[] {
+function checkedSlotCount(count: number | undefined): number {
+  if (count === undefined) return SUPPLY_SLOT_COUNT
+  if (!Number.isInteger(count) || count < SUPPLY_SLOT_COUNT || count > MAX_SUPPLY_SLOTS) {
+    throw new Error(`supply slots must be a whole number from ${SUPPLY_SLOT_COUNT} to ${MAX_SUPPLY_SLOTS}, received ${describeValue(count)}`)
+  }
+  return count
+}
+
+function emptySupplySlots(count: number): SupplySlot[] {
   const slots: SupplySlot[] = []
-  for (let index = 0; index < SUPPLY_SLOT_COUNT; index += 1) slots.push(null)
+  for (let index = 0; index < count; index += 1) slots.push(null)
   return slots
 }
 
-function packedSupplySlots(supplies: readonly string[] | undefined): SupplySlot[] {
-  const slots = emptySupplySlots()
+function packedSupplySlots(supplies: readonly string[] | undefined, supplySlotCount: number | undefined): SupplySlot[] {
+  const count = checkedSlotCount(supplySlotCount)
+  const slots = emptySupplySlots(count)
   if (supplies === undefined) return slots
-  if (!Array.isArray(supplies) || supplies.length > SUPPLY_SLOT_COUNT) {
-    throw new Error(`an expedition packs at most ${SUPPLY_SLOT_COUNT} supplies, received ${describeValue(supplies)}`)
+  if (!Array.isArray(supplies) || supplies.length > count) {
+    throw new Error(`an expedition packs at most ${count} supplies, received ${describeValue(supplies)}`)
   }
   supplies.forEach((id: unknown, index) => {
     if (typeof id !== 'string' || id.length === 0) throw new Error(`packed supply ${index + 1} needs a non-empty id`)
@@ -859,7 +872,7 @@ export function createExpedition(blueprint: ExpeditionBlueprint, seed: number): 
     secured: [],
     overflow: 0,
     ...(blueprint.lootCapacity === undefined ? {} : { lootCapacity: checkedCapacity(blueprint.lootCapacity) }),
-    supplySlots: packedSupplySlots(blueprint.supplies),
+    supplySlots: packedSupplySlots(blueprint.supplies, blueprint.supplySlotCount),
     consumedSupplyIds: [],
     carriedGold,
     ...(carriedGold > 0 ? { startGold: carriedGold } : {}),
