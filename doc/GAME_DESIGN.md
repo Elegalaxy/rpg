@@ -1223,8 +1223,6 @@ Notation:
 - Levels have no immediate hard cap; increasing XP requirements create a practical soft cap.
 - Each level grants two manually allocated attribute points.
 - One skill point is granted every three levels.
-- The first-ever defeat of Rootmaw Stalker and Echo Knight permanently unlocks one personal Legacy Skill Point each. These return as unallocated starting points after every reincarnation.
-- Later defeats of those elites award normal XP, materials, and mastery rather than additional skill points.
 - Level automatically grants only a small amount of health; most power comes from attributes, skills, and equipment.
 - The ordinary action-time target before Agility is approximately two seconds.
 
@@ -2435,6 +2433,7 @@ Reincarnation preserves:
 
 - Individual mastery and purchased legacy upgrades
 - Known map locations
+- Route returns (`routeReturns`)
 - Recipes and crafting proficiency
 - Deposited gold
 - The hero's gold, materials, and debt
@@ -2453,6 +2452,17 @@ First-playable reincarnation numbers, decided 2026-11-01:
 - Legacy buys hero-bound purchases that last across lives. Attribute Seed adds 1 to a starting attribute of the hero's choice and costs 3, up to 10 in total. Skill Point Seed gives 1 unallocated skill point at the start of each life and costs 8, then 12, then 16, up to 3. Second Heirloom lets the hero keep one more heirloom and costs 25, once.
 - Mastery is the hero's completed lives, up to 10. Each rank adds 2% ordinary XP, up to +20%, and nothing else.
 - The reset and preserve lists above apply. The hero's current contracts are cleared. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
+
+### Later lives (Step 13.18)
+
+Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.
+
+- Recall: while a hero is below their peak level, ordinary run XP counts double. `peakLevel` is the highest level the hero reached in any finished life, set at reincarnation to max(old peak, level reached). With `need` = XP from the hero's current total to reach `peakLevel`: `need <= 0` gives the XP as earned; `2 * xp <= need` gives `2 * xp`; otherwise `need + (xp - ceil(need / 2))` (the part that reaches the peak is doubled, the rest counts once). Recall applies to run XP (settlement, the outcome stats, the "Experience earned" line with "(Recall +N)", and the offline summary). Trainer drills are not boosted. A hero that already reincarnated before this step has no `peakLevel` until their next reincarnation (accepted).
+- Remembered Paths: from life 2 on, the elite defeats of earlier lives (Rootmaw Stalker, Echo Knight, Tidebound Colossus, Hollowmaw Reaver, Emberwrought Tyrant) keep the zone gates open. They are stored per hero in `rememberedEnemyIds`, filled at reincarnation from the elites in `defeatedEnemyIds`, and backfilled from the `elite:*` entries in `claimedBonuses` for heroes with `lives > 0`. Only zone gates read them. The Fracture Gate (the Warden route) never reads them, and neither do contracts, templates or the one-time Legacy bonuses (the bonus is still paid once, from `claimedBonuses`).
+- Exploit guard: nothing here pays for losing to the Warden on purpose. Reincarnation still requires a boss loss this life, Legacy is still level-based plus one-time bonuses, and the Fracture Gate still needs the elites beaten this life. Recall only speeds levels the hero already earned once, and only up to the old peak.
+- Head Start: a Legacy purchase. Head Start I starts each life at level 5 for 20 Legacy. Head Start II starts at level 10 for 35 Legacy and needs I. The hero gets the XP of that level, the attribute points and skill points of those levels unspent (nothing is placed for them), and heirloom scaling runs after. Levels from Head Start still count toward Legacy-from-level, so a hero who dies at level 20 gets the same Legacy either way.
+- Elite Legacy Skill Points (the old Section 9 line) are dropped, not built. Elites pay the one-time +3 Legacy bonus instead.
+- Screen: the Legacy screen shows Legacy, lives, mastery and peak level as key-values, a purchases table (cost, bought of max, Buy with the reason when disabled) and a "Next life" block (zones remembered, Recall up to level N, start level).
 
 ### Campaign and endgame
 

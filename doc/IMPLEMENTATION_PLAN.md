@@ -1188,6 +1188,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.18: Later lives
+- Status: `in progress`
+- Depends on: 13.17
+- Goal: make lives after the first faster without paying for deliberate losses (rules in GAME_DESIGN §10, "Later lives"). Recall XP doubles run XP below the hero's peak level, Remembered Paths keep zone gates open from life 2 (never the Fracture Gate), Head Start I and II (levels 5 and 10 for 20 and 35 Legacy), a reworked Legacy screen. Persist and UI only; `src/sim`, content, snapshots and the harness matrices stay byte-identical.
+- Parts: (1) docs only. (2) Remembered Paths. (3) Recall XP. (4) Head Start. (5) Legacy screen rework, browser check, HANDOFF. (6) Optional "Restore last life's build" if it reuses existing helpers cheaply.
+- Part status: 1 `done`. 2 to 6 `pending`.
+- Progress:
+  - 2026-11-17: Part 1 done. Rules recorded in GAME_DESIGN §10; the §9 elite Legacy Skill Point line struck; `routeReturns` added to the carries-over list.
+
 ### Step 13.17: Gold sinks retune
 - Status: `done`
 - Depends on: 13.16

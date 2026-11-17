@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Tech: design notes for later lives (Recall XP, Remembered Paths, Head Start) are written down. [13.18]
+
 ## 0.13.0 · 2026-11-16 to 2026-11-17 · Keep going, away rules and stronger gold sinks (Steps 13.15-13.17)
 
 - Balance: trainer drills give a fifth of a level's XP from level 10 (still a tenth below it); prices are unchanged. [13.17]
