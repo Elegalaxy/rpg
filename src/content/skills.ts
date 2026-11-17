@@ -565,7 +565,7 @@ const greaterDraught = {
   tags: ['supply'],
   target: 'single',
   supply: true,
-  effects: [{ kind: 'heal', maxHpFraction: 0.35, healingCoefficient: 0 }],
+  effects: [{ kind: 'heal', maxHpFraction: 0.4, healingCoefficient: 0 }],
 } satisfies SkillDef
 
 const riftglassWard = {

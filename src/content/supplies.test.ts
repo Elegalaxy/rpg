@@ -163,12 +163,12 @@ describe('the Warming Tonic Burn row', () => {
 })
 
 describe('crafted supplies', () => {
-  it('heals 35% with the Greater Draught and wards a telegraph with the Riftglass Ward', () => {
+  it('heals 40% with the Greater Draught and wards a telegraph with the Riftglass Ward', () => {
     const defs = gameDefs()
     const draught = createCombat(withSupplies(DUEL_BASIC_ID, ['greater-draught'], [{ skillId: 'greater-draught', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 30 }] }], 10), defs, 42)
     const maxHp = draught.hero.maxHp
     while (!draught.log.some((event) => event.type === 'supplyUse')) stepCombat(draught, defs)
-    expect(firstOf(draught.log, 'heal', () => true)?.amount).toBe(Math.round(maxHp * 0.35))
+    expect(firstOf(draught.log, 'heal', () => true)?.amount).toBe(Math.round(maxHp * 0.4))
     const ward = wardAgainst('riftglass-ward', 'tidebound-colossus', 22)
     expect(ward.event.damageFraction).toBe(0.25)
     expect(ward.state.log.some((event) => event.type === 'barrier')).toBe(false)

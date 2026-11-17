@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Balance: the Greater Draught now restores 40% of maximum HP (was 35%), a wider step up from the Healing Draught's 30%. [13.21]
 - Improved: the fight log has a Stack switches filter that shows only the moments the hero changed rule stack, automatically or by hand. Those lines still show under Rule choices too. [13.19]
 - Tech: the Warden and Causeway measurements gain a 'fourth Draught instead of the Ward Charm' row. [13.20]
 - Tech: supplies can ward off a telegraphed attack (not used yet). [13.20]

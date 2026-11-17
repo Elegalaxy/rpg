@@ -64,7 +64,7 @@ export const SUPPLIES: readonly SupplyDef[] = [
     id: 'greater-draught',
     name: 'Greater Draught',
     price: null,
-    effect: 'Restores 35% of maximum HP.',
+    effect: 'Restores 40% of maximum HP.',
     ruleUsed: true,
     brew: { materialId: 'riftglass', quantity: 2, gold: 10 },
     requires: { discoveryId: 'node:drowned-causeway' },
