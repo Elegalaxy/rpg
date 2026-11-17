@@ -1189,15 +1189,17 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.21: Wider supply tiers
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.20
 - Goal: a bigger gap between the Healing Draught (30%) and the Greater Draught, and between the Ward Charm and the Riftglass Ward (rules in GAME_DESIGN §9, "Changed 2026-11-17 (Step 13.21)"). Greater Draught heals more than 35% (proposal 50%; sweep 40/45/50). The `telegraphWard` effect gets an optional `charges` (default 1, so the Charm and all other content stay byte-identical); the Riftglass Ward gets 2 charges over 8 s with a swept elite fraction (0.25/0.35/0.5).
 - Parts: (1) docs only. (2) Greater Draught heal: sweep, then content and texts. (3) `charges` in the sim, Riftglass Ward content, UI text, tests. (4) AFTER measurements, bands, Done, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `todo`. 4 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done`.
 - Acceptance: crafted minus plain at most +30 where it held before this step (Warden Assassin +35, Colossus Mage +32, Tyrant Warrior +32 already broke in 13.20; no cell worse by more than about 2 points); Riftglass Ward clearly ahead of the Charm. Guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows at seed 1 x 5) byte-identical to origin/main.
 - Progress:
   - 2026-11-17: Part 1 done. Rules and proposed numbers recorded in GAME_DESIGN §9.
   - 2026-11-17: Part 2 done. Both sweeps run (seeds 1-3 x 100, crafted tier) and recorded in GAME_DESIGN §9. Greater Draught 40% (45 and 50 break the +30 band in more cells; 40 still breaks 10 of 20 cells). Riftglass Ward 0.35. Content: Greater Draught 40%, supply text, supplies test.
+  - 2026-11-17: Part 3 done. `charges?` on `telegraphWard` (parsed as a whole number of at least 1, key absent when omitted so the Charm stays byte-identical), `hero.telegraphWard.charges`, spent one per warded skill and cleared at 0; Riftglass Ward 2 charges, 8 s, 0.35; texts, `skillInfo` ("next 2 telegraphed attacks"), Ward with supplies hint for the Riftglass Ward ("8 seconds or 2 hits"), tests in `telegraphWard.test.ts` and `supplies.test.ts`.
+  - 2026-11-17: Part 4 done. AFTER measured and recorded in GAME_DESIGN §9. Band misses: crafted minus plain above +30 in 8 cells (2 before), the crafted tier now reaches 84-99% against the elites. Guards identical. For the user: the +30 band cannot be kept with a wider Draught gap.
 
 ### Step 13.20: Ward Charm answers a telegraph
 - Status: `done`
