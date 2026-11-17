@@ -129,6 +129,16 @@ export function tonicVariant(tier: WardenTier): WardenTier {
   }
 }
 
+/** The tier with the Ward Charm swapped for a fourth Healing Draught (Step 13.20 baseline). */
+export function noCharmVariant(tier: WardenTier): WardenTier {
+  return {
+    ...tier,
+    id: `${tier.id}-nocharm`,
+    label: `${tier.label}, a fourth Draught instead of the Ward Charm`,
+    supplies: tier.supplies.map((id) => (id === 'ward-charm' ? 'healing-draught' : id)),
+  }
+}
+
 const tierById = (id: string): WardenTier => WARDEN_TIERS.find((tier) => tier.id === id)!
 
 /** Measured beside the tiers, never instead of them. The reference matrix carries no supplies and is untouched. */
@@ -136,6 +146,7 @@ export const WARDEN_VARIANTS: readonly WardenTier[] = [
   craftedVariant(tierById('prepared')),
   craftedVariant(tierById('causeway')),
   tonicVariant(tierById('prepared')),
+  noCharmVariant(tierById('prepared')),
 ]
 
 export type WardenRow = {

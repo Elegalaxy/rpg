@@ -40,11 +40,12 @@ describe('warden matrix', () => {
     expect(wardenSetup('cleric', tier).hero.statBonuses?.equipmentHealingPower).toBe(20)
   })
 
-  it('adds crafted-supply and Warming Tonic variants beside the tiers', () => {
+  it('adds crafted-supply, Warming Tonic and no-Charm variants beside the tiers', () => {
     expect(WARDEN_VARIANTS.map((tier) => [tier.id, tier.supplies])).toEqual([
       ['prepared-crafted', ['greater-draught', 'greater-draught', 'greater-draught', 'riftglass-ward']],
       ['causeway-crafted', ['greater-draught', 'greater-draught', 'greater-draught', 'riftglass-ward']],
       ['prepared-tonic', ['warming-tonic', 'healing-draught', 'healing-draught', 'ward-charm']],
+      ['prepared-nocharm', ['healing-draught', 'healing-draught', 'healing-draught', 'healing-draught']],
     ])
   })
 

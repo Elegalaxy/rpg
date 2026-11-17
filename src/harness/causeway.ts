@@ -6,7 +6,7 @@ import type { CombatSetup } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 import { blindSetup } from './telegraph.ts'
-import { PREPARED_MODIFIERS, STARTER_MODIFIERS, craftedVariant, wardenSetup, type WardenTier } from './warden.ts'
+import { PREPARED_MODIFIERS, STARTER_MODIFIERS, craftedVariant, noCharmVariant, wardenSetup, type WardenTier } from './warden.ts'
 
 /**
  * Realistic heroes at the Drowned Causeway (Step 13.1 part 3). Same construction as the Warden tiers
@@ -44,7 +44,10 @@ export const CAUSEWAY_TIERS: readonly WardenTier[] = [
 ]
 
 /** Measured beside the tiers (Step 13.3 part 5): the prepared hero with crafted supplies packed. */
-export const CAUSEWAY_VARIANTS: readonly WardenTier[] = [craftedVariant(CAUSEWAY_TIERS[1]!)]
+export const CAUSEWAY_VARIANTS: readonly WardenTier[] = [
+  craftedVariant(CAUSEWAY_TIERS[1]!),
+  noCharmVariant(CAUSEWAY_TIERS[1]!),
+]
 
 const ALL_CAUSEWAY_TIERS: readonly WardenTier[] = [...CAUSEWAY_TIERS, ...CAUSEWAY_VARIANTS]
 
