@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.14.0 · 2026-11-17 · Later lives (Step 13.18)
 
 - Improved: the Legacy screen shows Legacy, lives, mastery and peak level at a glance, a purchases table with price, how many you own and why a Buy is disabled, and a "Next life" block (start level, Recall level, remembered zones). [13.18]
 - New: Head Start, a Legacy purchase: tier I starts every new life at level 5 (20 Legacy), tier II at level 10 (35 Legacy). The attribute and skill points of those levels are yours to spend, and the levels still count toward the Legacy you earn. [13.18]
