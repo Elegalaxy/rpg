@@ -526,7 +526,7 @@ const wardCharm = {
   tags: ['supply'],
   target: 'single',
   supply: true,
-  effects: [{ kind: 'barrier', source: 'anchorMaxHp', coefficient: 0.2, durationSeconds: 8 }],
+  effects: [{ kind: 'telegraphWard', durationSeconds: 5, eliteDamageFraction: 0.5 }],
 } satisfies SkillDef
 
 const antidote = {
@@ -577,7 +577,7 @@ const riftglassWard = {
   tags: ['supply'],
   target: 'single',
   supply: true,
-  effects: [{ kind: 'barrier', source: 'anchorMaxHp', coefficient: 0.25, durationSeconds: 8 }],
+  effects: [{ kind: 'telegraphWard', durationSeconds: 5, eliteDamageFraction: 0.25 }],
 } satisfies SkillDef
 
 export const skills: { [id: string]: SkillDef } = {

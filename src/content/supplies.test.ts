@@ -34,6 +34,21 @@ function firstOf<T extends LogEvent['type']>(log: readonly LogEvent[], type: T, 
   return log.find((event): event is Extract<LogEvent, { type: T }> => event.type === type && test(event as Extract<LogEvent, { type: T }>))
 }
 
+/** A hero with one ward supply and a "telegraph present" rule, run until the supply's ward takes a hit. */
+function wardAgainst(supplyId: string, enemyId: string, level: number) {
+  const defs = gameDefs()
+  const row: PriorityRow = { skillId: supplyId, conditions: [{ kind: 'telegraph', operator: 'present' }] }
+  const setup = withSupplies(ROOTMAW_ID, [supplyId], [row])
+  const state = createCombat({ ...setup, enemies: [{ defId: enemyId, slot: 0, level }] }, defs, 4)
+  state.hero.maxHp = 1_000_000
+  state.hero.hp = 1_000_000
+  while (state.outcome === 'ongoing' && state.timeMs < 120_000 && !state.log.some((entry) => entry.type === 'ward')) stepCombat(state, defs)
+  const event = firstOf(state.log, 'ward', () => true)
+  if (event === undefined) throw new Error('the ward never took a hit')
+  expect(firstOf(state.log, 'supplyUse', (entry) => entry.supplyId === supplyId)?.left).toBe(0)
+  return { state, event }
+}
+
 describe('supplies', () => {
   it('lists the decided supplies with their brew costs, and the ones a rule uses are supply skills', () => {
     expect(SUPPLIES.map((supply) => [supply.id, supply.price, supply.ruleUsed, supply.brew])).toEqual([
@@ -148,17 +163,15 @@ describe('the Warming Tonic Burn row', () => {
 })
 
 describe('crafted supplies', () => {
-  it('heals 35% with the Greater Draught and raises a 25% barrier with the Riftglass Ward', () => {
+  it('heals 35% with the Greater Draught and wards a telegraph with the Riftglass Ward', () => {
     const defs = gameDefs()
     const draught = createCombat(withSupplies(DUEL_BASIC_ID, ['greater-draught'], [{ skillId: 'greater-draught', conditions: [{ kind: 'hpPercent', who: 'hero', operator: 'atMost', value: 30 }] }], 10), defs, 42)
     const maxHp = draught.hero.maxHp
     while (!draught.log.some((event) => event.type === 'supplyUse')) stepCombat(draught, defs)
     expect(firstOf(draught.log, 'heal', () => true)?.amount).toBe(Math.round(maxHp * 0.35))
-    const row: PriorityRow = { skillId: 'riftglass-ward', conditions: [{ kind: 'telegraph', operator: 'present' }] }
-    const ward = runCombat(createCombat(withSupplies(ROOTMAW_ID, ['riftglass-ward'], [row]), defs, 4), defs, 300_000)
-    const used = firstOf(ward.log, 'supplyUse', (event) => event.supplyId === 'riftglass-ward')
-    const barrier = ward.log.find((event) => event.type === 'barrier' && event.timeMs === used!.timeMs)
-    expect(barrier).toMatchObject({ amount: ward.hero.maxHp * 0.25 })
+    const ward = wardAgainst('riftglass-ward', 'tidebound-colossus', 22)
+    expect(ward.event.damageFraction).toBe(0.25)
+    expect(ward.state.log.some((event) => event.type === 'barrier')).toBe(false)
   })
 })
 
@@ -183,15 +196,20 @@ describe('Mend cleanses', () => {
 })
 
 describe('the Ward Charm', () => {
-  it('raises a barrier of 20% of maximum HP when the rule sees a telegraph', () => {
-    const defs = gameDefs()
-    const row: PriorityRow = { skillId: 'ward-charm', conditions: [{ kind: 'telegraph', operator: 'present' }] }
-    const state = runCombat(createCombat(withSupplies(ROOTMAW_ID, ['ward-charm'], [row]), defs, 4), defs, 300_000)
-    const used = firstOf(state.log, 'supplyUse', (event) => event.supplyId === 'ward-charm')
-    expect(used?.left).toBe(0)
-    const barrier = state.log.find((event) => event.type === 'barrier' && event.timeMs === used!.timeMs)
-    expect(barrier).toMatchObject({ amount: state.hero.maxHp * 0.2 })
+  it('wards off a regular telegraphed hit completely: no damage from that skill', () => {
+    const { state, event } = wardAgainst('ward-charm', 'drowned-bulwark', 18)
+    expect(event.damageFraction).toBe(0)
+    expect(state.log.some((entry) => entry.type === 'barrier')).toBe(false)
+    const hitsThen = state.log.filter((entry) => entry.type === 'damage' && entry.actorId !== state.hero.id && entry.timeMs === event.timeMs)
+    expect(hitsThen).toHaveLength(0)
     expect(state.hero.supplies).toEqual([])
+    expect(state.hero.telegraphWard).toBeNull()
+    expect(formatEvent(event)).toContain('wards off')
+  })
+
+  it('lets an elite deal half of a telegraphed hit', () => {
+    const { event } = wardAgainst('ward-charm', 'tidebound-colossus', 22)
+    expect(event.damageFraction).toBe(0.5)
   })
 })
 

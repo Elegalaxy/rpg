@@ -14,6 +14,9 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - Improved: the fight log has a Stack switches filter that shows only the moments the hero changed rule stack, automatically or by hand. Those lines still show under Rule choices too. [13.19]
 - Tech: the Warden and Causeway measurements gain a 'fourth Draught instead of the Ward Charm' row. [13.20]
 - Tech: supplies can ward off a telegraphed attack (not used yet). [13.20]
+- Balance: the Ward Charm and Riftglass Ward no longer raise a barrier; they ward off the next telegraphed attack within 5 s (no damage, no statuses). Elites and bosses still deal 50% (Charm) or 25% (Riftglass Ward) of it. [13.20]
+- Improved: the Ward with supplies template now uses both wards on a telegraph, the stronger one first. [13.20]
+- Fixed: the skill info text for damage reduction now says it cuts every hit until your next action. [13.20]
 
 ## 0.15.0 · 2026-11-17 · Combat setup helpers (Step 13.19)
 

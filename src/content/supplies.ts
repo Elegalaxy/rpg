@@ -48,7 +48,7 @@ export const SUPPLIES: readonly SupplyDef[] = [
     id: 'ward-charm',
     name: 'Ward Charm',
     price: 20,
-    effect: 'A barrier of 20% of maximum HP for 8 seconds.',
+    effect: 'Wards off the next telegraphed attack within 5 seconds: no damage and no statuses. Elites and bosses still deal 50% of it.',
     ruleUsed: true,
     brew: { materialId: 'shard', quantity: 3, gold: 8 },
   },
@@ -73,7 +73,7 @@ export const SUPPLIES: readonly SupplyDef[] = [
     id: 'riftglass-ward',
     name: 'Riftglass Ward',
     price: null,
-    effect: 'A barrier of 25% of maximum HP for 8 seconds.',
+    effect: 'Wards off the next telegraphed attack within 5 seconds: no damage and no statuses. Elites and bosses still deal 25% of it.',
     ruleUsed: true,
     brew: { materialId: 'riftglass', quantity: 2, gold: 12 },
     requires: { enemyId: 'tidebound-colossus' },
@@ -90,7 +90,7 @@ export function supplyName(id: string): string {
 export const RULE_SUPPLY_IDS: readonly string[] = SUPPLIES.filter((supply) => supply.ruleUsed).map((supply) => supply.id)
 
 /**
- * The Ward Charm's default rule: raise the barrier when an enemy telegraphs and the hero is at 70% HP
+ * The Ward Charm's default rule: ward off the next hit when an enemy telegraphs and the hero is at 70% HP
  * or less (decided 2026-11-08, GAME_DESIGN Supplies). Telegraph alone spent it on the first, weak hit.
  */
 export const WARD_CHARM_ROW: PriorityRow = {

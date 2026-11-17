@@ -20,7 +20,9 @@ export function effectLine(effect: SkillEffect): string {
     case 'barrier':
       return `Barrier of ${effect.coefficient}× ${effect.source === 'anchorMaxHp' ? 'max HP' : `${effect.source} power`} for ${effect.durationSeconds} s`
     case 'damageReduction':
-      return `Cuts the next hit by ${percent(effect.fraction)}`
+      return `Cuts every hit by ${percent(effect.fraction)} until your next action`
+    case 'telegraphWard':
+      return `Wards off the next telegraphed attack within ${effect.durationSeconds} s; elites and bosses still deal ${percent(effect.eliteDamageFraction)}`
     case 'incomingDamage':
       return `You take ${percent(effect.multiplier - 1)} more damage afterwards`
     case 'resource':
