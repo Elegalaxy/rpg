@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.15.0 · 2026-11-17 · Combat setup helpers (Step 13.19)
 
 - Improved: the preparation screen names Auto run and AFK as separate groups, tags who each setting applies to, and drops the long explanations.
 - Improved: in a fight, the stack, supplies and Escape now sit beside the hero card, and the "vs" between the sides is gone.
