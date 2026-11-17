@@ -1,15 +1,17 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-17)
-- **Current Goal:** Step 13.18 "Later lives" is done, parts 1 to 5 (part 6, "Restore last life's build", deferred). Next is the user's playtest, then closing 13.18 into a `## 0.x.0` changelog heading.
-- **Recent Changes & Files Touched (persist and UI only; `src/sim`, content defs, harness and snapshots untouched):**
-  - Part 1 docs: GAME_DESIGN §10 "Later lives (Step 13.18)"; §9 elite Legacy Skill Point lines struck; `routeReturns` in the carries-over list; plan Step 13.18.
-  - Part 2 Remembered Paths: `SavedHero.rememberedEnemyIds`, new `persist/remembered.ts` (`zoneGateRecord`, `unionElites`, `openByMemory`), `reincarnate` unions elites, `nodeStatus` and the contract board read it for zone nodes only, MapView note (`map-remembered`).
-  - Part 3 Recall XP: `SavedHero.peakLevel`, `recallNeed` / `recallXp` in `persist/reincarnation.ts`, used in `settleExpedition`, `outcomeStats(expedition, hero)`, `outcomeSummary`, `offline.ts`, outcome card.
-  - Part 4 Head Start: `HeroPurchases.headStart` (0 to 2), `HEAD_START_LEVELS` 5 / 10, `HEAD_START_COSTS` 20 / 35, `buyPurchase('headStart')`.
-  - Part 5: `startingProgress`, `nextLifePreview`; `ui/character/Legacy.tsx` rebuilt (cards, purchases table, Next life), CSS in `character.css`, `Legacy.test.tsx`.
+- **Current Goal:** Step 13.20 (Ward Charm answers a telegraph) is done, parts 1 to 5. Next is the user's call on the band misses below, then Step 13.21 (crafted backpack, not written).
+- **Recent Changes & Files Touched:**
+  - Docs: GAME_DESIGN §9 (Ward Charm and Riftglass Ward rows, "Changed 2026-11-17" block with the measured tables); plan Step 13.20.
+  - Harness: `noCharmVariant` in `harness/warden.ts`, added to `WARDEN_VARIANTS` (prepared) and `CAUSEWAY_VARIANTS`; `warden.test.ts`.
+  - Sim: `telegraphWard` effect (`types.ts`, `skills.ts`), `hero.telegraphWard`, `spendTelegraphWard` and the `telegraphed` flag on `applyEnemySkill` (`combat.ts`), `ward` log event (`log.ts`, `ui/log/categories.ts`), `WARD_UP_REASON` skip (`automation.ts`), new `sim/telegraphWard.test.ts`.
+  - Content and UI: `content/skills.ts` (Charm 0.5, Riftglass Ward 0.25, 5 s), `content/supplies.ts` texts, `content/ruleTemplates.ts` (Ward with supplies), `ui/skillInfo.ts` (new effect line; damage reduction text fixed), `content/supplies.test.ts`.
 - **Active Decisions / Constraints:**
-  - Fracture Gate never reads remembered elites (no farming by losing to the Warden on purpose). Drills are not boosted by Recall. Heroes that reincarnated before this step get no `peakLevel` until their next reincarnation.
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`.
-- **Not verified:** a real Recall run and a real life-2 Causeway start in the browser (unit tests only); the browser check used the dev Legacy buttons at level 1.
-- **Exact Next Step:** (1) User playtest: reincarnate a hero who beat an elite, check the Causeway opens and Recall shows on the outcome card. (2) Close Step 13.18 into a `## 0.x.0 · date · name` changelog heading. (3) Optional part 6: store the last life's skill-web node ids and priority rows, and offer "Restore last life's build" using `allocateNode` and `allocateRacialNode`.
+  - Each ward stops the next telegraphed damaging skill: regular enemies deal nothing, elites and bosses 50% (Charm) or 25% (Riftglass Ward), never statuses; `dodgedDamageFraction` is a floor; no barrier; no once-per-fight cap; a ready Fade Back dodge goes first.
+  - Default rows unchanged. Template rows now use a blank "telegraph within N seconds" on both rows (a plain "telegraph present" has no blank, which the template tests require).
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`; every game change adds a `CHANGELOG.md` line under `Unreleased`.
+- **Measured (elites matrix, seeds 1-3 x 100):** the Step 13.5 bands broke in a few cells and the sweep (Charm 0.4/0.5/0.6, Riftglass 0.15/0.25/0.35) did not fix them (the fractions move wins by seed noise only), so 0.5 and 0.25 stay. Outside 40-85 (plain prepared): Warden Warrior 39, Assassin 26, Mage 39.5; Tyrant Mage 93.5. Over-levelled below 94: Reaver Assassin 92.5, Tyrant Warrior 91.5. Crafted minus plain above +30: Warden Assassin +35, Colossus Mage +32, Tyrant Warrior +32.
+  - A fourth Draught still beats the Charm at the Warden and Colossus (for example Warden Warrior 85 against 41); at the regular Causeway fights they tie.
+- **Not verified:** the in-game UI (skill info line, template picker, supply texts) in a browser; only tests and the harness were run.
+- **Exact Next Step:** (1) User decides whether to accept the band misses or change the Ward rules (for example a once-per-ward cap on elites, or the HP gate). (2) Step 13.21 crafted backpack. (3) Close Step 13.20 into a `## 0.x.0` changelog heading with the next milestone.
