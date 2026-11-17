@@ -1188,6 +1188,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.20: Ward Charm answers a telegraph
+- Status: `planned`
+- Depends on: 13.19
+- Goal: the Ward Charm and Riftglass Ward ward off the next telegraphed attack (no damage, no statuses) instead of raising a barrier; elites and bosses still deal 50% (Charm) or 25% (Riftglass Ward) of each damage effect, never statuses (rules in GAME_DESIGN §9, "Changed 2026-11-17"). The crafted backpack is Step 13.21.
+- Parts: (1) docs only. (2) Harness baseline: `noCharmVariant` in the Warden and Causeway variants, BEFORE measurements. (3) Sim: `telegraphWard` effect, hero field, `ward` log event, `ward already up` skip; content does not use it yet, so every matrix is byte-identical. (4) Content and UI: the two supplies, the Ward with supplies template, skill info text, tests. (5) AFTER measurements, bands, Done, HANDOFF.
+- Part status: 1 `done`. 2 `todo`. 3 `todo`. 4 `todo`. 5 `todo`.
+- Acceptance: prepared tiers stay inside 40-85 per elite and class where they were inside before (Ranger at the Reaver accepted at about 100); over-levelled tiers stay at 94 or more; crafted minus plain at most +30 and crafted at least plain. Reported without a band: Charm against `-nocharm` at the Bulwark and Causeway fights and at the Warden; diagnostic with the Charm row set to telegraph only. If a band breaks: sweep Charm elite fraction {0.4, 0.5, 0.6} and Riftglass {0.15, 0.25, 0.35} at seeds 1-3 x 100, record the table in GAME_DESIGN first, then change the numbers. Guards (telegraph, built, modded, reference, scenarios snapshot) stay identical.
+- Progress:
+  - 2026-11-17: Part 1 done. Rules recorded in GAME_DESIGN §9 (supply rows and a Changed 2026-11-17 block).
+
 ### Step 13.18: Later lives
 - Status: `done`
 - Depends on: 13.17

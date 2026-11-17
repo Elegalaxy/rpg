@@ -1718,7 +1718,7 @@ Before / after summary of this fix (Warden prepared, over, causeway wins %; part
 
 #### Crafted supplies trim (Step 13.5 part 7, 2026-11-09, user approved option (a))
 
-Band: the crafted prepared tier wins at most 30 points more than the plain prepared tier. Constraints: the Greater Draught must heal more than the Healing Draught (30%), the Riftglass Ward must be at least the Ward Charm (20%), plain tiers do not change. Only the two skill definitions in `src/content/skills.ts` are levers. Warming Tonic is unchanged.
+Band: the crafted prepared tier wins at most 30 points more than the plain prepared tier. Constraints: the Greater Draught must heal more than the Healing Draught (30%), the Riftglass Ward must be at least the Ward Charm (20%; since Step 13.20 this means the Riftglass Ward's elite damage fraction must be at most the Charm's), plain tiers do not change (since Step 13.20 this no longer holds for tiers that carry a Charm: the Charm changed). Only the two skill definitions in `src/content/skills.ts` are levers. Warming Tonic is unchanged.
 
 Sweep (seed 1, 60 runs, `--matrix elites` rules mode, Warden and Colossus prepared vs prepared-crafted; in-memory patches). Cells are plain > crafted wins % (gap). Plain: Warden Warrior 55, Assassin 42, Ranger 53, Mage 47, Cleric 40; Colossus 98, 53, 83, 100, 100.
 
@@ -2363,7 +2363,7 @@ First-playable supplies, decided 2026-11-03:
 | Healing Draught | Restores 30% of maximum HP. No roll, no Healing Power, no healing-received change. | 15 gold | Hero HP at most 40% |
 | Antidote | Removes every Poison and Bleed stack from the hero. | 10 gold | Hero Poison at least 3 stacks |
 | Smoke Bomb | +15 percentage points on the next escape roll, then used up, whether the roll succeeds or fails. | 20 gold | None: it is used by the escape roll |
-| Ward Charm (added 2026-11-04) | A barrier of 20% of maximum HP for 8 seconds. | 20 gold | When an enemy telegraph is present and hero HP is at most 70% (changed 2026-11-08) |
+| Ward Charm (added 2026-11-04) | Wards off the next telegraphed enemy attack with a damage effect that lands within 5 seconds: no damage and no statuses; an elite or boss still deals 50% of each damage effect, with no statuses. Changed 2026-11-17 (Step 13.20); it was a barrier of 20% of maximum HP for 8 seconds. | 20 gold | When an enemy telegraph is present and hero HP is at most 70% (changed 2026-11-08) |
 
 - Supplies are bought in Greyhaven with the hero's own gold and kept in the hero's stash. They are not shared between heroes.
 - Before a run the player picks what goes in each of the 4 slots. The run takes the picked items out of the stash. A pick the stash cannot cover leaves that slot empty.
@@ -2374,13 +2374,20 @@ First-playable supplies, decided 2026-11-03:
   - Ward Charm: a barrier of 20% of maximum HP for 8 seconds, used by a rule at the same 0.5× action time. 20 gold. Default rule for a new hero: when an enemy telegraph is present. Existing heroes get the rule once, unless a rule already names it.
   - Brewing at the Potion Shop: any supply can be made at once from the hero's own materials instead of bought: Healing Draught 3 hide + 5 gold, Antidote 2 shard + 3 gold, Smoke Bomb 3 scrap + 8 gold, Ward Charm 3 shard + 8 gold. No queue and no time.
 - Changed 2026-11-08 (user approved, Step 12.5): the Ward Charm default rule is "an enemy telegraph is present AND hero HP at most 70%". The old rule (telegraph only) spent the Charm on the first telegraph, usually a weak hit, in almost every Warden run. The Charm's own numbers (barrier 20% of maximum HP, 8 s) do not change. Measured against the Fractured Warden (seeds 1-2, 60 runs each, reference rules plus default supply rows, wins / mean HP lost): Mage well prepared 70% to 98%, Ranger well prepared 25% to 34%, Assassin well prepared 5% to 3% (noise, still walled), over-levelled tiers 99-100% either way, Warrior and Cleric 0% either way. Other candidates (HP at most 60, 50, 80; telegraph at most 1 s plus HP; HP alone; no barrier up) are in doc/IMPLEMENTATION_PLAN.md Step 12.5. Rootmaw and Echo Knight stay at 100% wins with the Charm packed. Reference-matrix rows carry no supplies and are unchanged. Heroes who already have a Ward Charm rule keep it; only new heroes, reincarnated heroes, the harness, and legacy heroes that get the rule for the first time use the new row.
+- Changed 2026-11-17 (user approved, Step 13.20): the Ward Charm and the Riftglass Ward stop being barriers and answer a telegraph instead. Price, brew cost, unlocks and default rows are unchanged; the two supplies change in place (no new supply id).
+  - Rule: using the supply starts a 5 second ward on the hero. The next telegraphed enemy attack (a telegraph or a reaction skill) with a damage effect that resolves while the ward is up is warded off: no damage and no statuses from that skill. A skill that is not telegraphed does not spend it. Telegraphs that deal no damage (roots, summons) do not spend it. An interrupted telegraph never resolves, so the ward stays up for the rest of its 5 seconds. There is no once-per-fight cap: each use of a supply is one ward. Using a supply while a ward is up is skipped with the reason `ward already up`.
+  - Elites and bosses: a share of each damage effect still lands, with no statuses. Ward Charm 50%, Riftglass Ward 25% (Rift Surge style skills have `dodgedDamageFraction` 60%; the share is the larger of the two, so Rift Surge lands at 60% for both). Regular enemies deal nothing.
+  - A ready Fade Back dodge is used first and the ward stays. There is no barrier any more; the Healing Draught and the Greater Draught are the HP answer.
+  - Why not reuse `damageReduction`: it ends at the hero's next action (using a supply counts as one), and it cuts every hit instead of one. The skill info text "Cuts the next hit by N%" was wrong and now says "until your next action".
+  - Default rows unchanged (telegraph present AND HP at most 70%; the Riftglass Ward row copies it). The rule template "Ward with supplies" now puts both wards on a telegraph, the stronger one first.
+  - Measured against the Step 13.5 bands in Step 13.20 of doc/IMPLEMENTATION_PLAN.md; nothing is tuned beyond the sweep recorded there.
 - Crafted supplies, decided 2026-11-08 (user approved, Step 13.3). New supplies that Greyhaven does not sell, brewed at the Potion Shop like any other, plus one shop supply. All are used by rules at 0.5x action time with no cost and no cooldown.
 
 | Supply | Effect | Shop price | Brew | Unlock | Default rule |
 |---|---|---|---|---|---|
 | Warming Tonic | Removes all Chill and Burn from the hero and restores 10% of maximum HP. | 12 gold | 2 hide + 4 gold | none | Hero Chill at least 2 stacks |
 | Greater Draught | Restores 35% of maximum HP (50% until Step 13.5 part 7). | not sold | 2 riftglass + 10 gold | Drowned Causeway discovered | Hero HP at most 40% (30% until Step 13.5 part 7b), placed above the Healing Draught row |
-| Riftglass Ward | A barrier of 25% of maximum HP for 8 seconds (30% until Step 13.5 part 7). | not sold | 2 riftglass + 12 gold | Any hero has beaten the Tidebound Colossus | Same conditions as the Ward Charm row, placed above it |
+| Riftglass Ward | Same as the Ward Charm but an elite or boss still deals 25% of each damage effect. Changed 2026-11-17 (Step 13.20); it was a barrier of 25% of maximum HP for 8 seconds (30% until Step 13.5 part 7). | not sold | 2 riftglass + 12 gold | Any hero has beaten the Tidebound Colossus | Same conditions as the Ward Charm row, placed above it |
 
   - A locked supply cannot be brewed and shows its lock reason, the same way a locked recipe does. A supply with no shop price cannot be bought.
   - Existing heroes get each new default row once, unless a rule already names that supply; one the player removes later does not come back.
