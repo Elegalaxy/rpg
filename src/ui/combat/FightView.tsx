@@ -158,31 +158,30 @@ export function FightView({
         <div className="fight-field" aria-label="Combat">
           <div className="fight-side fight-side--hero">
             <div className="fight-hero-stack">
-            <ActorCard
-              actor={hero}
-              spriteId={hero.id}
-              timeMs={combat.timeMs}
-              log={combat.log}
-              equippedSkillIds={hero.equippedSkillIds}
-              classResource={{ id: hero.classResourceId, current: hero.classResource, max: hero.classResourceMax }}
-              manualQueue={live ? { state: combat, queueError } : undefined}
-            />
-            <StackBar combat={combat} />
-            <SuppliesBar combat={combat} />
-            {live && onEscapeNow !== undefined ? (
-              <div className="fight-escape">
-                <button type="button" className="btn-danger" disabled={escapePending} onClick={onEscapeNow}>
-                  {escapePending ? 'Escaping...' : 'Escape now'}
-                </button>
-                <Help label="About Escape now">
-                  Tries to escape at once, whatever your HP or the auto-escape setting. The usual chance applies, and a packed Smoke Bomb adds 15 points. A failed try waits before the next automatic one.
-                </Help>
+              <ActorCard
+                actor={hero}
+                spriteId={hero.id}
+                timeMs={combat.timeMs}
+                log={combat.log}
+                equippedSkillIds={hero.equippedSkillIds}
+                classResource={{ id: hero.classResourceId, current: hero.classResource, max: hero.classResourceMax }}
+                manualQueue={live ? { state: combat, queueError } : undefined}
+              />
+              <div className="fight-hero-tools">
+                <StackBar combat={combat} />
+                <SuppliesBar combat={combat} />
+                {live && onEscapeNow !== undefined ? (
+                  <div className="fight-escape">
+                    <button type="button" className="btn-danger" disabled={escapePending} onClick={onEscapeNow}>
+                      {escapePending ? 'Escaping...' : 'Escape now'}
+                    </button>
+                    <Help label="About Escape now">
+                      Tries to escape at once, whatever your HP or the auto-escape setting. The usual chance applies, and a packed Smoke Bomb adds 15 points. A failed try waits before the next automatic one.
+                    </Help>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
             </div>
-          </div>
-          <div className="fight-vs" aria-hidden="true">
-            vs
           </div>
           <div className="fight-side fight-side--enemies">
             {combat.enemies.map((enemy) => (

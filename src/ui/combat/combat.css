@@ -295,11 +295,9 @@
   gap: var(--s3);
 }
 
-.fight-vs {
-  align-self: center;
-  color: var(--muted);
-  font-family: Georgia, 'Times New Roman', serif;
-  font-style: italic;
+.fight-side--hero {
+  flex: 1 1 100%;
+  min-width: 0;
 }
 
 .fight-field .actor-card {
@@ -391,9 +389,23 @@
 
 .fight-hero-stack {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.fight-hero-tools {
+  display: flex;
+  flex: 1 1 220px;
   flex-direction: column;
   gap: var(--s2);
   min-width: 0;
+}
+
+.fight-hero-tools .rs-bar,
+.fight-hero-tools .fight-supplies {
+  margin-top: 0;
 }
 
 .fight-escape-banner {

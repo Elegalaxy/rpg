@@ -70,6 +70,14 @@ describe('the fight view controls', () => {
     expect(after).not.toContain('aria-label="Queue Healing Draught"')
   })
 
+  it('puts stack and supplies beside the hero card and does not print vs', () => {
+    const { state } = fresh()
+    const html = renderToStaticMarkup(<FightView combat={state} title="test" onEscapeNow={() => undefined} />)
+    expect(html).toContain('fight-hero-tools')
+    expect(html).not.toContain('fight-vs')
+    expect(html).not.toMatch(/>vs</)
+  })
+
   it('shows Escape now only when an expedition fight passes the handler, and not once the fight is over', () => {
     const { state } = fresh()
     expect(renderToStaticMarkup(<FightView combat={state} title="test" />)).not.toContain('Escape now')
