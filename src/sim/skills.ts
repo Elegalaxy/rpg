@@ -59,6 +59,7 @@ import type {
   SkillDef,
   SkillEffect,
   SummonEffect,
+  TelegraphWardEffect,
 } from './types.ts'
 
 export const SKILL_EFFECT_KINDS = [
@@ -480,7 +481,14 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     if (value.eliteDamageFraction < 0 || value.eliteDamageFraction >= 1) {
       throw new Error(`skill '${skillId}' ward elite damage fraction must be at least 0 and less than 1, received ${describeValue(value.eliteDamageFraction)}`)
     }
-    return { kind, durationSeconds: value.durationSeconds, eliteDamageFraction: value.eliteDamageFraction }
+    const parsed: TelegraphWardEffect = { kind, durationSeconds: value.durationSeconds, eliteDamageFraction: value.eliteDamageFraction }
+    if (value.charges !== undefined) {
+      if (typeof value.charges !== 'number' || !Number.isInteger(value.charges) || value.charges < 1) {
+        throw new Error(`skill '${skillId}' ward charges must be a whole number of at least 1, received ${describeValue(value.charges)}`)
+      }
+      parsed.charges = value.charges
+    }
+    return parsed
   }
   if (kind === 'cleanse') {
     const ids = value.statusIds

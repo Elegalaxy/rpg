@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { WARD_UP_REASON } from './automation.ts'
+import { WARD_UP_REASON, skipReason } from './automation.ts'
 import { createCombat, stepCombat } from './combat.ts'
 import { formatEvent } from './log.ts'
 import { assertSkillBook } from './skills.ts'
@@ -54,7 +54,7 @@ function warriorSetup(supplies: string[] = [], rows: readonly { skillId: string 
   }
 }
 
-function wardSupply(id: string, eliteDamageFraction: number): SkillDef {
+function wardSupply(id: string, eliteDamageFraction: number, charges?: number, durationSeconds = 5): SkillDef {
   return {
     id,
     name: id,
@@ -64,7 +64,7 @@ function wardSupply(id: string, eliteDamageFraction: number): SkillDef {
     tags: ['supply'],
     target: 'single',
     supply: true,
-    effects: [{ kind: 'telegraphWard', durationSeconds: 5, eliteDamageFraction }],
+    effects: [{ kind: 'telegraphWard', durationSeconds, eliteDamageFraction, ...(charges === undefined ? {} : { charges }) }],
   }
 }
 
@@ -100,8 +100,8 @@ function open(defs: GameDefs, supplies: string[] = [], rows: readonly { skillId:
   return state
 }
 
-function ready(state: CombatState, untilMs: number, eliteDamageFraction: number): void {
-  state.hero.telegraphWard = { untilMs, eliteDamageFraction, name: 'Charm' }
+function ready(state: CombatState, untilMs: number, eliteDamageFraction: number, charges = 1): void {
+  state.hero.telegraphWard = { untilMs, eliteDamageFraction, name: 'Charm', charges }
 }
 
 function runUntil(state: CombatState, defs: GameDefs, done: (log: readonly LogEvent[]) => boolean, limitMs = 20_000): void {
@@ -232,7 +232,7 @@ describe('telegraph ward', () => {
     const state = open(defs, ['charm'], [{ skillId: 'charm' }])
     runUntil(state, defs, (log) => log.some((event) => event.type === 'supplyUse'))
     const used = state.log.find((event) => event.type === 'supplyUse')!
-    expect(state.hero.telegraphWard).toMatchObject({ untilMs: used.timeMs + 5000, eliteDamageFraction: 0.5, name: 'charm' })
+    expect(state.hero.telegraphWard).toMatchObject({ untilMs: used.timeMs + 5000, eliteDamageFraction: 0.5, name: 'charm', charges: 1 })
   })
 
   it('leaves the ward up when a ready dodge takes the hit first', () => {
@@ -267,6 +267,49 @@ describe('telegraph ward', () => {
     expect(() => assertSkillBook(book({ ...ok, eliteDamageFraction: 1 }))).toThrow(/elite damage fraction/)
     expect(() => assertSkillBook(book({ ...ok, eliteDamageFraction: -0.1 }))).toThrow(/elite damage fraction/)
     expect(() => assertSkillBook(book({ ...ok, durationSeconds: 0 }))).toThrow()
+  })
+
+  it('rejects charges that are not a whole number of at least 1', () => {
+    const book = (effect: Record<string, unknown>) => ({ w: { ...wardSupply('w', 0.5), effects: [effect] } })
+    const ok: TelegraphWardEffect = { kind: 'telegraphWard', durationSeconds: 8, eliteDamageFraction: 0.35, charges: 2 }
+    expect(() => assertSkillBook(book(ok))).not.toThrow()
+    for (const charges of [0, 1.5, -1, '2']) expect(() => assertSkillBook(book({ ...ok, charges }))).toThrow(/charges/)
+  })
+
+  it('starts with 1 charge, or the effect charges, and lasts its own duration', () => {
+    const twin = wardSupply('twin', 0.35, 2, 8)
+    const defs = defsFor(foe([strike({ telegraphMs: 9000 })]), [twin])
+    const state = open(defs, ['twin'], [{ skillId: 'twin' }])
+    runUntil(state, defs, (log) => log.some((event) => event.type === 'supplyUse'))
+    const used = state.log.find((event) => event.type === 'supplyUse')!
+    expect(state.hero.telegraphWard).toMatchObject({ untilMs: used.timeMs + 8000, eliteDamageFraction: 0.35, charges: 2 })
+  })
+
+  it('a two-charge ward takes two telegraphed hits, then ends', () => {
+    const quick = strike({ cooldownSeconds: 2, telegraphMs: 500 })
+    const defs = defsFor(foe([quick], { elite: true }))
+    const state = open(defs)
+    ready(state, 60_000, 0.35, 2)
+    const hits = (log: readonly LogEvent[]) => log.filter((event) => event.type === 'telegraph' && event.phase === 'resolve' && event.skillId === 'smash').length
+    runUntil(state, defs, (log) => hits(log) >= 1)
+    expect(state.log.filter((event) => event.type === 'ward')).toHaveLength(1)
+    expect(state.hero.telegraphWard).toMatchObject({ charges: 1 })
+    runUntil(state, defs, (log) => hits(log) >= 2)
+    expect(state.log.filter((event) => event.type === 'ward')).toHaveLength(2)
+    expect(state.hero.telegraphWard).toBeNull()
+    runUntil(state, defs, (log) => hits(log) >= 3)
+    expect(state.log.filter((event) => event.type === 'ward')).toHaveLength(2)
+  })
+
+  it('skips a second ward while charges remain, and allows one when they are spent', () => {
+    const state = open(defsFor(foe([strike()])))
+    ready(state, 60_000, 0.35, 2)
+    state.hero.telegraphWard!.charges = 1
+    const twin = wardSupply('twin', 0.35, 2, 8)
+    state.hero.supplies = ['twin']
+    expect(skipReason(state, state.hero, twin, 0)).toBe(WARD_UP_REASON)
+    state.hero.telegraphWard = null
+    expect(skipReason(state, state.hero, twin, 0)).toBeNull()
   })
 
   it('reads as a plain line, with the share when some lands', () => {

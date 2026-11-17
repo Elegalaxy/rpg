@@ -1358,12 +1358,14 @@ export type SkillDodgeEffect = {
 /**
  * Supplies only: ward the hero against the next telegraphed enemy skill with a damage effect that
  * resolves within this window. The skill deals no damage and applies no statuses; an elite or boss
- * still deals `eliteDamageFraction` of each damage effect (never statuses). One skill spends it.
+ * still deals `eliteDamageFraction` of each damage effect (never statuses). Each skill spends one charge (default 1).
  */
 export type TelegraphWardEffect = {
   kind: 'telegraphWard'
   durationSeconds: number
   eliteDamageFraction: number
+  /** How many telegraphed skills the ward absorbs before it ends. Omitted is 1. */
+  charges?: number
 }
 
 /**
@@ -1522,7 +1524,7 @@ export type CombatHero = CombatActor & {
   /** A readied skill dodge lasts through this time. Null when none is ready. */
   skillDodgeUntilMs: number | null
   /** A supply's ward lasts through this time and spends on the next telegraphed damaging skill. Null when none is up. */
-  telegraphWard: { untilMs: number; eliteDamageFraction: number; name: string } | null
+  telegraphWard: { untilMs: number; eliteDamageFraction: number; name: string; charges: number } | null
   /** Supplies an enemy took this fight. A win returns them. */
   stolenSupplies: string[]
   /** Special arrows already fired this expedition. Null when the setup omits the counter. */

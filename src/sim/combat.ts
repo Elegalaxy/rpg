@@ -1325,7 +1325,8 @@ function spendTelegraphWard(state: CombatState, actor: CombatActor, skill: Enemy
     return null
   }
   if (!skill.effects.some((effect) => effect.kind === 'damage')) return null
-  hero.telegraphWard = null
+  ward.charges -= 1
+  if (ward.charges <= 0) hero.telegraphWard = null
   const share = Math.max(actor.elite || actor.boss ? ward.eliteDamageFraction : 0, skill.dodgedDamageFraction ?? 0)
   state.log.push({
     type: 'ward',
@@ -1975,6 +1976,7 @@ function resolveSupply(state: CombatState, skill: SkillDef, scheduled: number): 
         untilMs: scheduled + roundDurationMs(effect.durationSeconds, `${skill.id} ward`),
         eliteDamageFraction: effect.eliteDamageFraction,
         name: skill.name,
+        charges: effect.charges ?? 1,
       }
       continue
     }

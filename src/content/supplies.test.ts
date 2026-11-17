@@ -170,8 +170,18 @@ describe('crafted supplies', () => {
     while (!draught.log.some((event) => event.type === 'supplyUse')) stepCombat(draught, defs)
     expect(firstOf(draught.log, 'heal', () => true)?.amount).toBe(Math.round(maxHp * 0.4))
     const ward = wardAgainst('riftglass-ward', 'tidebound-colossus', 22)
-    expect(ward.event.damageFraction).toBe(0.25)
+    expect(ward.event.damageFraction).toBe(0.35)
     expect(ward.state.log.some((event) => event.type === 'barrier')).toBe(false)
+  })
+
+  it('gives the Riftglass Ward 2 charges over 8 seconds, and the Ward Charm 1 over 5', () => {
+    const riftglass = skills['riftglass-ward']?.effects[0]
+    const charm = skills['ward-charm']?.effects[0]
+    expect(riftglass).toMatchObject({ kind: 'telegraphWard', durationSeconds: 8, eliteDamageFraction: 0.35, charges: 2 })
+    expect(charm).toMatchObject({ kind: 'telegraphWard', durationSeconds: 5, eliteDamageFraction: 0.5 })
+    expect(charm).not.toHaveProperty('charges')
+    const { state } = wardAgainst('riftglass-ward', 'tidebound-colossus', 22)
+    expect(state.hero.telegraphWard).toMatchObject({ charges: 1, name: 'Riftglass Ward' })
   })
 })
 

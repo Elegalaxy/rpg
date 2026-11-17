@@ -22,7 +22,7 @@ export function effectLine(effect: SkillEffect): string {
     case 'damageReduction':
       return `Cuts every hit by ${percent(effect.fraction)} until your next action`
     case 'telegraphWard':
-      return `Wards off the next telegraphed attack within ${effect.durationSeconds} s; elites and bosses still deal ${percent(effect.eliteDamageFraction)}`
+      return `Wards off the next ${effect.charges === undefined || effect.charges === 1 ? 'telegraphed attack' : `${effect.charges} telegraphed attacks`} within ${effect.durationSeconds} s; elites and bosses still deal ${percent(effect.eliteDamageFraction)}`
     case 'incomingDamage':
       return `You take ${percent(effect.multiplier - 1)} more damage afterwards`
     case 'resource':

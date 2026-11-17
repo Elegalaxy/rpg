@@ -577,7 +577,7 @@ const riftglassWard = {
   tags: ['supply'],
   target: 'single',
   supply: true,
-  effects: [{ kind: 'telegraphWard', durationSeconds: 5, eliteDamageFraction: 0.25 }],
+  effects: [{ kind: 'telegraphWard', durationSeconds: 8, eliteDamageFraction: 0.35, charges: 2 }],
 } satisfies SkillDef
 
 export const skills: { [id: string]: SkillDef } = {

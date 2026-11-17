@@ -73,7 +73,7 @@ export const SUPPLIES: readonly SupplyDef[] = [
     id: 'riftglass-ward',
     name: 'Riftglass Ward',
     price: null,
-    effect: 'Wards off the next telegraphed attack within 5 seconds: no damage and no statuses. Elites and bosses still deal 25% of it.',
+    effect: 'Wards off the next 2 telegraphed attacks within 8 seconds: no damage and no statuses. Elites and bosses still deal 35% of each.',
     ruleUsed: true,
     brew: { materialId: 'riftglass', quantity: 2, gold: 12 },
     requires: { enemyId: 'tidebound-colossus' },

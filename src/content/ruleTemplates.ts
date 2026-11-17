@@ -225,7 +225,7 @@ export const ruleTemplates: readonly RuleTemplate[] = [
     summary: 'Ward off a telegraphed hit with a supply from your pack, the stronger one first.',
     tradeOff: 'Uses up supplies and deals no damage: add your attacks below it.',
     rows: [
-      { skillId: 'riftglass-ward', hint: SLOT_HINT, condition: { type: 'telegraphWithin', operator: 'atMost', value: '', hint: 'How many seconds before the hit to use this. It protects for 5 seconds.' } },
+      { skillId: 'riftglass-ward', hint: SLOT_HINT, condition: { type: 'telegraphWithin', operator: 'atMost', value: '', hint: 'How many seconds before the hit to use this. It protects for 8 seconds or 2 hits.' } },
       { skillId: 'ward-charm', hint: SLOT_HINT, condition: { type: 'telegraphWithin', operator: 'atMost', value: '', hint: 'How many seconds before the hit to use this. It protects for 5 seconds.' } },
     ],
     unlock: 'open',
