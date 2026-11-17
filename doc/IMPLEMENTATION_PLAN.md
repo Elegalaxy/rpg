@@ -1188,6 +1188,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.21: Wider supply tiers
+- Status: `in progress`
+- Depends on: 13.20
+- Goal: a bigger gap between the Healing Draught (30%) and the Greater Draught, and between the Ward Charm and the Riftglass Ward (rules in GAME_DESIGN §9, "Changed 2026-11-17 (Step 13.21)"). Greater Draught heals more than 35% (proposal 50%; sweep 40/45/50). The `telegraphWard` effect gets an optional `charges` (default 1, so the Charm and all other content stay byte-identical); the Riftglass Ward gets 2 charges over 8 s with a swept elite fraction (0.25/0.35/0.5).
+- Parts: (1) docs only. (2) Greater Draught heal: sweep, then content and texts. (3) `charges` in the sim, Riftglass Ward content, UI text, tests. (4) AFTER measurements, bands, Done, HANDOFF.
+- Part status: 1 `done`. 2 `todo`. 3 `todo`. 4 `todo`.
+- Acceptance: crafted minus plain at most +30 where it held before this step (Warden Assassin +35, Colossus Mage +32, Tyrant Warrior +32 already broke in 13.20; no cell worse by more than about 2 points); Riftglass Ward clearly ahead of the Charm. Guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows at seed 1 x 5) byte-identical to origin/main.
+- Progress:
+  - 2026-11-17: Part 1 done. Rules and proposed numbers recorded in GAME_DESIGN §9.
+
 ### Step 13.20: Ward Charm answers a telegraph
 - Status: `done`
 - Depends on: 13.19
@@ -1269,11 +1279,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-16: Part 1 done. Rules and the template table recorded in GAME_DESIGN §7.
   - 2026-11-16: Part 2 done. `ui/character/chainModel.ts`: `buildChain`, `buildRouter`, `buildRules`, `ruleFireCounts`, `fireCount`, `stackFireTotal`, `fallbackText`; tests in `chainModel.test.ts`.
-
-  - 2026-11-16: Part 3 done. `RuleNode.tsx`, `RuleChain.tsx`, `rc-*` classes in `character.css`; `Rules.tsx` renders the chain (one node open at a time, Remove with Undo, Add rule off at 12 with the reason, Fallback node, empty state). `RulesForm` takes `initialOpenRule` for tests; the telegraph hint test opens that rule. Aria-labels kept.
-  - 2026-11-16: Part 4 done. `RuleRouter.tsx` replaces the tab row (tab roles and ids kept, `DEFAULT_TAB` moved here); tests in `RuleRouter.test.tsx`.
-  - 2026-11-16: Part 5 done. `useFireCounts.ts` (`countsFor`, `useFireCounts`) reads the live combat log through the existing `subscribe` and `getSnapshot` (store.ts untouched); the chain and router show it, "—" without a log for that hero.
-  - 2026-11-16: Part 6 done. `src/content/ruleTemplates.ts` (10 templates, plain data) and `src/persist/ruleTemplates.ts` (`templatesFor`, `templateUnlocked`, `applyTemplate`); unlocks read `defeatedEnemyIds` and the account defeat records through the enemy defs (telegraph, swarm, phased boss). Tests in `ruleTemplates.test.ts`; architecture test passes.
+
+
+  - 2026-11-16: Part 3 done. `RuleNode.tsx`, `RuleChain.tsx`, `rc-*` classes in `character.css`; `Rules.tsx` renders the chain (one node open at a time, Remove with Undo, Add rule off at 12 with the reason, Fallback node, empty state). `RulesForm` takes `initialOpenRule` for tests; the telegraph hint test opens that rule. Aria-labels kept.
+
+  - 2026-11-16: Part 4 done. `RuleRouter.tsx` replaces the tab row (tab roles and ids kept, `DEFAULT_TAB` moved here); tests in `RuleRouter.test.tsx`.
+
+  - 2026-11-16: Part 5 done. `useFireCounts.ts` (`countsFor`, `useFireCounts`) reads the live combat log through the existing `subscribe` and `getSnapshot` (store.ts untouched); the chain and router show it, "—" without a log for that hero.
+
+  - 2026-11-16: Part 6 done. `src/content/ruleTemplates.ts` (10 templates, plain data) and `src/persist/ruleTemplates.ts` (`templatesFor`, `templateUnlocked`, `applyTemplate`); unlocks read `defeatedEnemyIds` and the account defeat records through the enemy defs (telegraph, swarm, phased boss). Tests in `ruleTemplates.test.ts`; architecture test passes.
+
   - 2026-11-16: Part 7 done. `TemplatePicker.tsx` (cards grouped by situation, 44px targets, locked or stack-limit cards disabled with the reason, replace-rules confirm); `Rules.tsx` opens it from a Templates button and the empty state, shows a "Still to fill in" note list after applying. Browser-checked at 1024 and 375 wide.
   - 2026-11-16: Part 8 done. HANDOFF rewritten. Verified in the browser pane at 1024 and 375 wide (chain, in-place edit, router, picker, apply with replace confirm, no horizontal overflow). Not verified in a real fight: live "Used N×" counts (unit-tested only). src/sim, content/scenarios.ts and the snapshots are untouched.
 
