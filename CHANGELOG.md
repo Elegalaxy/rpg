@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: Recall. A hero who reincarnated earns double run XP until they are back at the highest level they ever reached; drills are not doubled, and the outcome card shows "Recall +N". [13.18]
 - New: from your second life on, a hero remembers the elites beaten in earlier lives, so the Drowned Causeway, Rift Hollows and Cinder Scar open again without redoing the elite fights (the Fracture Gate still asks for this life's elites). [13.18]
 - Tech: design notes for later lives (Recall XP, Remembered Paths, Head Start) are written down. [13.18]
 

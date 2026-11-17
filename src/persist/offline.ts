@@ -5,6 +5,7 @@ import { deriveSeed } from '../sim/rng.ts'
 import { gameDefs } from '../content/scenarios.ts'
 
 import { selectedHero } from './character.ts'
+import { recallXp } from './reincarnation.ts'
 import { isComplete } from './contracts.ts'
 import { advanceCrafting } from './crafting.ts'
 import { advanceTraining } from './training.ts'
@@ -370,7 +371,8 @@ function rerun(ctx: Ctx, auto: boolean): boolean {
   if (expedition === null) return false
   const routeId = expedition.id
   const seed = deriveSeed(expedition.seed, 7919)
-  lane.summary.xp += expedition.xpEarned ?? 0
+  const owner = selectedHero(ctx.save)
+  lane.summary.xp += owner === null ? (expedition.xpEarned ?? 0) : recallXp(owner, expedition.xpEarned ?? 0)
   ctx.save = settleExpedition(ctx.save)
   if (auto) {
     // The same refusal rule the live Auto run uses; a refusal switches Auto run off.

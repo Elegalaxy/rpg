@@ -6,6 +6,7 @@ import { gameDefs } from '../content/scenarios.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { legacyFromProgress, awardXp, xpFromEnemies, createProgress } from '../sim/progression.ts'
 import { stepExpedition } from '../sim/expedition.ts'
+import { cumulativeXpToReachLevel } from '../sim/stats.ts'
 
 import { selectedHero } from './character.ts'
 import { DEEP_POCKETS_COST } from './bag.ts'
@@ -23,12 +24,14 @@ import {
   legacyPreview,
   masteryRank,
   masteryXpFactor,
+  recallNeed,
+  recallXp,
   reincarnate,
   reincarnationBlock,
   scaleHeirlooms,
 } from './reincarnation.ts'
 import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
-import { settleExpedition } from './world.ts'
+import { outcomeStats, outcomeSummary, settleExpedition } from './world.ts'
 
 function heroSave(race: 'human' | 'elf' = 'human'): SaveData {
   const made = createHero(newSave(), { name: 'Ash', race, classId: 'warrior' })
@@ -408,5 +411,63 @@ describe('Emberwrought Tyrant Legacy bonus', () => {
     expect(hero(first).claimedBonuses).toContain('elite:emberwrought-tyrant')
     const again = { ...first, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true, defeatedEnemyIds: ['emberwrought-tyrant'] })) }
     expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:emberwrought-tyrant')).toBe(false)
+  })
+})
+
+describe('Recall XP (Step 13.18)', () => {
+  function recalling(level: number, peak: number | undefined, xpInto = 0) {
+    const base = hero(heroSave())
+    const progress = awardXp(base.progress, cumulativeXpToReachLevel(level) + xpInto)
+    return { ...base, progress, peakLevel: peak }
+  }
+
+  it('gives plain XP to a hero with no peak, a fresh hero, or a hero at or above the peak', () => {
+    expect(recallXp(recalling(1, undefined), 500)).toBe(500)
+    expect(recallXp(recalling(5, 5), 500)).toBe(500)
+    expect(recallXp(recalling(8, 5), 500)).toBe(500)
+    expect(recallNeed(recalling(1, undefined))).toBe(0)
+  })
+
+  it('doubles XP while all of it stays below the peak', () => {
+    const fresh = recalling(1, 10)
+    expect(recallNeed(fresh)).toBe(cumulativeXpToReachLevel(10))
+    expect(recallXp(fresh, 100)).toBe(200)
+    expect(recallXp(fresh, 0)).toBe(0)
+  })
+
+  it('doubles only the part that reaches the peak', () => {
+    const near = recalling(4, 5, 10)
+    const need = cumulativeXpToReachLevel(5) - (cumulativeXpToReachLevel(4) + 10)
+    expect(recallNeed(near)).toBe(need)
+    expect(recallXp(near, need / 2)).toBe(need)
+    const xp = need + 100
+    expect(recallXp(near, xp)).toBe(need + (xp - Math.ceil(need / 2)))
+    expect(recallXp(near, xp)).toBeGreaterThan(xp)
+    expect(recallXp(near, xp)).toBeLessThan(2 * xp)
+  })
+
+  it('records the peak at reincarnation and keeps the highest one', () => {
+    const first = ok(reincarnate(veteran(), 'hero-1', null))
+    const reached = hero(veteran()).progress.level
+    expect(hero(first).peakLevel).toBe(reached)
+    const lower = { ...first, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true })) }
+    const second = ok(reincarnate(lower, 'hero-1', null))
+    expect(hero(second).peakLevel).toBe(reached)
+    expect(() => assertSaveData(parseSave(serializeSave(second)).ok ? second : first)).not.toThrow()
+  })
+
+  it('settles a run with Recall and reports it in the summary and stats', () => {
+    const reborn = ok(reincarnate(veteran(), 'hero-1', null))
+    const started = startExpedition(hero(reborn), 'splintered-road', 1)
+    const expedition = { ...started, outcome: 'returned' as const, xpEarned: 100 }
+    const withRun = { ...reborn, expedition }
+    const stats = outcomeStats(expedition, hero(withRun))
+    expect(stats).toMatchObject({ xp: 200, recall: 100 })
+    expect(outcomeSummary(expedition, hero(withRun)).lines).toContain('Experience earned: 200 (Recall +100).')
+    expect(outcomeSummary(expedition).lines).toContain('Experience earned: 100.')
+    const settled = settleExpedition(withRun)
+    expect(hero(settled).progress.xp + cumulativeXpToReachLevel(hero(settled).progress.level)).toBe(
+      hero(reborn).progress.xp + cumulativeXpToReachLevel(hero(reborn).progress.level) + 200,
+    )
   })
 })

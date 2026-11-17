@@ -265,6 +265,8 @@ export type SavedHero = {
   fightRank: number
   /** A boss defeated this hero this life. Reincarnation needs it, and reincarnation clears it. */
   bossLossThisLife: boolean
+  /** The highest level this hero reached in a finished life. Recall doubles run XP below it. Absent until the first reincarnation after Step 13.18. */
+  peakLevel?: number
   /** Reincarnation currency this hero has not spent. Bound to the hero and kept across lives. */
   legacy: number
   /** Lives this hero has completed by reincarnating. Mastery rank is this, up to 10. */
@@ -547,6 +549,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   whole(value.craftXp, `${label} crafting experience`)
   whole(value.legacy, `${label} Legacy`)
   whole(value.lives, `${label} lives`)
+  check(value.peakLevel === undefined || (typeof value.peakLevel === 'number' && Number.isInteger(value.peakLevel) && value.peakLevel >= 1), `${label} peak level must be a whole number from 1`)
   stringList(value.claimedBonuses, `${label} claimed bonuses`)
   check(isRecord(value.purchases), `${label} purchases must be an object`)
   check(isRecord(value.purchases.attributeSeeds), `${label} attribute seeds must be an object`)

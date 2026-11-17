@@ -21,7 +21,7 @@ import { itemBase } from '../content/items.ts'
 import { EQUIPMENT_SLOT_IDS, applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress, refreshBoard } from './contracts.ts'
 import { defeatRecordId } from './crafting.ts'
-import { scaleHeirlooms } from './reincarnation.ts'
+import { recallXp, scaleHeirlooms } from './reincarnation.ts'
 import { openByMemory, zoneGateRecord } from './remembered.ts'
 import { withXp } from './training.ts'
 import { purseOf, reachMilestone, updatePurse, type SaveData, type SavedHero } from './save.ts'
@@ -417,7 +417,7 @@ export function settleExpedition(save: SaveData, now: number | null = null): Sav
       ? {
           ...hero,
           equipment: applyDurability(hero.equipment, wornEquipment(expedition)),
-          ...withXp(hero, expedition.xpEarned ?? 0),
+          ...withXp(hero, recallXp(hero, expedition.xpEarned ?? 0)),
           ...unlockedRanks(hero, expedition),
           bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
           ...(expedition.outcome === 'defeat' && now !== null && expedition.recoveryMs > 0 ? { recoveryUntil: now + expedition.recoveryMs } : {}),
@@ -509,7 +509,10 @@ export type GearWear = { slot: string; durability: number; maxDurability: number
 export type OutcomeStats = {
   title: string
   fightsWon: number
+  /** XP the hero gets, Recall included. */
   xp: number
+  /** The part of `xp` that Recall added (0 when none). */
+  recall: number
   /** The fight a retreat happened in, counted from 1, or null. */
   retreatedIn: number | null
   /** The fight that was lost, counted from 1, or null. */
@@ -531,13 +534,16 @@ export type OutcomeStats = {
   bossLoss: boolean
 }
 
-export function outcomeStats(expedition: ExpeditionState): OutcomeStats {
+export function outcomeStats(expedition: ExpeditionState, hero: SavedHero | null = null): OutcomeStats {
+  const earned = expedition.xpEarned ?? 0
+  const xp = hero === null ? earned : recallXp(hero, earned)
   const retreated = expedition.history.find((entry) => entry.outcome === 'retreat')
   const lost = expedition.history.find((entry) => entry.outcome === 'defeat')
   return {
     title: outcomeSummary(expedition).title,
     fightsWon: expedition.history.filter((entry) => entry.outcome === 'victory').length,
-    xp: expedition.xpEarned ?? 0,
+    xp,
+    recall: xp - earned,
     retreatedIn: retreated === undefined ? null : retreated.index + 1,
     defeatedIn: lost === undefined ? null : lost.index + 1,
     carriedGold: expedition.carriedGold,
@@ -555,12 +561,16 @@ export function outcomeStats(expedition: ExpeditionState): OutcomeStats {
 }
 
 /** What a finished expedition cost and gained, taken only from its state. */
-export function outcomeSummary(expedition: ExpeditionState): OutcomeSummary {
+export function outcomeSummary(expedition: ExpeditionState, hero: SavedHero | null = null): OutcomeSummary {
   const victories = expedition.history.filter((entry) => entry.outcome === 'victory').length
   const retreated = expedition.history.find((entry) => entry.outcome === 'retreat')
   const lines = [`Fights won: ${victories}.`]
   for (const rank of bossVictoryRanks(expedition)) lines.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
-  if ((expedition.xpEarned ?? 0) > 0) lines.push(`Experience earned: ${expedition.xpEarned}.`)
+  const earned = expedition.xpEarned ?? 0
+  if (earned > 0) {
+    const gained = hero === null ? earned : recallXp(hero, earned)
+    lines.push(`Experience earned: ${gained}${gained > earned ? ` (Recall +${gained - earned})` : ''}.`)
+  }
   const wear = gearWearOf(expedition)
   if (wear > 0) lines.push(`Gear wear: -${wear} durability on each worn piece.`)
   if (expedition.outcome === 'returned') {

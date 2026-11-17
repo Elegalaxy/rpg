@@ -14,6 +14,7 @@ import {
   heirloomAllowance,
   legacyPreview,
   masteryRank,
+  recallNeed,
   reincarnationBlock,
   skillSeedCost,
 } from '../../persist/reincarnation.ts'
@@ -70,6 +71,13 @@ export function Legacy() {
           </>
         ) : null}
       </p>
+
+      {hero.peakLevel !== undefined ? (
+        <p data-testid="recall">
+          Recall: <strong>{recallNeed(hero) > 0 ? `run XP counts double until level ${hero.peakLevel}` : `done, level ${hero.peakLevel} reached again`}</strong>. Peak level{' '}
+          <strong className="num">{hero.peakLevel}</strong>.
+        </p>
+      ) : null}
 
       <h3>Purchases</h3>
       <ul>

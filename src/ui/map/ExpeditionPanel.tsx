@@ -720,7 +720,8 @@ function RunDetails({ expedition }: { expedition: ExpeditionState }) {
 }
 
 function Ended({ expedition }: { expedition: ExpeditionState }) {
-  const stats = outcomeStats(expedition)
+  const { save } = useSaveStatus()
+  const stats = outcomeStats(expedition, selectedHero(save))
   const [error, setError] = useState<string | null>(null)
   const defeated = expedition.outcome === 'defeat'
   const lootTotal = stats.secured.reduce((sum, stack) => sum + stack.quantity, 0)
@@ -735,7 +736,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
       <h3 data-testid="expedition-ended">{stats.title}</h3>
       <KpiRow label="Outcome">
         <Kpi label="Fights won" value={stats.fightsWon} />
-        <Kpi label="XP earned" value={stats.xp} tone={stats.xp > 0 ? 'good' : undefined} />
+        <Kpi label="XP earned" value={stats.xp} tone={stats.xp > 0 ? 'good' : undefined} note={stats.recall > 0 ? `Recall +${stats.recall}` : undefined} />
         {defeated ? (
           <>
             <Kpi label="Rescue fee" value={`${stats.rescueFee} g`} tone="bad" note={`${stats.carriedGold} g left · debt ${stats.debt}`} />

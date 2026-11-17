@@ -5,7 +5,7 @@ import { startingRules } from '../content/supplies.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
 import { createProgress, legacyFromProgress } from '../sim/progression.ts'
-import type { Attributes } from '../sim/stats.ts'
+import { cumulativeXpToReachLevel, type Attributes } from '../sim/stats.ts'
 
 import { DEEP_POCKETS_COST } from './bag.ts'
 import { unionElites } from './remembered.ts'
@@ -33,6 +33,25 @@ export function masteryRank(hero: SavedHero): number {
 
 export function masteryXpFactor(rank: number): number {
   return 1 + MASTERY_XP_PER_RANK * rank
+}
+
+/** XP the hero still needs to reach their peak level from where they stand. 0 without a peak or at or above it. */
+export function recallNeed(hero: SavedHero): number {
+  const peak = hero.peakLevel
+  if (peak === undefined) return 0
+  const need = cumulativeXpToReachLevel(peak) - (cumulativeXpToReachLevel(hero.progress.level) + hero.progress.xp)
+  return need > 0 ? need : 0
+}
+
+/**
+ * Recall (Step 13.18): run XP counts double while the hero is below their peak level. The part that
+ * reaches the peak is doubled and the rest counts once. Drills and other XP are not passed through here.
+ */
+export function recallXp(hero: SavedHero, xp: number): number {
+  const need = recallNeed(hero)
+  if (need <= 0 || xp <= 0) return xp
+  if (2 * xp <= need) return 2 * xp
+  return need + (xp - Math.ceil(need / 2))
 }
 
 /** One-time bonuses this hero has earned and not yet been paid, from what they have reached this life. */
@@ -190,6 +209,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     drillsThisLevel: 0,
     legacy: hero.legacy + preview.total,
     lives,
+    peakLevel: Math.max(hero.peakLevel ?? 0, hero.progress.level),
     claimedBonuses: [...hero.claimedBonuses, ...preview.bonuses.map((bonus) => bonus.id)],
     equipment: starterEquipment(hero.id, hero.classId, lives),
     purse: { ...hero.purse, archive: nextArchive, contracts: [] },
