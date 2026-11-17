@@ -18,8 +18,8 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   encounterStart: [],
   priority: ['automation'],
   rulesChanged: ['automation'],
-  stackChanged: ['automation'],
-  manual: ['automation'],
+  stackChanged: ['automation', 'stacks'],
+  manual: ['automation', 'stacks'],
   action: ['automation'],
   hitRoll: ['rolls'],
   damage: ['damage', 'defeatCause'],
@@ -100,6 +100,10 @@ describe('log categories', () => {
     expect(eventMatchesCategories('priority', new Set(['automation', 'retreat']))).toBe(true)
     expect(eventMatchesCategories('statusTick', new Set(['statuses']))).toBe(true)
     expect(eventMatchesCategories('encounterStart', new Set(['automation']))).toBe(false)
+    expect(eventMatchesCategories('stackChanged', new Set(['stacks']))).toBe(true)
+    expect(eventMatchesCategories('stackChanged', new Set(['automation']))).toBe(true)
+    expect(eventMatchesCategories('action', new Set(['stacks']))).toBe(false)
+    expect(rowKind('stackChanged')).toBe('automation')
     expect(eventMatchesCategories('encounterEnd', new Set(['defeatCause']))).toBe(true)
   })
 

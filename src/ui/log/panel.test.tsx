@@ -191,6 +191,7 @@ describe('log filters', () => {
       'Hits & misses',
       'Effects',
       'Rule choices',
+      'Stack switches',
       'Resources',
       'Escapes',
       'Why it ended',

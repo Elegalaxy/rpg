@@ -149,6 +149,7 @@
 [data-kind='rolls'] { --dot: var(--info); }
 [data-kind='statuses'] { --dot: var(--warn); }
 [data-kind='automation'] { --dot: var(--accent); }
+[data-kind='stacks'] { --dot: color-mix(in srgb, var(--accent) 60%, var(--fg)); }
 [data-kind='resources'] { --dot: var(--gold); }
 [data-kind='retreat'] { --dot: color-mix(in srgb, var(--good) 50%, var(--fg)); }
 [data-kind='defeatCause'] { --dot: var(--fg); }

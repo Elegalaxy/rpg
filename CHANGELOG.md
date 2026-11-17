@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Improved: the fight log has a Stack switches filter that shows only the moments the hero changed rule stack, automatically or by hand. Those lines still show under Rule choices too. [13.19]
+
 ## 0.15.0 · 2026-11-17 · Combat setup helpers (Step 13.19)
 
 - Improved: the preparation screen names Auto run and AFK as separate groups, tags who each setting applies to, and drops the long explanations.
