@@ -9,6 +9,7 @@ import {
   draftsFromRows,
   draftsFromStacks,
   ruleSkillIds,
+  startingRuleDrafts,
   summarizeTrigger,
   validateRules,
   validateStacks,
@@ -53,6 +54,7 @@ export function RulesForm({
   const [openRule, setOpenRule] = useState<number | null>(initialOpenRule)
   const [removedRule, setRemovedRule] = useState<{ tab: string; index: number; row: RowDraft } | null>(null)
   const [errors, setErrors] = useState<string[]>([])
+  const [beforeReset, setBeforeReset] = useState<RowDraft[] | null>(null)
   const [saved, setSaved] = useState(false)
   const skillIds = ruleSkillIds(hero)
   const [pickerOpen, setPickerOpen] = useState(initialPicker)
@@ -142,6 +144,7 @@ export function RulesForm({
     setErrors(problem)
     setSaved(problem.length === 0)
     setRemovedRule(null)
+    setBeforeReset(null)
   }
 
   const liveRules = validateRules(hero, rows)
@@ -318,7 +321,37 @@ export function RulesForm({
       </div>{' '}
       <button type="button" disabled={!liveOk} onClick={save}>
         Save rules
-      </button>
+      </button>{' '}
+      {beforeReset === null ? (
+        <button
+          type="button"
+          data-testid="reset-rules"
+          title="Replace the default rules with the ones this class starts with. Nothing changes until you press Save rules. Rule stacks are kept."
+          onClick={() => {
+            touch()
+            setBeforeReset(rows)
+            setRows(startingRuleDrafts(hero))
+            setTab(DEFAULT_TAB)
+            setOpenRule(null)
+            setRemovedRule(null)
+          }}
+        >
+          Reset to starting rules
+        </button>
+      ) : (
+        <button
+          type="button"
+          data-testid="undo-reset-rules"
+          onClick={() => {
+            touch()
+            setRows(beforeReset)
+            setBeforeReset(null)
+            setOpenRule(null)
+          }}
+        >
+          Undo reset
+        </button>
+      )}
       {!liveOk ? (
         <ul role="alert" aria-label="Rule problems">
           {liveErrors.map((message) => (

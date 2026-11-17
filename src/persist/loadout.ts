@@ -1,5 +1,6 @@
+import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { skills } from '../content/skills.ts'
-import { RULE_SUPPLY_IDS } from '../content/supplies.ts'
+import { RULE_SUPPLY_IDS, startingRules } from '../content/supplies.ts'
 import { statuses } from '../content/statuses.ts'
 import { enemies } from '../content/enemies.ts'
 import { MAX_PRIORITY_ROWS, MAX_RULE_STACKS, MAX_STACK_NAME_LENGTH, parsePriorityRules, parseRuleStacks, STATUS_IDS } from '../sim/automation.ts'
@@ -381,6 +382,15 @@ export function draftsFromRows(rows: readonly PriorityRow[]): RowDraft[] {
 }
 
 /** Skills a rule row may name for this hero: the equipped four, the temporary slot skills, and the supplies a rule uses. */
+/**
+ * The rules a brand-new hero of this class starts with (supply rules, then the class rules), kept to the skills this
+ * hero can use now, so a reset never writes a rule that the rule check would refuse.
+ */
+export function startingRuleDrafts(hero: SavedHero): RowDraft[] {
+  const allowed = ruleSkillIds(hero)
+  return draftsFromRows(startingRules(referenceLoadoutFor(hero.classId).priorityRows)).filter((row) => allowed.includes(row.skillId))
+}
+
 export function ruleSkillIds(hero: SavedHero): string[] {
   const ids = [...hero.progress.loadout, ...RULE_SUPPLY_IDS]
   const nodes = hero.progress.allocatedNodeIds

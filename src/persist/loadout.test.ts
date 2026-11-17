@@ -19,6 +19,7 @@ import {
   saveLoadout,
   saveRules,
   skillName,
+  startingRuleDrafts,
   summarizeRule,
   validateRules,
   type RowDraft,
@@ -335,5 +336,28 @@ describe('Batch C rule conditions', () => {
     expect(validateRules(h, rows).ok).toBe(true)
     expect(validateRules(h, [...rows, draft(first!)]).ok).toBe(false)
     expect(validateRules(h, draftsFromRows(h.priorityRows)).ok).toBe(true)
+  })
+})
+
+describe('starting rules for a reset', () => {
+  it('gives every class its starting rules, all valid for a fresh hero', () => {
+    for (const classId of HERO_CLASSES) {
+      const save = heroSave(classId)
+      const hero = selectedHero(save)
+      if (hero === null) throw new Error('no hero')
+      const drafts = startingRuleDrafts(hero)
+      expect(drafts.length, classId).toBeGreaterThan(0)
+      expect(draftsFromRows(hero.priorityRows), classId).toEqual(drafts)
+      expect(validateRules(hero, drafts).ok, classId).toBe(true)
+    }
+  })
+
+  it('keeps only rules whose skills the hero can use', () => {
+    const save = heroSave('warrior')
+    const hero = selectedHero(save)
+    if (hero === null) throw new Error('no hero')
+    const drafts = startingRuleDrafts(hero)
+    const allowed = ruleSkillIds(hero)
+    expect(drafts.every((row) => allowed.includes(row.skillId))).toBe(true)
   })
 })

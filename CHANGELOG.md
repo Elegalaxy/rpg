@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: a Reset to starting rules button in the combat setup puts the default rules back to what the class starts with (only the skills the hero can use). Nothing changes until you press Save rules, and Undo reset brings your rules back. Rule stacks are kept. [13.19]
 - Improved: opening a rule in the combat setup now shows what its skill costs, its cooldown and what it does, so you no longer have to go back to the Skills tab. [13.19]
 
 ## 0.14.0 · 2026-11-17 · Later lives (Step 13.18)

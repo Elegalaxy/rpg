@@ -74,6 +74,8 @@ describe('rules screen templates', () => {
     const { save, hero } = setup()
     const html = renderToStaticMarkup(<RulesForm hero={hero} save={save} />)
     expect(html).toContain('>Templates<')
+    expect(html).toContain('data-testid="reset-rules"')
+    expect(html).not.toContain('undo-reset-rules')
     expect(html).not.toContain('Rule templates')
     const open = renderToStaticMarkup(<RulesForm hero={hero} save={save} initialPicker />)
     expect(open).toContain('aria-label="Rule templates"')
