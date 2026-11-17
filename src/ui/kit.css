@@ -631,6 +631,14 @@ fieldset.away-box {
   max-width: 100%;
 }
 
+.prep-who {
+  margin-left: var(--s2);
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 ul.away-facts {
   margin: 0;
   padding-left: 1.2rem;

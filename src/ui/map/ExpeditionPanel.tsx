@@ -57,6 +57,11 @@ const CURSE_LABELS: { [curse: string]: string } = {
   'soul-debt': 'Soul Debt',
 }
 
+/** A short tag: which kind of run this control belongs to. */
+function PrepWho({ of }: { of: string }) {
+  return <small className="prep-who">{of}</small>
+}
+
 function PreparationForm({ hero }: { hero: SavedHero }) {
   const status = useSaveStatus()
   const [draft, setDraft] = useState<PreparationDraft>(() => {
@@ -99,8 +104,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
     <section aria-label="Preparation">
       <h3>Preparation — {hero.name}</h3>
       <fieldset className="away-box" data-testid="every-run-box">
-        <legend>Every run</legend>
-        <p className="muted">Used by every run you start, whether you play it by hand, with Auto run or while you are away.</p>
+        <legend>
+          Every run <PrepWho of="Always" />
+        </legend>
         <div className="controls">
           <label>
             Retreat when HP is at most (%){' '}
@@ -243,12 +249,41 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </button>
         ) : null}
       </fieldset>
+      <fieldset className="away-box" data-testid="auto-run-box">
+        <legend>
+          Auto run <PrepWho of="Live · AFK" />
+        </legend>
+        {getAutoNotice() === null ? null : (
+          <p className="muted" role="status" data-testid="auto-run-notice">
+            {getAutoNotice()}
+          </p>
+        )}
+        <div className="controls">
+          <label>
+            <input type="checkbox" aria-label="Auto run" checked={draft.autoRun === true} onChange={(event) => patch({ autoRun: event.target.checked })} />
+            Play the run for me, then rerun the route
+          </label>
+          <label>
+            Stop after total fights{' '}
+            <input
+              aria-label="Auto run fight limit"
+              value={draft.autoRunMaxFights ?? ''}
+              inputMode="numeric"
+              size={5}
+              placeholder="No limit"
+              onChange={(event) => patch({ autoRunMaxFights: event.target.value })}
+            />
+          </label>
+          <Help label="About Auto run">
+            Uses the orders below. Off: you press Push on, and a run that is out waits there when you leave. On: the hero pushes on, walks home, and reruns the
+            route, while you watch and when you leave. {AUTO_RUN_MIN}–{AUTO_RUN_MAX} total fights, empty for none; then it walks home and switches off.
+          </Help>
+        </div>
+      </fieldset>
       <fieldset className="away-box" data-testid="standing-orders-box">
-        <legend>Standing orders</legend>
-        <p className="muted">
-          Used by Auto run (while you watch and while you are away) and by a run that starts when you leave: what the hero does between fights. A run you play by
-          hand with Auto run off ignores them, except the fight limit, which applies while you watch and while you are away.
-        </p>
+        <legend>
+          Orders <PrepWho of="Auto · AFK" />
+        </legend>
         <div className="controls">
           <label>
             Push on while HP is at least (%){' '}
@@ -273,9 +308,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
               onChange={(event) => patch({ stopAfterFights: event.target.value })}
             />
           </label>
+          <PrepWho of="also Live" />
           <Help label="About the fight limit">
-            {STOP_AFTER_MIN} to {STOP_AFTER_MAX}. Empty means no limit. After this many fights in one run the hero walks home and secures the loot instead of pushing on. It also
-            applies while you watch. A repeated run starts counting again.
+            {STOP_AFTER_MIN}–{STOP_AFTER_MAX}, empty for none. Walks home after this many fights in one run, including while you watch. A new run counts again.
           </Help>
         </div>
         <div className="controls">
@@ -288,55 +323,17 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             </select>
           </label>
           <Help label="About a full bag">
-            The bag counts as full when fewer than 4 room is free. Walk home returns and secures the loot. Hold and wait stops the run at that point, also while you
-            are away, until you come back and choose. Keep going ignores a full bag and pushes on: gold, XP and momentum still count, but loot that does not fit is lost.
-          </Help>
-        </div>
-      </fieldset>
-      <fieldset className="away-box" data-testid="auto-run-box">
-        <legend>Auto run (while you watch and while you are away)</legend>
-        <p className="muted">
-          Uses your standing orders and reruns this route on its own, so you can farm without pressing Push on. It also keeps your run going when you leave. With
-          Auto run off, the hero waits at Push on when you leave.
-        </p>
-        {getAutoNotice() === null ? null : (
-          <p className="muted" role="status" data-testid="auto-run-notice">
-            {getAutoNotice()}
-          </p>
-        )}
-        <div className="controls">
-          <label>
-            <input type="checkbox" aria-label="Auto run" checked={draft.autoRun === true} onChange={(event) => patch({ autoRun: event.target.checked })} />
-            Auto run: keeps pushing on and reruns this route
-          </label>
-          <label>
-            Stop after total fights{' '}
-            <input
-              aria-label="Auto run fight limit"
-              value={draft.autoRunMaxFights ?? ''}
-              inputMode="numeric"
-              size={5}
-              placeholder="No limit"
-              onChange={(event) => patch({ autoRunMaxFights: event.target.value })}
-            />
-          </label>
-          <Help label="About Auto run">
-            While on, the hero decides after each fight, live and while you are away: it walks home when the fight limit or the push-on HP above is reached or
-            the bag is nearly full (or waits, if the bag order above says so), otherwise it pushes on. When a run ends safely, the same route starts again by itself,
-            on any route you can start (cleared or not). A defeat, a refused start (for example a piece at 0 durability) or a missing supply stops it, also while you are away. The total fight limit ({AUTO_RUN_MIN} to {AUTO_RUN_MAX}, empty for none) counts fights since
-            Auto run was switched on, over repeated runs; at the limit the hero walks home and Auto run switches itself off. You can switch it off at any moment.
+            Full means fewer than 4 room left. Hold also waits while you are away. Keep going still earns gold and XP; loot that does not fit is lost.
           </Help>
         </div>
       </fieldset>
       <fieldset className="away-box" data-testid="away-box">
-        <legend>While you are away</legend>
-        <p className="muted">
-          When you close the page or hide the tab, Auto run decides whether your run keeps going (for up to 8 hours). With Auto run off, the hero finishes the
-          fight in progress and waits at Push on until you are back. These settings decide whether a run starts when you have none.
-        </p>
+        <legend>
+          AFK <PrepWho of="When you leave" />
+        </legend>
         <div className="controls">
           <label>
-            Start a run when I leave{' '}
+            If I have no run, start{' '}
             <select aria-label="Away route" value={draft.awayRouteId} onChange={(event) => patch({ awayRouteId: event.target.value })}>
               <option value="">Never</option>
               {Object.values(routes).map((route) => (
@@ -348,15 +345,13 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             </select>
           </label>
           <Help label="About starting while away">
-            Only starts a run when you have no run at all when you close the page or hide the tab (for at least 5 seconds): not one that is out, and not a
-            finished one waiting for you on the Map. The hero starts this route on its own, using the packed supplies and carried gold above. The route must be
-            one the hero has cleared. A run started this way follows the standing orders and the repeat settings below.
+            Only if you have no run when you leave (for at least 5 seconds). The route must be cleared. That run uses the pack, gold and orders above.
           </Help>
         </div>
         <div className="controls">
           <label>
             <input type="checkbox" checked={draft.repeatRoute} onChange={(event) => patch({ repeatRoute: event.target.checked })} />
-            Run a cleared route again
+            Repeat that AFK route
           </label>
           <label>
             Run limit{' '}
@@ -370,34 +365,12 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </label>
         </div>
         <p data-testid="away-plan">
-          <strong>What will happen:</strong>{' '}
-          {draft.autoRun === true
-            ? 'With Auto run on, a run that is out keeps going when you leave: '
-            : 'With Auto run off, a run that is out finishes the fight in progress and waits at Push on until you are back'}
-          {draft.autoRun === true ? (
-            <>
-              after each fight the hero {draft.pushOnPercent.trim() === '' ? 'pushes on' : `pushes on if HP is at least ${draft.pushOnPercent}%`}{' '}
-              {draft.bagFullOrder === 'keep' ? '' : 'and the bag is not nearly full, '}otherwise {draft.bagFullOrder === 'ask' ? 'waits for you with the run held' : 'walks home'}.{' '}
-              {(draft.stopAfterFights ?? '').trim() === '' ? '' : `A run walks home after ${draft.stopAfterFights?.trim()} fights. `}
-              Back in town it runs the same route again, on any route you can start.{' '}
-            </>
-          ) : (
-            <>
-              {(draft.stopAfterFights ?? '').trim() === '' ? '' : `, unless it reaches ${draft.stopAfterFights?.trim()} fights first, then it walks home`}.{' '}
-            </>
-          )}
+          {draft.autoRun === true ? 'Leave now: the run keeps going.' : 'Leave now: finishes the fight, then waits at Push on.'}{' '}
           {draft.awayRouteId === ''
-            ? 'If you have no run when you leave, nothing starts.'
-            : `If you have no run when you leave, the hero starts ${routes[draft.awayRouteId]?.name ?? 'that route'}${
-                draft.autoRun === true ? '' : `, pushes on while HP is at least ${draft.pushOnPercent.trim() === '' ? 'your limit' : `${draft.pushOnPercent}%`}, and ${draft.repeatRoute ? 'runs it again while every node is cleared' : 'stops after the first safe return'}`
-              }.`}
+            ? 'No run: nothing starts.'
+            : `No run: starts ${routes[draft.awayRouteId]?.name ?? 'that route'}${draft.autoRun === true || !draft.repeatRoute ? '.' : ' and repeats it.'}`}{' '}
+          AFK fights drop half loot and gold.
         </p>
-        <ul className="away-facts">
-          <li>Your retreat setting still applies in every fight.</li>
-          <li>It stops for good on a defeat, when a piece is at 0 durability or the packed supplies run out, or after 8 hours.</li>
-          <li>Fights won while away give half the loot and gold. XP, contracts and discoveries are not reduced.</li>
-          <li>Heroes you did not select keep going only on their own away route or with their own Auto run on; the others wait. Every hero keeps crafting.</li>
-        </ul>
       </fieldset>
       <button type="button" disabled={!checked.ok} onClick={save}>
         Save preparation
