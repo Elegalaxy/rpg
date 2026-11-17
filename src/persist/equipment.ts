@@ -56,9 +56,23 @@ export function statLines(stats: HeroDerivedStats): StatLine[] {
 /** Stats where a lower number is the better one. */
 const LOWER_IS_BETTER = ['Base action time']
 
-/** Whether a change in a stat helps the hero. Always true or false, since a change has a direction. */
+/** One decimal, matching what the shop and Equipment screens print. */
+function shownStat(value: number): number {
+  return Math.round(value * 10) / 10
+}
+
+/** Whether a change in a stat helps the hero. A difference that rounds to 0.0 is neither. */
+export function changeKind(label: string, before: number, after: number): 'better' | 'worse' | 'same' {
+  const left = shownStat(before)
+  const right = shownStat(after)
+  if (left === right) return 'same'
+  const improved = LOWER_IS_BETTER.includes(label) ? right < left : right > left
+  return improved ? 'better' : 'worse'
+}
+
+/** Whether a change in a stat helps the hero. False when it is worse or unchanged after rounding. */
 export function changeIsBetter(label: string, before: number, after: number): boolean {
-  return LOWER_IS_BETTER.includes(label) ? after < before : after > before
+  return changeKind(label, before, after) === 'better'
 }
 
 export type EquipPreview = {
@@ -152,7 +166,7 @@ export function previewEquip(save: SaveData, heroId: string, itemId: string, slo
   const next = statLines(after)
   const changes = lines.flatMap((line, index) => {
     const changed = next[index]
-    return changed !== undefined && changed.value !== line.value
+    return changed !== undefined && shownStat(changed.value) !== shownStat(line.value)
       ? [{ label: line.label, before: line.value, after: changed.value, unit: line.unit }]
       : []
   })

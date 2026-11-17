@@ -1,4 +1,4 @@
-import { changeIsBetter, type EquipPreview } from '../../persist/equipment.ts'
+import { changeKind, type EquipPreview } from '../../persist/equipment.ts'
 
 /** One decimal at most, like the Equipment screen's stat panel; whole numbers print without a decimal. */
 function format(value: number, unit: string): string {
@@ -36,16 +36,23 @@ export function GearChanges({ preview, empty }: { preview: EquipPreview; empty: 
       )}
       <span className="change-list">
         {preview.changes.length === 0 && extras.length === 0 && notes.length === 0 ? <span>No stat change.</span> : null}
-        {preview.changes.map((change) => (
-          <span key={change.label} className={changeIsBetter(change.label, change.before, change.after) ? 'change-better' : 'change-worse'}>
-            {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit, true)})
-          </span>
-        ))}
-        {extras.map((change) => (
-          <span key={change.label} className={change.after > change.before ? 'change-better' : 'change-worse'} data-testid="equip-extra">
-            {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit, false)})
-          </span>
-        ))}
+        {preview.changes.map((change) => {
+          const kind = changeKind(change.label, change.before, change.after)
+          if (kind === 'same') return null
+          return (
+            <span key={change.label} className={kind === 'better' ? 'change-better' : 'change-worse'}>
+              {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit, true)})
+            </span>
+          )
+        })}
+        {extras.map((change) => {
+          if (round1(change.before) === round1(change.after)) return null
+          return (
+            <span key={change.label} className={change.after > change.before ? 'change-better' : 'change-worse'} data-testid="equip-extra">
+              {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)} ({delta(change.before, change.after, change.unit, false)})
+            </span>
+          )
+        })}
         {notes.map((note) => (
           <span key={note} className={note.startsWith('Gains') ? 'change-better' : 'change-worse'}>
             {note}

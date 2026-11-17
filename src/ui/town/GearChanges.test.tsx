@@ -31,4 +31,20 @@ describe('GearChanges', () => {
     expect(html).toContain('change-worse')
     expect(html).toContain('change-better')
   })
+
+  it('does not paint a 0.0 evasion change green', () => {
+    const html = renderToStaticMarkup(
+      <GearChanges
+        preview={{
+          ...preview,
+          changes: [{ label: 'Evasion', before: 43.80000000000001, after: 43.80000000000003, unit: '' }],
+          extras: [],
+          notes: [],
+        }}
+        empty="none"
+      />,
+    )
+    expect(html).not.toContain('change-better')
+    expect(html).not.toContain('43.8 → 43.8')
+  })
 })

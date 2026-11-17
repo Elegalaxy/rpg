@@ -12,6 +12,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ## Unreleased
 
 - Improved: the preparation screen names Auto run and AFK as separate groups, tags who each setting applies to, and drops the long explanations.
+- Fixed: a shop compare that rounds to 0.0 (for example Evasion 43.8 → 43.8) is no longer shown as a green upgrade.
 - New: two rule templates for every class, Drink when low and Ward with supplies, that set up your healing and barrier supplies. Pick the HP % and they are ready. [13.19]
 - New: a Reset to starting rules button in the combat setup puts the default rules back to what the class starts with (only the skills the hero can use). Nothing changes until you press Save rules, and Undo reset brings your rules back. Rule stacks are kept. [13.19]
 - Improved: opening a rule in the combat setup now shows what its skill costs, its cooldown and what it does, so you no longer have to go back to the Skills tab. [13.19]

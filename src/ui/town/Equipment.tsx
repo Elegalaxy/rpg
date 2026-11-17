@@ -4,7 +4,7 @@ import { purseOf } from '../../persist/save.ts'
 
 import { itemBase, itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
-import { changeIsBetter, previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
+import { changeKind, previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
 import { bagCapacity } from '../../persist/bag.ts'
 import { EQUIPMENT_SLOT_IDS, MODIFIER_STACK_CAP, gearGaps, modifierCapNotes, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
@@ -175,11 +175,15 @@ export function Equipment() {
                                   <small className="row-note">No stat changes.</small>
                                 ) : (
                                   <small className="row-note change-list" data-testid="equip-changes">
-                                    {preview.changes.map((change) => (
-                                      <span key={change.label} className={changeIsBetter(change.label, change.before, change.after) ? 'change-better' : 'change-worse'}>
-                                        {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)}
-                                      </span>
-                                    ))}
+                                    {preview.changes.map((change) => {
+                                      const kind = changeKind(change.label, change.before, change.after)
+                                      if (kind === 'same') return null
+                                      return (
+                                        <span key={change.label} className={kind === 'better' ? 'change-better' : 'change-worse'}>
+                                          {change.label} {format(change.before, change.unit)} → {format(change.after, change.unit)}
+                                        </span>
+                                      )
+                                    })}
                                   </small>
                                 )}
                               </Row>
