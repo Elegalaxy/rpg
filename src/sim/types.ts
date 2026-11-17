@@ -1096,6 +1096,7 @@ export type LogEvent =
   | EscapeEvent
   | RaceEvent
   | SkillDodgeEvent
+  | WardEvent
   | SupplyUseEvent
   | SupplyTheftEvent
 
@@ -1138,6 +1139,22 @@ export type SkillDodgeEvent = {
   skillName: string
   /** Present when part of the damage still landed (the skill set a dodged-damage share). */
   damageFraction?: number
+}
+
+/** A supply's ward took a telegraphed enemy attack: no damage and no statuses, or only a share of the damage when `damageFraction` is above 0. */
+export type WardEvent = {
+  type: 'ward'
+  timeMs: number
+  actorId: string
+  actorName: string
+  sourceId: string
+  sourceName: string
+  skillId: string
+  skillName: string
+  /** The supply's name. */
+  wardName: string
+  /** Share of each damage effect that still lands. 0: none. */
+  damageFraction: number
 }
 
 export type RaceEvent = {
@@ -1339,6 +1356,17 @@ export type SkillDodgeEffect = {
 }
 
 /**
+ * Supplies only: ward the hero against the next telegraphed enemy skill with a damage effect that
+ * resolves within this window. The skill deals no damage and applies no statuses; an elite or boss
+ * still deals `eliteDamageFraction` of each damage effect (never statuses). One skill spends it.
+ */
+export type TelegraphWardEffect = {
+  kind: 'telegraphWard'
+  durationSeconds: number
+  eliteDamageFraction: number
+}
+
+/**
  * Remove every stack of the listed statuses from the user, in the listed order. `limit` stops after
  * that many statuses were removed; omitted removes every listed one present.
  */
@@ -1370,6 +1398,7 @@ export type SkillEffect =
   | DefenseBonusEffect
   | CleanseEffect
   | SkillDodgeEffect
+  | TelegraphWardEffect
   | StealSupplyEffect
 
 export type SkillRequirement = {
@@ -1492,6 +1521,8 @@ export type CombatHero = CombatActor & {
   supplies: string[]
   /** A readied skill dodge lasts through this time. Null when none is ready. */
   skillDodgeUntilMs: number | null
+  /** A supply's ward lasts through this time and spends on the next telegraphed damaging skill. Null when none is up. */
+  telegraphWard: { untilMs: number; eliteDamageFraction: number; name: string } | null
   /** Supplies an enemy took this fight. A win returns them. */
   stolenSupplies: string[]
   /** Special arrows already fired this expedition. Null when the setup omits the counter. */

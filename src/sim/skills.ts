@@ -82,6 +82,7 @@ export const SKILL_EFFECT_KINDS = [
   'defenseBonus',
   'cleanse',
   'skillDodge',
+  'telegraphWard',
   'stealSupply',
 ] as const
 
@@ -473,6 +474,14 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     assertPositive(value.durationSeconds, `skill '${skillId}' dodge duration`)
     return { kind, durationSeconds: value.durationSeconds }
   }
+  if (kind === 'telegraphWard') {
+    assertPositive(value.durationSeconds, `skill '${skillId}' ward duration`)
+    assertFiniteNumber(value.eliteDamageFraction, `skill '${skillId}' ward elite damage fraction`)
+    if (value.eliteDamageFraction < 0 || value.eliteDamageFraction >= 1) {
+      throw new Error(`skill '${skillId}' ward elite damage fraction must be at least 0 and less than 1, received ${describeValue(value.eliteDamageFraction)}`)
+    }
+    return { kind, durationSeconds: value.durationSeconds, eliteDamageFraction: value.eliteDamageFraction }
+  }
   if (kind === 'cleanse') {
     const ids = value.statusIds
     if (!Array.isArray(ids) || ids.length === 0) throw new Error(`skill '${skillId}' cleanse needs status ids`)
@@ -549,7 +558,7 @@ export function assertSkillDef(value: unknown): asserts value is SkillDef {
     throw new Error(`skill '${id}' supply must be true or omitted, received ${describeValue(value.supply)}`)
   }
   for (const effect of value.effects as { kind: string }[]) {
-    if (value.supply === true && effect.kind !== 'heal' && effect.kind !== 'cleanse' && effect.kind !== 'barrier') {
+    if (value.supply === true && effect.kind !== 'heal' && effect.kind !== 'cleanse' && effect.kind !== 'barrier' && effect.kind !== 'telegraphWard') {
       throw new Error(`supply '${id}' can only heal, cleanse, or ward, received '${effect.kind}'`)
     }
   }
@@ -1209,6 +1218,9 @@ export function applySkillEffects(
       effect.kind === 'stealSupply'
     ) {
       throw new Error(`skill '${skill.id}' effect '${effect.kind}' is resolved by enemy actions`)
+    }
+    if (effect.kind === 'telegraphWard') {
+      throw new Error(`skill '${skill.id}' effect 'telegraphWard' is for supplies only`)
     }
     if (effect.kind === 'cleanse') {
       cleanseListed(state, hero, scheduledMs, effect.statusIds, effect.limit)

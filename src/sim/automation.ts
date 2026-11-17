@@ -491,6 +491,8 @@ function enemyTargets(state: CombatState, skill: SkillDef): CombatActor[] {
 
 /** A supply row with none of that supply left in the slots. */
 export const SUPPLY_NONE_LEFT_REASON = 'none left'
+/** Logged when a supply that wards off a telegraph is skipped because a ward is already up. */
+export const WARD_UP_REASON = 'ward already up'
 
 function priorityEvent(
   hero: CombatHero,
@@ -523,7 +525,14 @@ export function skipReason(
   skill: SkillDef,
   timeMs: number,
 ): string | null {
-  if (skill.supply === true) return hero.supplies.includes(skill.id) ? null : SUPPLY_NONE_LEFT_REASON
+  if (skill.supply === true) {
+    if (!hero.supplies.includes(skill.id)) return SUPPLY_NONE_LEFT_REASON
+    const ward = hero.telegraphWard
+    if (ward !== null && ward.untilMs >= timeMs && skill.effects.some((effect) => effect.kind === 'telegraphWard')) {
+      return WARD_UP_REASON
+    }
+    return null
+  }
   if (!skillEquipped(hero, skill.id)) return 'not equipped'
   if (!skillOffCooldown(hero, skill, timeMs)) return 'on cooldown'
   if (hero.classId === 'cleric') syncCleric(state)

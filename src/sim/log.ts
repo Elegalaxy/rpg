@@ -399,6 +399,13 @@ export function formatEvent(event: LogEvent): string {
         return `At ${seconds(event.timeMs)}s, ${event.actorName} partly dodges ${event.sourceName}'s ${event.skillName}: ${Math.round(event.damageFraction * 100)}% of the damage lands, no statuses.`
       }
       return `At ${seconds(event.timeMs)}s, ${event.actorName} dodges ${event.sourceName}'s ${event.skillName}: no damage and no statuses.`
+    case 'ward': {
+      const share =
+        event.damageFraction > 0
+          ? `${Math.round(event.damageFraction * 100)}% of the damage lands, no statuses.`
+          : 'no damage and no statuses.'
+      return `At ${seconds(event.timeMs)}s, ${event.actorName}'s ${event.wardName} wards off ${event.sourceName}'s ${event.skillName}: ${share}`
+    }
     case 'escape': {
       const result = event.success ? 'success' : 'failure'
       const reason = event.requested === true ? 'on request' : `threshold ${event.thresholdPercent}%`

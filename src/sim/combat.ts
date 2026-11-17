@@ -1311,6 +1311,37 @@ function spendSkillDodge(state: CombatState, actor: CombatActor, skill: EnemySki
   return true
 }
 
+/**
+ * A supply's ward takes the next telegraphed enemy skill that has a damage effect and reaches the hero in time.
+ * Returns the share of each damage effect that still lands (0: none), or null when nothing was warded off.
+ * Elites and bosses let `eliteDamageFraction` through; a skill's own `dodgedDamageFraction` is a floor.
+ */
+function spendTelegraphWard(state: CombatState, actor: CombatActor, skill: EnemySkillDef, timeMs: number): number | null {
+  const hero = state.hero
+  const ward = hero.telegraphWard
+  if (ward === null || !hero.alive) return null
+  if (ward.untilMs < timeMs) {
+    hero.telegraphWard = null
+    return null
+  }
+  if (!skill.effects.some((effect) => effect.kind === 'damage')) return null
+  hero.telegraphWard = null
+  const share = Math.max(actor.elite || actor.boss ? ward.eliteDamageFraction : 0, skill.dodgedDamageFraction ?? 0)
+  state.log.push({
+    type: 'ward',
+    timeMs,
+    actorId: hero.id,
+    actorName: hero.name,
+    sourceId: actor.id,
+    sourceName: actor.name,
+    skillId: skill.id,
+    skillName: skill.name,
+    wardName: ward.name,
+    damageFraction: share,
+  })
+  return share
+}
+
 /** A hit that steals: with the chance, take the last carried supply, once per enemy per fight. No roll is spent when nothing can be taken. */
 function stealSupply(state: CombatState, thief: CombatActor, chance: number, timeMs: number): void {
   const hero = state.hero
@@ -1367,17 +1398,20 @@ function applyEnemySkill(
   actor: CombatActor,
   skill: EnemySkillDef,
   timeMs: number,
+  telegraphed = false,
 ): void {
   const deaths: PendingDeath[] = []
   const view = enemySkillView(skill)
   const hpDamageDealt: { [targetId: string]: number } = {}
   const ally = skill.allyTarget === undefined ? null : selectAlly(state.enemies, actor, skill.allyTarget, timeMs)
   const dodged = spendSkillDodge(state, actor, skill, timeMs)
-  const dodgedShare = dodged ? (skill.dodgedDamageFraction ?? 0) : 1
+  const wardShare = dodged || !telegraphed ? null : spendTelegraphWard(state, actor, skill, timeMs)
+  const blocked = dodged || wardShare !== null
+  const dodgedShare = dodged ? (skill.dodgedDamageFraction ?? 0) : (wardShare ?? 1)
   for (const effect of skill.effects) {
     if (state.outcome !== 'ongoing') break
-    if (dodged && (effect.kind === 'applyStatus' || effect.kind === 'stealSupply')) continue
-    if (dodged && effect.kind === 'damage' && dodgedShare <= 0) continue
+    if (blocked && (effect.kind === 'applyStatus' || effect.kind === 'stealSupply')) continue
+    if (blocked && effect.kind === 'damage' && dodgedShare <= 0) continue
     if (effect.kind === 'stealSupply') {
       stealSupply(state, actor, effect.chance, timeMs)
       continue
@@ -1630,7 +1664,7 @@ function resolveOneTelegraph(state: CombatState, defs: GameDefs, actor: CombatAc
     cooldownReadyMs,
   })
   if (state.outcome !== 'ongoing' || !state.hero.alive) return
-  applyEnemySkill(state, defs, actor, skill, timeMs)
+  applyEnemySkill(state, defs, actor, skill, timeMs, true)
   if (actor.alive && state.outcome === 'ongoing') applyForcedRecovery(state, actor, skill, timeMs)
 }
 
@@ -1677,7 +1711,7 @@ function resolveOneReaction(state: CombatState, defs: GameDefs, actor: CombatAct
     cooldownReadyMs: null,
   })
   if (state.outcome !== 'ongoing' || !actor.alive || !state.hero.alive) return
-  applyEnemySkill(state, defs, actor, skill, timeMs)
+  applyEnemySkill(state, defs, actor, skill, timeMs, true)
 }
 
 function resolveReactions(state: CombatState, defs: GameDefs, stepStart: number, stepEnd: number): void {
@@ -1934,6 +1968,14 @@ function resolveSupply(state: CombatState, skill: SkillDef, scheduled: number): 
     }
     if (effect.kind === 'cleanse') {
       cleanseListed(state, hero, scheduled, effect.statusIds, effect.limit)
+      continue
+    }
+    if (effect.kind === 'telegraphWard') {
+      hero.telegraphWard = {
+        untilMs: scheduled + roundDurationMs(effect.durationSeconds, `${skill.id} ward`),
+        eliteDamageFraction: effect.eliteDamageFraction,
+        name: skill.name,
+      }
       continue
     }
     if (effect.kind === 'barrier' && effect.source === 'anchorMaxHp') {
@@ -2532,6 +2574,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     carriedSupplyCount: readWholeCount(hero.carriedSupplyCount, 'carried supplies', 0),
     supplies: readSupplyList(hero.supplies),
     skillDodgeUntilMs: null,
+    telegraphWard: null,
     stolenSupplies: [],
     suppliedArrowCount: readOptionalCount(hero.specialArrowCount, 'special arrow count'),
     suppliedTrapperCooldown: readOptionalCount(hero.trapperCooldown, 'trapper cooldown'),

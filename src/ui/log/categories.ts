@@ -96,6 +96,7 @@ const EVENT_CATEGORIES = {
   escape: ['retreat'],
   race: [],
   skillDodge: ['statuses'],
+  ward: ['statuses'],
   supplyUse: ['items'],
   supplyTheft: ['items'],
 } as const satisfies Record<LogEvent['type'], readonly LogCategory[]>

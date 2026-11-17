@@ -59,6 +59,7 @@ const EXPECTED: Record<LogEvent['type'], readonly LogCategory[]> = {
   escape: ['retreat'],
   race: [],
   skillDodge: ['statuses'],
+  ward: ['statuses'],
   supplyUse: ['items'],
   supplyTheft: ['items'],
 }
