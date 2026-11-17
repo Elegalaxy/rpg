@@ -1188,6 +1188,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.22: Crafted backpack
+- Status: `in progress`
+- Depends on: 13.21
+- Goal: the player crafts a pack that raises the road's supply slots from 4 to 5 (Satchel) or 6 (Field Pack) (rules in GAME_DESIGN §9, "Crafted backpack (Step 13.22)"; carried over in §10). Default 4 slots keeps every guard byte-identical.
+- Parts: (1) docs only. (2) Sim `supplySlotCount` on the blueprint, harness `--matrix pack` (4/5/6 slots, seeds 1-3 x 100), measurement and a GO/NO-GO stop before any UI. (3) Persist: `src/persist/pack.ts` (+test), `SavedHero.pack` with a safe default for old saves, the `pack` craft job, reincarnation carry-over, preparation and save validation read the slot count. (4) UI: `PackWorkshop` at the Armorer, preparation supply slots, rule editor and Potion Shop batches read the hero's slots, tests.
+- Part status: 1 `done`. 2 `todo`. 3 `todo`. 4 `todo`.
+- Acceptance: guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows, warden, causeway at default slots, seed 1 x 5) byte-identical to origin/main; `tests/architecture.test.ts`, typecheck, lint, npm test, build pass. If 6 slots pushes crafted wins to 95% or more in most elite cells, or more than 10 points over 5 slots, stop after the measurement and report before building the UI.
+- Progress:
+  - 2026-11-17: Part 1 done. Rules recorded in GAME_DESIGN §9 (Inventory) and §10 (carries over).
+
 ### Step 13.21: Wider supply tiers
 - Status: `done`
 - Depends on: 13.20

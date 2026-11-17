@@ -2354,7 +2354,18 @@ These are neutral calibration builds, not recommended player builds. Race bonuse
 ### Inventory
 
 - Expeditions use limited supply slots and loot capacity. The design avoids detailed per-item weight. Capacity counts total material quantity.
-- The first playable has 4 supply slots.
+- The first playable has 4 supply slots. A crafted backpack raises this to 5 or 6 (Step 13.22, below).
+
+**Crafted backpack (Step 13.22).** Decided 2026-11-17 (user approved all four decisions). The 4 slots are the default; a crafted pack raises them.
+
+- Two packs. Satchel: 5 slots, hero level 10, craft material of grade 2 or higher (grade is the `UPGRADE_QUALITY_POINTS` value used for temper: shard, witherbark and oathsteel 2, riftglass 3, duskiron 4, cinderite 5), 8 units of it and 400 gold. Field Pack: 6 slots, hero level 17, grade 3 or higher (riftglass, duskiron, cinderite), 10 units and 1,200 gold, and the hero must already own the Satchel. The hard cap is 6 slots. The units (8 and 10) are an implementation choice, small beside the gold (a socket also costs 8).
+- The material grade only sets what a pack needs (tier and units); a better grade does not add slots.
+- A pack is a queued 30 second job in the crafting queue (kind `pack`), paid when queued, never cancelled, like every other job. It is crafted at the Armorer ("Backpack" panel). The slots change when the job ends. A hero holds one pack: none, Satchel or Field Pack (the Field Pack replaces the Satchel). The Field Pack needs the Satchel finished, not queued. The same pack cannot be queued twice, nor one the hero already owns or has outgrown (a Satchel when a Field Pack is owned).
+- Stored per hero as `SavedHero.pack` (`satchel` or `fieldPack`; absent means none, so old saves load unchanged). Slots: none 4, Satchel 5, Field Pack 6. The pack carries over through reincarnation (section 10) and is not lost to defeat.
+- Sim: `ExpeditionBlueprint.supplySlotCount` (optional, 4 to 6, default 4 = `SUPPLY_SLOT_COUNT`). `supplySlots` is already a list and its length is the count, so no new state key is written and every run at the default count is byte-identical. The supply rows and conditions do not change; the extra slots hold more of the same supplies. `assertExpedition` accepts 4 to 6 slots.
+- The UI reads the hero's slot count: preparation slots, the Potion Shop "Buy N" and "Brew N" batches (they equalled the slot count), and the town text. Saved `packedSupplies` is limited to the hero's slots.
+- Why: Step 13.21 accepted that crafted supplies sit well above the old +30 band and said this step holds the number of crafted supplies per run. A slot is that lever, and it is also a gold and material sink.
+- Measurement and go/no-go (part 2): `--matrix pack` compares 4, 5 and 6 slots with the default supply rows. Extra slots hold the tier's main healing supply (Healing Draught at the prepared tier, Greater Draught at the crafted tier), so 5 slots is one more of it and 6 is two more. Rules mode, five classes, the Warden, Tidebound Colossus, Hollowmaw Reaver and Emberwrought Tyrant, seeds 1 to 3 x 100. If 6 slots lifts crafted wins to 95% or more in most elite cells, or by more than 10 points over 5 slots, the cap of 6 is reconsidered before any UI is built.
 
 First-playable supplies, decided 2026-11-03:
 
@@ -2455,6 +2466,7 @@ Reincarnation preserves:
 - Individual mastery and purchased legacy upgrades
 - Known map locations
 - Route returns (`routeReturns`)
+- The crafted backpack (`pack`, Step 13.22)
 - Recipes and crafting proficiency
 - Deposited gold
 - The hero's gold, materials, and debt

@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Tech: the design for a craftable backpack (Satchel 5 slots, Field Pack 6) is written down; nothing changes in play yet. [13.22]
 - Balance: the Greater Draught now restores 40% of maximum HP (was 35%), a wider step up from the Healing Draught's 30%. [13.21]
 - Balance: the Riftglass Ward now lasts 8 s and wards off the next 2 telegraphed attacks (elites and bosses still deal 35% of each, was 25% of one). The Ward Charm is unchanged. [13.21]
 - Tech: a supply ward can carry several charges. [13.21]
