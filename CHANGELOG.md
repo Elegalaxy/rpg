@@ -24,6 +24,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ## 0.15.0 · 2026-11-17 · Combat setup helpers (Step 13.19)
 
 - Improved: the preparation screen names Auto run and AFK as separate groups, tags who each setting applies to, and drops the long explanations.
+- Improved: Combat setup rules can be reordered by dragging the card. Move up and Move down still work.
 - Improved: in a fight, the stack, supplies and Escape now sit beside the hero card, and the "vs" between the sides is gone.
 - Fixed: a shop compare that rounds to 0.0 (for example Evasion 43.8 → 43.8) is no longer shown as a green upgrade.
 - New: two rule templates for every class, Drink when low and Ward with supplies, that set up your healing and barrier supplies. Pick the HP % and they are ready. [13.19]

@@ -92,13 +92,20 @@ export function RulesForm({
   }
 
   function move(index: number, delta: number): void {
-    const target = index + delta
-    if (target < 0 || target >= activeRows.length) return
+    reorder(index, index + delta)
+  }
+
+  function reorder(from: number, to: number): void {
+    if (from === to || to < 0 || to >= activeRows.length) return
     const next = [...activeRows]
-    const [row] = next.splice(index, 1)
+    const [row] = next.splice(from, 1)
     if (row === undefined) return
-    next.splice(target, 0, row)
+    next.splice(to, 0, row)
     update(next)
+    if (openRule === null) return
+    if (openRule === from) setOpenRule(to)
+    else if (from < openRule && to >= openRule) setOpenRule(openRule - 1)
+    else if (from > openRule && to <= openRule) setOpenRule(openRule + 1)
   }
 
   function selectTab(id: string): void {
@@ -283,6 +290,7 @@ export function RulesForm({
           onOpen={setOpenRule}
           onPatch={patchRow}
           onMove={move}
+          onReorder={reorder}
           onDuplicate={(index) => {
             update([...activeRows.slice(0, index + 1), copyRow(activeRows[index]!), ...activeRows.slice(index + 1)])
             setOpenRule(index + 1)

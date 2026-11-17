@@ -1,3 +1,5 @@
+import { useState, type DragEvent } from 'react'
+
 import { MAX_PRIORITY_ROWS, type RowDraft } from '../../persist/loadout.ts'
 import type { SavedHero } from '../../persist/save.ts'
 
@@ -18,6 +20,7 @@ export type RuleChainProps = {
   onOpen: (index: number | null) => void
   onPatch: (index: number, patch: Partial<RowDraft>) => void
   onMove: (index: number, delta: number) => void
+  onReorder: (from: number, to: number) => void
   onDuplicate: (index: number) => void
   onRemove: (index: number) => void
   onAdd: () => void
@@ -38,6 +41,7 @@ export function RuleChain({
   onOpen,
   onPatch,
   onMove,
+  onReorder,
   onDuplicate,
   onRemove,
   onAdd,
@@ -46,6 +50,33 @@ export function RuleChain({
 }: RuleChainProps) {
   const rules = buildRules(hero, rows)
   const atLimit = rows.length >= MAX_PRIORITY_ROWS
+  const [dragging, setDragging] = useState<number | null>(null)
+  const [over, setOver] = useState<number | null>(null)
+
+  function dragStart(event: DragEvent<HTMLLIElement>, index: number): void {
+    const target = event.target
+    if (target instanceof Element && target.closest('.rc-edit')) {
+      event.preventDefault()
+      return
+    }
+    event.dataTransfer.setData('text/plain', String(index))
+    event.dataTransfer.effectAllowed = 'move'
+    setDragging(index)
+  }
+
+  function dragOver(event: DragEvent<HTMLLIElement>, index: number): void {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    if (over !== index) setOver(index)
+  }
+
+  function dropOn(event: DragEvent<HTMLLIElement>, index: number): void {
+    event.preventDefault()
+    const from = Number(event.dataTransfer.getData('text/plain'))
+    if (Number.isInteger(from)) onReorder(from, index)
+    setDragging(null)
+    setOver(null)
+  }
   const limitText = `A hero can have at most ${MAX_PRIORITY_ROWS} rules.`
   return (
     <div className="rc-chain" data-testid="rule-chain">
@@ -74,7 +105,19 @@ export function RuleChain({
       ) : null}
       <ol className="rc-list">
         {rules.map((rule) => (
-          <li key={rule.index} className="rc-item">
+          <li
+            key={rule.index}
+            className={`rc-item${dragging === rule.index ? ' rc-item--dragging' : ''}${over === rule.index && dragging !== null && dragging !== rule.index ? ' rc-item--drop' : ''}`}
+            draggable
+            aria-grabbed={dragging === rule.index}
+            onDragStart={(event) => dragStart(event, rule.index)}
+            onDragOver={(event) => dragOver(event, rule.index)}
+            onDrop={(event) => dropOn(event, rule.index)}
+            onDragEnd={() => {
+              setDragging(null)
+              setOver(null)
+            }}
+          >
             <RuleNode
               rule={rule}
               row={rows[rule.index]!}

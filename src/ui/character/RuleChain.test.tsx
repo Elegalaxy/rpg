@@ -33,6 +33,7 @@ function chain(rows: RowDraft[], extra: Partial<RuleChainProps> = {}): string {
       onOpen={noop}
       onPatch={noop}
       onMove={noop}
+      onReorder={noop}
       onDuplicate={noop}
       onRemove={noop}
       onAdd={noop}
@@ -86,6 +87,12 @@ describe('rule chain', () => {
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Add rule/)
     expect(html).toContain('A hero can have at most 12 rules.')
     expect(chain([blow])).not.toContain('A hero can have at most 12 rules.')
+  })
+
+  it('marks each rule as draggable so the card can be reordered', () => {
+    const html = chain([blow, { ...blow, skillId: 'sundering-blow' }])
+    expect(html).toContain('draggable="true"')
+    expect(html).toContain('aria-grabbed="false"')
   })
 
   it('offers Undo after a remove', () => {

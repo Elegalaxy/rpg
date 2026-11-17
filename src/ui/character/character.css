@@ -96,6 +96,19 @@
   font-size: 0.8rem;
 }
 
+.rc-item[draggable='true'] {
+  cursor: grab;
+}
+
+.rc-item--dragging {
+  opacity: 0.55;
+}
+
+.rc-item--drop .rc-node {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
 .rc-node {
   border: 1px solid var(--border);
   border-radius: var(--radius);
