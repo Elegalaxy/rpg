@@ -1,16 +1,15 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-17)
-- **Current Goal:** Step 13.17 (gold sinks retune) is done, parts 1 to 4, pushed to `origin/main`. Next is the user's decision on the missed `infuse-rift` target, then a playtest and closing 13.12 to 13.17 into a `## 0.x.0` changelog heading.
-- **Recent Changes & Files Touched:**
-  - Part 1 docs: GAME_DESIGN §9 (ranks 1.0 / 1.5 / 2.0, `TEMPER_PER_POINT = 0.15`, drills 20% from level 10, "Retune (Step 13.17)" note with measured results); plan Step 13.17.
-  - Part 2: `sim/economy.ts` (rank multipliers, temper per point, factor rounded to two decimals); `ui/town/Ranks.tsx` help text from the constants; `ui/town/materialEffect.ts` comment; `ui/town/groupItems.ts` key includes `modifierTempers`; tests recomputed in `sim/modifiers.test.ts`, `persist/crafting.test.ts`, `persist/ranks.test.ts`, `ui/town/Ranks.test.tsx`, `Sockets.test.tsx`, `groupItems.test.ts`.
-  - Part 3: `harness/modded.ts` rows `infuse-rift`, `stack-rift` (riftglass only) and `modded.test.ts`.
-  - Part 4: `persist/training.ts` (`DRILL_BOOST_LEVEL = 10`, `DRILL_BOOST_XP_FRACTION = 0.2`), `training.test.ts`, Trainer text in `ui/town/Town.tsx`.
+- **Current Goal:** Step 13.18 "Later lives" is done, parts 1 to 5 (part 6, "Restore last life's build", deferred). Next is the user's playtest, then closing 13.18 into a `## 0.x.0` changelog heading.
+- **Recent Changes & Files Touched (persist and UI only; `src/sim`, content defs, harness and snapshots untouched):**
+  - Part 1 docs: GAME_DESIGN §10 "Later lives (Step 13.18)"; §9 elite Legacy Skill Point lines struck; `routeReturns` in the carries-over list; plan Step 13.18.
+  - Part 2 Remembered Paths: `SavedHero.rememberedEnemyIds`, new `persist/remembered.ts` (`zoneGateRecord`, `unionElites`, `openByMemory`), `reincarnate` unions elites, `nodeStatus` and the contract board read it for zone nodes only, MapView note (`map-remembered`).
+  - Part 3 Recall XP: `SavedHero.peakLevel`, `recallNeed` / `recallXp` in `persist/reincarnation.ts`, used in `settleExpedition`, `outcomeStats(expedition, hero)`, `outcomeSummary`, `offline.ts`, outcome card.
+  - Part 4 Head Start: `HeroPurchases.headStart` (0 to 2), `HEAD_START_LEVELS` 5 / 10, `HEAD_START_COSTS` 20 / 35, `buyPurchase('headStart')`.
+  - Part 5: `startingProgress`, `nextLifePreview`; `ui/character/Legacy.tsx` rebuilt (cards, purchases table, Next life), CSS in `character.css`, `Legacy.test.tsx`.
 - **Active Decisions / Constraints:**
-  - Prices unchanged. Guard runs, `--matrix causeway` and `--matrix cinder` are byte-identical to before; `plain` and `arrived` rows of the modded matrix too.
-  - Existing tempered or ranked items get stronger in saves (no save change).
-  - Measured (seed 1, 100 runs): `stack-rift` Colossus warrior 75, assassin 53, ranger 55, mage 37, cleric 97%; `causeway-deep` HP left +6.1 points; `rank3` 10 to 27%; `infuse-rift` only about +2 points over `socket` (target 5 MISSED). Not tuned further.
+  - Fracture Gate never reads remembered elites (no farming by losing to the Warden on purpose). Drills are not boosted by Recall. Heroes that reincarnated before this step get no `peakLevel` until their next reincarnation.
   - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`.
-- **Not verified:** the new numbers in the browser (Ranks and Trainer text only by static tests).
-- **Exact Next Step:** (1) User decides whether to raise the rank I second-modifier effect or accept `infuse-rift`. (2) Playtest ranks, tempers and drills. (3) Close Steps 13.12 to 13.17 into a `## 0.x.0 · date · name` changelog heading.
+- **Not verified:** a real Recall run and a real life-2 Causeway start in the browser (unit tests only); the browser check used the dev Legacy buttons at level 1.
+- **Exact Next Step:** (1) User playtest: reincarnate a hero who beat an elite, check the Causeway opens and Recall shows on the outcome card. (2) Close Step 13.18 into a `## 0.x.0 · date · name` changelog heading. (3) Optional part 6: store the last life's skill-web node ids and priority rows, and offer "Restore last life's build" using `allocateNode` and `allocateRacialNode`.

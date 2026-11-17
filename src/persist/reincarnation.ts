@@ -1,10 +1,11 @@
 import { racialStartingAttributes } from '../content/heroes.ts'
 import { starterEquipment } from '../content/items.ts'
+import { nodes } from '../content/world.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { startingRules } from '../content/supplies.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
-import { awardXp, createProgress, legacyFromProgress } from '../sim/progression.ts'
+import { awardXp, createProgress, legacyFromProgress, type HeroProgress } from '../sim/progression.ts'
 import { cumulativeXpToReachLevel, type Attributes } from '../sim/stats.ts'
 
 import { DEEP_POCKETS_COST } from './bag.ts'
@@ -150,6 +151,45 @@ function startingAttributes(hero: SavedHero): Attributes {
   }
 }
 
+/** What a new life starts with: the racial base, the seeds, the Head Start level and the Skill Point Seeds. */
+export function startingProgress(hero: SavedHero): HeroProgress {
+  const web = classWebs[hero.classId]
+  const fresh = createProgress(hero.progress.race, startingAttributes(hero), { startingSkillIds: web.startingSkillIds })
+  // Head Start: the XP of that level. The attribute and skill points of those levels stay unspent.
+  const startLevel = headStartLevel(hero.purchases)
+  const progress = startLevel > 1 ? awardXp(fresh, cumulativeXpToReachLevel(startLevel)) : fresh
+  progress.legacySkillPoints = hero.purchases.skillSeeds
+  return progress
+}
+
+export type NextLife = {
+  /** Names of the discovered zones whose elite gates stay open next life. */
+  zones: string[]
+  /** The level Recall doubles run XP up to, or null when the hero would have no peak above their start. */
+  recallUntil: number | null
+  startLevel: number
+  attributePoints: number
+  skillPoints: number
+}
+
+/** What the next life will start with, as the Legacy screen shows it. */
+export function nextLifePreview(hero: SavedHero, discoveries: readonly string[]): NextLife {
+  const remembered = unionElites(hero.rememberedEnemyIds, hero.defeatedEnemyIds)
+  const zones = Object.values(nodes)
+    .filter((node) => node.kind === 'zone' && node.gate !== undefined && discoveries.includes(node.discoveryId))
+    .filter((node) => node.gate!.defeatedEnemyIds.every((id) => remembered.includes(id)))
+    .map((node) => node.name)
+  const start = startingProgress(hero)
+  const peak = Math.max(hero.peakLevel ?? 0, hero.progress.level)
+  return {
+    zones,
+    recallUntil: peak > start.level ? peak : null,
+    startLevel: start.level,
+    attributePoints: start.unspentAttributePoints,
+    skillPoints: start.unspentSkillPoints,
+  }
+}
+
 /**
  * Reincarnate a hero. Level, XP, attributes, the skill web, personal gates and Echo ranks, and the
  * hero's contracts reset. Mastery, purchases, Legacy, discoveries, recipes, crafting experience,
@@ -171,12 +211,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
 
   const preview = legacyPreview(hero)
   const lives = hero.lives + 1
-  const web = classWebs[hero.classId]
-  const fresh = createProgress(hero.progress.race, startingAttributes(hero), { startingSkillIds: web.startingSkillIds })
-  // Head Start: the XP of that level. The attribute and skill points of those levels stay unspent.
-  const startLevel = headStartLevel(hero.purchases)
-  const progress = startLevel > 1 ? awardXp(fresh, cumulativeXpToReachLevel(startLevel)) : fresh
-  progress.legacySkillPoints = hero.purchases.skillSeeds
+  const progress = startingProgress(hero)
   const loadout = referenceLoadoutFor(hero.classId)
 
   // Every worn item goes to the archive. Heirlooms already kept stay flagged up to the allowance.

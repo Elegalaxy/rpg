@@ -27,6 +27,7 @@ import {
   legacyPreview,
   masteryRank,
   masteryXpFactor,
+  nextLifePreview,
   recallNeed,
   recallXp,
   reincarnate,
@@ -534,5 +535,26 @@ describe('Head Start (Step 13.18)', () => {
     expect(parsed.ok && hero(parsed.data).purchases.headStart).toBe(0)
     raw.heroes[0].purchases.headStart = 3
     expect(parseSave(JSON.stringify(raw)).ok).toBe(false)
+  })
+})
+
+describe('nextLifePreview (Step 13.18)', () => {
+  it('names the remembered zones, the Recall level and the start level', () => {
+    const base = veteran()
+    const bought = {
+      ...base,
+      account: { ...base.account, discoveries: [...base.account.discoveries, 'node:drowned-causeway'] },
+      heroes: base.heroes.map((h) => ({ ...h, purchases: { ...h.purchases, headStart: 1 } })),
+    }
+    const next = nextLifePreview(hero(bought), bought.account.discoveries)
+    expect(next.zones).toEqual(['Drowned Causeway'])
+    expect(next.startLevel).toBe(5)
+    expect(next).toMatchObject({ attributePoints: 8, skillPoints: 1 })
+    // The peak (this life's level) is not above a level 5 start, so there is nothing to recall.
+    expect(next.recallUntil).toBeNull()
+    const plain = nextLifePreview(hero(base), base.account.discoveries)
+    expect(plain.startLevel).toBe(1)
+    expect(plain.recallUntil).toBe(hero(base).progress.level)
+    expect(nextLifePreview(hero(heroSave()), []).recallUntil).toBeNull()
   })
 })

@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: the Legacy screen shows Legacy, lives, mastery and peak level at a glance, a purchases table with price, how many you own and why a Buy is disabled, and a "Next life" block (start level, Recall level, remembered zones). [13.18]
 - New: Head Start, a Legacy purchase: tier I starts every new life at level 5 (20 Legacy), tier II at level 10 (35 Legacy). The attribute and skill points of those levels are yours to spend, and the levels still count toward the Legacy you earn. [13.18]
 - New: Recall. A hero who reincarnated earns double run XP until they are back at the highest level they ever reached; drills are not doubled, and the outcome card shows "Recall +N". [13.18]
 - New: from your second life on, a hero remembers the elites beaten in earlier lives, so the Drowned Causeway, Rift Hollows and Cinder Scar open again without redoing the elite fights (the Fracture Gate still asks for this life's elites). [13.18]

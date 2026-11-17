@@ -404,3 +404,71 @@
 .rc-card:disabled {
   opacity: 0.75;
 }
+
+/* Legacy screen (Step 13.18) */
+.legacy-table td,
+.legacy-table th {
+  vertical-align: top;
+}
+
+.legacy-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+
+.legacy-why {
+  display: block;
+  margin-top: var(--s1);
+  color: var(--muted);
+}
+
+.legacy-facts {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+}
+
+.legacy-facts > div {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: var(--s3);
+}
+
+.legacy-facts dt {
+  color: var(--muted);
+}
+
+.legacy-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .legacy-table thead {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .legacy-table,
+  .legacy-table tbody,
+  .legacy-table tr,
+  .legacy-table th,
+  .legacy-table td {
+    display: block;
+  }
+
+  .legacy-table tr {
+    padding: var(--s2) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .legacy-table td.num {
+    text-align: left;
+  }
+
+  .legacy-facts > div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

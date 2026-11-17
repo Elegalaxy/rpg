@@ -1189,16 +1189,18 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.18: Later lives
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.17
 - Goal: make lives after the first faster without paying for deliberate losses (rules in GAME_DESIGN §10, "Later lives"). Recall XP doubles run XP below the hero's peak level, Remembered Paths keep zone gates open from life 2 (never the Fracture Gate), Head Start I and II (levels 5 and 10 for 20 and 35 Legacy), a reworked Legacy screen. Persist and UI only; `src/sim`, content, snapshots and the harness matrices stay byte-identical.
 - Parts: (1) docs only. (2) Remembered Paths. (3) Recall XP. (4) Head Start. (5) Legacy screen rework, browser check, HANDOFF. (6) Optional "Restore last life's build" if it reuses existing helpers cheaply.
-- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done`. 5 and 6 `pending`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done`. 5 `done`. 6 `deferred` (not small: needs a stored build, new save field and validation, and skill-web, racial-node and loadout replay).
 - Progress:
   - 2026-11-17: Part 1 done. Rules recorded in GAME_DESIGN §10; the §9 elite Legacy Skill Point line struck; `routeReturns` added to the carries-over list.
   - 2026-11-17: Part 2 done. `SavedHero.rememberedEnemyIds` (validated, backfilled from `elite:*` claimed bonuses when `lives > 0`, no version bump); new `persist/remembered.ts` (`zoneGateRecord`, `unionElites`, `openByMemory`); `reincarnate` unions the elites; `nodeStatus` and the contract board read the union for zone nodes only (`NodeStatus.remembered`); MapView note. Tests in `remembered.test.ts`.
   - 2026-11-17: Part 3 done. `SavedHero.peakLevel` (validated, set in `reincarnate`), `recallNeed` and `recallXp` in `persist/reincarnation.ts`, applied in `settleExpedition`, `outcomeStats(expedition, hero)` (`xp`, `recall`), `outcomeSummary` ("(Recall +N)"), the offline summary and the outcome card; Recall line in `Legacy.tsx`. Drills untouched. Tests in `reincarnation.test.ts`.
   - 2026-11-17: Part 4 done. `HeroPurchases.headStart` (0 to 2, validated, backfilled), `HEAD_START_LEVELS` / `HEAD_START_COSTS`, `headStartLevel`, `headStartCost`, `buyPurchase` kind `headStart`; `reincarnate` awards the XP of the start level after `createProgress` (points stay unspent), heirloom scaling after. Row in `Legacy.tsx`. Tests in `reincarnation.test.ts`.
+  - 2026-11-17: Part 5 done. `startingProgress` and `nextLifePreview` in `persist/reincarnation.ts`; `ui/character/Legacy.tsx` rebuilt: Legacy, lives, mastery and peak level as cards, a purchases table (cost, bought of max, Buy with the reason shown when disabled), a Next life block (start level and unspent points, Recall level, remembered zones); test ids `legacy`, `mastery`, `legacy-preview`, `reincarnation-block` kept. Checked in the browser pane at 1280 and 375 px (no horizontal overflow, buy and reincarnate with Head Start I gave a level 5 life). Test in `Legacy.test.tsx`.
+  - 2026-11-17: Part 6 deferred: restoring the last life's build is not small (see the part status).
 
 ### Step 13.17: Gold sinks retune
 - Status: `done`
