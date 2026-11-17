@@ -194,6 +194,8 @@ export type HeroPurchases = {
   secondHeirloom: boolean
   /** Whether Deep Pockets (+4 bag room) was bought. */
   deepPockets: boolean
+  /** Head Start tiers bought: 0 none, 1 start at level 5, 2 start at level 10 (Step 13.18). */
+  headStart: number
 }
 
 export const EMPTY_PURCHASES: HeroPurchases = {
@@ -201,6 +203,7 @@ export const EMPTY_PURCHASES: HeroPurchases = {
   skillSeeds: 0,
   secondHeirloom: false,
   deepPockets: false,
+  headStart: 0,
 }
 
 /** A hero's drills (Step 13.11). `queue` has 1 to `MAX_DRILLS_PER_LEVEL` entries; the first is running. */
@@ -563,6 +566,10 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check((value.purchases.skillSeeds as number) <= 3, `${label} has more than 3 skill seeds`)
   check(typeof value.purchases.secondHeirloom === 'boolean', `${label} second heirloom must be true or false`)
   check(typeof value.purchases.deepPockets === 'boolean', `${label} deep pockets must be true or false`)
+  check(
+    typeof value.purchases.headStart === 'number' && Number.isInteger(value.purchases.headStart) && value.purchases.headStart >= 0 && value.purchases.headStart <= 2,
+    `${label} head start must be 0, 1 or 2`,
+  )
   whole(value.echoRank, `${label} Echo rank`)
   whole(value.fightRank, `${label} fight rank`)
   check(value.fightRank <= value.echoRank, `${label} fight rank is above the Echo rank it has unlocked`)
@@ -667,6 +674,7 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.claimedBonuses === undefined) hero.claimedBonuses = []
     if (hero.purchases === undefined) hero.purchases = JSON.parse(JSON.stringify(EMPTY_PURCHASES))
     if (isRecord(hero.purchases) && hero.purchases.deepPockets === undefined) hero.purchases.deepPockets = false
+    if (isRecord(hero.purchases) && hero.purchases.headStart === undefined) hero.purchases.headStart = 0
     if (hero.rememberedEnemyIds === undefined && typeof hero.lives === 'number' && hero.lives > 0 && Array.isArray(hero.claimedBonuses)) {
       hero.rememberedEnemyIds = elitesFromClaimed(hero.claimedBonuses.filter((id): id is string => typeof id === 'string'))
     }

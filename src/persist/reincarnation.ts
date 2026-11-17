@@ -4,7 +4,7 @@ import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { startingRules } from '../content/supplies.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
-import { createProgress, legacyFromProgress } from '../sim/progression.ts'
+import { awardXp, createProgress, legacyFromProgress } from '../sim/progression.ts'
 import { cumulativeXpToReachLevel, type Attributes } from '../sim/stats.ts'
 
 import { DEEP_POCKETS_COST } from './bag.ts'
@@ -23,6 +23,9 @@ export const ATTRIBUTE_SEED_COST = 3
 export const ATTRIBUTE_SEED_MAX = 10
 export const SKILL_SEED_COSTS: readonly number[] = [8, 12, 16]
 export const SECOND_HEIRLOOM_COST = 25
+/** Head Start tiers (Step 13.18): the level each new life starts at, and the Legacy each tier costs. */
+export const HEAD_START_LEVELS: readonly number[] = [5, 10]
+export const HEAD_START_COSTS: readonly number[] = [20, 35]
 
 export type Bonus = { id: string; text: string; amount: number }
 
@@ -169,7 +172,10 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
   const preview = legacyPreview(hero)
   const lives = hero.lives + 1
   const web = classWebs[hero.classId]
-  const progress = createProgress(hero.progress.race, startingAttributes(hero), { startingSkillIds: web.startingSkillIds })
+  const fresh = createProgress(hero.progress.race, startingAttributes(hero), { startingSkillIds: web.startingSkillIds })
+  // Head Start: the XP of that level. The attribute and skill points of those levels stay unspent.
+  const startLevel = headStartLevel(hero.purchases)
+  const progress = startLevel > 1 ? awardXp(fresh, cumulativeXpToReachLevel(startLevel)) : fresh
   progress.legacySkillPoints = hero.purchases.skillSeeds
   const loadout = referenceLoadoutFor(hero.classId)
 
@@ -219,7 +225,17 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
   return { ok: true, save: scaleHeirlooms(next, heroId), hero: renewed }
 }
 
-export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets'
+export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets' | 'headStart'
+
+/** The level each new life starts at: 1, or the level of the Head Start tier bought. */
+export function headStartLevel(purchases: HeroPurchases): number {
+  return HEAD_START_LEVELS[purchases.headStart - 1] ?? 1
+}
+
+/** The Legacy cost of the next Head Start tier, or null when both are bought. */
+export function headStartCost(purchases: HeroPurchases): number | null {
+  return HEAD_START_COSTS[purchases.headStart] ?? null
+}
 
 export function skillSeedCost(purchases: HeroPurchases): number | null {
   return SKILL_SEED_COSTS[purchases.skillSeeds] ?? null
@@ -256,6 +272,11 @@ export function buyPurchase(
     if (hero.purchases.deepPockets) return { ok: false, reason: 'You already have Deep Pockets.' }
     cost = DEEP_POCKETS_COST
     purchases = { ...purchases, deepPockets: true }
+  } else if (kind === 'headStart') {
+    const price = headStartCost(hero.purchases)
+    if (price === null) return { ok: false, reason: 'You already have both Head Starts.' }
+    cost = price
+    purchases = { ...purchases, headStart: purchases.headStart + 1 }
   } else {
     if (hero.purchases.secondHeirloom) return { ok: false, reason: 'You already have the Second Heirloom.' }
     cost = SECOND_HEIRLOOM_COST

@@ -75,7 +75,7 @@ function withHero(): SaveData {
     craftXp: 0,
     legacy: 0,
     lives: 0,
-    purchases: { attributeSeeds: { strength: 0, vitality: 0, agility: 0, intellect: 0, spirit: 0 }, skillSeeds: 0, secondHeirloom: false, deepPockets: false },
+    purchases: { attributeSeeds: { strength: 0, vitality: 0, agility: 0, intellect: 0, spirit: 0 }, skillSeeds: 0, secondHeirloom: false, deepPockets: false, headStart: 0 },
     claimedBonuses: [],
     echoRank: 0,
     fightRank: 0,

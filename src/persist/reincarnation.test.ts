@@ -16,10 +16,13 @@ import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
 import {
   ATTRIBUTE_SEED_COST,
+  HEAD_START_COSTS,
   SECOND_HEIRLOOM_COST,
   SKILL_SEED_COSTS,
   bonusesDue,
   buyPurchase,
+  headStartCost,
+  headStartLevel,
   heirloomLevel,
   legacyPreview,
   masteryRank,
@@ -469,5 +472,67 @@ describe('Recall XP (Step 13.18)', () => {
     expect(hero(settled).progress.xp + cumulativeXpToReachLevel(hero(settled).progress.level)).toBe(
       hero(reborn).progress.xp + cumulativeXpToReachLevel(hero(reborn).progress.level) + 200,
     )
+  })
+})
+
+describe('Head Start (Step 13.18)', () => {
+  function rich(): SaveData {
+    const base = veteran()
+    return { ...base, heroes: base.heroes.map((h) => ({ ...h, legacy: 100 })) }
+  }
+
+  it('sells tier I for 20 Legacy and tier II for 35, in order, and nothing past that', () => {
+    let save = rich()
+    expect(hero(save).purchases.headStart).toBe(0)
+    save = ok(buyPurchase(save, 'hero-1', 'headStart'))
+    expect(hero(save).purchases.headStart).toBe(1)
+    expect(hero(save).legacy).toBe(100 - HEAD_START_COSTS[0]!)
+    save = ok(buyPurchase(save, 'hero-1', 'headStart'))
+    expect(hero(save).purchases.headStart).toBe(2)
+    expect(hero(save).legacy).toBe(100 - HEAD_START_COSTS[0]! - HEAD_START_COSTS[1]!)
+    const third = buyPurchase(save, 'hero-1', 'headStart')
+    expect(third.ok).toBe(false)
+    expect(headStartCost(hero(save).purchases)).toBeNull()
+  })
+
+  it('refuses a tier the hero cannot afford, so tier II cannot be bought before I', () => {
+    const poor = { ...rich(), heroes: rich().heroes.map((h) => ({ ...h, legacy: 30 })) }
+    const first = ok(buyPurchase(poor, 'hero-1', 'headStart'))
+    expect(hero(first).legacy).toBe(10)
+    const second = buyPurchase(first, 'hero-1', 'headStart')
+    expect(second.ok ? '' : second.reason).toMatch(/35 Legacy/)
+  })
+
+  it('starts the next life at level 5 or 10 with the points of those levels unspent', () => {
+    expect(hero(ok(reincarnate(rich(), 'hero-1', null))).progress.level).toBeGreaterThan(0)
+    const none = hero(ok(reincarnate(rich(), 'hero-1', null)))
+    expect(none.progress).toMatchObject({ level: 1, xp: 0, unspentAttributePoints: 0, unspentSkillPoints: 0 })
+    for (const [tier, level] of [[1, 5], [2, 10]] as const) {
+      const base = rich()
+      const bought = { ...base, heroes: base.heroes.map((h) => ({ ...h, purchases: { ...h.purchases, headStart: tier, skillSeeds: 1 } })) }
+      const started = hero(ok(reincarnate(bought, 'hero-1', null)))
+      expect(headStartLevel(started.purchases)).toBe(level)
+      expect(started.progress.level).toBe(level)
+      expect(started.progress.xp).toBe(0)
+      expect(started.progress.unspentAttributePoints).toBe((level - 1) * 2)
+      expect(started.progress.unspentSkillPoints).toBe(Math.floor(level / 3))
+      expect(started.progress.legacySkillPoints).toBe(1)
+      expect(started.progress.allocatedNodeIds).toEqual([])
+    }
+  })
+
+  it('counts head start levels toward Legacy-from-level and fills a missing field on old saves', () => {
+    const base = rich()
+    const bought = { ...base, heroes: base.heroes.map((h) => ({ ...h, purchases: { ...h.purchases, headStart: 2 }, bossLossThisLife: true, defeatedEnemyIds: [] })) }
+    const reborn = ok(reincarnate(bought, 'hero-1', null))
+    const again = { ...reborn, heroes: reborn.heroes.map((h) => ({ ...h, bossLossThisLife: true })) }
+    expect(legacyPreview(hero(again)).fromLevel).toBe(legacyFromProgress(hero(again).progress))
+    expect(legacyPreview(hero(again)).fromLevel).toBeGreaterThanOrEqual(2 * (10 - 1))
+    const raw = JSON.parse(serializeSave(reborn))
+    delete raw.heroes[0].purchases.headStart
+    const parsed = parseSave(JSON.stringify(raw))
+    expect(parsed.ok && hero(parsed.data).purchases.headStart).toBe(0)
+    raw.heroes[0].purchases.headStart = 3
+    expect(parseSave(JSON.stringify(raw)).ok).toBe(false)
   })
 })

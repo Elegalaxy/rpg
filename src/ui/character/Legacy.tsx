@@ -9,8 +9,11 @@ import {
   ATTRIBUTE_SEED_COST,
   ATTRIBUTE_SEED_MAX,
   MASTERY_MAX,
+  HEAD_START_LEVELS,
   SECOND_HEIRLOOM_COST,
   attributeSeedTotal,
+  headStartCost,
+  headStartLevel,
   heirloomAllowance,
   legacyPreview,
   masteryRank,
@@ -98,6 +101,13 @@ export function Legacy() {
         <li>
           Second Heirloom ({SECOND_HEIRLOOM_COST} Legacy, {hero.purchases.secondHeirloom ? 'bought' : 'not bought'}){' '}
           <button type="button" disabled={hero.purchases.secondHeirloom} onClick={() => run(buyPurchaseFromUi('heirloom'), 'Bought the Second Heirloom.')}>
+            Buy
+          </button>
+        </li>
+        <li>
+          Head Start ({hero.purchases.headStart} of {HEAD_START_LEVELS.length} bought, starts each life at level {headStartLevel(hero.purchases)}
+          {headStartCost(hero.purchases) === null ? '' : `, next: level ${HEAD_START_LEVELS[hero.purchases.headStart]} for ${headStartCost(hero.purchases)} Legacy`}){' '}
+          <button type="button" disabled={headStartCost(hero.purchases) === null} onClick={() => run(buyPurchaseFromUi('headStart'), 'Bought a Head Start.')}>
             Buy
           </button>
         </li>
