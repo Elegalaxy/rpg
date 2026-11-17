@@ -1193,9 +1193,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.17
 - Goal: make lives after the first faster without paying for deliberate losses (rules in GAME_DESIGN §10, "Later lives"). Recall XP doubles run XP below the hero's peak level, Remembered Paths keep zone gates open from life 2 (never the Fracture Gate), Head Start I and II (levels 5 and 10 for 20 and 35 Legacy), a reworked Legacy screen. Persist and UI only; `src/sim`, content, snapshots and the harness matrices stay byte-identical.
 - Parts: (1) docs only. (2) Remembered Paths. (3) Recall XP. (4) Head Start. (5) Legacy screen rework, browser check, HANDOFF. (6) Optional "Restore last life's build" if it reuses existing helpers cheaply.
-- Part status: 1 `done`. 2 to 6 `pending`.
+- Part status: 1 `done`. 2 `done`. 3 to 6 `pending`.
 - Progress:
   - 2026-11-17: Part 1 done. Rules recorded in GAME_DESIGN §10; the §9 elite Legacy Skill Point line struck; `routeReturns` added to the carries-over list.
+  - 2026-11-17: Part 2 done. `SavedHero.rememberedEnemyIds` (validated, backfilled from `elite:*` claimed bonuses when `lives > 0`, no version bump); new `persist/remembered.ts` (`zoneGateRecord`, `unionElites`, `openByMemory`); `reincarnate` unions the elites; `nodeStatus` and the contract board read the union for zone nodes only (`NodeStatus.remembered`); MapView note. Tests in `remembered.test.ts`.
 
 ### Step 13.17: Gold sinks retune
 - Status: `done`

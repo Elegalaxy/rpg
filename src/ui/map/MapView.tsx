@@ -45,6 +45,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const marker = position === null ? null : point(position)
   const shownRoute = expedition === null ? routeId : expedition.id
   const onRoute = new Set(routes[shownRoute]?.nodeIds ?? [])
+  const remembered = Object.values(nodes).filter((node) => nodeStatus(node, save, hero).remembered === true).map((node) => node.name)
 
   return (
     <section aria-label="World map">
@@ -76,7 +77,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
             <g
               key={node.id}
               className={`map-node map-node--${state}${chosen.has(node.id) ? ' map-node--chosen' : ''}`}
-              aria-label={`${node.name}, ${state}${status.reason !== null ? `. ${status.reason}` : ''}`}
+              aria-label={`${node.name}, ${state}${status.reason !== null ? `. ${status.reason}` : ''}${status.remembered === true ? '. Remembered from an earlier life.' : ''}`}
               role="img"
             >
               <circle cx={position.x} cy={position.y} r={node.kind === 'town' ? 18 : 15} />
@@ -92,6 +93,11 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
           </circle>
         ) : null}
       </svg>
+      {remembered.length > 0 ? (
+        <p className="map-remembered" data-testid="map-remembered">
+          Remembered from an earlier life: {remembered.join(', ')}.
+        </p>
+      ) : null}
       <fieldset className="choices" disabled={expedition !== null}>
         <legend>Route</legend>
         {Object.values(routes).map((route) => (

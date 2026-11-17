@@ -22,6 +22,7 @@ import { EQUIPMENT_SLOT_IDS, applyDurability, gearGaps } from '../sim/economy.ts
 import { addContractProgress, refreshBoard } from './contracts.ts'
 import { defeatRecordId } from './crafting.ts'
 import { scaleHeirlooms } from './reincarnation.ts'
+import { openByMemory, zoneGateRecord } from './remembered.ts'
 import { withXp } from './training.ts'
 import { purseOf, reachMilestone, updatePurse, type SaveData, type SavedHero } from './save.ts'
 
@@ -31,6 +32,8 @@ export type NodeStatus = {
   state: NodeState
   /** Why a node is locked, or null. A personal gate shows what the hero still has to defeat. */
   reason: string | null
+  /** True when a zone is open only because of an elite beaten in an earlier life (Step 13.18). */
+  remembered?: boolean
 }
 
 /**
@@ -41,8 +44,10 @@ export function nodeStatus(node: WorldNode, save: SaveData, hero: SavedHero | nu
   if (hero !== null && hero.clearedNodeIds.includes(node.id)) return { state: 'cleared', reason: null }
   if (!save.account.discoveries.includes(node.discoveryId)) return { state: 'locked', reason: 'Not discovered yet.' }
   if (node.gate !== undefined) {
-    const block = gateBlock(node, { defeatedEnemyIds: hero?.defeatedEnemyIds ?? [] })
+    const record = node.kind === 'zone' ? zoneGateRecord(hero) : { defeatedEnemyIds: hero?.defeatedEnemyIds ?? [] }
+    const block = gateBlock(node, record)
     if (block !== null) return { state: 'locked', reason: block }
+    if (openByMemory(node, hero)) return { state: 'discovered', reason: null, remembered: true }
   }
   if (node.kind === 'town') return { state: 'cleared', reason: null }
   return { state: 'discovered', reason: null }

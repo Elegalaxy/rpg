@@ -9,6 +9,7 @@ import { applyHeroUpdates } from './heroUpdates.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_TEMPER_MAX, rankable, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
+import { elitesFromClaimed } from './remembered.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
 import type { PriorityRow, RuleStack } from '../sim/types.ts'
 
@@ -221,6 +222,8 @@ export type SavedHero = {
   preparedSpells: string[]
   /** Personal world record: enemies this hero has defeated, and the nodes this hero has cleared. */
   defeatedEnemyIds: string[]
+  /** Elites this hero defeated in earlier lives. Zone gates read them (never the Fracture Gate). Step 13.18. */
+  rememberedEnemyIds?: string[]
   clearedNodeIds: string[]
   /** Retreat when HP falls to this fraction of maximum. Null never retreats. */
   retreatAtMost: number | null
@@ -505,6 +508,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     value.stopAfterFights === null || (typeof value.stopAfterFights === 'number' && Number.isInteger(value.stopAfterFights) && value.stopAfterFights >= 1 && value.stopAfterFights <= 99),
     `${label} stop-after-fights must be a whole number from 1 to 99, or null`,
   )
+  check(value.rememberedEnemyIds === undefined || (Array.isArray(value.rememberedEnemyIds) && value.rememberedEnemyIds.every((id: unknown) => typeof id === 'string')), `${label} remembered enemies must be a list of text`)
   check(value.autoRun === undefined || typeof value.autoRun === 'boolean', `${label} auto run must be true or false`)
   check(
     value.autoRunMaxFights === undefined ||
@@ -660,6 +664,9 @@ function fillWorldFields(parsed: unknown): void {
     if (hero.claimedBonuses === undefined) hero.claimedBonuses = []
     if (hero.purchases === undefined) hero.purchases = JSON.parse(JSON.stringify(EMPTY_PURCHASES))
     if (isRecord(hero.purchases) && hero.purchases.deepPockets === undefined) hero.purchases.deepPockets = false
+    if (hero.rememberedEnemyIds === undefined && typeof hero.lives === 'number' && hero.lives > 0 && Array.isArray(hero.claimedBonuses)) {
+      hero.rememberedEnemyIds = elitesFromClaimed(hero.claimedBonuses.filter((id): id is string => typeof id === 'string'))
+    }
     if (hero.echoRank === undefined) hero.echoRank = 0
     if (hero.fightRank === undefined) hero.fightRank = 0
     if (hero.bossLossThisLife === undefined) hero.bossLossThisLife = false

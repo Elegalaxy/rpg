@@ -8,6 +8,7 @@ import { createProgress, legacyFromProgress } from '../sim/progression.ts'
 import type { Attributes } from '../sim/stats.ts'
 
 import { DEEP_POCKETS_COST } from './bag.ts'
+import { unionElites } from './remembered.ts'
 import { reachMilestone, type HeroPurchases, type SaveData, type SavedHero } from './save.ts'
 import type { RosterResult } from './roster.ts'
 
@@ -181,6 +182,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     ruleStacks: [],
     preparedSpells: [],
     defeatedEnemyIds: [],
+    rememberedEnemyIds: unionElites(hero.rememberedEnemyIds, hero.defeatedEnemyIds),
     clearedNodeIds: [],
     echoRank: 0,
     fightRank: 0,

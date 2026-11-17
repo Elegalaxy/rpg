@@ -1,5 +1,6 @@
 import { encounters } from '../content/encounters.ts'
 import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
+import { zoneGateRecord } from './remembered.ts'
 import { nodes, routes } from '../content/world.ts'
 import type { ExpeditionState } from '../sim/expedition.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
@@ -31,7 +32,7 @@ export function withFilledBoard(hero: SavedHero, discoveries: readonly string[])
   let rolls = hero.purse.boardRolls
   while (board.length < BOARD_SIZE) {
     const rng = createRng(deriveSeed(deriveSeed(BOARD_SEED, heroNumber(hero.id)), rolls))
-    const offer = rollContract(`${hero.id}-contract-${rolls + 1}`, discoveries, () => nextFloat(rng), board.map((entry) => targetKey(entry.target)), hero)
+    const offer = rollContract(`${hero.id}-contract-${rolls + 1}`, discoveries, () => nextFloat(rng), board.map((entry) => targetKey(entry.target)), zoneGateRecord(hero))
     rolls += 1
     if (offer === null) break
     board.push(offer)
