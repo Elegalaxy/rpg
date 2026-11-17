@@ -1,5 +1,6 @@
 import { MAX_PRIORITY_ROWS, TARGET_LABELS, skillName, type RowDraft } from '../../persist/loadout.ts'
 import { TARGET_PRIORITIES, type TargetPriority } from '../../sim/types.ts'
+import { skillFacts } from '../skillInfo.ts'
 import { Tag } from '../Kit.tsx'
 
 import type { ChainRule } from './chainModel.ts'
@@ -15,6 +16,8 @@ export type RuleNodeProps = {
   used: number | null
   classId: Parameters<typeof ConditionList>[0]['classId']
   skillIds: readonly string[]
+  /** The hero's learned skill-web nodes, so the skill facts count their bonuses. */
+  nodeIds?: readonly string[]
   onToggle: () => void
   onPatch: (patch: Partial<RowDraft>) => void
   onMove: (delta: number) => void
@@ -26,7 +29,7 @@ export type RuleNodeProps = {
  * One rule in the chain. Closed it reads as: number and skill (primary), the rule sentence and target
  * (secondary), the use count (tertiary). Open it holds the existing editing controls.
  */
-export function RuleNode({ rule, row, rowCount, open, used, classId, skillIds, onToggle, onPatch, onMove, onDuplicate, onRemove }: RuleNodeProps) {
+export function RuleNode({ rule, row, rowCount, open, used, classId, skillIds, nodeIds, onToggle, onPatch, onMove, onDuplicate, onRemove }: RuleNodeProps) {
   const number = rule.index + 1
   const panelId = `rc-edit-${rule.index}`
   const atLimit = rowCount >= MAX_PRIORITY_ROWS
@@ -87,6 +90,7 @@ export function RuleNode({ rule, row, rowCount, open, used, classId, skillIds, o
               </select>
             </label>
           </div>
+          <SkillFactsBox skillId={row.skillId} nodeIds={nodeIds} />
           <ConditionList
             conditions={row.conditions}
             onChange={(next) => onPatch({ conditions: next })}
@@ -117,6 +121,19 @@ export function RuleNode({ rule, row, rowCount, open, used, classId, skillIds, o
           </span>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+/** What the picked skill costs, how often it fires and what it does, so the rule can be written without leaving this tab. */
+function SkillFactsBox({ skillId, nodeIds }: { skillId: string; nodeIds?: readonly string[] }) {
+  const facts = skillId === '' ? null : skillFacts(skillId, nodeIds)
+  if (facts === null) return null
+  return (
+    <div className="rc-skill-facts" data-testid="rule-skill-facts">
+      <strong>{facts.name}</strong>
+      <span className="rc-skill-stats">{facts.stats.join(' · ')}</span>
+      <span className="rc-skill-effects muted">{facts.effects.join('. ')}</span>
     </div>
   )
 }

@@ -63,6 +63,14 @@ describe('rule chain', () => {
     expect(html).toContain('Never reached: rule 1 always wins')
   })
 
+  it('shows what the picked skill costs and does inside the open node only', () => {
+    expect(chain([blow])).not.toContain('rule-skill-facts')
+    const html = chain([blow], { open: 0 })
+    expect(html).toContain('data-testid="rule-skill-facts"')
+    expect(html).toMatch(/Cooldown \d/)
+    expect(chain([{ ...blow, skillId: '' }], { open: 0 })).not.toContain('rule-skill-facts')
+  })
+
   it('keeps the editing labels inside the open node only', () => {
     expect(chain([blow])).not.toContain('Rule 1 skill')
     const html = chain([blow], { open: 0 })

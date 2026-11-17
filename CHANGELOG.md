@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Improved: opening a rule in the combat setup now shows what its skill costs, its cooldown and what it does, so you no longer have to go back to the Skills tab. [13.19]
+
 ## 0.14.0 · 2026-11-17 · Later lives (Step 13.18)
 
 - Improved: the Legacy screen shows Legacy, lives, mastery and peak level at a glance, a purchases table with price, how many you own and why a Buy is disabled, and a "Next life" block (start level, Recall level, remembered zones). [13.18]

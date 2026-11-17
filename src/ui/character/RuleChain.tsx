@@ -83,6 +83,7 @@ export function RuleChain({
               used={fireCount(counts, stackId, rule.index)}
               classId={hero.classId}
               skillIds={skillIds}
+              nodeIds={hero.progress.allocatedNodeIds}
               onToggle={() => onOpen(open === rule.index ? null : rule.index)}
               onPatch={(patch) => onPatch(rule.index, patch)}
               onMove={(delta) => onMove(rule.index, delta)}

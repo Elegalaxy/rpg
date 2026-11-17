@@ -472,3 +472,16 @@
     gap: 0;
   }
 }
+
+.rc-skill-facts {
+  display: grid;
+  gap: var(--s1);
+  margin-bottom: var(--s2);
+  padding: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.rc-skill-stats {
+  font-variant-numeric: tabular-nums;
+}
