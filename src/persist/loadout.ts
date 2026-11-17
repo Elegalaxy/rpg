@@ -381,7 +381,6 @@ export function draftsFromRows(rows: readonly PriorityRow[]): RowDraft[] {
   }))
 }
 
-/** Skills a rule row may name for this hero: the equipped four, the temporary slot skills, and the supplies a rule uses. */
 /**
  * The rules a brand-new hero of this class starts with (supply rules, then the class rules), kept to the skills this
  * hero can use now, so a reset never writes a rule that the rule check would refuse.
@@ -391,6 +390,7 @@ export function startingRuleDrafts(hero: SavedHero): RowDraft[] {
   return draftsFromRows(startingRules(referenceLoadoutFor(hero.classId).priorityRows)).filter((row) => allowed.includes(row.skillId))
 }
 
+/** Skills a rule row may name for this hero: the equipped four, the temporary slot skills, and the supplies a rule uses. */
 export function ruleSkillIds(hero: SavedHero): string[] {
   const ids = [...hero.progress.loadout, ...RULE_SUPPLY_IDS]
   const nodes = hero.progress.allocatedNodeIds

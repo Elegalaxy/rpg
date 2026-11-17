@@ -138,3 +138,18 @@ describe('template unlocks', () => {
     expect(options.every((option) => option.template.classId === 'warrior' || option.template.classId === 'any')).toBe(true)
   })
 })
+
+describe('supply templates', () => {
+  it('are open to every class and keep their supply rows', () => {
+    for (const classId of HERO_CLASSES) {
+      const { save, hero } = heroOf(classId)
+      for (const id of ['any-drink-when-low', 'any-ward-with-supplies']) {
+        const option = templatesFor(hero, save).find((entry) => entry.template.id === id)
+        expect(option?.unlocked, `${classId} ${id}`).toBe(true)
+        const applied = applyTemplate(hero, option!.template, [])
+        expect(applied.rows.every((row) => row.skillId !== ''), `${classId} ${id} keeps its supplies`).toBe(true)
+        expect(applied.notes.length, id).toBeGreaterThan(0)
+      }
+    }
+  })
+})
