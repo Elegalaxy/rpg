@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.13.0 · 2026-11-16 to 2026-11-17 · Keep going, away rules and stronger gold sinks (Steps 13.15-13.17)
 
 - Balance: trainer drills give a fifth of a level's XP from level 10 (still a tenth below it); prices are unchanged. [13.17]
 - Balance: modifier ranks are stronger (rank II raises a modifier's numbers by 50%, rank III by 100%) and the material you spend tempers it far more (riftglass +45%, cinderite +75% instead of +9% and +15%). Items you already tempered or ranked get stronger too. [13.17]
