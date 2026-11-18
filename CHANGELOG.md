@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: beating the Fractured Warden now also unlocks reincarnation, so you no longer have to lose to a boss. [13.27]
 - Improved: route cards, the outcome card, the away report and the Guide show first-clear rewards and whether they are claimed. [13.24]
 - New: the Trading Post sells common materials (scrap, hide, shard, witherbark, oathsteel) at five times their sell price. [13.28]
 - New: the Guide has a Gear topic (slots, quality, durability, modifiers and their limit, sockets, ranks, temper, heirlooms), an entry for every modifier and base item, and a Greyhaven topic on what each shop does. [13.25]

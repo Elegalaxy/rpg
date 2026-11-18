@@ -7,7 +7,7 @@ import { commitSave } from '../store.ts'
 
 import { Legacy } from './Legacy.tsx'
 
-function show(patch: { legacy?: number; peakLevel?: number; lives?: number; headStart?: number }): string {
+function show(patch: { legacy?: number; peakLevel?: number; lives?: number; headStart?: number; bossLoss?: boolean; echoRank?: number }): string {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
   if (!made.ok) throw new Error(made.reason)
   const save: SaveData = {
@@ -18,6 +18,8 @@ function show(patch: { legacy?: number; peakLevel?: number; lives?: number; head
       legacy: patch.legacy ?? 0,
       lives: patch.lives ?? 0,
       peakLevel: patch.peakLevel,
+      bossLossThisLife: patch.bossLoss ?? false,
+      echoRank: patch.echoRank ?? 0,
       rememberedEnemyIds: ['rootmaw-stalker', 'echo-knight'],
       purchases: { ...hero.purchases, headStart: patch.headStart ?? 0 },
     })),
@@ -27,6 +29,18 @@ function show(patch: { legacy?: number; peakLevel?: number; lives?: number; head
 }
 
 describe('Legacy screen', () => {
+  it('shows which boss condition was met, and that a victory or a loss both unlock reincarnation', () => {
+    const none = show({})
+    expect(none).toContain('Not yet: face the Fractured Warden.')
+    expect(none).toContain('data-testid="reincarnation-block"')
+    const lost = show({ bossLoss: true })
+    expect(lost).toContain('lost to the Fractured Warden.')
+    expect(lost).not.toContain('data-testid="reincarnation-block"')
+    const won = show({ echoRank: 1 })
+    expect(won).toContain('defeated the Fractured Warden.')
+    expect(won).not.toContain('data-testid="reincarnation-block"')
+  })
+
   it('shows the summary, the purchases with reasons for the disabled ones, and the next life', () => {
     const html = show({ legacy: 21, peakLevel: 12, lives: 1 })
     expect(html).toContain('data-testid="legacy"')

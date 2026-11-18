@@ -1191,13 +1191,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.27: A boss victory also unlocks reincarnation
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.18
 - Goal: beating the Fractured Warden (any Echo rank) unlocks reincarnation like losing to it, per GAME_DESIGN §10 Trigger. User chose this option 2026-11-18. Sim untouched.
 - Parts: (1) docs. (2) persist: `bossFacedThisLife` helper over `bossLossThisLife` or `echoRank > 0`, reincarnation block and guidance, tests. (3) UI wording (Legacy condition line, outcome card), Guide, CHANGELOG.
-- Part status: 1 `done`. 2 `todo`. 3 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §10, the Warden section and the risks note.
+  - 2026-11-18: Parts 2 and 3 done. Decision: no new field; `bossFaced(hero)` in `persist/reincarnation.ts` reads `bossLossThisLife` (loss) or `echoRank > 0` (a Warden win; both reset on reincarnate), so old saves load unchanged and heroes who already won are unlocked. Used by `reincarnationBlock`, `guidance.ts`, the Legacy condition line, outcome card and summary lines, Guide. Offline replay settles through `settleExpedition`, so it agrees. Tests in `echo.test.ts`, `Legacy.test.tsx`. Sim untouched.
 
 ### Step 13.28: Trading Post buys materials
 - Status: `done`

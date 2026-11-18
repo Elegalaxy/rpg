@@ -607,7 +607,9 @@ export function outcomeSummary(expedition: ExpeditionState, hero: SavedHero | nu
   const victories = expedition.history.filter((entry) => entry.outcome === 'victory').length
   const retreated = expedition.history.find((entry) => entry.outcome === 'retreat')
   const lines = [`Fights won: ${victories}.`]
-  for (const rank of bossVictoryRanks(expedition)) lines.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
+  const bossRanks = bossVictoryRanks(expedition)
+  for (const rank of bossRanks) lines.push(`The Fractured Warden fell at Echo rank ${rank}. Echo rank ${rank + 1} is unlocked.`)
+  if (bossRanks.length > 0) lines.push('You defeated a boss this life. You can now reincarnate.')
   const earned = expedition.xpEarned ?? 0
   if (earned > 0) {
     const gained = hero === null ? earned : recallXp(hero, earned)

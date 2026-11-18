@@ -95,11 +95,23 @@ export function legacyPreview(hero: SavedHero): LegacyPreview {
   return { fromLevel, bonuses, total: fromLevel + bonuses.reduce((sum, bonus) => sum + bonus.amount, 0) }
 }
 
-/** Null when the hero can reincarnate. A boss must have beaten them this life, with its defeat costs paid. */
+export type BossFaced = 'lost' | 'won' | 'both' | null
+
+/**
+ * How the hero has faced a boss this life (Step 13.27). A loss sets `bossLossThisLife`. A Fractured Warden
+ * victory raises `echoRank` above 0 (reincarnation resets both), so no extra saved field is needed.
+ */
+export function bossFaced(hero: Pick<SavedHero, 'bossLossThisLife' | 'echoRank'>): BossFaced {
+  const lost = hero.bossLossThisLife
+  const won = hero.echoRank > 0
+  return lost && won ? 'both' : lost ? 'lost' : won ? 'won' : null
+}
+
+/** Null when the hero can reincarnate. A boss must have been faced this life: a loss, with its defeat costs paid, or a victory. */
 export function reincarnationBlock(save: SaveData, hero: SavedHero): string | null {
   if (save.expedition !== null) return 'Finish the expedition first.'
   if ((hero.training?.queue.length ?? 0) > 0) return 'Wait for the Trainer: drills are queued or running. They finish first.'
-  if (!hero.bossLossThisLife) return 'Lose to a boss first. Reincarnation opens after a boss defeats you this life.'
+  if (bossFaced(hero) === null) return 'Face a boss first. Reincarnation opens after you lose to or defeat the Fractured Warden this life.'
   return null
 }
 

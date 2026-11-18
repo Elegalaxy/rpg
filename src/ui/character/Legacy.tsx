@@ -16,6 +16,7 @@ import {
   legacyPreview,
   masteryRank,
   nextLifePreview,
+  bossFaced,
   reincarnationBlock,
   skillSeedCost,
 } from '../../persist/reincarnation.ts'
@@ -240,6 +241,7 @@ export function Legacy() {
         </Help>
         <GuideLink id="topic-reincarnation" label="Reincarnation" />
       </h3>
+      <p data-testid="boss-faced">{bossFacedText(bossFaced(hero))}</p>
       {block !== null ? (
         <p data-testid="reincarnation-block">{block}</p>
       ) : (
@@ -286,4 +288,11 @@ export function Legacy() {
       {error !== null ? <p role="alert">{error}</p> : null}
     </section>
   )
+}
+
+function bossFacedText(faced: ReturnType<typeof bossFaced>): string {
+  if (faced === 'lost') return 'Boss faced this life: lost to the Fractured Warden.'
+  if (faced === 'won') return 'Boss faced this life: defeated the Fractured Warden.'
+  if (faced === 'both') return 'Boss faced this life: lost to and defeated the Fractured Warden.'
+  return 'Not yet: face the Fractured Warden. A loss or a victory both count.'
 }

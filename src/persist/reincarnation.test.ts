@@ -93,9 +93,9 @@ function veteran(): SaveData {
 }
 
 describe('eligibility and currency', () => {
-  it('needs a boss loss this life and no running expedition', () => {
+  it('needs a boss faced this life and no running expedition', () => {
     const fresh = heroSave()
-    expect(reincarnationBlock(fresh, hero(fresh))).toMatch(/Lose to a boss first/)
+    expect(reincarnationBlock(fresh, hero(fresh))).toMatch(/Face a boss first/)
     expect(reincarnate(fresh, 'hero-1', null).ok).toBe(false)
     const lost = veteran()
     expect(reincarnationBlock(lost, hero(lost))).toBeNull()

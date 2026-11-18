@@ -7,7 +7,8 @@ import { selectedHero } from './character.ts'
 import { blueprintForHero, startExpedition } from './expeditionSetup.ts'
 import { checkPreparation, draftFor } from './preparation.ts'
 import { createHero } from './roster.ts'
-import { assertSaveData, newSave, type SaveData } from './save.ts'
+import { assertSaveData, newSave, parseSave, type SaveData } from './save.ts'
+import { bossFaced, reincarnate, reincarnationBlock } from './reincarnation.ts'
 import { bossVictoryRanks, outcomeSummary, routeInfo, settleExpedition } from './world.ts'
 
 function heroSave(echoRank = 0, fightRank = 0): SaveData {
@@ -102,6 +103,50 @@ describe('unlocking ranks and the loss flag', () => {
     expect(hero(top)).toMatchObject({ echoRank: 6, fightRank: 6 })
     const lower = settleExpedition(winWarden(heroSave(4, 1), 1))
     expect(hero(lower)).toMatchObject({ echoRank: 4, fightRank: 1 })
+  })
+
+  it('a Warden victory unlocks reincarnation like a loss, and a plain elite win does not', () => {
+    const fresh = heroSave()
+    expect(bossFaced(hero(fresh))).toBeNull()
+    expect(reincarnationBlock(fresh, hero(fresh))).toMatch(/Face a boss first/)
+    const won = settleExpedition(winWarden(fresh, 0))
+    expect(hero(won).bossLossThisLife).toBe(false)
+    expect(bossFaced(hero(won))).toBe('won')
+    expect(reincarnationBlock(won, hero(won))).toBeNull()
+    // a high-rank victory counts too
+    const high = settleExpedition(winWarden(heroSave(5, 5), 5))
+    expect(reincarnationBlock(high, hero(high))).toBeNull()
+    // a plain elite win (no boss in the history) does not
+    const road = startExpedition(hero(fresh), 'splintered-road', 1)
+    road.history = [{ index: 0, encounterId: road.opening[0]!.id, seed: 1, outcome: 'victory', durationMs: 1 }]
+    road.outcome = 'returned'
+    const plain = settleExpedition({ ...fresh, expedition: road })
+    expect(bossFaced(hero(plain))).toBeNull()
+    expect(reincarnationBlock(plain, hero(plain))).not.toBeNull()
+    // a loss still unlocks it, and a loss plus a win is both
+    const lost = { ...fresh, heroes: fresh.heroes.map((h) => ({ ...h, bossLossThisLife: true })) }
+    expect(bossFaced(hero(lost))).toBe('lost')
+    expect(reincarnationBlock(lost, hero(lost))).toBeNull()
+    expect(bossFaced({ bossLossThisLife: true, echoRank: 2 })).toBe('both')
+    expect(outcomeSummary(winWarden(fresh, 0).expedition!).lines).toContain('You defeated a boss this life. You can now reincarnate.')
+  })
+
+  it('reincarnating after a victory clears the unlock again', () => {
+    const won = settleExpedition(winWarden(heroSave(), 0))
+    const result = reincarnate(won, hero(won).id, null)
+    if (!result.ok) throw new Error(result.reason)
+    expect(hero(result.save)).toMatchObject({ echoRank: 0, fightRank: 0, bossLossThisLife: false })
+    expect(bossFaced(hero(result.save))).toBeNull()
+    expect(reincarnationBlock(result.save, hero(result.save))).not.toBeNull()
+  })
+
+  it('an old save without the boss-loss field loads, and a hero with an Echo rank is unlocked', () => {
+    const raw = JSON.parse(JSON.stringify(heroSave(2, 1))) as { heroes: Record<string, unknown>[] }
+    for (const h of raw.heroes) delete h.bossLossThisLife
+    const loaded = parseSave(JSON.stringify(raw))
+    if (!loaded.ok) throw new Error(loaded.reason)
+    expect(hero(loaded.data).bossLossThisLife).toBe(false)
+    expect(reincarnationBlock(loaded.data, hero(loaded.data))).toBeNull()
   })
 
   it('climbs one Echo rank after a Bastion-gate win while Echo climb is on, and leaves other runs alone', () => {

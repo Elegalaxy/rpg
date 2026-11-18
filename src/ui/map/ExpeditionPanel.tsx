@@ -784,6 +784,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
   if (stats.retreatedIn !== null) notes.push(`You retreated in fight ${stats.retreatedIn}. That fight gave no loot or momentum.`)
   if (defeated) notes.push(stats.defeatedIn === null ? 'You were defeated.' : `You were defeated in fight ${stats.defeatedIn}. Loot outside the safe pouch was destroyed.`)
   if (stats.gearWear > 0) notes.push(`Gear wear: -${stats.gearWear} durability on each worn piece.`)
+  if (stats.bossRanks.length > 0) notes.push('You defeated a boss this life. You can now reincarnate.')
   if (stats.bossLoss) notes.push('A boss defeated you this life. You can now reincarnate.')
   return (
     <section aria-label="Expedition outcome">

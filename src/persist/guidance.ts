@@ -5,6 +5,7 @@ import { itemBase } from '../content/items.ts'
 import { routes } from '../content/world.ts'
 
 import { selectedHero } from './character.ts'
+import { bossFaced } from './reincarnation.ts'
 import { canStartRoute } from './world.ts'
 import type { SaveData } from './save.ts'
 
@@ -37,7 +38,9 @@ export function nextHint(save: SaveData): Hint {
     return { tab: 'heroes', text: 'You have unspent points. Spend them on Attributes or the Skill web.' }
   }
   if (gearGaps(hero.equipment, itemBase).length > 0) return { tab: 'town', text: 'Buy or equip gear for every slot.' }
-  if (hero.bossLossThisLife) return { tab: 'heroes', text: 'A boss beat you. You can reincarnate on the Heroes tab, or rebuild and try again.' }
+  const faced = bossFaced(hero)
+  if (faced === 'won') return { tab: 'heroes', text: 'You defeated the Fractured Warden. You can reincarnate on the Heroes tab, or keep climbing.' }
+  if (faced !== null) return { tab: 'heroes', text: 'A boss beat you. You can reincarnate on the Heroes tab, or rebuild and try again.' }
   const next = nextRouteId(save)
   if (next === null) return { tab: 'town', text: 'Visit the Town to repair, take a contract, or craft.' }
   return { tab: 'map', text: 'Choose a route on the Map and start an expedition.' }
