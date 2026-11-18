@@ -1212,12 +1212,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
 ### Step 13.30: Legacy purchases apply now
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.18, 13.29
 - Goal: buying Attribute Seed, Skill Point Seed or Head Start also applies it to the hero's current life at once (GAME_DESIGN §10, "Purchases apply now"). Second Heirloom stays next reincarnation, Deep Pockets already applied. `startingProgress`, `nextLifePreview` and `reincarnate` results stay identical. No new save fields, no version bump. Purchases bought before this change are not applied retroactively. Sim untouched, so every guard is identical.
 - Parts: (1) docs. (2) `buyPurchase` applies to the current progress, heirloom scaling after a level change, tests. (3) Legacy screen text, buy messages, Guide, CHANGELOG, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
 - Progress:
+  - 2026-11-18: Part 3 done. Legacy screen rows and buy messages say what applies now, Guide sentence (no digits), test. Not checked in a browser or at 375 px.
   - 2026-11-18: Part 2 done. `buyPurchase` applies the purchase to `hero.progress` through `applyToCurrentLife` (seed +1, skill point +1, Head Start via `awardXp` of the difference) and runs `scaleHeirlooms` when the level changed; tests in `persist/reincarnation.test.ts`.
   - 2026-11-18: Part 1 done. Rule recorded in GAME_DESIGN §10.
 

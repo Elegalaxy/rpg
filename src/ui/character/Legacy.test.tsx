@@ -55,6 +55,8 @@ describe('Legacy screen', () => {
     expect(html).toContain('Peak level')
     expect(html).toContain('Head Start I')
     expect(html).toContain('20 Legacy')
+    expect(html).toContain('Applies now and every later life')
+    expect(html).toContain('Applies at your next reincarnation')
     expect(html).toContain('Needs 4 more Legacy.')
     expect(html).toContain('Doubles run XP until level 12.')
     expect(html).toContain('Drowned Causeway')

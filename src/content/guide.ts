@@ -72,7 +72,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
     summary: 'After facing a boss, a hero may start a new life with permanent Legacy gains.',
     body: [
       'Reincarnation unlocks once the hero has faced the Fractured Warden in the current life. Losing to it or beating it both count. It is optional, and losing on purpose does not reward you.',
-      'Level and experience turn into Legacy, a currency that stays with that hero. Reaching a boss, zone, or difficulty milestone for the first time gives a one-time bonus. Legacy buys small permanent gains, new nodes, and starting options.',
+      'Level and experience turn into Legacy, a currency that stays with that hero. Reaching a boss, zone, or difficulty milestone for the first time gives a one-time bonus. Legacy buys small permanent gains, new nodes, and starting options. Attribute seeds, skill point seeds, and a head start also apply to the hero’s current life as soon as they are bought, and to every later life; a second heirloom applies at the next reincarnation.',
       'Reincarnating resets level, experience, attributes, the skill web, the hero’s world progress, and its contracts. Mastery, purchases, Legacy, discoveries, recipes, crafting, gold, materials, and the archive stay. Worn gear goes to the archive, and one heirloom can be chosen to carry over.',
       'The elites you beat are remembered, so the zones they guard stay open in the next life.',
       'Clearing the three farthest zones for the first time, and returning safely, also gives a one-time Legacy bonus, claimed at the next reincarnation.',

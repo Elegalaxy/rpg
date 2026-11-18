@@ -87,7 +87,7 @@ export function Legacy() {
     {
       id: 'attribute',
       name: 'Attribute Seed',
-      effect: '+1 to a starting attribute of your choice',
+      effect: '+1 to an attribute of your choice. Applies now and every later life',
       cost: attributeSeedTotal(hero.purchases) >= ATTRIBUTE_SEED_MAX ? null : ATTRIBUTE_SEED_COST,
       bought: `${attributeSeedTotal(hero.purchases)} of ${ATTRIBUTE_SEED_MAX}`,
       controls: 'attributes',
@@ -97,37 +97,37 @@ export function Legacy() {
     {
       id: 'skill',
       name: 'Skill Point Seed',
-      effect: '+1 unspent skill point at the start of each life',
+      effect: '+1 unspent skill point. Applies now and every later life',
       cost: skillSeedCost(hero.purchases),
       bought: `${hero.purchases.skillSeeds} of ${SKILL_SEED_COSTS.length}`,
       controls: 'single',
       buy: () => buyPurchaseFromUi('skill'),
-      done: 'Bought a skill point seed.',
+      done: 'Bought a skill point seed. The point is added now.',
     },
     {
       id: 'headStart',
       name: hero.purchases.headStart === 0 ? 'Head Start I' : hero.purchases.headStart === 1 ? 'Head Start II' : 'Head Start',
-      effect: `Every life starts at level ${HEAD_START_LEVELS[Math.min(hero.purchases.headStart, HEAD_START_LEVELS.length - 1)]}`,
+      effect: `Start at level ${HEAD_START_LEVELS[Math.min(hero.purchases.headStart, HEAD_START_LEVELS.length - 1)]}. Raises you to it now if you are lower, and every later life starts there`,
       cost: headStart,
       bought: `${hero.purchases.headStart} of ${HEAD_START_LEVELS.length}`,
       controls: 'single',
       buy: () => buyPurchaseFromUi('headStart'),
-      done: 'Bought a Head Start.',
+      done: 'Bought a Head Start. Your level is raised now if it was lower.',
     },
     {
       id: 'heirloom',
       name: 'Second Heirloom',
-      effect: 'Keep one more heirloom',
+      effect: 'Keep one more heirloom. Applies at your next reincarnation',
       cost: hero.purchases.secondHeirloom ? null : SECOND_HEIRLOOM_COST,
       bought: hero.purchases.secondHeirloom ? '1 of 1' : '0 of 1',
       controls: 'single',
       buy: () => buyPurchaseFromUi('heirloom'),
-      done: 'Bought the Second Heirloom.',
+      done: 'Bought the Second Heirloom. It applies at your next reincarnation.',
     },
     {
       id: 'pockets',
       name: 'Deep Pockets',
-      effect: `+${DEEP_POCKETS_ROOM} loot bag room`,
+      effect: `+${DEEP_POCKETS_ROOM} loot bag room. Applies now and every later life`,
       cost: hero.purchases.deepPockets ? null : DEEP_POCKETS_COST,
       bought: hero.purchases.deepPockets ? '1 of 1' : '0 of 1',
       controls: 'single',
@@ -189,7 +189,7 @@ export function Legacy() {
                           type="button"
                           disabled={why !== null}
                           aria-label={`Buy ${attribute} seed`}
-                          onClick={() => run(buyPurchaseFromUi('attribute', attribute), `Bought a ${attribute} seed.`)}
+                          onClick={() => run(buyPurchaseFromUi('attribute', attribute), `Bought a ${attribute} seed. It is added to this life now.`)}
                         >
                           +1 {attribute} ({hero.purchases.attributeSeeds[attribute]})
                         </button>
