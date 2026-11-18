@@ -91,3 +91,110 @@
   left: auto;
   right: 0;
 }
+
+/* ---- Phones: folded map, pinned Start, folding preparation groups ---- */
+
+.map-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map-fold > summary::after {
+  content: '▾';
+  color: var(--muted);
+}
+
+.map-fold[open] > summary::after {
+  content: '▴';
+}
+
+.start-dock {
+  position: fixed;
+  right: 0;
+  bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom));
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s4);
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.start-dock button {
+  flex: none;
+}
+
+.start-dock p {
+  display: -webkit-box;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--danger);
+  font-size: 0.85rem;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.shell:has(.start-dock) .content {
+  padding-bottom: calc(var(--s4) + var(--tabs-h) + 64px + env(safe-area-inset-bottom));
+}
+
+/* A floated legend sits inside the box like a header row, so a folded group is just that row. */
+.prep-group > legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+.prep-group > legend + * {
+  clear: both;
+}
+
+.prep-group.is-folded > :not(legend) {
+  display: none;
+}
+
+.prep-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+
+.prep-toggle > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.prep-summary {
+  flex: none;
+  max-width: 55%;
+  overflow: hidden;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prep-toggle::after {
+  content: '▾';
+  color: var(--muted);
+}
+
+.prep-toggle[aria-expanded='true']::after {
+  content: '▴';
+}

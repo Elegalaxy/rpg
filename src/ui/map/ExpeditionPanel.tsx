@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import { selectedHero } from '../../persist/character.ts'
 import {
@@ -39,6 +39,7 @@ import { HoldActions } from '../HoldActions.tsx'
 import { DurabilityGrid, Kpi, KpiRow, Tag } from '../Kit.tsx'
 import { Row } from '../Row.tsx'
 import { FightView } from '../combat/FightView.tsx'
+import { useNarrow } from '../useNarrow.ts'
 import {
   escapeNowFromUi,
   setAutoEscapeFromUi,
@@ -68,6 +69,8 @@ function vowLabel(vow: string | null): string | null {
   return VOW_LABELS[vow] ?? vow
 }
 
+type PrepGroup = 'every' | 'pack' | 'auto' | 'orders' | 'afk'
+
 /** A short tag: which kind of run this control belongs to. */
 function PrepWho({ of }: { of: string }) {
   return <small className="prep-who">{of}</small>
@@ -86,6 +89,8 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   const counts = packedCounts(draft.supplies)
   const packedTotal = draft.supplies.filter((id) => id !== '').length
   const slotCount = packSlots(hero)
+  const narrow = useNarrow()
+  const [openGroup, setOpenGroup] = useState<PrepGroup | null>('every')
 
   // Every change is saved as soon as it is valid, so Start never runs on stale settings. A draft that is not valid yet blocks Start.
   useEffect(() => () => setPreparationProblem(null), [])
@@ -112,13 +117,43 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
     setSaved(result.length === 0)
   }
 
+  /** On a phone each group folds to its legend and a one-line summary; one group is open at a time. */
+  function groupClass(base: string, id: PrepGroup): string {
+    return narrow ? `${base} prep-group${openGroup === id ? '' : ' is-folded'}` : base
+  }
+
+  function legend(id: PrepGroup, title: ReactNode, summary: string) {
+    if (!narrow) return <legend>{title}</legend>
+    const open = openGroup === id
+    return (
+      <legend>
+        <button
+          type="button"
+          className="prep-toggle"
+          aria-expanded={open}
+          onClick={() => {
+            debugLog('[ui]', 'prep group', { id, open: !open })
+            setOpenGroup(open ? null : id)
+          }}
+        >
+          <span>{title}</span>
+          <span className="prep-summary">{summary}</span>
+        </button>
+      </legend>
+    )
+  }
+
   return (
     <section aria-label="Preparation">
       <h3>Preparation — {hero.name}</h3>
-      <fieldset className="away-box" data-testid="every-run-box">
-        <legend>
-          Every run <PrepWho of="Always" />
-        </legend>
+      <fieldset className={groupClass('away-box', 'every')} data-testid="every-run-box">
+        {legend(
+          'every',
+          <>
+            Every run <PrepWho of="Always" />
+          </>,
+          `${draft.retreatPercent.trim() === '' ? 'Never retreat' : `Retreat at ${draft.retreatPercent}%`} · ${draft.carryGold.trim() === '' ? 0 : draft.carryGold} g`,
+        )}
         <div className="controls">
           <label>
             Retreat when HP is at most (%){' '}
@@ -219,8 +254,8 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </div>
         ) : null}
       </fieldset>
-      <fieldset className="supply-pack">
-        <legend>Pack for the road</legend>
+      <fieldset className={groupClass('supply-pack', 'pack')}>
+        {legend('pack', 'Pack for the road', `${packedTotal}/${slotCount} packed`)}
         <p>
           Backpack: <strong data-testid="pack-used">{packedTotal}</strong> of {slotCount} slots{hero.pack === undefined ? '' : ` (${PACKS[hero.pack].name})`}.
         </p>
@@ -274,10 +309,14 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </button>
         ) : null}
       </fieldset>
-      <fieldset className="away-box" data-testid="auto-run-box">
-        <legend>
-          Auto run <PrepWho of="Live · AFK" />
-        </legend>
+      <fieldset className={groupClass('away-box', 'auto')} data-testid="auto-run-box">
+        {legend(
+          'auto',
+          <>
+            Auto run <PrepWho of="Live · AFK" />
+          </>,
+          draft.autoRun !== true ? 'Off' : draft.autoRunMode === 'endless' ? 'On · keep going' : 'On · repeat',
+        )}
         {getAutoNotice() === null ? null : (
           <p className="muted" role="status" data-testid="auto-run-notice">
             {getAutoNotice()}
@@ -361,10 +400,14 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </p>
         ) : null}
       </fieldset>
-      <fieldset className="away-box" data-testid="standing-orders-box">
-        <legend>
-          Orders <PrepWho of="Auto · AFK" />
-        </legend>
+      <fieldset className={groupClass('away-box', 'orders')} data-testid="standing-orders-box">
+        {legend(
+          'orders',
+          <>
+            Orders <PrepWho of="Auto · AFK" />
+          </>,
+          `Push on at ${draft.pushOnPercent}%`,
+        )}
         <div className="controls">
           <label>
             Push on while HP is at least (%){' '}
@@ -408,10 +451,14 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </Help>
         </div>
       </fieldset>
-      <fieldset className="away-box" data-testid="away-box">
-        <legend>
-          AFK <PrepWho of="When you leave" />
-        </legend>
+      <fieldset className={groupClass('away-box', 'afk')} data-testid="away-box">
+        {legend(
+          'afk',
+          <>
+            AFK <PrepWho of="When you leave" />
+          </>,
+          draft.awayRouteId === '' ? 'Nothing starts' : (routes[draft.awayRouteId]?.name ?? 'A route'),
+        )}
         <div className="controls">
           <label>
             If I have no run, start{' '}

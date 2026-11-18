@@ -521,13 +521,14 @@ function App() {
               ) : null}
               {tab === 'map' ? (
                 <>
+                  {narrow && saved.save.expedition !== null ? <ExpeditionPanel /> : null}
                   <MapView
                     onGo={(to) => {
                       if (to.heroPart !== undefined) setHeroPart(to.heroPart)
                       setTab(to.tab)
                     }}
                   />
-                  <ExpeditionPanel />
+                  {narrow && saved.save.expedition !== null ? null : <ExpeditionPanel />}
                 </>
               ) : null}
               {tab === 'combat' ? <CombatViewer /> : null}

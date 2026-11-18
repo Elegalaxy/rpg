@@ -11,7 +11,8 @@ import {
   type NodeState,
 } from '../../persist/world.ts'
 import { firstClearReward, firstClearRewardText } from '../../content/firstClear.ts'
-import { legs, nodes, routes } from '../../content/world.ts'
+import { legs, nodes, routes, type Route } from '../../content/world.ts'
+import { useNarrow } from '../useNarrow.ts'
 import { canStartRouteNow, getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
 import { Help } from '../Help.tsx'
 import { Kpi, KpiRow } from '../Kit.tsx'
@@ -51,10 +52,19 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const shownRoute = expedition === null ? routeId : expedition.id
   const onRoute = new Set(routes[shownRoute]?.nodeIds ?? [])
   const remembered = Object.values(nodes).filter((node) => nodeStatus(node, save, hero).remembered === true).map((node) => node.name)
+  const narrow = useNarrow()
+  const [showLocked, setShowLocked] = useState(false)
+  const isLocked = (route: Route) =>
+    route.nodeIds.some((id) => {
+      const node = nodes[id]
+      return node !== undefined && node.kind !== 'town' && nodeStatus(node, save, hero).state === 'locked'
+    })
+  const allRoutes = Object.values(routes)
+  const shownRoutes = narrow && !showLocked ? allRoutes.filter((route) => route.id === routeId || !isLocked(route)) : allRoutes
+  const hiddenRoutes = allRoutes.length - shownRoutes.length
 
-  return (
-    <section aria-label="World map">
-      <h2>Fractured Frontier</h2>
+  const mapArt = (
+    <>
       <svg className="world-map" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="group" aria-label="Map nodes">
         <rect className="map-background" x={0} y={0} width={WIDTH} height={HEIGHT} />
         {legs.map((leg) => {
@@ -103,14 +113,33 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
           Remembered from an earlier life: {remembered.join(', ')}.
         </p>
       ) : null}
+    </>
+  )
+
+  return (
+    <section aria-label="World map">
+      <h2>Fractured Frontier</h2>
+      {narrow ? (
+        <details className="map-fold">
+          <summary>World map</summary>
+          {mapArt}
+        </details>
+      ) : (
+        mapArt
+      )}
       <fieldset className="choices" disabled={expedition !== null}>
         <legend>Route</legend>
-        {Object.values(routes).map((route) => (
+        {shownRoutes.map((route) => (
           <label key={route.id}>
             <input type="radio" name="rpg-route" checked={routeId === route.id} onChange={() => setRouteId(route.id)} />
             {route.name}
           </label>
         ))}
+        {hiddenRoutes > 0 ? (
+          <button type="button" className="link-button" data-testid="show-locked-routes" onClick={() => setShowLocked(true)}>
+            Show {hiddenRoutes} locked {hiddenRoutes === 1 ? 'route' : 'routes'}
+          </button>
+        ) : null}
       </fieldset>
       <div aria-label="Route info">
         <h3>{info.route.name}</h3>
@@ -172,20 +201,24 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
           <>
             {hero !== null ? <GoingIn hero={hero} onGo={onGo} /> : null}
             {hero !== null ? <ContractTrack /> : null}
-            <button
-              type="button"
-              className="btn-primary"
-              disabled={!start.ok}
-              aria-describedby={!start.ok ? 'start-blocked' : undefined}
-              onClick={() => setError(startExpeditionFromUi(routeId))}
-            >
-              Start expedition
-            </button>
-            {!start.ok ? <p id="start-blocked" data-testid="start-blocked">{start.reason}</p> : null}
+            <div className={narrow ? 'start-dock' : undefined} data-testid="start-area">
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={!start.ok}
+                aria-describedby={!start.ok ? 'start-blocked' : undefined}
+                onClick={() => setError(startExpeditionFromUi(routeId))}
+              >
+                Start expedition
+              </button>
+              {!start.ok ? <p id="start-blocked" data-testid="start-blocked">{start.reason}</p> : null}
+            </div>
           </>
         ) : (
           <p data-testid="map-expedition-note">
-            {expedition.outcome === 'ongoing' ? 'An expedition is under way. Follow it below.' : 'The expedition has ended. See the outcome below.'}
+            {expedition.outcome === 'ongoing'
+              ? `An expedition is under way. Follow it ${narrow ? 'above' : 'below'}.`
+              : `The expedition has ended. See the outcome ${narrow ? 'above' : 'below'}.`}
           </p>
         )}
         {error !== null ? <p role="alert">{error}</p> : null}
