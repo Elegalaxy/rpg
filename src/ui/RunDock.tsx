@@ -84,8 +84,8 @@ export function RunDockView({
             </span>
           ) : null}
           {hero?.autoRun === true ? (
-            <span className="run-dock-stack" data-testid="dock-auto" title="Auto run is on: the hero pushes on and repeats by your standing orders.">
-              Auto
+            <span className="run-dock-stack" data-testid="dock-auto" title={hero.autoRunMode === 'endless' ? 'Auto run is on, endless: the hero keeps going until a retreat, a defeat or the total fight limit.' : 'Auto run is on: the hero pushes on and repeats by your standing orders.'}>
+              {hero.autoRunMode === 'endless' ? 'Auto · endless' : 'Auto'}
             </span>
           ) : null}
           <span className="run-dock-hp">

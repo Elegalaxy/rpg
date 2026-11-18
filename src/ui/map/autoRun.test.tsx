@@ -277,3 +277,54 @@ describe('the shared hold decision', () => {
     expect(decideHold(full, { ...orders, bagFullOrder: 'keep', stopAfterFights: 2 })).toBe('fights')
   })
 })
+
+describe('the Auto run mode on the preparation screen (Step 13.26)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  function prepare(patch: Partial<SavedHero>): string {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    commitSave({ ...made.save, heroes: made.save.heroes.map((entry) => ({ ...entry, ...patch })) }, 'test', false)
+    return renderToStaticMarkup(<ExpeditionPanel />)
+  }
+
+  it('shows the select disabled with a reason while Auto run is off', () => {
+    const html = prepare({ autoRun: false })
+    expect(html).toMatch(/<select[^>]*aria-label="Auto run mode"[^>]*disabled/)
+    expect(html).toContain('Turn on Auto run to choose what happens when the route ends.')
+    expect(html).toContain('Repeat the route')
+    expect(html).toContain('Keep going until I retreat or fall')
+  })
+
+  it('says loot is lost in the endless mode and warns when no retreat level is set', () => {
+    const html = prepare({ autoRun: true, autoRunMode: 'endless', retreatAtMost: null })
+    expect(html).not.toMatch(/<select[^>]*aria-label="Auto run mode"[^>]*disabled/)
+    expect(html).toContain('Loot that does not fit the bag is lost.')
+    expect(html).toContain('auto-run-endless-warning')
+    expect(html).toContain('can only end by defeat or the total fight limit')
+  })
+
+  it('has no warning with a retreat level, or in the repeat mode', () => {
+    expect(prepare({ autoRun: true, autoRunMode: 'endless', retreatAtMost: 0.4 })).not.toContain('auto-run-endless-warning')
+    expect(prepare({ autoRun: true, autoRunMode: 'repeat', retreatAtMost: null })).not.toContain('auto-run-endless-warning')
+  })
+
+  it('tags the run dock Auto · endless', async () => {
+    const { RunDock } = await import('../RunDock.tsx')
+    const html = (patch: Partial<SavedHero>) => {
+      prepare(patch)
+      const run = startRun(patch)
+      expect(run).not.toBeNull()
+      return renderToStaticMarkup(<RunDock />)
+    }
+    expect(html({ autoRun: true, autoRunMode: 'endless' })).toContain('Auto · endless')
+    expect(html({ autoRun: true })).not.toContain('Auto · endless')
+  })
+})

@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: Auto run can now keep going until you retreat or fall, instead of repeating the route; choose it next to the Auto run switch, and the away report says how an endless run ended. [13.26]
 - Improved: Repair everything worn here sits at the top of the Repair tab, like Queue all on Upgrade.
 - New: spend a free upgrade at the crafters to open a socket or rank a modifier up to II at no cost. [13.24]
 - New: the first time a hero clears a zone and gets home, it earns gold, the zone's material and a free gear upgrade; the three late zones also give Legacy at the next reincarnation. [13.24]
