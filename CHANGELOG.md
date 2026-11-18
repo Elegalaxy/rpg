@@ -11,7 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
-<<<<<<< HEAD
+- Improved: route cards, the outcome card, the away report and the Guide show first-clear rewards and whether they are claimed. [13.24]
 - New: the Trading Post sells common materials (scrap, hide, shard, witherbark, oathsteel) at five times their sell price. [13.28]
 - New: the Guide has a Gear topic (slots, quality, durability, modifiers and their limit, sockets, ranks, temper, heirlooms), an entry for every modifier and base item, and a Greyhaven topic on what each shop does. [13.25]
 - New: Auto run can climb Echo ranks on Fracture Gate through the Bastion. A Warden win raises the next rank by one, and a loss to the Warden stops Auto run. [13.26]
@@ -24,9 +24,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - New: Auto run can hand in finished contracts and take board contracts that fit the route every time the hero gets home; switch it on under the Auto run controls. [13.26]
 - New: Auto run can now keep going until you retreat or fall, instead of repeating the route; choose it next to the Auto run switch, and the away report says how an endless run ended. [13.26]
 - Fixed: kill bounties now count enemies that join a fight as summons, such as the Oathbound Echo called by the Echo Knight. [13.25]
-=======
 - Tech: `--matrix free` measures free first-clear upgrades (sockets and rank IIs) against plain gear at hero levels 10 to 17. [13.24]
->>>>>>> 87802e6 (Step 13.24 part 3b: measure free sockets and rank IIs against plain gear)
 - Improved: Repair everything worn here sits at the top of the Repair tab, like Queue all on Upgrade.
 - New: spend a free upgrade at the crafters to open a socket or rank a modifier up to II at no cost. [13.24]
 - New: the first time a hero clears a zone and gets home, it earns gold, the zone's material and a free gear upgrade; the three late zones also give Legacy at the next reincarnation. [13.24]

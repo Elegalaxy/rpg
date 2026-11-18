@@ -52,6 +52,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'Retreat is automatic. Set the health level at which the hero tries to escape. Escape is a roll, not a promise: enemies keep acting while it is attempted, and a failed attempt can be retried later. A successful escape abandons the current fight and its loot, then walks home safely.',
       'Defeat has weight. Unsecured loot is lost, equipment loses durability, and a rescue fee is taken from the gold you carried; unpaid fees become debt. The hero must also rest before the next expedition. Gold you deposited stays safe.',
       'Gear also wears down slowly from ordinary fighting. A piece at no durability is disabled until repaired, never destroyed.',
+      'The first time a hero clears a zone and returns safely, it earns gold, that zone’s material and a free upgrade: open a socket or raise a modifier one rank, at no cost, at the crafters. The farthest zones also add Legacy at the next reincarnation. Each zone pays once per hero, ever; reincarnation does not reset it and a defeat never pays it.',
     ],
   },
   {
@@ -74,6 +75,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'Level and experience turn into Legacy, a currency that stays with that hero. Reaching a boss, zone, or difficulty milestone for the first time gives a one-time bonus. Legacy buys small permanent gains, new nodes, and starting options.',
       'Reincarnating resets level, experience, attributes, the skill web, the hero’s world progress, and its contracts. Mastery, purchases, Legacy, discoveries, recipes, crafting, gold, materials, and the archive stay. Worn gear goes to the archive, and one heirloom can be chosen to carry over.',
       'The elites you beat are remembered, so the zones they guard stay open in the next life.',
+      'Clearing the three farthest zones for the first time, and returning safely, also gives a one-time Legacy bonus, claimed at the next reincarnation.',
     ],
   },
   {

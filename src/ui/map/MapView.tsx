@@ -10,6 +10,7 @@ import {
   type MarkerPosition,
   type NodeState,
 } from '../../persist/world.ts'
+import { firstClearReward, firstClearRewardText } from '../../content/firstClear.ts'
 import { legs, nodes, routes } from '../../content/world.ts'
 import { canStartRouteNow, getLastRouteId, startExpeditionFromUi, useSaveStatus } from '../store.ts'
 import { Help } from '../Help.tsx'
@@ -41,6 +42,9 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const info = routeInfo(routeId, save)
   const start = canStartRouteNow(save, routeId)
   const mastery = routeMastery(hero, routeId)
+  const lastNodeId = routes[routeId]?.nodeIds[(routes[routeId]?.nodeIds.length ?? 1) - 1]
+  const firstClear = lastNodeId === undefined ? null : firstClearReward(lastNodeId)
+  const firstClearClaimed = hero?.firstClearIds?.includes(lastNodeId ?? '') === true
   const chosen = new Set(routes[routeId]?.nodeIds ?? [])
   const position = expedition === null ? null : markerPosition(expedition)
   const marker = position === null ? null : point(position)
@@ -125,6 +129,15 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
             tone={mastery.mastered ? 'good' : undefined}
             testId="route-mastery"
           />
+          {firstClear === null ? null : (
+            <Kpi
+              label="First clear"
+              value={firstClearRewardText(firstClear)}
+              note={firstClearClaimed ? 'Claimed' : 'Not claimed yet'}
+              tone={firstClearClaimed ? undefined : 'gold'}
+              testId="route-first-clear"
+            />
+          )}
         </KpiRow>
         <dl className="route-facts">
           <dt>Path</dt>

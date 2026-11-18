@@ -21,10 +21,11 @@ import {
 } from '../../persist/preparation.ts'
 import { PACKS, STACK_LIMIT_REASON, packSlots } from '../../persist/pack.ts'
 import { REPEAT_LIMITS, type SavedHero } from '../../persist/save.ts'
+import { firstClearRewardText } from '../../content/firstClear.ts'
 import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
 import { countNames } from '../town/groupItems.ts'
-import { outcomeStats } from '../../persist/world.ts'
+import { firstClearPreview, outcomeStats } from '../../persist/world.ts'
 import { ContractTrack } from './ContractTrack.tsx'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { MOMENTUM_CAP, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
@@ -774,6 +775,7 @@ function RunDetails({ expedition }: { expedition: ExpeditionState }) {
 function Ended({ expedition }: { expedition: ExpeditionState }) {
   const { save } = useSaveStatus()
   const stats = outcomeStats(expedition, selectedHero(save))
+  const firstClears = firstClearPreview(save)
   const [error, setError] = useState<string | null>(null)
   const defeated = expedition.outcome === 'defeat'
   const lootTotal = stats.secured.reduce((sum, stack) => sum + stack.quantity, 0)
@@ -819,6 +821,18 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
           </span>
         </div>
         <DiscoveredLine />
+        {firstClears.length > 0 ? (
+          <div className="pill-line" data-testid="first-clear">
+            <small className="pill-label">First clear</small>
+            <span className="pill-row">
+              {firstClears.map((reward) => (
+                <Tag key={reward.nodeId} kind="good">
+                  {reward.name} +{firstClearRewardText(reward)}
+                </Tag>
+              ))}
+            </span>
+          </div>
+        ) : null}
       </div>
       {defeated ? (
         <>

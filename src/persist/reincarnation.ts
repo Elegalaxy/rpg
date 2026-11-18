@@ -22,7 +22,7 @@ export const RANK_BONUS = 5
 /** Legacy for the first clear of each of the three late zones (Step 13.24). */
 export const ZONE_CLEAR_BONUS = 2
 /** The zones that pay `ZONE_CLEAR_BONUS`, each read from `firstClearIds`. */
-const LEGACY_ZONES: readonly string[] = ['drowned-causeway', 'rift-hollows', 'cinder-scar']
+export const LEGACY_ZONES: readonly string[] = ['drowned-causeway', 'rift-hollows', 'cinder-scar']
 
 export const ATTRIBUTE_SEED_COST = 3
 export const ATTRIBUTE_SEED_MAX = 10

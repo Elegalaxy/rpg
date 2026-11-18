@@ -11,6 +11,8 @@ import {
   type GuideTopicId,
 } from '../../content/guide.ts'
 import { enemies } from '../../content/enemies.ts'
+import { FIRST_CLEAR_NODE_IDS, firstClearReward, firstClearRewardText } from '../../content/firstClear.ts'
+import { LEGACY_ZONES, ZONE_CLEAR_BONUS } from '../../persist/reincarnation.ts'
 import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS } from '../../content/contracts.ts'
 import { itemBases } from '../../content/items.ts'
 import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE } from '../../content/shop.ts'
@@ -401,6 +403,16 @@ function townFacts(): GuideFact[] {
   ]
 }
 
+/** One fact per zone that pays a first-clear reward, generated from the content table and the Legacy bonus. */
+function firstClearFacts(): GuideFact[] {
+  return FIRST_CLEAR_NODE_IDS.flatMap((nodeId) => {
+    const reward = firstClearReward(nodeId)
+    if (reward === null) return []
+    const legacy = LEGACY_ZONES.includes(nodeId) ? ` · +${ZONE_CLEAR_BONUS} Legacy` : ''
+    return [{ label: `First clear: ${reward.name}`, value: `${firstClearRewardText(reward)}${legacy}` }]
+  })
+}
+
 function topicEntry(id: GuideTopicId): GuideEntry {
   const found = GUIDE_TOPICS.find((candidate) => candidate.id === id)
   if (found === undefined) throw new Error(`guide topic ${id} is missing`)
@@ -409,7 +421,7 @@ function topicEntry(id: GuideTopicId): GuideEntry {
     section: TOPIC_SECTION[found.id],
     title: found.title,
     summary: found.summary,
-    facts: found.id === 'gear' ? gearFacts() : found.id === 'greyhaven' ? townFacts() : [],
+    facts: found.id === 'gear' ? gearFacts() : found.id === 'greyhaven' ? townFacts() : found.id === 'expeditions' ? firstClearFacts() : [],
     lines: found.id === 'expeditions' ? [MASTERY_HELP] : [],
     prose: found.body,
     links: found.id === 'greyhaven' ? [{ id: 'topic-gear', label: 'Gear' }] : found.id === 'gear' ? [{ id: 'topic-greyhaven', label: 'Greyhaven and its shops' }] : [],

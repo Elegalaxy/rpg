@@ -1230,13 +1230,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.23
 - Goal: the first time a hero clears a zone node and gets home safely they earn gold, 15 of the zone's material, a free upgrade token (open a socket, or raise a modifier I to II) and, at the three late zones, +2 Legacy at the next reincarnation (rules in GAME_DESIGN §9, "First-clear rewards (Step 13.24)"; §10). Sim untouched, so every matrix stays byte-identical.
 - Parts: (1) docs only. (2) `content/firstClear.ts`, `persist/firstClear.ts`, save fields, payout in `settleExpedition`, away report, Legacy bonus, tests. (3) `spendFreeUpgrade` in `persist/crafting.ts`, store action, Sockets and Ranks buttons, tests. (3b) measurement of free sockets and rank-IIs (modded matrix) with a stop if early sockets are too strong. (4) UI: outcome card, map route card, away report, Guide. (5) Status, Progress, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `done`. 3b `done`. 4 `todo`. 5 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 3b `done`. 4 `done`. 5 `todo`.
 - Acceptance: typecheck, lint, npm test (incl. `tests/architecture.test.ts`) and build pass; guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows, warden, causeway, elites at seed 1 x 5) byte-identical to origin/main.
 - Progress:
   - 2026-11-18: Part 1 done. Rules and table recorded in GAME_DESIGN §9 and §10, Guide line in §12.
   - 2026-11-18: Part 2 done. `content/firstClear.ts`, `persist/firstClear.ts` (`firstClearsDue`, `payFirstClears`), `SavedHero.firstClearIds?`/`freeUpgrades?` (validated, no version bump), payout inside `settleExpedition` for `returned` runs only, `firstClearPreview` in `persist/world.ts`, `HeroAwaySummary.firstClears`, `ZONE_CLEAR_BONUS` (`zone:<node>` bonus from `firstClearIds`). Sim untouched.
   - 2026-11-18: Part 3 done. `spendFreeUpgrade` and a `free` argument on `socketCheck`/`rankCheck` (`FREE_RANK_MAX = 2`) in `persist/crafting.ts`, `spendFreeUpgradeFromUi`, `ui/town/FreeUpgrade.tsx` (button with confirm), buttons and a "Free upgrades: N" tag in Sockets and Ranks, tests.
   - 2026-11-18: Part 3b done. `--matrix free` (`src/harness/freeUpgrade.ts`, seeds 1-3 x 100, levels 10, 13, 16, 17) recorded in GAME_DESIGN §9. Free sockets (with a scrap infuse) lift level-10 wins by +1.7 (3 tokens) to +2.8 (4) points on average, about the paid socket's +3.8; one cell (Warrior vs the Echo Knight) rises 21% to 50%. Levels 13 to 17 are already at 0 or 100% in every cell. No spike, so Part 4 went ahead; the fallback (early tokens rank up only) is the user's call.
+  - 2026-11-18: Part 4 done. `firstClearRewardText` (content), a "First clear" pill line on the outcome card (`firstClearPreview`), a "First clear" Kpi with Claimed / Not claimed yet on the route card, "First clear: ..." in the away report, Guide prose (no digits) and per-zone facts (`topic-expeditions`), tests in `ui/map/firstClear.test.tsx` and `guideIndex.test.ts`.
 
 ### Step 13.23: In-game Guide
 - Status: `done`
