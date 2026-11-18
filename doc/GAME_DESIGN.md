@@ -2267,6 +2267,86 @@ Like all crafting it is refused during an expedition, and for an item held by a 
 
 **Sink arithmetic.** A hero can earn at most 7 tokens in all. Seven free sockets replace at most 7 x 880 gold (the dearest socket, level 22 x 40) and 56 of the rare material, once per hero. The gold and material of the rewards total 4,200 gold and 90 material once per hero, small beside a run's loot.
 
+
+**Measurement: free upgrades against plain gear (Step 13.24 part 3b, 2026-11-18).** Question: are free sockets and rank-IIs at hero levels 10 to 17 too strong? Method: `--matrix free` (`src/harness/freeUpgrade.ts`, rules mode, seeds 1-3 x 100, pooled). The hero is the reference hero of that level (skill nodes = level / 3, 6 at level 17), item level = hero level, quality 100%, one modifier per piece (the Prepared set), 2 Healing Draughts. Gear is built with the game's own code (`spendFreeUpgrade`, `queueInfuse`, `advanceCrafting`). Rows: `plain`; `free-socket-3` / `free-socket-4`: 3 or 4 free sockets (no quality lift) with a scrap second modifier infused into each (an empty socket does nothing by itself, so the lift below is the infused modifier; armor cannot take a second modifier, so only weapon, off-hand and two accessories count; 7 tokens on all slots equal 4 here); `free-rank2-3` / `free-rank2-7`: 3 or 7 free rank II (no temper change); `free-mix-7`: 4 sockets plus 3 ranks; `paid-socket`: reference, riftglass socket plus scrap infuse on the same four pieces. Fights: levels 10, 13 and 16 meet the zone fights (Grove mixed, Bastion mixed, Rootmaw Stalker, Echo Knight); level 17 and the under-levelled `hard` run (levels 16 and 13 against the Causeway) meet the seven Causeway fights. Cells are class x fight (20 cells at levels 10 to 16, 35 at the Causeway). Numbers are mean win % per class, the lift over plain in brackets.
+
+Level 10 (4 fights: bastion-mixed, echo-knight, grove-mixed, rootmaw-stalker)
+
+| Row | Warrior | Assassin | Ranger | Mage | Cleric | Mean | Cells over +10 | Cells over +20 | Largest cell lift |
+|---|---|---|---|---|---|---|---|---|---|
+| plain | 77 | 71 | 64 | 70 | 100 | 76.5 | - | - | - |
+| free-socket-3 | 83 (+6) | 72 (+1) | 65 (+1) | 71 (+0) | 100 (+0) | 78.2 | 1/20 | 0/20 | +20 |
+| free-socket-4 | 85 (+8) | 73 (+2) | 66 (+2) | 72 (+1) | 100 (+0) | 79.3 | 1/20 | 1/20 | +29 |
+| free-rank2-3 | 78 (+2) | 73 (+2) | 66 (+1) | 71 (+0) | 100 (+0) | 77.5 | 0/20 | 0/20 | +6 |
+| free-rank2-7 | 86 (+9) | 74 (+3) | 70 (+5) | 72 (+1) | 100 (+0) | 80.2 | 3/20 | 1/20 | +26 |
+| free-mix-7 | 88 (+11) | 74 (+2) | 69 (+5) | 73 (+2) | 100 (+0) | 80.6 | 2/20 | 1/20 | +37 |
+| paid-socket | 87 (+10) | 74 (+2) | 68 (+4) | 73 (+2) | 100 (+0) | 80.3 | 2/20 | 1/20 | +35 |
+
+Level 13 (4 fights: bastion-mixed, echo-knight, grove-mixed, rootmaw-stalker)
+
+| Row | Warrior | Assassin | Ranger | Mage | Cleric | Mean | Cells over +10 | Cells over +20 | Largest cell lift |
+|---|---|---|---|---|---|---|---|---|---|
+| plain | 100 | 96 | 100 | 96 | 100 | 98.4 | - | - | - |
+| free-socket-3 | 100 (+0) | 97 (+0) | 100 (+0) | 98 (+3) | 100 (+0) | 99.0 | 1/20 | 0/20 | +10 |
+| free-socket-4 | 100 (+0) | 98 (+1) | 100 (+0) | 98 (+3) | 100 (+0) | 99.2 | 1/20 | 0/20 | +11 |
+| free-rank2-3 | 100 (+0) | 97 (+0) | 100 (-0) | 96 (+0) | 100 (+0) | 98.5 | 0/20 | 0/20 | +2 |
+| free-rank2-7 | 100 (+0) | 98 (+2) | 100 (+0) | 98 (+2) | 100 (+0) | 99.2 | 0/20 | 0/20 | +8 |
+| free-mix-7 | 100 (+0) | 98 (+1) | 100 (+0) | 99 (+3) | 100 (+0) | 99.3 | 1/20 | 0/20 | +13 |
+| paid-socket | 100 (+0) | 98 (+1) | 100 (+0) | 99 (+3) | 100 (+0) | 99.2 | 1/20 | 0/20 | +12 |
+
+Level 16 (4 fights: bastion-mixed, echo-knight, grove-mixed, rootmaw-stalker)
+
+| Row | Warrior | Assassin | Ranger | Mage | Cleric | Mean | Cells over +10 | Cells over +20 | Largest cell lift |
+|---|---|---|---|---|---|---|---|---|---|
+| plain | 100 | 100 | 100 | 100 | 100 | 100.0 | - | - | - |
+| free-socket-3 | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100.0 | 0/20 | 0/20 | +0 |
+| free-socket-4 | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100.0 | 0/20 | 0/20 | +0 |
+| free-rank2-3 | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100.0 | 0/20 | 0/20 | +0 |
+| free-rank2-7 | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100.0 | 0/20 | 0/20 | +0 |
+| free-mix-7 | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100.0 | 0/20 | 0/20 | +0 |
+| paid-socket | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100 (+0) | 100.0 | 0/20 | 0/20 | +0 |
+
+
+Level 17 hero against the Causeway fights (the standard level of the modded matrix; six fights are won by every row and the Colossus is lost by every row, so nothing can move):
+
+| Row | Warrior | Assassin | Ranger | Mage | Cleric | Mean | Cells over +10 | Cells over +20 | Largest cell lift |
+|---|---|---|---|---|---|---|---|---|---|
+| plain | 86 | 86 | 86 | 86 | 86 | 85.8 | - | - | - |
+| free-socket-3 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.8 | 0/35 | 0/35 | +2 |
+| free-socket-4 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86.0 | 0/35 | 0/35 | +3 |
+| free-rank2-3 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.8 | 0/35 | 0/35 | +0 |
+| free-rank2-7 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.9 | 0/35 | 0/35 | +1 |
+| free-mix-7 | 86 (+0) | 86 (+1) | 86 (+0) | 86 (+0) | 86 (+0) | 86.1 | 0/35 | 0/35 | +4 |
+| paid-socket | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86.0 | 0/35 | 0/35 | +3 |
+
+
+Level 16 hero against the Causeway fights (under-levelled):
+
+| Row | Warrior | Assassin | Ranger | Mage | Cleric | Mean | Cells over +10 | Cells over +20 | Largest cell lift |
+|---|---|---|---|---|---|---|---|---|---|
+| plain | 86 | 86 | 86 | 86 | 86 | 85.7 | - | - | - |
+| free-socket-3 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-socket-4 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-rank2-3 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-rank2-7 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-mix-7 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| paid-socket | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+
+Level 16 (7 fights: bulwark, causeway-deep, causeway-mixed, colossus, leech, leech-swarm, raider)
+
+| Row | Warrior | Assassin | Ranger | Mage | Cleric | Mean | Cells over +10 | Cells over +20 | Largest cell lift |
+|---|---|---|---|---|---|---|---|---|---|
+| plain | 86 | 86 | 86 | 86 | 86 | 85.7 | - | - | - |
+| free-socket-3 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-socket-4 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-rank2-3 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-rank2-7 | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| free-mix-7 | 86 (+0) | 86 (-0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+| paid-socket | 86 (+0) | 86 (-0) | 86 (+0) | 86 (+0) | 86 (+0) | 85.7 | 0/35 | 0/35 | +0 |
+
+
+Reading: the reference hero at levels 13, 16 and 17 already wins or loses every fight outright, so free upgrades cannot move them. At level 10 the lift is small and about the same as the paid socket: mean +2.8 (3 sockets: +1.7) points for four free sockets, against +3.8 for the paid riftglass socket on the same pieces, and +3.7 for seven free rank IIs. The largest single cell is the Warrior against the level-16 Echo Knight at hero level 10: 21% plain, 41% with 3 free sockets, 50% with 4, 56% with the paid socket, 58% for sockets plus ranks. Only 1 of 20 cells rises by more than +10 for the socket rows (3 of 20 for seven rank IIs: that Warrior cell and the Ranger against the Rootmaw Stalker, +15). Conclusion: no spike. The decision for the fallback (earlier tokens may rank up only) is left to the user because a hero that fights an elite 6 levels above its own level is where free sockets matter most. Caveat: the reference hero is a tuned build, so a real hero is weaker and the cells that matter sit lower; the measurement covers only the cells that are not already at 0% or 100%.
+
 ### Equipment math
 
 MVP combat slots:

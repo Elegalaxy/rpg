@@ -16,6 +16,7 @@ import { formatBuiltTable, runBuiltMatrix } from './builds.ts'
 import { runComboMatrix } from './combos.ts'
 import { formatTelegraphTable, runTelegraphMatrix } from './telegraph.ts'
 import { formatCausewayTable, runCausewayMatrix } from './causeway.ts'
+import { formatFreeCsv, runFreeMatrix } from './freeUpgrade.ts'
 import { formatModdedCsv, formatModdedTable, runModdedMatrix, writeModdedCsv } from './modded.ts'
 import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
 import { formatCinderTable, runCinderMatrix } from './cinder.ts'
@@ -273,8 +274,8 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'modded') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites, pack, modded`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'modded' && args.matrix !== 'free') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites, pack, modded, free`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
@@ -331,6 +332,16 @@ function printMatrix(args: ParsedArgs): void {
     const rows = runHollowsMatrix(seed, runs)
     const elapsedMs = performance.now() - started
     process.stdout.write(formatHollowsTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
+  if (args.matrix === 'free') {
+    console.log(`[sim] matrix free seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const only = process.env.FREE_LEVELS?.split(',').map(Number).filter((n) => Number.isInteger(n))
+    const rows = runFreeMatrix(seed, runs, only === undefined || only.length === 0 ? undefined : only, process.env.FREE_HARD === '1')
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatFreeCsv(rows))
     printTiming(rows.length * runs, elapsedMs)
     return
   }
