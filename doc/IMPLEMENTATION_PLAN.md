@@ -1211,6 +1211,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.31: Lean inheritance
+- Status: `in progress`
+- Depends on: 13.18, 13.24, 13.30
+- Goal: on reincarnation only a share of the hero's gold, materials and supplies carries over (base 20%, Stockpile I/II/III 30/40/50%), the rest is lost; gear, free upgrades, pack, recipes, crafting XP, route returns and mastery stay whole. Five new Legacy purchases (Stockpile, Artisan's Favor, Long Memory, Head Start III, Third Heirloom) carry long-run growth. Two guards keep the share from being laundered: earlier-life gear sells at the share (`pastLifeItemIds`), and reincarnation waits for the craft queue. GAME_DESIGN §10 "Carry-over and Stockpile". `src/sim`, content numbers and the harness are untouched, so every guard stays identical.
+- Parts: (1) docs. (2) persist: `carryOver.ts`, save fields, `reincarnation.ts`, `town.ts` sell price, tests. (3) UI: Legacy screen, Town sell price and tag, confirm dialog. (4) Guide, CHANGELOG, HANDOFF.
+- Part status: 1 `done`. 2 `pending`. 3 `pending`. 4 `pending`.
+- Progress:
+  - 2026-11-18: Part 1 done. Rule, guards and purchases recorded in GAME_DESIGN §10.
+
 ### Step 13.30: Legacy purchases apply now
 - Status: `done`
 - Depends on: 13.18, 13.29

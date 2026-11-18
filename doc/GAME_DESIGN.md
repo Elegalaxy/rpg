@@ -2597,6 +2597,7 @@ Raw permanent power must be controlled to avoid making build decisions irrelevan
 Reincarnation resets:
 
 - Level and current XP
+- The part of the hero's gold, materials and supplies above the carried share (lost, not converted)
 - Allocated attributes
 - Allocated skill web
 - Current contracts
@@ -2610,9 +2611,8 @@ Reincarnation preserves:
 - First-clear records and unspent free upgrades (`firstClearIds`, `freeUpgrades`, Step 13.24)
 - The crafted backpack (`pack`, Step 13.22)
 - Recipes and crafting proficiency
-- Deposited gold
-- The hero's gold, materials, and debt
-- The hero's archived equipment
+- A share of the hero's gold, materials, supplies and debt (Step 13.31; see "Carry-over and Stockpile" below). The rest is lost
+- The hero's archived equipment (all gear, whole)
 
 ### Equipment across lives
 
@@ -2630,6 +2630,34 @@ First-playable reincarnation numbers, decided 2026-11-01:
 - Purchases apply now (Step 13.30, decided 2026-11-18): a purchase also applies to the hero's current life at once, except Second Heirloom (the heirloom is chosen at reincarnation, so it takes effect then). Attribute Seed adds 1 to that attribute on the current life now; Skill Point Seed adds 1 unspent skill point now; Head Start raises the hero to its level now (see Head Start below); Deep Pockets already applied at once. Each later life still starts from the fresh racial base plus every seed, so nothing is counted twice. Purchases bought before this change are not applied retroactively: the game cannot tell what the current life already has, so those seeds and Head Starts take effect from the next reincarnation as before.
 - Mastery is the hero's completed lives, up to 10. Each rank adds 2% ordinary XP, up to +20%, and nothing else.
 - The reset and preserve lists above apply. The hero's current contracts are cleared. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
+
+### Carry-over and Stockpile (Step 13.31)
+
+Decided 2026-11-18 (user: "go with all my picks"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are. Reason: a hero kept every coin, material and supply across lives, so early lives paid for later ones and Legacy was the only brake on growth. Now wealth is mostly lost at reincarnation, gear stays, and long-run growth comes from Legacy purchases.
+
+- Carried share: one integer percent applies to gold, every material id and every supply id. Base 20. Stockpile I, II and III make it 30, 40 and 50 (cost 20, 35 and 50 Legacy, each needs the one before).
+- Rounding: for each material id and each supply id, `kept = floor(n * pct / 100)`. A stack that rounds to 0 is removed (4 units at 20% keep 0, 7 keep 1).
+- Debt is settled first from gold: `paid = min(gold, debt)`, `gold' = floor((gold - paid) * pct / 100)`, `debt' = ceil((debt - paid) * pct / 100)`. The rest is lost.
+- Leftover wealth is lost, not converted to Legacy, so spending it on gear, upgrades and potions before reincarnating is the intended play.
+- Kept whole, as before: the archive (all gear, worn gear goes to the archive, heirlooms), free upgrade tokens (`freeUpgrades`), the crafted pack, recipes, crafting XP, route returns, first clears, mastery and purchases. Contracts are still cleared.
+- Guard A (earlier-life gear): the shop sells for `item level * 10` and buys back at `item level * 5 * quality`, so without a guard a hero could turn gold into shop gear, reincarnate (all gear is kept) and sell it back, laundering gold past the share. At reincarnation the hero's `pastLifeItemIds` (optional on the save) is set to the id of every archive item; selling such an item pays `floor(itemSellPrice * pct / 100)` at the current carried share (`sellPriceFor`). `sellItem` removes the id from the list when the item is sold, because shop ids can be reused. Items bought or found this life sell at the full price.
+- Guard B (craft queue): crafting keeps about all of its gold, so queued jobs could hold wealth through the reset. `reincarnationBlock` refuses while the hero's craft queue is not empty ("Wait for the crafters: jobs are queued or running. They finish first."), like the Trainer drill rule.
+- No path moves gold, materials, supplies or items between heroes (`Purse`: "Nothing in it moves between heroes"), so the share cannot be laundered through a second hero.
+- Legacy income, for the purchases below: income per life is `legacyFromProgress`, about `2 * (L - 1) + 0..4` (level 20 about 38 to 42, level 25 about 48 to 52, level 30 about 58 to 62). One-time bonuses: 5 elites x 3 = 15, the Warden +20, 3 late zones x 2 = 6, and +5 per new Echo rank.
+- Purchases (all hero-bound; "applies now" as in Step 13.30 where it makes sense):
+
+| Purchase | Tiers and cost (Legacy) | Effect |
+| --- | --- | --- |
+| Stockpile I / II / III | 20 / 35 / 50 | Carried share 30 / 40 / 50%; also the share an earlier-life item sells for. Applies at once to the preview and to sales. |
+| Artisan's Favor I / II | 30 / 45 | Each new life starts with +1 / +2 free upgrade tokens (they stack with unspent ones). Buying adds +1 token now. |
+| Long Memory I / II | 25 / 40 | Recall doubles run XP up to peak level + 3 / + 6 (needs a peak; applies now when the hero has one). |
+| Head Start III | 55 (needs II) | Start at level 15 (levels 5 / 10 / 15 cost 20 / 35 / 55). Raises a lower hero to 15 now, as I and II do. |
+| Third Heirloom | 50 (needs Second Heirloom) | Keep a third heirloom (allowance 1 + second + third). Takes effect at the next reincarnation. |
+
+  The nine new buys cost 335 Legacy in total.
+- Long Memory deliberately widens the earlier exploit guard line in "Later lives" ("Recall only speeds levels the hero already earned once, and only up to the old peak"): with Long Memory it runs up to 3 or 6 levels above the old peak. It still pays nothing for losing on purpose.
+- Gear economy (Section 9): gear from an earlier life sells at the carried share of its normal sell price (see Guard A); gear bought or found this life is unchanged.
+- Risk accepted: the first reincarnation after this change cuts an existing hoard (10,000 gold keeps 2,000 at the base share), and Guard B blocks reincarnating while craft jobs run.
 
 ### Later lives (Step 13.18)
 

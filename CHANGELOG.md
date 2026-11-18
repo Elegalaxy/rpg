@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Tech: record the lean-inheritance design (a share of gold, materials and supplies carries over; new Legacy purchases) in the design doc. [13.31]
 - Improved: Legacy purchases (Attribute Seed, Skill Point Seed, Head Start) now apply to the hero's current life as soon as you buy them, not only after the next reincarnation. [13.30]
 
 ## 0.16.0 · 2026-11-18 · Supplies, the Guide, first clears and Auto run modes (Steps 13.20-13.29)
