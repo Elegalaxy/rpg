@@ -228,6 +228,13 @@ function GearShop({ place }: { place: PlaceDef }) {
       {job === 'repair' ? (
         <>
       <h3>Repair</h3>
+      {repairAllPrice > 0 ? (
+        <div className="upgrade-all">
+          <button type="button" className="btn-good" disabled={closed || gold < repairAllPrice} onClick={() => run(repairAllFromUi(mine), 'Repaired everything worn of this kind.')}>
+            Repair everything worn here <Tag kind="gold">{repairAllPrice} gold</Tag>
+          </button>
+        </div>
+      ) : null}
       {damaged.length === 0 ? <p>Nothing of this kind is damaged.</p> : null}
       <ul className="shop-rows">
         {groupItems(damaged).map(({ item, count }) => (
@@ -251,11 +258,6 @@ function GearShop({ place }: { place: PlaceDef }) {
           />
         ))}
       </ul>
-      {repairAllPrice > 0 ? (
-        <button type="button" className="btn-good" disabled={closed || gold < repairAllPrice} onClick={() => run(repairAllFromUi(mine), 'Repaired everything worn of this kind.')}>
-          Repair everything worn here <Tag kind="gold">{repairAllPrice} gold</Tag>
-        </button>
-      ) : null}
         </>
       ) : null}
 
