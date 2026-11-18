@@ -8,7 +8,7 @@ import type { HeroRace } from '../sim/progression.ts'
  * sim definitions (src/ui/guide/guideIndex.ts), so this text cannot go stale. guide.test.ts enforces it.
  */
 
-export type GuideTopicId = 'getting-started' | 'rules' | 'expeditions' | 'supplies-crafting' | 'reincarnation'
+export type GuideTopicId = 'getting-started' | 'rules' | 'expeditions' | 'supplies-crafting' | 'reincarnation' | 'gear' | 'greyhaven'
 
 export type GuideTopic = {
   id: GuideTopicId
@@ -74,6 +74,38 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'Level and experience turn into Legacy, a currency that stays with that hero. Reaching a boss, zone, or difficulty milestone for the first time gives a one-time bonus. Legacy buys small permanent gains, new nodes, and starting options.',
       'Reincarnating resets level, experience, attributes, the skill web, the hero’s world progress, and its contracts. Mastery, purchases, Legacy, discoveries, recipes, crafting, gold, materials, and the archive stay. Worn gear goes to the archive, and one heirloom can be chosen to carry over.',
       'The elites you beat are remembered, so the zones they guard stay open in the next life.',
+    ],
+  },
+  {
+    id: 'gear',
+    title: 'Gear',
+    summary: 'Slots, item level and quality, durability, modifiers, sockets, ranks, temper, and heirlooms.',
+    body: [
+      'A hero wears gear in eight slots: main hand, off hand, head, chest, hands, feet, and two accessories. A two-handed weapon leaves the off-hand slot empty. Gear you own but do not wear waits in the archive.',
+      'Every item has a base kind, an item level, and a quality. A hero can wear an item only when the hero’s level reaches the item level. Quality multiplies a weapon’s or off-hand’s Power and the Armor and Resistance of armor and shields; it does nothing for accessories, and it raises the sell price.',
+      'Each class prefers certain weapons, off-hands, and one armor category, and the shops sell only what the selected hero can use. Accessories are open to every class.',
+      'Durability falls slowly from ordinary fighting and more after a defeat. A piece at no durability is disabled, never destroyed, and does nothing until it is repaired. Repair is paid in gold by the missing durability and the item level, and a shop repairs only its own kind of item.',
+      'Modifiers are the extra effects of crafted gear. The Enchanter teaches a recipe once for every hero, a hero must reach the modifier’s level to craft or wear it, and some modifiers fit only certain kinds of item.',
+      'The same modifier counts only a limited number of times across everything a hero wears. This applies to every modifier, not only one. A piece beyond the limit still works as gear but adds nothing for that modifier, and the equipment screen says so. Hauler’s bag room follows the same rule: it counts for at most the same number of worn pieces, and it can only sit on chest armor or an accessory.',
+      'An upgrade raises an item’s level by one, never past the hero’s level, and keeps its modifier. The material spent can lift quality but never lowers it, so upgrading is the cheap way to keep a good item current, while crafting is for a new item or a different modifier.',
+      'From a certain hero level, a socket can be opened on an item, and a second, different modifier can then be infused into it. A rank-up raises the numbers of one modifier on one item, up to a top rank. The limit above counts pieces, not ranks.',
+      'The material used also sets a temper on the modifier: the better the material, the bigger the boost to its numbers.',
+      'At reincarnation all worn gear goes to the archive. One chosen heirloom carries over: its item level follows the hero’s level up to the level it had, and its quality and modifiers are kept.',
+    ],
+  },
+  {
+    id: 'greyhaven',
+    title: 'Greyhaven and its shops',
+    summary: 'What each place in town does and where to go for what.',
+    body: [
+      'Greyhaven is a set of places, each with its own trade. Gold, materials, and items belong to the hero you have selected, while recipes and the map are shared by all your heroes.',
+      'The Weaponsmith handles weapons and off-hands, the Armorer handles helms, chestpieces, gloves, and boots, and the Jeweler handles rings and charms. Each one lets you buy, sell, repair, craft, upgrade, open sockets, and raise ranks, but only for its own kind of item. Bought items go into the archive, where they can be worn.',
+      'The Repair tab at a gear shop lists the damaged pieces of that kind and can repair everything worn there at once. Repair needs gold, and a broken piece stays equipped and does nothing until it is repaired.',
+      'The Armorer also has a Backpack counter. A crafted Satchel and then a Field Pack add supply slots for every run, with a limit on how many of one supply a run can carry. The pack is kept through reincarnation.',
+      'Crafting, upgrades, sockets, ranks, and packs are jobs in one shared queue that runs for every hero, in town or on the road. Costs are paid when a job is queued, and nothing in the queue can be cancelled.',
+      'The Potion Shop sells the basic supplies for gold and brews better ones from materials. The Trading Post buys your materials for gold, one at a time, in steps, or all at once. It does not sell materials.',
+      'The Enchanter sells modifier recipes. The Trainer sells timed drills that give part of the next level. The Bank takes payments toward the debt left by rescues, and debt blocks nothing.',
+      'The Contract Board posts work: defeat a kind of enemy, win fights in a zone, break an elite, or bring home a material. A hero can hold only a few contracts at once, wins count when an expedition ends, and new work is posted each time you come back to town. Each contract pays gold, materials, and XP when you collect it.',
     ],
   },
 ]

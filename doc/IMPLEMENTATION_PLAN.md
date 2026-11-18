@@ -1203,15 +1203,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 4 done. `persist/autoContracts.ts` (`autoContractsStep`, `contractFitsRoute`) shared by `store.ts afterAutoRun` and `offline.ts rerun`; `autoContracts?` on the hero and draft, checkbox, away report line, Guide sentence, CHANGELOG. Summoned enemies are not matched for bounties. Full `npm test` under load showed 2 timeouts; every file passes when run in two groups. Browser and 375 px not checked; sim untouched so guards not re-run.
 
 ### Step 13.25: Playtest fixes (contract kills, tracker route, material sell steps, guide gaps)
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.22, 13.23
 - Goal: (A) a kill bounty counts every enemy that dies in a won fight, summons included (the Echo Knight's Oathbound Echo), via an optional `slain` list on the expedition history entry; old history falls back to encounter members. (B) the contract tracker names the zone or route in brackets. (C) the Trading Post sells materials in steps of 1, 10, 100 and All. (D) Guide topics for Gear and Greyhaven, plus generated modifier entries. No sim behaviour change; every guard stays byte-identical.
-- Part status: A `done`. B `done`. C `done`. D `todo`.
+- Part status: A `done`. B `done`. C `done`. D `done`.
 - Progress:
   - 2026-11-18: Step opened. Cause of A: `unitsFrom` read only `encounters[id].members`, and summons are not members.
   - 2026-11-18: Part A done. `ExpeditionEncounterRecord.slain?` (defIds of every enemy that died, summons included; recorded in `finishEncounter`, no sim behaviour change); `unitsFrom` counts it, old history falls back to members. `encounterEnemyIds` (members plus summons, through any depth) in `content/contracts.ts`, shared by Auto run's `contractFitsRoute`. Guards (8 matrices seed 1 x 5) identical to origin/main apart from the speed line.
   - 2026-11-18: Part B done. `contractZone(target)` in `content/contracts.ts` (derived from the target, so old stored contracts work; summoned enemies count, zones joined with " / "), `ContractTrackRow.label`, shown on the map and fight tracker. The board rows already carry the zone in their description. Tests in `persist/contracts.test.ts`.
   - 2026-11-18: Part C done. `SELL_STEPS` (1, 10, 100, hidden above the stack) plus Sell all, each with its gold, in `TradingPost` (`ui/town/Town.tsx`); aria-labels kept ("Sell 1 shard", "Sell all shard"). No material buying. Test `ui/town/TradingPost.test.tsx`.
+  - 2026-11-18: Part D done. Gear and Greyhaven topics in `content/guide.ts` (no digits), sections Gear and Greyhaven, generated `modifier-*` entries (effect, level, price, fits, recipe need, stacking from `MODIFIER_STACK_CAP`; Hauler's bag room shown as per counted piece, at most cap times, chest armor or accessory only) and `item-*` base item entries in `ui/guide/guideIndex.ts`; GAME_DESIGN §12 line; coverage tests. Browser not checked.
 
 ### Step 13.24: First-clear rewards
 - Status: `in progress`

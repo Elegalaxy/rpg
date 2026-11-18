@@ -11,6 +11,9 @@ import {
   type GuideTopicId,
 } from '../../content/guide.ts'
 import { enemies } from '../../content/enemies.ts'
+import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS } from '../../content/contracts.ts'
+import { itemBases } from '../../content/items.ts'
+import { MATERIAL_SELL_PRICE } from '../../content/shop.ts'
 import { statuses } from '../../content/statuses.ts'
 import { SUPPLIES, type SupplyDef } from '../../content/supplies.ts'
 import { skills } from '../../content/skills.ts'
@@ -29,12 +32,25 @@ import {
   ZEAL_BASE,
   type ClericVow,
 } from '../../sim/classes/cleric.ts'
-import { HERO_CLASSES, type HeroClass } from '../../sim/constants.ts'
+import { CRAFT_MS, SOCKET_MIN_HERO_LEVEL, recipePrice } from '../../persist/crafting.ts'
+import { PACKS } from '../../persist/pack.ts'
+import { CLASS_PREFERENCE, HERO_CLASSES, type HeroClass } from '../../sim/constants.ts'
+import {
+  ITEM_MAX_DURABILITY,
+  ITEM_MODIFIERS,
+  MODIFIER_RANK_MAX,
+  MODIFIER_STACK_CAP,
+  MODIFIER_TEMPER_MAX,
+  rankName,
+  rankable,
+  type ItemBase,
+  type ItemModifier,
+} from '../../sim/economy.ts'
 import { HERO_RACES, type HeroRace } from '../../sim/progression.ts'
 import { MASTERY_HELP } from '../masteryHelp.ts'
 import { skillFacts } from '../skillInfo.ts'
 
-export type GuideSection = 'basics' | 'classes' | 'races' | 'skills' | 'statuses' | 'supplies' | 'expeditions' | 'reincarnation'
+export type GuideSection = 'basics' | 'classes' | 'races' | 'skills' | 'statuses' | 'supplies' | 'gear' | 'town' | 'expeditions' | 'reincarnation'
 
 export const GUIDE_SECTIONS: readonly { id: GuideSection; label: string }[] = [
   { id: 'basics', label: 'Basics' },
@@ -43,11 +59,13 @@ export const GUIDE_SECTIONS: readonly { id: GuideSection; label: string }[] = [
   { id: 'skills', label: 'Skills' },
   { id: 'statuses', label: 'Statuses' },
   { id: 'supplies', label: 'Supplies' },
+  { id: 'gear', label: 'Gear' },
+  { id: 'town', label: 'Greyhaven' },
   { id: 'expeditions', label: 'Expeditions' },
   { id: 'reincarnation', label: 'Reincarnation' },
 ]
 
-export type GuideEntryId = `class-${string}` | `race-${string}` | `vow-${string}` | `skill-${string}` | `status-${string}` | `supply-${string}` | `topic-${string}`
+export type GuideEntryId = `class-${string}` | `race-${string}` | `vow-${string}` | `skill-${string}` | `status-${string}` | `supply-${string}` | `modifier-${string}` | `item-${string}` | `topic-${string}`
 
 export type GuideFact = { label: string; value: string }
 export type GuideLinkRef = { id: GuideEntryId; label: string }
@@ -73,6 +91,8 @@ const TOPIC_SECTION: Record<GuideTopicId, GuideSection> = {
   expeditions: 'expeditions',
   'supplies-crafting': 'supplies',
   reincarnation: 'reincarnation',
+  gear: 'gear',
+  greyhaven: 'town',
 }
 
 function capitalize(text: string): string {
@@ -270,6 +290,115 @@ function supplyEntry(supply: SupplyDef): GuideEntry {
   }
 }
 
+const TYPE_NAMES: { [type in ItemBase['type']]: string } = { weapon: 'Weapons', offHand: 'Off-hands', armor: 'Armor', accessory: 'Accessories' }
+
+function modifierFits(modifier: ItemModifier): string {
+  return modifier.appliesTo
+    .map((type) => (type === 'armor' && modifier.armorSlots !== undefined ? `Armor (${modifier.armorSlots.join(', ')} only)` : TYPE_NAMES[type]))
+    .join(', ')
+}
+
+function modifierNeeds(modifier: ItemModifier): string | null {
+  const requires = modifier.requires
+  if (requires === undefined) return null
+  if ('discoveryId' in requires) {
+    const place = Object.values(worldNodes).find((node) => node.discoveryId === requires.discoveryId)
+    return `Recipe unlocks after you discover ${place?.name ?? requires.discoveryId}`
+  }
+  return `Recipe unlocks after any hero defeats ${enemies[requires.enemyId]?.name ?? requires.enemyId}`
+}
+
+/** Every modifier has an entry. The stack limit is read from `MODIFIER_STACK_CAP` and applies to all of them. */
+function modifierEntry(modifier: ItemModifier): GuideEntry {
+  const facts: GuideFact[] = [
+    { label: 'Effect', value: modifier.text },
+    { label: 'Hero level', value: String(modifier.minLevel) },
+    { label: 'Recipe price', value: `${recipePrice(modifier.id)} gold` },
+    { label: 'Fits', value: modifierFits(modifier) },
+    { label: 'Stacking', value: `Counts at most ${MODIFIER_STACK_CAP} times across worn gear` },
+    { label: 'Ranks', value: rankable(modifier) ? `Up to rank ${rankName(MODIFIER_RANK_MAX)}` : 'No numbers to raise' },
+  ]
+  const needs = modifierNeeds(modifier)
+  if (needs !== null) facts.push({ label: 'Needs', value: needs })
+  const lines: string[] = []
+  if (modifier.bagRoom !== undefined) {
+    lines.push(`Each counted piece adds ${modifier.bagRoom} bag room, so at most ${modifier.bagRoom * MODIFIER_STACK_CAP} in all. A piece beyond the limit adds none.`)
+  }
+  return {
+    id: `modifier-${modifier.id}`,
+    section: 'gear',
+    group: 'Modifiers',
+    title: modifier.name,
+    summary: modifier.text,
+    facts,
+    lines,
+    prose: [],
+    links: [{ id: 'topic-gear', label: 'Gear' }],
+  }
+}
+
+function wornIn(base: ItemBase): string {
+  if (base.type === 'weapon') return 'Main hand'
+  if (base.type === 'offHand') return 'Off hand'
+  if (base.type === 'armor') return capitalize(base.slot)
+  return 'Accessory (two slots)'
+}
+
+function preferredBy(base: ItemBase): string {
+  if (base.type === 'accessory') return 'Every class'
+  return HERO_CLASSES.filter((classId) => {
+    const preference = CLASS_PREFERENCE[classId]
+    if (base.type === 'weapon') return preference.weapons.includes(base.weaponKind)
+    if (base.type === 'offHand') return preference.offHands.includes(base.offHandKind)
+    return preference.armor === base.category
+  })
+    .map((classId) => classIdentity[classId].name)
+    .join(', ')
+}
+
+function itemEntry(base: ItemBase): GuideEntry {
+  return {
+    id: `item-${base.id}`,
+    section: 'gear',
+    group: 'Base items',
+    title: base.name,
+    summary: `${TYPE_NAMES[base.type]}: worn in ${wornIn(base).toLowerCase()}.`,
+    facts: [
+      { label: 'Kind', value: TYPE_NAMES[base.type] },
+      { label: 'Worn in', value: wornIn(base) },
+      { label: 'Preferred by', value: preferredBy(base) },
+    ],
+    lines: base.type === 'weapon' && base.weaponKind === 'twoHanded' ? ['Leaves the off-hand slot empty.'] : [],
+    prose: [],
+    links: [{ id: 'topic-gear', label: 'Gear' }],
+  }
+}
+
+function gearFacts(): GuideFact[] {
+  return [
+    { label: 'Equipment slots', value: 'Main hand, off hand, head, chest, hands, feet, two accessories' },
+    { label: 'Full durability', value: String(ITEM_MAX_DURABILITY) },
+    { label: 'Same modifier counts', value: `At most ${MODIFIER_STACK_CAP} times across worn gear` },
+    { label: 'Sockets unlock at hero level', value: String(SOCKET_MIN_HERO_LEVEL) },
+    { label: 'Top modifier rank', value: rankName(MODIFIER_RANK_MAX) },
+    { label: 'Top temper', value: String(MODIFIER_TEMPER_MAX) },
+    { label: 'Crafting job time', value: `${CRAFT_MS / 1000} s` },
+  ]
+}
+
+function townFacts(): GuideFact[] {
+  const prices = Object.entries(MATERIAL_SELL_PRICE)
+    .map(([id, price]) => `${capitalize(id)} ${price}`)
+    .join(' · ')
+  return [
+    { label: 'Material sell price (gold each)', value: prices },
+    { label: 'Satchel', value: `${PACKS.satchel.slots} supply slots, hero level ${PACKS.satchel.minHeroLevel}, ${PACKS.satchel.gold} gold` },
+    { label: 'Field Pack', value: `${PACKS.fieldPack.slots} supply slots, hero level ${PACKS.fieldPack.minHeroLevel}, ${PACKS.fieldPack.gold} gold` },
+    { label: 'Contracts held at once', value: String(MAX_ACTIVE_CONTRACTS) },
+    { label: 'Offers on the board', value: String(BOARD_SIZE) },
+  ]
+}
+
 function topicEntry(id: GuideTopicId): GuideEntry {
   const found = GUIDE_TOPICS.find((candidate) => candidate.id === id)
   if (found === undefined) throw new Error(`guide topic ${id} is missing`)
@@ -278,10 +407,10 @@ function topicEntry(id: GuideTopicId): GuideEntry {
     section: TOPIC_SECTION[found.id],
     title: found.title,
     summary: found.summary,
-    facts: [],
+    facts: found.id === 'gear' ? gearFacts() : found.id === 'greyhaven' ? townFacts() : [],
     lines: found.id === 'expeditions' ? [MASTERY_HELP] : [],
     prose: found.body,
-    links: [],
+    links: found.id === 'greyhaven' ? [{ id: 'topic-gear', label: 'Gear' }] : found.id === 'gear' ? [{ id: 'topic-greyhaven', label: 'Greyhaven and its shops' }] : [],
   }
 }
 
@@ -301,6 +430,10 @@ export function buildGuide(): GuideEntry[] {
   for (const statusId of Object.keys(statuses)) entries.push(statusEntry(statusId))
   entries.push(topicEntry('supplies-crafting'))
   for (const supply of SUPPLIES) entries.push(supplyEntry(supply))
+  entries.push(topicEntry('gear'))
+  for (const modifier of Object.values(ITEM_MODIFIERS)) entries.push(modifierEntry(modifier))
+  for (const base of Object.values(itemBases)) entries.push(itemEntry(base))
+  entries.push(topicEntry('greyhaven'))
   entries.push(topicEntry('expeditions'), topicEntry('reincarnation'))
   return entries
 }

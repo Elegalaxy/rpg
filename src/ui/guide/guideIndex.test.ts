@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { EXTRA_CLASS_SKILLS, HIDDEN_SKILL_IDS } from '../../content/guide.ts'
+import { itemBases } from '../../content/items.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { statuses } from '../../content/statuses.ts'
 import { classWebs } from '../../content/webs/index.ts'
 import { CLERIC_VOWS, ZEAL_BASE } from '../../sim/classes/cleric.ts'
+import { ITEM_MODIFIERS, MODIFIER_STACK_CAP } from '../../sim/economy.ts'
 import { HERO_CLASSES } from '../../sim/constants.ts'
 import { HERO_RACES } from '../../sim/progression.ts'
 import { buildGuide, searchGuide } from './guideIndex.ts'
@@ -33,6 +35,26 @@ describe('buildGuide', () => {
     }
     for (const id of owned) expect(ids.has(`skill-${id}`), id).toBe(true)
     for (const id of HIDDEN_SKILL_IDS) expect(ids.has(`skill-${id}`), id).toBe(false)
+  })
+
+  it('has an entry for every modifier and base item, and the Gear and Greyhaven topics', () => {
+    for (const id of Object.keys(ITEM_MODIFIERS)) expect(ids.has(`modifier-${id}`), id).toBe(true)
+    for (const id of Object.keys(itemBases)) expect(ids.has(`item-${id}`), id).toBe(true)
+    expect(ids.has('topic-gear')).toBe(true)
+    expect(ids.has('topic-greyhaven')).toBe(true)
+  })
+
+  it('says every modifier counts at most the stack cap, read from the sim constant', () => {
+    for (const id of Object.keys(ITEM_MODIFIERS)) {
+      const entry = entries.find((candidate) => candidate.id === `modifier-${id}`)
+      expect(entry?.facts.find((fact) => fact.label === 'Stacking')?.value, id).toBe(`Counts at most ${MODIFIER_STACK_CAP} times across worn gear`)
+    }
+  })
+
+  it("explains Hauler's bag room under the cap", () => {
+    const hauler = entries.find((entry) => entry.id === 'modifier-hauler')
+    expect(hauler?.facts.find((fact) => fact.label === 'Fits')?.value).toContain('chest only')
+    expect(hauler?.lines.join(' ')).toContain(`at most ${3 * MODIFIER_STACK_CAP} in all`)
   })
 
   it('only links to entries that exist', () => {

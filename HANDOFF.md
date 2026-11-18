@@ -1,16 +1,15 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code implementer (2026-11-18)
-- **Current Goal:** Step 13.26 "Auto run modes" is done (parts 1 to 4). Next is the user's playtest.
+- **Last Updated By:** Claude Code implementer (2026-11-18), Step 13.25
+- **Current Goal:** Step 13.25 "Playtest fixes" is done (parts A to D, one commit each, pushed to origin/main). Next is the user's playtest.
 - **Recent Changes & Files Touched:**
-  - Docs: GAME_DESIGN §11 "Auto run modes" and "Auto run contracts", plan Step 13.26, CHANGELOG `Unreleased` [13.26] (two New lines).
-  - Mode: `SavedHero.autoRunMode?: 'repeat' | 'endless'` (`persist/save.ts`, validated; kept by reincarnation through `...hero`). `isEndlessAutoRun` and the mode inside `decideHold` (`persist/world.ts`): endless gives `push` at every hold, so the live loop (`ui/store.ts`) and the away replay (`persist/offline.ts`) needed no new branch. Away summary `endless`/`endlessRetreats` and a banner (`offline.ts`). Draft field in `persist/preparation.ts`.
-  - Contracts: `SavedHero.autoContracts?: boolean`; `persist/autoContracts.ts` (`autoContractsStep`, `contractFitsRoute`) called after a safe return is settled and before the rerun, in `store.ts afterAutoRun` and `offline.ts rerun`. Away summary `contractsHandedIn`/`contractsTaken`, a line in `ui/AwayPanel.tsx`.
-  - UI: "When the route ends" select, mode note, no-retreat warning, "Hand in and take contracts at home" checkbox in `ui/map/ExpeditionPanel.tsx`; "Auto · endless" tag in `ui/RunDock.tsx`; styles in `ui/kit.css`; two Guide sentences in `content/guide.ts` (expeditions topic).
-  - Tests: `persist/autoRunMode.test.ts`, `persist/autoContracts.test.ts`, additions in `ui/map/autoRun.test.tsx` (live loop, live vs away agreement, render) and `persist/preparation.test.ts`.
+  - A (Fixed): a kill bounty now counts every enemy that dies in a won fight, summons included (Echo Knight's Oathbound Echo). `ExpeditionEncounterRecord.slain?` (defIds of dead enemies) is recorded in `finishEncounter` (`src/sim/expedition.ts`, no behaviour change); `unitsFrom` (`src/persist/contracts.ts`) counts it and falls back to encounter members for old history. `encounterEnemyIds` (members plus summons) in `src/content/contracts.ts` is shared by Auto run's `contractFitsRoute` (`src/persist/autoContracts.ts`) and `contractZone`.
+  - B: the contract tracker (map and fight) shows `Name (Zone / Zone)`; `contractZone(target)` derives it, `ContractTrackRow.label` carries it. Board rows already had the zone in their description.
+  - C: Trading Post sells 1, 10, 100 (hidden above the stack) and all, each with its gold (`src/ui/town/Town.tsx`, test `TradingPost.test.tsx`). No material buying.
+  - D: Guide gets Gear and Greyhaven topics (`src/content/guide.ts`, no digits), sections Gear and Greyhaven, generated modifier and base-item entries (`src/ui/guide/guideIndex.ts`), tests, GAME_DESIGN section 12 line.
 - **Active Decisions / Constraints:**
-  - Endless ignores Stop after fights, the push-on HP floor and the bag order; it ends by retreat (then the route reruns), defeat, or the total fight limit. Loot that does not fit is lost.
-  - Contract matching: kill = enemy in an encounter at a route node, fights = node on route, encounters = encounter at a route node, secure = a route node's resource. Summoned enemies are not considered (tidy-ui 13.25 had not landed). The board is rerolled on return, so the offers taken come from the refreshed board.
-  - Sim, harness and content untouched. Never remove `// admin code`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
-- **Not verified:** the preparation screen and dock in a browser or at 375 px (render tests only); guard matrices were not re-run (no sim change).
-- **Exact Next Step:** (1) User playtest: endless with and without a retreat level, contracts toggle over a few reruns. (2) Consider counting summoned enemies for bounty matching once 13.25 is on main. (3) Close 13.26 into a `## 0.x.0` changelog heading.
+  - The modifier stack cap (2) applies to every modifier. Hauler's gives +3 bag room per counted piece, so at most +6, chest armor or accessory only.
+  - Guards (telegraph, built, modded, cinder, hollows, warden, causeway, elites at seed 1 x 5) identical to origin/main apart from the runs/sec line.
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
+- **Not verified:** the Trading Post buttons at 375 px and the new Guide sections in a browser (tests only). A summoned-kill count in a real simulated Echo Knight fight is covered by synthetic history only.
+- **Exact Next Step:** (1) User playtest: take an Echo bounty, fight at the Bastion, check it counts; look at the tracker label and the Trading Post steps. (2) Check the Guide Gear and Greyhaven sections in the browser. (3) Close 13.25 into a `## 0.x.0` changelog heading.

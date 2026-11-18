@@ -47,6 +47,12 @@ describe('guide text', () => {
     }
   })
 
+  it('has the Gear and Greyhaven topics', () => {
+    const topicIds = GUIDE_TOPICS.map((topic) => topic.id)
+    expect(topicIds).toContain('gear')
+    expect(topicIds).toContain('greyhaven')
+  })
+
   it('contains no digits in any hand-written prose', () => {
     for (const text of proseStrings()) {
       expect(text.length).toBeGreaterThan(0)

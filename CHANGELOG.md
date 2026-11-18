@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: the Guide has a Gear topic (slots, quality, durability, modifiers and their limit, sockets, ranks, temper, heirlooms), an entry for every modifier and base item, and a Greyhaven topic on what each shop does. [13.25]
 - New: Auto run can climb Echo ranks on Fracture Gate through the Bastion. A Warden win raises the next rank by one, and a loss to the Warden stops Auto run. [13.26]
 - Improved: the Trading Post sells materials 1, 10, 100 or all at a time, and each button shows the gold it pays. [13.25]
 - Improved: the contract tracker names the zone after each contract, such as Bounty: Oathbound Echos (Fallen Bastion / Drowned Causeway), so you know where to go. [13.25]
