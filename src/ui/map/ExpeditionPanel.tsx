@@ -29,6 +29,7 @@ import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
+import { GuideLink } from '../guide/GuideLink.tsx'
 import { HoldActions } from '../HoldActions.tsx'
 import { DurabilityGrid, Kpi, KpiRow, Tag } from '../Kit.tsx'
 import { Row } from '../Row.tsx'
@@ -135,6 +136,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
               </select>
             </label>{' '}
             <Help label="About vows">Your vow is locked for the whole expedition.</Help>
+            <GuideLink id={draft.vow === '' ? 'class-cleric' : `vow-${draft.vow}`} label="Cleric vows" />
           </div>
         ) : null}
         {canPickCurse(hero) ? (

@@ -4,6 +4,7 @@ import { classIdentity, raceIdentity } from '../../content/heroes.ts'
 import { nameProblem } from '../../persist/roster.ts'
 import { HERO_CLASSES, type HeroClass } from '../../sim/constants.ts'
 import { HERO_RACES, type HeroRace } from '../../sim/progression.ts'
+import { GuideLink } from '../guide/GuideLink.tsx'
 import { createHeroFromUi, useSaveStatus } from '../store.ts'
 
 export function CreateHero() {
@@ -50,6 +51,7 @@ export function CreateHero() {
           ))}
           <p data-testid="race-summary">
             <strong>{race_.name}.</strong> {race_.summary} <em>{race_.core}</em>
+            <GuideLink id={`race-${race}`} label={race_.name} />
           </p>
         </fieldset>
         <fieldset className="choices">
@@ -62,6 +64,7 @@ export function CreateHero() {
           ))}
           <p data-testid="class-summary">
             <strong>{class_.name}.</strong> {class_.summary} <em>{class_.core}</em>
+            <GuideLink id={`class-${classId}`} label={class_.name} />
           </p>
         </fieldset>
         <button type="submit">Create hero</button>

@@ -20,6 +20,7 @@ import { applyTemplate, templatesFor } from '../../persist/ruleTemplates.ts'
 import type { SaveData, SavedHero } from '../../persist/save.ts'
 import type { RuleTemplate } from '../../content/ruleTemplates.ts'
 import { Help } from '../Help.tsx'
+import { GuideLink } from '../guide/GuideLink.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
 import { ConditionList } from './ConditionList.tsx'
@@ -278,6 +279,7 @@ export function RulesForm({
           <Help label="How rules work">
             The hero tries rule 1 first, then the next, and uses the first skill whose conditions pass. {RESOURCE_NAMES[hero.classId]} is this class resource.
           </Help>
+          <GuideLink id="topic-rules" label="How rules work" />
         </p>
         <RuleChain
           hero={hero}

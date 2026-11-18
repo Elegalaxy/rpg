@@ -1,4 +1,5 @@
 import { Help } from '../Help.tsx'
+import { GuideLink } from '../guide/GuideLink.tsx'
 import { skillFacts } from '../skillInfo.ts'
 import { useState } from 'react'
 
@@ -89,7 +90,10 @@ export function SkillWeb() {
           note={<Help label="About the colours">Class clusters are blue; the racial branch is teal.</Help>}
         />
       </KpiRow>
-      <p data-testid="web-intro">{classWebIntro[hero.classId]}</p>
+      <p data-testid="web-intro">
+        {classWebIntro[hero.classId]}
+        <GuideLink id={`class-${hero.classId}`} label={`${hero.classId} class`} />
+      </p>
       <ul aria-label="Clusters" data-testid="cluster-intros">
         {Object.entries(clusterIntro[hero.classId]).map(([name, text]) => (
           <li key={name}>

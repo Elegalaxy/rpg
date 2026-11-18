@@ -1521,3 +1521,29 @@ dl.upgrade-facts dd {
     background: color-mix(in srgb, var(--accent) 20%, transparent);
   }
 }
+
+.guide-open {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 var(--s2);
+  border-color: transparent;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85em;
+  text-decoration: underline;
+}
+
+.guide-open:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.guide-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  color: var(--accent);
+}
+
+.guide-open:active:not(:disabled) {
+  background: var(--panel);
+}

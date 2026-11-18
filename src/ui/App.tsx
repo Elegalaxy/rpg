@@ -13,6 +13,7 @@ import type { CombatState } from '../sim/types.ts'
 import { CHANGELOG_SECTIONS, changelogKey } from './whatsNew/changelog.ts'
 import { WhatsNew } from './whatsNew/WhatsNew.tsx'
 import { Guide } from './guide/Guide.tsx'
+import { useGuideTarget } from './guide/guideNav.ts'
 import { readSeen, writeSeen } from './whatsNew/seen.ts'
 
 import { Attributes } from './character/Attributes.tsx'
@@ -316,6 +317,8 @@ export function CombatViewer() {
 function App() {
   const [tab, setTab] = useState<AppTab>('heroes')
   const [welcomeGuide, setWelcomeGuide] = useState(false)
+  const guideTarget = useGuideTarget()
+  const guideNonce = guideTarget?.nonce
   const latestKey = changelogKey(CHANGELOG_SECTIONS)
   const [seenKey, setSeenKey] = useState<string | null>(readSeen)
   const [heroPart, setHeroPart] = useState<HeroPart>('overview')
@@ -338,6 +341,12 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openShop, unseenCrafts])
 
+  useEffect(() => {
+    if (guideNonce !== undefined) {
+      setTab('guide')
+      setWelcomeGuide(true)
+    }
+  }, [guideNonce])
   useEffect(() => {
     if (tab === 'map' && unseenDiscoveries > 0) clearUnseenDiscoveries()
   }, [tab, unseenDiscoveries])
@@ -392,7 +401,7 @@ function App() {
               <button type="button" onClick={() => setWelcomeGuide(false)}>
                 Back to hero creation
               </button>
-              <Guide />
+              <Guide target={guideTarget} />
             </>
           ) : (
             <>
@@ -488,7 +497,7 @@ function App() {
               ) : null}
               {tab === 'combat' ? <CombatViewer /> : null}
               {tab === 'whatsnew' ? <WhatsNew /> : null}
-              {tab === 'guide' ? <Guide /> : null}
+              {tab === 'guide' ? <Guide target={guideTarget} /> : null}
             </main>
             {docked ? <RunDock onOpenMap={() => setTab('map')} /> : null}
           </div>

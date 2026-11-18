@@ -7,6 +7,9 @@ export type GuideTarget = { id: GuideEntryId; nonce: number }
 
 const FLASH_MS = 1800
 
+/** The newest request this page has acted on, so reopening the tab later does not replay an old link. */
+let handledNonce = 0
+
 function factValue(entry: GuideEntry, label: string): string {
   return entry.facts.find((fact) => fact.label === label)?.value ?? ''
 }
@@ -184,7 +187,10 @@ export function GuideView({ entries, target = null }: { entries: readonly GuideE
   const nonce = target?.nonce
   const targetId = target?.id
   useEffect(() => {
-    if (targetId !== undefined) jump(targetId)
+    if (targetId !== undefined && nonce !== undefined && nonce > handledNonce) {
+      handledNonce = nonce
+      jump(targetId)
+    }
     // Only a new nonce is a new request; `jump` reads the latest entries.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce])

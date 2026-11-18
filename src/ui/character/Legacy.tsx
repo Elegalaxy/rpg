@@ -22,6 +22,7 @@ import {
 import { purseOf, type SavedHero } from '../../persist/save.ts'
 import { EQUIPMENT_SLOT_IDS } from '../../sim/economy.ts'
 import { Help } from '../Help.tsx'
+import { GuideLink } from '../guide/GuideLink.tsx'
 import { Kpi, KpiRow } from '../Kit.tsx'
 import { buyPurchaseFromUi, devLegacyTools, reincarnateFromUi, useSaveStatus } from '../store.ts'
 
@@ -237,6 +238,7 @@ export function Legacy() {
           Legacy, discoveries, recipes, crafting, and this hero's gold, materials, and archive stay. Your worn gear goes to the archive. The elites you beat are
           remembered, so the zones they guard stay open.
         </Help>
+        <GuideLink id="topic-reincarnation" label="Reincarnation" />
       </h3>
       {block !== null ? (
         <p data-testid="reincarnation-block">{block}</p>
