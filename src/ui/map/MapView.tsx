@@ -15,6 +15,7 @@ import { canStartRouteNow, getLastRouteId, startExpeditionFromUi, useSaveStatus 
 import { Help } from '../Help.tsx'
 import { Kpi, KpiRow } from '../Kit.tsx'
 import { MASTERY_HELP } from '../masteryHelp.ts'
+import { ContractTrack } from './ContractTrack.tsx'
 import { GoingIn } from './GoingIn.tsx'
 import type { GoTo } from './goingInLines.ts'
 import { MAP_HEIGHT, MAP_WIDTH, NODE_POSITIONS } from './layout.ts'
@@ -157,6 +158,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
         {expedition === null ? (
           <>
             {hero !== null ? <GoingIn hero={hero} onGo={onGo} /> : null}
+            {hero !== null ? <ContractTrack /> : null}
             <button
               type="button"
               className="btn-primary"

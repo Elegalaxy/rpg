@@ -684,6 +684,45 @@ ul.away-facts li {
   order: 3;
 }
 
+/* ---- Compact contract list on the map and during a run ---- */
+
+.contract-track {
+  margin: var(--s2) 0;
+}
+
+.contract-track h4 {
+  margin: 0 0 var(--s2);
+}
+
+ul.contract-track-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li.contract-track-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+}
+
+.contract-track-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.contract-track-meta .progress-bar {
+  width: 5.5rem;
+  flex: none;
+}
+
 /* ---- Going in with: the pre-flight summary above Start expedition ---- */
 
 .going-in {

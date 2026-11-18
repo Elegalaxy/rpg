@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: the map and a live fight show the hero's current contracts and this run's progress, so you do not have to go back to the Contract Board to check.
 - Balance: A backpack now lets a run carry up to 3 of each supply, up from 2. [13.22]
 - New: the Armorer has a Backpack counter. Craft a Satchel (5 supply slots, hero level 10) and then a Field Pack (6 slots, level 17) from a good material; the pack is kept through reincarnation. With a pack a run carries at most 2 of each supply, and the packing screen says so when a third is refused. [13.22]
 - Improved: the Potion Shop Buy and Brew batches match what a run can carry of one supply (4, or 2 with a pack). [13.22]

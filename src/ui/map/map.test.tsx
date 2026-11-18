@@ -1,6 +1,11 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
+import { contractList } from '../../content/contracts.ts'
+import { acceptContract } from '../../persist/contracts.ts'
+import { createHero } from '../../persist/roster.ts'
+import { newSave, updatePurse } from '../../persist/save.ts'
+import { commitSave } from '../store.ts'
 import { MapView } from './MapView.tsx'
 
 describe('world map without a hero', () => {
@@ -40,5 +45,31 @@ describe('world map with the Cinder Scar', () => {
     const html = renderToStaticMarkup(<MapView />)
     expect(html).toContain('Cinder Scar')
     expect(html).toContain('aria-label="Cinder Scar, locked. Not discovered yet."')
+  })
+})
+
+describe('map contract track', () => {
+  afterEach(() => {
+    commitSave(newSave(), 'test', false)
+  })
+
+  it('lists accepted contracts before a run', () => {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    const board = updatePurse(made.save, { board: contractList.map((def) => ({ ...def })) })
+    const accepted = acceptContract(board, 'cull-the-pack')
+    if (!accepted.ok) throw new Error(accepted.reason)
+    commitSave(accepted.save, 'test', false)
+    const html = renderToStaticMarkup(<MapView />)
+    expect(html).toContain('data-testid="contract-track"')
+    expect(html).toContain('Cull the Pack')
+    expect(html).toContain('0/6')
+  })
+
+  it('says when none are accepted', () => {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    commitSave(made.save, 'test', false)
+    expect(renderToStaticMarkup(<MapView />)).toContain('None accepted')
   })
 })

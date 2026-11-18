@@ -164,17 +164,31 @@ export function unitsFrom(expedition: ExpeditionState, def: ContractDef): number
   return units
 }
 
-/** What a live run has already earned toward each of the selected hero's active contracts, before it is settled. */
-export function pendingContractProgress(save: SaveData, expedition: ExpeditionState): { contractId: string; name: string; pending: number; progress: number; count: number }[] {
+export type ContractTrackRow = {
+  contractId: string
+  name: string
+  description: string
+  progress: number
+  count: number
+  pending: number
+}
+
+/** The selected hero's active contracts, plus units a live run has already earned toward them. */
+export function contractTrack(save: SaveData, expedition: ExpeditionState | null): ContractTrackRow[] {
   const purse = purseOf(save)
-  const rows: { contractId: string; name: string; pending: number; progress: number; count: number }[] = []
+  const rows: ContractTrackRow[] = []
   for (const active of purse.contracts) {
     const def = contractFor(purse, active.contractId)
     if (def === undefined) continue
-    const pending = Math.min(def.count - active.progress, unitsFrom(expedition, def))
-    if (pending > 0) rows.push({ contractId: def.id, name: def.name, pending, progress: active.progress, count: def.count })
+    const pending = expedition === null ? 0 : Math.min(def.count - active.progress, unitsFrom(expedition, def))
+    rows.push({ contractId: def.id, name: def.name, description: def.description, progress: active.progress, count: def.count, pending })
   }
   return rows
+}
+
+/** What a live run has already earned toward each of the selected hero's active contracts, before it is settled. */
+export function pendingContractProgress(save: SaveData, expedition: ExpeditionState): ContractTrackRow[] {
+  return contractTrack(save, expedition).filter((row) => row.pending > 0)
 }
 
 /** Add an expedition's won fights to the selected hero's active contracts, never past their target. */

@@ -24,7 +24,7 @@ import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
 import { countNames } from '../town/groupItems.ts'
 import { outcomeStats } from '../../persist/world.ts'
-import { pendingContractProgress } from '../../persist/contracts.ts'
+import { ContractTrack } from './ContractTrack.tsx'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { MOMENTUM_CAP, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
@@ -611,7 +611,6 @@ function RunHeadline({ expedition }: { expedition: ExpeditionState }) {
 function RunDetails({ expedition }: { expedition: ExpeditionState }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
-  const pendingContracts = pendingContractProgress(save, expedition)
   const runGold = expedition.carriedGold - (expedition.startGold ?? 0)
   // A leg whose fights drop no materials (before the route's last zone) still drops gold.
   const legFight = expedition.current ?? expedition.opening[expedition.encounterIndex] ?? null
@@ -648,15 +647,6 @@ function RunDetails({ expedition }: { expedition: ExpeditionState }) {
           Push on and repeat apply live and while you are away when Auto run is on, and to a run that starts when you leave; the fight limit applies while you watch too. Carried gold is with you and pays the rescue fee; banked gold is safe in town and the purse reads 0 meanwhile.
         </Help>
       </p>
-      {pendingContracts.length > 0 ? (
-        <ul className="muted" data-testid="pending-contracts" aria-label="Contract progress this run">
-          {pendingContracts.map((entry) => (
-            <li key={entry.contractId}>
-              {entry.name}: <Tag kind="good">+{entry.pending} pending this run</Tag> ({entry.progress}/{entry.count} banked)
-            </li>
-          ))}
-        </ul>
-      ) : null}
       <div className="pill-lines">
         <div className="pill-line" data-testid="unsecured" title="Lost if you are defeated, except the safe pouch">
           <small className="pill-label">Carrying</small>
@@ -794,6 +784,7 @@ export function ExpeditionPanel() {
       expedition.outcome === 'ongoing' ? (
         <section aria-label="Expedition" className="run-area">
           <RunBar expedition={expedition} />
+          <ContractTrack />
           <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} expedition={expedition} />
           <RunHeadline expedition={expedition} />
           <RunDetails expedition={expedition} />
@@ -801,6 +792,7 @@ export function ExpeditionPanel() {
       ) : (
         <>
           <Ended expedition={expedition} />
+          <ContractTrack />
           <FightArea live={expedition.combat} escapePending={expedition.escapeNow === true} expedition={expedition} />
         </>
       )

@@ -11,7 +11,7 @@ import { awardXp, xpFromEnemies } from '../sim/progression.ts'
 import { humanOrdinaryXp } from '../sim/races/human.ts'
 
 import { selectedHero } from './character.ts'
-import { abandonContract, acceptContract, addContractProgress, collectContract, isComplete, refreshBoard, unitsFrom, withFilledBoard } from './contracts.ts'
+import { abandonContract, acceptContract, addContractProgress, collectContract, contractTrack, isComplete, pendingContractProgress, refreshBoard, unitsFrom, withFilledBoard } from './contracts.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, contractFor, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
@@ -178,6 +178,20 @@ describe('progress from expeditions', () => {
   it('adds progress only to contracts that are active', () => {
     const save = victories(withRun(heroSave(), 'splintered-road'), 3)
     expect(addContractProgress(save, save.expedition!)).toBe(save)
+  })
+
+  it('lists every active contract and counts pending units from a live run', () => {
+    let save = heroSave()
+    for (const id of ['cull-the-pack', 'bastion-patrol']) save = ok(acceptContract(save, id))
+    expect(contractTrack(save, null).map((row) => [row.contractId, row.progress, row.pending, row.count])).toEqual([
+      ['cull-the-pack', 0, 0, 6],
+      ['bastion-patrol', 0, 0, 4],
+    ])
+    save = victories(withRun(save, 'fracture-via-grove'), 5)
+    const rows = contractTrack(save, save.expedition)
+    expect(rows.find((row) => row.contractId === 'cull-the-pack')).toMatchObject({ pending: 2, progress: 0, count: 6 })
+    expect(rows.find((row) => row.contractId === 'bastion-patrol')).toMatchObject({ pending: 0, progress: 0, count: 4 })
+    expect(pendingContractProgress(save, save.expedition!).map((row) => row.contractId)).toEqual(['cull-the-pack'])
   })
 })
 

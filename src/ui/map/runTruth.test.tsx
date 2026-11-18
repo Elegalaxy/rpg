@@ -104,5 +104,6 @@ describe('the run panel tells the truth', () => {
     const html = renderToStaticMarkup(<ExpeditionPanel />)
     expect(html).toContain('>Next fight: 13 / 20 s · 8×<')
     expect(html).toContain('class="run-bar-meta"')
+    expect(html).toContain('data-testid="contract-track"')
   })
 })
