@@ -466,12 +466,12 @@ function decideAtHold(ctx: Ctx, mode: Mode): void {
     returnToTown(expedition)
     return
   }
-  if (verdict === 'ask') {
-    // 'ask' holds the run for the player; replaying stops here and the run waits at this hold.
+  if (verdict === 'ask' && mode !== 'auto') {
+    // 'ask' holds the run for the player; replaying stops here and the run waits at this hold. Auto run never waits: it walks home like the home order.
     ctx.lane.stopped = 'bagFull'
     return
   }
-  if (verdict === 'bag') {
+  if (verdict === 'bag' || verdict === 'ask') {
     summary.walkedHomeBag = (summary.walkedHomeBag ?? 0) + 1
     returnToTown(expedition)
     return

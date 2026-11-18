@@ -518,7 +518,7 @@ export function advanceExpedition(count: number): void {
       } else {
         // The same decision the away replay makes. Without Auto run only the "Stop after N fights" order acts on its own.
         const verdict = decideHold(expedition, hero)
-        if (verdict === 'fights' || (auto && (verdict === 'hp' || verdict === 'bag'))) {
+        if (verdict === 'fights' || (auto && (verdict === 'hp' || verdict === 'bag' || verdict === 'ask'))) {
           returnToTown(expedition)
           debugLog('[ui]', 'walking home on the standing orders', { verdict, fight: expedition.encounterIndex })
         } else if (auto && verdict === 'push') {

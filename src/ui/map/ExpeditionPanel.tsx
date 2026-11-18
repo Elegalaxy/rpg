@@ -323,7 +323,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             </select>
           </label>
           <Help label="About a full bag">
-            Full means fewer than 4 room left. Hold also waits while you are away. Keep going still earns gold and XP; loot that does not fit is lost.
+            Full means fewer than 4 room left. Hold also waits while you are away, but Auto run never waits: it walks home, banks the loot and reruns the route. Keep going still earns gold and XP; loot that does not fit is lost.
           </Help>
         </div>
       </fieldset>

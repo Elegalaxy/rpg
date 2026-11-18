@@ -264,6 +264,14 @@ describe('an expedition while away', () => {
       expect(run.travelMs).toBe(0)
     })
 
+    it('Auto run does not wait on the ask order: it walks home like the home order', () => {
+      const save = atFirstHold('ask', 17)
+      save.heroes[0]!.autoRun = true
+      const away = runOwn(save, 30 * MINUTE, true)
+      expect(away.summary.heroes[0]!.stopped).not.toBe('bagFull')
+      expect(away.summary.heroes[0]!.walkedHomeBag ?? 0).toBeGreaterThan(0)
+    })
+
     it('counts the run bag room, so a bigger bag is not full yet', () => {
       const away = runOwn(atFirstHold('home', 17, 26), 30 * MINUTE, true)
       expect(away.save.expedition?.history.length).toBeGreaterThan(1)
