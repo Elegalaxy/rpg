@@ -308,6 +308,93 @@ describe('purchases', () => {
     expect(buyPurchase(save, 'hero-1', 'heirloom')).toEqual({ ok: false, reason: 'You already have the Second Heirloom.' })
   })
 
+  describe('apply to the current life (Step 13.30)', () => {
+    const base = racialStartingAttributes.human
+    const lose = (save: SaveData): SaveData => ({ ...save, heroes: save.heroes.map((h) => ({ ...h, bossLossThisLife: true })) })
+    const at = (save: SaveData, xp: number): SaveData => ({
+      ...save,
+      heroes: save.heroes.map((h) => ({ ...h, progress: awardXp(h.progress, xp) })),
+    })
+
+    it('Attribute Seed adds one to the current attribute exactly once, and the next life is unchanged', () => {
+      const before = hero(rich()).progress
+      const save = ok(buyPurchase(rich(), 'hero-1', 'attribute', 'vitality'))
+      expect(hero(save).progress.attributes.vitality).toBe(before.attributes.vitality + 1)
+      expect(hero(save).progress.attributes.strength).toBe(before.attributes.strength)
+      const twice = ok(buyPurchase(save, 'hero-1', 'attribute', 'vitality'))
+      expect(hero(twice).progress.attributes.vitality).toBe(before.attributes.vitality + 2)
+      expect(hero(ok(reincarnate(lose(save), 'hero-1', null))).progress.attributes.vitality).toBe(base.vitality + 1)
+    })
+
+    it('Skill Point Seed adds one skill point now', () => {
+      const save = ok(buyPurchase(rich(), 'hero-1', 'skill'))
+      expect(hero(save).progress.legacySkillPoints).toBe(1)
+      expect(hero(ok(buyPurchase(save, 'hero-1', 'skill'))).progress.legacySkillPoints).toBe(2)
+      expect(hero(ok(reincarnate(lose(save), 'hero-1', null))).progress.legacySkillPoints).toBe(1)
+    })
+
+    it('Head Start from level 1 raises the hero to that level with unspent points, and II after I needs the difference', () => {
+      const first = ok(buyPurchase(rich(), 'hero-1', 'headStart'))
+      const fresh = createProgress('human', base, { startingSkillIds: classWebs.warrior.startingSkillIds })
+      const expected = awardXp(fresh, cumulativeXpToReachLevel(5))
+      expect(hero(first).progress).toMatchObject({
+        level: 5,
+        xp: expected.xp,
+        unspentAttributePoints: expected.unspentAttributePoints,
+        unspentSkillPoints: expected.unspentSkillPoints,
+      })
+      expect(hero(first).progress.unspentAttributePoints).toBeGreaterThan(0)
+      const second = ok(buyPurchase(first, 'hero-1', 'headStart'))
+      const expectedTen = awardXp(fresh, cumulativeXpToReachLevel(10))
+      expect(hero(second).progress).toMatchObject({
+        level: 10,
+        unspentAttributePoints: expectedTen.unspentAttributePoints,
+        unspentSkillPoints: expectedTen.unspentSkillPoints,
+      })
+    })
+
+    it('Head Start changes nothing now for a hero already at or above its level', () => {
+      const high = at(rich(), cumulativeXpToReachLevel(12))
+      expect(hero(high).progress.level).toBe(12)
+      const bought = ok(buyPurchase(high, 'hero-1', 'headStart'))
+      expect(hero(bought).progress).toEqual(hero(high).progress)
+      expect(hero(bought).purchases.headStart).toBe(1)
+    })
+
+    it('Head Start scales an heirloom to the new level', () => {
+      const withHeirloom = updatePurse(rich(), { archive: [{ ...newItem('h', 'weapon-bow', 9), heirloom: { heroId: 'hero-1', cap: 9 } }] })
+      const bought = ok(buyPurchase(withHeirloom, 'hero-1', 'headStart'))
+      expect(purseOf(bought).archive.find((item) => item.id === 'h')?.itemLevel).toBe(5)
+    })
+
+    it('reincarnating after buying mid-life gives the same new life as buying first', () => {
+      const early = lose(
+        [
+          (s: SaveData) => ok(buyPurchase(s, 'hero-1', 'attribute', 'agility')),
+          (s: SaveData) => ok(buyPurchase(s, 'hero-1', 'skill')),
+          (s: SaveData) => ok(buyPurchase(s, 'hero-1', 'headStart')),
+          (s: SaveData) => ok(buyPurchase(s, 'hero-1', 'headStart')),
+        ].reduce((s, step) => step(s), rich()),
+      )
+      const viaRecord: SaveData = {
+        ...early,
+        heroes: early.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 1, xp: 0 } })),
+      }
+      const a = hero(ok(reincarnate(early, 'hero-1', null))).progress
+      const b = hero(ok(reincarnate(viaRecord, 'hero-1', null))).progress
+      expect(a).toEqual(b)
+      expect(a.level).toBe(10)
+      expect(a.attributes.agility).toBe(base.agility + 1)
+      expect(a.legacySkillPoints).toBe(1)
+    })
+
+    it('Second Heirloom and Deep Pockets leave the progress alone', () => {
+      const before = hero(rich()).progress
+      expect(hero(ok(buyPurchase(rich(), 'hero-1', 'heirloom'))).progress).toEqual(before)
+      expect(hero(ok(buyPurchase(rich(), 'hero-1', 'pockets'))).progress).toEqual(before)
+    })
+  })
+
   it('refuses a purchase the hero cannot pay for, and during an expedition', () => {
     expect(buyPurchase(heroSave(), 'hero-1', 'skill')).toEqual({ ok: false, reason: 'That costs 8 Legacy. Ash has 0.' })
     const running = { ...rich(), expedition: startExpedition(hero(rich()), 'splintered-road', 1) }

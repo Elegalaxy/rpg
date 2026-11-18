@@ -338,8 +338,34 @@ export function buyPurchase(
     purchases = { ...purchases, secondHeirloom: true }
   }
   if (hero.legacy < cost) return { ok: false, reason: `That costs ${cost} Legacy. ${hero.name} has ${hero.legacy}.` }
-  return {
-    ok: true,
-    save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, legacy: entry.legacy - cost, purchases } : entry)) },
+  const progress = applyToCurrentLife(hero.progress, kind, attribute, purchases)
+  const bought: SaveData = {
+    ...save,
+    heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, legacy: entry.legacy - cost, purchases, progress } : entry)),
   }
+  // A Head Start can raise the level, so heirlooms are brought to the new level.
+  return { ok: true, save: progress.level === hero.progress.level ? bought : scaleHeirlooms(bought, heroId) }
+}
+
+/**
+ * Step 13.30: a purchase also applies to the current life. Each later life still rebuilds from the racial base
+ * plus every seed (`startingProgress`), so nothing is counted twice. Second Heirloom and Deep Pockets change nothing here.
+ */
+function applyToCurrentLife(
+  progress: HeroProgress,
+  kind: PurchaseKind,
+  attribute: keyof HeroPurchases['attributeSeeds'] | undefined,
+  purchases: HeroPurchases,
+): HeroProgress {
+  if (kind === 'attribute' && attribute !== undefined) {
+    return { ...progress, attributes: { ...progress.attributes, [attribute]: progress.attributes[attribute] + 1 } }
+  }
+  if (kind === 'skill') return { ...progress, legacySkillPoints: progress.legacySkillPoints + 1 }
+  if (kind === 'headStart') {
+    const target = cumulativeXpToReachLevel(headStartLevel(purchases))
+    const have = cumulativeXpToReachLevel(progress.level) + progress.xp
+    // Only a hero below the tier's level moves; a higher one keeps their own XP.
+    return progress.level < headStartLevel(purchases) ? awardXp(progress, target - have) : progress
+  }
+  return progress
 }
