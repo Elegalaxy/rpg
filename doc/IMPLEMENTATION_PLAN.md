@@ -1199,6 +1199,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §12.
   - 2026-11-18: Part 2 done. `src/content/guide.ts` (topics, class/race tips, vow text, status summaries, `EXTRA_CLASS_SKILLS`, `HIDDEN_SKILL_IDS`) and `guide.test.ts` (coverage, no digits in prose, every non-supply skill owned once). Mage has six Convergence spells, not five.
+  - 2026-11-18: Part 2c (stack limit raised from 2 to 3 above 4 slots, user's choice after the playtest question). Recorded in GAME_DESIGN §9 first; code and the re-measurement (`--matrix pack`, seeds 1-3 x 100) follow in the next commit. 4 slots unchanged.
   - 2026-11-18: Part 3 done. `ui/guide/guideIndex.ts` (+test), `Guide.tsx` (+test), "Guide" tab after "What's new", "Read the guide" on the Welcome screen, Guide CSS in `kit.css`.
   - 2026-11-18: Part 4 done. `guideNav.ts`, `GuideLink.tsx`, links on CreateHero, the vow picker, Combat setup, the skill web and Legacy; tests. Checked in the browser: tab renders, search "vow" lists the three vows and the Cleric, links open the section, focus the heading and flash it.
   - 2026-11-18: Part 5 done. Known rough edge: `effectLine` (shared with the skill info tooltips) prints raw names for some effects (chain, field, arm trap, reveal) and "Heals 0%" for Mend, which heals by a coefficient.
