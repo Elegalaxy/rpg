@@ -92,11 +92,11 @@ export function AwayReportView({ report }: { report: AwayReport }) {
               return (
                 <tr key={hero.heroId} data-testid={`away-row-${hero.heroId}`}>
                   <th scope="row">{hero.heroName}</th>
-                  <td>{hero.routeId === null ? '—' : (routes[hero.routeId]?.name ?? hero.routeId)}</td>
-                  <td className="num">{hero.runs}</td>
-                  <td className="num">{hero.fightsWon}</td>
-                  <td className="num">{hero.gold}</td>
-                  <td className="num">
+                  <td data-label="Route">{hero.routeId === null ? '—' : (routes[hero.routeId]?.name ?? hero.routeId)}</td>
+                  <td className="num" data-label="Runs">{hero.runs}</td>
+                  <td className="num" data-label="Fights won">{hero.fightsWon}</td>
+                  <td className="num" data-label="Gold">{hero.gold}</td>
+                  <td className="num" data-label="XP">
                     {hero.xp}
                     {hero.levelsGained > 0 ? <Tag kind="good"> ▲ {hero.levelsGained} {hero.levelsGained === 1 ? 'level' : 'levels'}</Tag> : null}
                   </td>

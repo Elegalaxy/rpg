@@ -27,6 +27,8 @@ import { Equipment } from './town/Equipment.tsx'
 import { Legacy } from './character/Legacy.tsx'
 import { AwayPanel } from './AwayPanel.tsx'
 import { RunDock } from './RunDock.tsx'
+import { PhoneNav } from './PhoneNav.tsx'
+import { useNarrow } from './useNarrow.ts'
 import { dockVisible } from './runDockState.ts'
 import { Help } from './Help.tsx'
 import { MASTERY_HELP } from './masteryHelp.ts'
@@ -85,6 +87,10 @@ const TABS: { id: AppTab; label: string }[] = [
   { id: 'whatsnew', label: "What's new" },
   { id: 'guide', label: 'Guide' },
 ]
+
+const PHONE_MAIN: AppTab[] = ['map', 'town', 'heroes']
+const PHONE_TABS = PHONE_MAIN.map((id) => TABS.find((entry) => entry.id === id)!)
+const PHONE_MORE = TABS.filter((entry) => !PHONE_MAIN.includes(entry.id))
 
 type HeroPart = 'overview' | 'skills' | 'combat' | 'gear' | 'legacy'
 
@@ -188,12 +194,30 @@ const STAT_SHORT: { [label: string]: string } = {
 }
 
 function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
+  const [open, setOpen] = useState(false)
   const hero = selectedHero(save)
   const hint = nextHint(save)
   const stats = hero === null ? null : statsFor(hero)
   const need = hero === null ? 1 : xpToNextLevel(hero.progress.level)
+  const run = save.expedition !== null && save.expedition.outcome === 'ongoing' ? save.expedition : null
+  const runHp = run === null ? null : (run.combat?.hero ?? run.hero)
   return (
-    <header aria-label="Status">
+    <header aria-label="Status" className={open ? 'status-open' : undefined}>
+      {hero !== null ? (
+        <button type="button" className="status-compact" aria-expanded={open} aria-controls="status-full" onClick={() => setOpen(!open)}>
+          <strong className="status-compact-name">
+            {hero.name} · L{hero.progress.level}
+          </strong>
+          {runHp !== null ? (
+            <span className="status-compact-hp">
+              HP {Math.round(runHp.hp)}/{Math.round(runHp.maxHp)}
+            </span>
+          ) : null}
+          <progress className="status-compact-xp" max={need} value={hero.progress.xp} aria-label={`XP ${hero.progress.xp} of ${need}`} />
+          <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+        </button>
+      ) : null}
+      <div className="status-full" id="status-full">
       <div className="status-row">
         <select
           aria-label="Selected hero"
@@ -238,6 +262,7 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
         <button type="button" className="btn-primary" onClick={() => onGo(hint.tab)}>
           Go
         </button>
+      </div>
       </div>
     </header>
   )
@@ -335,6 +360,21 @@ function App() {
   const docked = dockVisible(saved.save, tab)
   const openShop = tab === 'town' ? PLACE_LIST.find((place) => place.id === townPart && place.gear !== undefined) : undefined
   const craftsAt = (place: PlaceDef) => unseenCrafts.filter((baseId) => dealsIn(place, baseId)).length
+  const narrow = useNarrow()
+
+  function tabBadge(id: AppTab) {
+    if (id === 'town') return <Badge count={finishedContracts + unseenCrafts.length + newRecipes} what="things waiting in town" />
+    if (id === 'map') return <Badge count={unseenDiscoveries} what="new places discovered" />
+    if (id === 'heroes') return <Badge count={attributePoints + skillPoints} what="unspent points" />
+    if (id === 'whatsnew' && seenKey !== latestKey && tab !== 'whatsnew') {
+      return (
+        <span className="badge" role="status">
+          new
+        </span>
+      )
+    }
+    return null
+  }
 
   useEffect(() => {
     if (openShop !== undefined && craftsAt(openShop) > 0) clearUnseenCrafts(openShop)
@@ -375,7 +415,7 @@ function App() {
     <>
       <div className="topbar">
         <h1>RPG</h1>
-        <ThemeSwitch />
+        {narrow ? null : <ThemeSwitch />}
       </div>
       {saved.loadError !== null ? (
         <div role="alert">
@@ -418,22 +458,17 @@ function App() {
         <>
           <div className={`shell${docked ? ' shell-docked' : ''}`}>
             <aside className="sidebar">
-              <Header save={saved.save} onGo={setTab} />
-              <nav aria-label="Main">
-                {TABS.map((entry) => (
-                  <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
-                    {entry.label}
-                    {entry.id === 'town' ? <Badge count={finishedContracts + unseenCrafts.length + newRecipes} what="things waiting in town" /> : null}
-                    {entry.id === 'map' ? <Badge count={unseenDiscoveries} what="new places discovered" /> : null}
-                    {entry.id === 'whatsnew' && seenKey !== latestKey && tab !== 'whatsnew' ? (
-                      <span className="badge" role="status">
-                        new
-                      </span>
-                    ) : null}
-                    {entry.id === 'heroes' ? <Badge count={attributePoints + skillPoints} what="unspent points" /> : null}
-                  </button>
-                ))}
-              </nav>
+              <Header key={tab} save={saved.save} onGo={setTab} />
+              {narrow ? null : (
+                <nav aria-label="Main">
+                  {TABS.map((entry) => (
+                    <button key={entry.id} type="button" aria-pressed={tab === entry.id} onClick={() => setTab(entry.id)}>
+                      {entry.label}
+                      {tabBadge(entry.id)}
+                    </button>
+                  ))}
+                </nav>
+              )}
             </aside>
             <main className="content">
               <AwayPanel />
@@ -500,6 +535,9 @@ function App() {
               {tab === 'guide' ? <Guide target={guideTarget} /> : null}
             </main>
             {docked ? <RunDock onOpenMap={() => setTab('map')} /> : null}
+            {narrow ? (
+              <PhoneNav main={PHONE_TABS} more={PHONE_MORE} current={tab} onPick={setTab} badge={tabBadge} moreBadge={tabBadge('whatsnew')} extra={<ThemeSwitch />} />
+            ) : null}
           </div>
         </>
       )}

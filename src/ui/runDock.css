@@ -164,8 +164,12 @@
 }
 
 @media (max-width: 899px) {
+  .run-dock {
+    bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom));
+  }
+
   .shell-docked .content {
-    padding-bottom: calc(var(--s3) + var(--run-dock-height, 64px));
+    padding-bottom: calc(var(--s3) + var(--run-dock-height, 64px) + var(--tabs-h) + env(safe-area-inset-bottom));
   }
 }
 

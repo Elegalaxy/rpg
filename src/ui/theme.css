@@ -366,13 +366,85 @@ nav[aria-label='Main'] button {
   font-weight: 600;
 }
 
-/* Phones: stacked layout; the status header stays on top while scrolling. */
+.status-compact {
+  display: none;
+}
+
+.status-full {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+/* Phones: one pinned status line that opens the full status, and a tab bar along the bottom. */
 
 @media (max-width: 899px) {
+  :root {
+    --status-h: 52px;
+    --tabs-h: 56px;
+  }
+
+  .topbar {
+    display: none;
+  }
+
+  /* Lets the header stick to the whole page instead of its short sidebar box. */
+  .sidebar {
+    display: contents;
+  }
+
   header[aria-label='Status'] {
     position: sticky;
     top: 0;
     z-index: 5;
+    gap: 0;
+    margin: 0 calc(-1 * var(--s4));
+    padding: 0 var(--s4);
+  }
+
+  .status-compact {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    width: 100%;
+    min-height: var(--status-h);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
+  }
+
+  .status-compact-name,
+  .status-compact-hp {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .status-compact-hp {
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .status-compact-xp {
+    flex: 1 1 0;
+    min-width: 2rem;
+    height: var(--s2);
+    accent-color: var(--accent);
+  }
+
+  header[aria-label='Status']:not(.status-open) .status-full {
+    display: none;
+  }
+
+  .status-full {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-bottom: var(--s3);
+  }
+
+  .content {
+    padding-bottom: calc(var(--s4) + var(--tabs-h) + env(safe-area-inset-bottom));
   }
 
   button {
@@ -382,6 +454,62 @@ nav[aria-label='Main'] button {
   .actor-card {
     width: 100%;
   }
+}
+
+.bottom-tabs {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s1);
+  min-height: var(--tabs-h);
+  padding: var(--s1) var(--s2) calc(var(--s1) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.bottom-tabs button {
+  min-height: 48px;
+  font-weight: 600;
+}
+
+.more-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  border: 0;
+  border-radius: 0;
+  background: rgb(0 0 0 / 40%);
+}
+
+.more-sheet {
+  position: fixed;
+  right: var(--s2);
+  bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom) + var(--s2));
+  left: var(--s2);
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 35%);
+}
+
+.more-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+.more-list button {
+  min-height: 48px;
+  font-weight: 600;
 }
 
 /* Wide screens: top bar, side panel, content. */

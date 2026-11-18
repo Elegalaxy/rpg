@@ -884,6 +884,49 @@ table.away-table {
   text-align: right;
 }
 
+/* Phones: one small card per hero, each value with its label. */
+@media (max-width: 600px) {
+  .away-table thead {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .away-table,
+  .away-table tbody,
+  .away-table tr,
+  .away-table th {
+    display: block;
+  }
+
+  .away-table tr {
+    padding: var(--s2) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .away-table th,
+  .away-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .away-table td {
+    display: inline-block;
+    margin-right: var(--s3);
+  }
+
+  .away-table td.num {
+    text-align: left;
+  }
+
+  .away-table td[data-label]::before {
+    content: attr(data-label) ' ';
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+}
+
 /* Crafting selects keep one width whatever option is chosen; the effect text has its own reserved lines. */
 .craft-select {
   width: 11rem;
@@ -1341,6 +1384,7 @@ dl.upgrade-facts dd {
 
 @media (max-width: 899px) {
   .run-bar {
+    top: var(--status-h);
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
