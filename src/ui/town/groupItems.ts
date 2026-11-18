@@ -7,10 +7,10 @@ function keyOf(item: ItemInstance): string {
 }
 
 /** Identical items (same base, level, quality, wear, modifiers) become one entry with a count. The first of each kind stands for the group. */
-export function groupItems(items: readonly ItemInstance[]): ItemGroup[] {
+export function groupItems(items: readonly ItemInstance[], extraKey: (item: ItemInstance) => string = () => ''): ItemGroup[] {
   const groups = new Map<string, ItemGroup>()
   for (const item of items) {
-    const key = keyOf(item)
+    const key = keyOf(item) + extraKey(item)
     const found = groups.get(key)
     if (found === undefined) groups.set(key, { item, count: 1 })
     else found.count += 1

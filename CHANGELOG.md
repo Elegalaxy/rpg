@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: the Legacy screen shows what carries over (gold, debt, tokens, materials, supplies) before you reincarnate, and the shop marks earlier-life gear with the lower price it pays. [13.31]
 - Balance: reincarnating keeps 20% of gold, materials and supplies; all gear is still kept. [13.31]
 - New: Legacy purchases Stockpile, Artisan's Favor, Long Memory, Head Start III and Third Heirloom. [13.31]
 - Tech: record the lean-inheritance design (a share of gold, materials and supplies carries over; new Legacy purchases) in the design doc. [13.31]

@@ -60,3 +60,9 @@ export function carriedPurse(purse: Purse, carry: CarryOver): Purse {
   }
   return { ...purse, gold: carry.gold.kept, debt: carry.debt.kept, materials: keep(carry.materials), supplies: keep(carry.supplies) }
 }
+
+/** The line the reincarnation confirmation shows: what is kept and what is lost. */
+export function carrySummary(carry: CarryOver): string {
+  const gold = (value: number): string => value.toLocaleString('en-US')
+  return `Keeps ${gold(carry.gold.kept)} of ${gold(carry.gold.now)} gold and ${carry.percent}% of each material and supply. The rest is lost.`
+}

@@ -1216,8 +1216,9 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.18, 13.24, 13.30
 - Goal: on reincarnation only a share of the hero's gold, materials and supplies carries over (base 20%, Stockpile I/II/III 30/40/50%), the rest is lost; gear, free upgrades, pack, recipes, crafting XP, route returns and mastery stay whole. Five new Legacy purchases (Stockpile, Artisan's Favor, Long Memory, Head Start III, Third Heirloom) carry long-run growth. Two guards keep the share from being laundered: earlier-life gear sells at the share (`pastLifeItemIds`), and reincarnation waits for the craft queue. GAME_DESIGN §10 "Carry-over and Stockpile". `src/sim`, content numbers and the harness are untouched, so every guard stays identical.
 - Parts: (1) docs. (2) persist: `carryOver.ts`, save fields, `reincarnation.ts`, `town.ts` sell price, tests. (3) UI: Legacy screen, Town sell price and tag, confirm dialog. (4) Guide, CHANGELOG, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `pending`. 4 `pending`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `pending`.
 - Progress:
+  - 2026-11-18: Part 3 done. Legacy screen: two purchase groups, five new rows, Carried share KPI, a "Carries over" block with Materials and Supplies folds, confirm line and Help text; Town sell tab uses `sellPriceFor` and tags earlier-life gear. Not checked in a browser or at 375 px.
   - 2026-11-18: Part 2 done. `persist/carryOver.ts`, new optional save fields (`stockpile`, `artisan`, `longMemory`, `thirdHeirloom`, `pastLifeItemIds`), `reincarnate` carries the share, craft-queue block, `sellPriceFor`, purchases and tests. Head Start check raised to 3.
   - 2026-11-18: Part 1 done. Rule, guards and purchases recorded in GAME_DESIGN §10.
 

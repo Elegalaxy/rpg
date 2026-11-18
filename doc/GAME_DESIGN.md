@@ -2158,7 +2158,7 @@ First-playable town numbers, decided 2026-10-31:
 
 - Gold comes from enemies. Each regular enemy drops its level × 2 gold. An elite or the boss drops its level × 3. Gold is added to the gold the hero is carrying.
 - Before an expedition the player chooses how much gold to carry, with a default of 25, the rescue fee. The rest of the account's gold stays deposited and safe. On a safe return the carried gold goes back to the account. After a defeat the carried gold that is left after the rescue fee is lost.
-- Greyhaven buys materials at 3 gold each (scrap 2) and buys archive items for `item level × 5 × quality`, rounded half up. It sells base items at 100% quality for `item level × 10` gold at the hero's level, and the shop supplies at the prices under Inventory.
+- Greyhaven buys materials at 3 gold each (scrap 2) and buys archive items for `item level × 5 × quality`, rounded half up. Gear that came from an earlier life (`pastLifeItemIds`) pays only the carried share of that price (Step 13.31, Section 10). It sells base items at 100% quality for `item level × 10` gold at the hero's level, and the shop supplies at the prices under Inventory.
 - Repair restores an item to full durability. One item costs `ceil(missing durability × (1 + item level ÷ 2) ÷ 10)` gold. A disabled item is repaired the same way.
 - Debt is kept on the account and added to by each defeat. It can be paid off in any amount from the account's gold, and it still blocks nothing.
 

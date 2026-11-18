@@ -1,12 +1,19 @@
 import { useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
+import { supplyTable } from '../../content/supplies.ts'
 import { DEEP_POCKETS_COST, DEEP_POCKETS_ROOM } from '../../persist/bag.ts'
+import { STOCKPILE_COSTS, STOCKPILE_PERCENTS, carrySummary, type CarryLine } from '../../persist/carryOver.ts'
 import { selectedHero } from '../../persist/character.ts'
 import {
   ATTRIBUTE_SEED_COST,
   ATTRIBUTE_SEED_MAX,
+  ARTISAN_COSTS,
+  ARTISAN_TOKENS,
   HEAD_START_LEVELS,
+  LONG_MEMORY_COSTS,
+  LONG_MEMORY_LEVELS,
+  THIRD_HEIRLOOM_COST,
   MASTERY_MAX,
   SECOND_HEIRLOOM_COST,
   SKILL_SEED_COSTS,
@@ -23,6 +30,7 @@ import {
 } from '../../persist/reincarnation.ts'
 import { purseOf, type SavedHero } from '../../persist/save.ts'
 import { EQUIPMENT_SLOT_IDS } from '../../sim/economy.ts'
+import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { GuideLink } from '../guide/GuideLink.tsx'
 import { Kpi, KpiRow, Tag } from '../Kit.tsx'
@@ -30,8 +38,27 @@ import { buyPurchaseFromUi, devLegacyTools, reincarnateFromUi, useSaveStatus } f
 
 const ATTRIBUTES = ['strength', 'vitality', 'agility', 'intellect', 'spirit'] as const
 
+const PURCHASE_GROUPS: { id: PurchaseGroup; title: string }[] = [
+  { id: 'life', title: 'Each new life' },
+  { id: 'carry', title: 'What carries over' },
+]
+
+const ROMAN = ['I', 'II', 'III'] as const
+
+/** The name of a tiered purchase: the next tier to buy, or the bare name once every tier is bought. */
+function tierName(base: string, bought: number, tiers: number): string {
+  return bought < tiers ? `${base} ${ROMAN[bought]}` : base
+}
+
+function num(value: number): string {
+  return value.toLocaleString('en-US')
+}
+
+type PurchaseGroup = 'life' | 'carry'
+
 type PurchaseRow = {
   id: string
+  group: PurchaseGroup
   name: string
   effect: string
   /** The next price, or null when nothing is left to buy. */
@@ -70,7 +97,9 @@ export function Legacy() {
   const block = reincarnationBlock(save, hero)
   const preview = legacyPreview(hero)
   const next = nextLifePreview(hero, save.account.discoveries)
+  const carry = next.carry
   const running = save.expedition !== null
+  const pieces = EQUIPMENT_SLOT_IDS.filter((slot) => hero.equipment[slot] !== null).length + purseOf(save).archive.length
   const rank = masteryRank(hero)
   const candidates = [
     ...EQUIPMENT_SLOT_IDS.flatMap((slot) => (hero.equipment[slot] === null ? [] : [hero.equipment[slot]!])),
@@ -83,9 +112,15 @@ export function Legacy() {
   }
 
   const headStart = headStartCost(hero.purchases)
+  const stockpileBought = hero.purchases.stockpile ?? 0
+  const artisanBought = hero.purchases.artisan ?? 0
+  const memoryBought = hero.purchases.longMemory ?? 0
+  const heirloomBought = (hero.purchases.secondHeirloom ? 1 : 0) + (hero.purchases.thirdHeirloom === true ? 1 : 0)
+  const artisanTokens = ARTISAN_TOKENS[Math.min(artisanBought, ARTISAN_TOKENS.length - 1)]
   const rows: PurchaseRow[] = [
     {
       id: 'attribute',
+      group: 'life',
       name: 'Attribute Seed',
       effect: '+1 to an attribute of your choice. Applies now and every later life',
       cost: attributeSeedTotal(hero.purchases) >= ATTRIBUTE_SEED_MAX ? null : ATTRIBUTE_SEED_COST,
@@ -96,6 +131,7 @@ export function Legacy() {
     },
     {
       id: 'skill',
+      group: 'life',
       name: 'Skill Point Seed',
       effect: '+1 unspent skill point. Applies now and every later life',
       cost: skillSeedCost(hero.purchases),
@@ -106,7 +142,8 @@ export function Legacy() {
     },
     {
       id: 'headStart',
-      name: hero.purchases.headStart === 0 ? 'Head Start I' : hero.purchases.headStart === 1 ? 'Head Start II' : 'Head Start',
+      group: 'life',
+      name: tierName('Head Start', hero.purchases.headStart, HEAD_START_LEVELS.length),
       effect: `Start at level ${HEAD_START_LEVELS[Math.min(hero.purchases.headStart, HEAD_START_LEVELS.length - 1)]}. Raises you to it now if you are lower, and every later life starts there`,
       cost: headStart,
       bought: `${hero.purchases.headStart} of ${HEAD_START_LEVELS.length}`,
@@ -115,17 +152,52 @@ export function Legacy() {
       done: 'Bought a Head Start. Your level is raised now if it was lower.',
     },
     {
+      id: 'memory',
+      group: 'life',
+      name: tierName('Long Memory', memoryBought, LONG_MEMORY_COSTS.length),
+      effect: `Recall doubles run XP until ${LONG_MEMORY_LEVELS[Math.min(memoryBought, LONG_MEMORY_LEVELS.length - 1)]} levels above your peak level. Applies now once you have a peak, and every later life`,
+      cost: LONG_MEMORY_COSTS[memoryBought] ?? null,
+      bought: `${memoryBought} of ${LONG_MEMORY_COSTS.length}`,
+      controls: 'single',
+      buy: () => buyPurchaseFromUi('memory'),
+      done: 'Bought Long Memory. Recall reaches higher now.',
+    },
+    {
+      id: 'artisan',
+      group: 'life',
+      name: tierName('Artisan\u2019s Favor', artisanBought, ARTISAN_COSTS.length),
+      effect: `Each new life starts with ${artisanTokens} free upgrade ${artisanTokens === 1 ? 'token' : 'tokens'}, and they stack across lives. Gives 1 token now`,
+      cost: ARTISAN_COSTS[artisanBought] ?? null,
+      bought: `${artisanBought} of ${ARTISAN_COSTS.length}`,
+      controls: 'single',
+      buy: () => buyPurchaseFromUi('artisan'),
+      done: 'Bought Artisan\u2019s Favor. You have a free upgrade token now.',
+    },
+    {
+      id: 'stockpile',
+      group: 'carry',
+      name: tierName('Stockpile', stockpileBought, STOCKPILE_COSTS.length),
+      effect: `Reincarnating keeps ${STOCKPILE_PERCENTS[Math.min(stockpileBought, STOCKPILE_PERCENTS.length - 1)]}% of your gold, materials and supplies (now ${next.carry.percent}%), and earlier-life gear sells for the same share. Applies now`,
+      cost: STOCKPILE_COSTS[stockpileBought] ?? null,
+      bought: `${stockpileBought} of ${STOCKPILE_COSTS.length}`,
+      controls: 'single',
+      buy: () => buyPurchaseFromUi('stockpile'),
+      done: 'Bought a Stockpile. The carried share is higher now.',
+    },
+    {
       id: 'heirloom',
-      name: 'Second Heirloom',
+      group: 'carry',
+      name: heirloomBought === 0 ? 'Second Heirloom' : heirloomBought === 1 ? 'Third Heirloom' : 'Heirloom slots',
       effect: 'Keep one more heirloom. Applies at your next reincarnation',
-      cost: hero.purchases.secondHeirloom ? null : SECOND_HEIRLOOM_COST,
-      bought: hero.purchases.secondHeirloom ? '1 of 1' : '0 of 1',
+      cost: heirloomBought === 0 ? SECOND_HEIRLOOM_COST : heirloomBought === 1 ? THIRD_HEIRLOOM_COST : null,
+      bought: `${heirloomBought} of 2`,
       controls: 'single',
       buy: () => buyPurchaseFromUi('heirloom'),
-      done: 'Bought the Second Heirloom. It applies at your next reincarnation.',
+      done: 'Bought an heirloom slot. It applies at your next reincarnation.',
     },
     {
       id: 'pockets',
+      group: 'carry',
       name: 'Deep Pockets',
       effect: `+${DEEP_POCKETS_ROOM} loot bag room. Applies now and every later life`,
       cost: hero.purchases.deepPockets ? null : DEEP_POCKETS_COST,
@@ -143,6 +215,7 @@ export function Legacy() {
         <Kpi label="Legacy" value={<span data-testid="legacy">{hero.legacy}</span>} tone="gold" />
         <Kpi label="Lives completed" value={hero.lives} />
         <Kpi label="Mastery rank" value={<span data-testid="mastery">{rank}</span>} note={`of ${MASTERY_MAX} · +${rank * 2}% ordinary XP`} />
+        <Kpi label="Carried share" value={<span data-testid="carry-percent">{next.carry.percent}%</span>} note="of gold, materials and supplies" />
         <Kpi label="Peak level" value={hero.peakLevel ?? '—'} note={hero.peakLevel === undefined ? 'set at your next reincarnation' : undefined} />
       </KpiRow>
       {import.meta.env.DEV ? (
@@ -157,7 +230,10 @@ export function Legacy() {
       ) : null}
 
       <h3>Purchases</h3>
-      <table className="away-table legacy-table" aria-label="Legacy purchases">
+      {PURCHASE_GROUPS.map((group) => (
+        <div key={group.id}>
+      <h4 className="legacy-group">{group.title}</h4>
+      <table className="away-table legacy-table" aria-label={`Legacy purchases: ${group.title}`}>
         <thead>
           <tr>
             <th scope="col">Purchase</th>
@@ -172,7 +248,7 @@ export function Legacy() {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {rows.filter((row) => row.group === group.id).map((row) => {
             const why = whyNot(row, hero, running)
             return (
               <tr key={row.id} data-testid={`purchase-${row.id}`}>
@@ -211,6 +287,8 @@ export function Legacy() {
           })}
         </tbody>
       </table>
+        </div>
+      ))}
 
       <h3>Next life</h3>
       <dl className="legacy-facts" data-testid="next-life">
@@ -241,12 +319,52 @@ export function Legacy() {
         </div>
       </dl>
 
+      <h4 className="legacy-group">Carries over</h4>
+      <dl className="legacy-facts" data-testid="carry-over">
+        <div>
+          <dt>Gold</dt>
+          <dd data-testid="carry-gold">
+            {`${num(carry.gold.now)} → ${num(carry.gold.kept)}`}
+          </dd>
+        </div>
+        {carry.debt.now > 0 ? (
+          <div>
+            <dt>Debt</dt>
+            <dd data-testid="carry-debt">
+              {`${num(carry.debt.now)} → ${num(carry.debt.kept)}`} <small>{`(${num(carry.debtPaid)} paid from gold first)`}</small>
+            </dd>
+          </div>
+        ) : null}
+        <div>
+          <dt>Free upgrade tokens</dt>
+          <dd data-testid="carry-tokens">
+            {`${hero.freeUpgrades ?? 0} → ${next.tokens}`}
+          </dd>
+        </div>
+        <div>
+          <dt>Gear</dt>
+          <dd data-testid="carry-gear">{`All ${pieces} pieces kept`}</dd>
+        </div>
+        <div>
+          <dt>Earlier-life gear</dt>
+          <dd data-testid="carry-sell">{`Sells at ${carry.percent}%`}</dd>
+        </div>
+      </dl>
+      <Collapsible summary={`Materials (${carry.materials.length})`} testId="carry-materials">
+        <StockTable lines={carry.materials} label="Materials" nameOf={(id) => id} />
+      </Collapsible>
+      <Collapsible summary={`Supplies (${carry.supplies.length})`} testId="carry-supplies">
+        <StockTable lines={carry.supplies} label="Supplies" nameOf={(id) => supplyTable[id]?.name ?? id} />
+      </Collapsible>
+      <p className="legacy-lost">The rest is lost. Spend gold and materials on gear before you go.</p>
+
       <h3>
         Reincarnate
         <Help label="What reincarnating resets">
-          Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and this hero's contracts. Mastery, purchases,
-          Legacy, discoveries, recipes, crafting, and this hero's gold, materials, and archive stay. Your worn gear goes to the archive. The elites you beat are
-          remembered, so the zones they guard stay open.
+          Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and this hero's contracts. Only a share of
+          this hero's gold, materials and supplies carries over (Stockpile raises it); the rest is lost. Mastery, purchases, Legacy, discoveries, recipes,
+          crafting, free upgrade tokens and all gear stay, and your worn gear goes to the archive. Gear from an earlier life sells for only the carried share.
+          The elites you beat are remembered, so the zones they guard stay open.
         </Help>
         <GuideLink id="topic-reincarnation" label="Reincarnation" />
       </h3>
@@ -287,6 +405,10 @@ export function Legacy() {
             {confirming ? (
               <div className="legacy-confirm" role="dialog" aria-label="Confirm reincarnation">
                 <p>This cannot be undone. Reincarnate {hero.name}?</p>
+                <p data-testid="confirm-carry">
+                  {carrySummary(carry)}
+                </p>
+                <p className="legacy-hint">Spend gold and materials on gear before you go.</p>
                 <button
                   type="button"
                   className="btn-primary"
@@ -340,4 +462,33 @@ function gainLines(preview: LegacyPreview): { amount: number; text: string }[] {
     })
   }
   return lines
+}
+
+/** What a stack list carries over: now and next life, right aligned with thousands separators. */
+function StockTable({ lines, label, nameOf }: { lines: CarryLine[]; label: string; nameOf: (id: string) => string }) {
+  if (lines.length === 0) return <p>None.</p>
+  return (
+    <table className="legacy-stock" aria-label={`${label} that carry over`}>
+      <thead>
+        <tr>
+          <th scope="col">{label.slice(0, -1)}</th>
+          <th scope="col" className="num">
+            Now
+          </th>
+          <th scope="col" className="num">
+            Next life
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {lines.map((line) => (
+          <tr key={line.id}>
+            <th scope="row">{nameOf(line.id)}</th>
+            <td className="num">{num(line.now)}</td>
+            <td className="num">{num(line.kept)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
 }

@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { PLACES, dealsIn, placeTable, type PlaceDef, type PlaceId } from '../../content/places.ts'
-import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
+import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE, repairCost, shopStock } from '../../content/shop.ts'
 import { materialSources } from '../../content/materialSources.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { selectedHero } from '../../persist/character.ts'
@@ -10,7 +10,7 @@ import { recipePrice, recipesForSale, supplyLock } from '../../persist/crafting.
 import { DRILL_MS, MAX_DRILLS_PER_LEVEL, purseOf, type SaveData } from '../../persist/save.ts'
 import { drillInfo, heroAway, trainCheck } from '../../persist/training.ts'
 import { previewEquip, wearerOf } from '../../persist/equipment.ts'
-import { previewBuy, repairAllCost } from '../../persist/town.ts'
+import { previewBuy, repairAllCost, sellPriceFor } from '../../persist/town.ts'
 import { GearChanges } from './GearChanges.tsx'
 import { groupItems } from './groupItems.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemBase, type ItemInstance } from '../../sim/economy.ts'
@@ -110,17 +110,18 @@ const GEAR_JOBS: { id: GearJob; label: string; hint: string }[] = [
 ]
 
 /** A weaponsmith, armorer, or jeweler: buy, sell, repair, then craft and upgrade, all limited to the shop's kind of item. */
-function GearShop({ place }: { place: PlaceDef }) {
+function GearShop({ place, startJob = 'buy' }: { place: PlaceDef; startJob?: GearJob }) {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const { run, messages } = useMessages()
-  const [job, setJob] = useState<GearJob>('buy')
+  const [job, setJob] = useState<GearJob>(startJob)
   const closed = save.expedition !== null
   const mine = (item: ItemInstance) => dealsIn(place, item.baseId)
   if (hero === null) return <p>Select a hero to trade here.</p>
   const gold = purseOf(save).gold
   const worn = Object.values(hero.equipment).filter((item): item is ItemInstance => item !== null && mine(item))
   const archived = purseOf(save).archive.filter(mine)
+  const earlier = new Set(hero.pastLifeItemIds ?? [])
   const damaged = [...worn, ...archived].filter((item) => item.durability < item.maxDurability)
   const repairAllPrice = repairAllCost(hero, mine)
   const queueCount = purseOf(save).craftQueue.length
@@ -188,7 +189,7 @@ function GearShop({ place }: { place: PlaceDef }) {
             name={itemName(item)}
             owned={1}
             effect={`Worn · Item level ${item.itemLevel}`}
-            costs={[[{ kind: 'gold', amount: itemSellPrice(item), prefix: '+' }]]}
+            costs={[[{ kind: 'gold', amount: sellPriceFor(hero, item), prefix: '+' }]]}
             actions={
               <button
                 type="button"
@@ -202,14 +203,25 @@ function GearShop({ place }: { place: PlaceDef }) {
             }
           />
         ))}
-        {groupItems(archived).map(({ item, count }) => (
+        {groupItems(archived, (item) => (earlier.has(item.id) ? 'earlier' : '')).map(({ item, count }) => (
           <ShopRow
             key={item.id}
-            name={itemName(item)}
+            name={
+              earlier.has(item.id) ? (
+                <>
+                  {itemName(item)}{' '}
+                  <Tag kind="info" title="Gear from an earlier life sells for only the share your reincarnation carries over.">
+                    Earlier life
+                  </Tag>
+                </>
+              ) : (
+                itemName(item)
+              )
+            }
             owned={count > 1 ? count : undefined}
             effect={`Archive · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
             note={<GearChanges preview={previewEquip(save, hero.id, item.id)} empty="No stat change from what you wear." />}
-            costs={[[{ kind: 'gold', amount: itemSellPrice(item), prefix: '+' }]]}
+            costs={[[{ kind: 'gold', amount: sellPriceFor(hero, item), prefix: '+' }]]}
             actions={
               <>
                 <button type="button" className="btn-good" disabled={closed} aria-label={`Wear ${item.id}`} onClick={() => run(equipFromUi(item.id, null), `Put on ${itemName(item)}.`)}>
@@ -626,7 +638,7 @@ function Bank() {
 }
 
 /** One of Greyhaven's places. */
-export function Town({ place: id }: { place: PlaceId }) {
+export function Town({ place: id, startJob }: { place: PlaceId; /** Which gear counter tab opens first. Used by tests. */ startJob?: GearJob }) {
   const { save } = useSaveStatus()
   const place = placeTable[id]
   return (
@@ -634,7 +646,7 @@ export function Town({ place: id }: { place: PlaceId }) {
       <h2>{place.name}</h2>
       <p>{place.blurb}</p>
       <PurseLine save={save} />
-      {place.gear !== undefined ? <GearShop place={place} /> : null}
+      {place.gear !== undefined ? <GearShop place={place} startJob={startJob} /> : null}
       {id === 'potion-shop' ? <PotionShop /> : null}
       {id === 'trading-post' ? <TradingPost /> : null}
       {id === 'trainer' ? <Trainer /> : null}
