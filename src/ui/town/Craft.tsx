@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PACKS } from '../../persist/pack.ts'
 import { purseOf } from '../../persist/save.ts'
 
 import { itemBases, itemName } from '../../content/items.ts'
@@ -365,7 +366,9 @@ export function Craft({ accepts = () => true, part }: { accepts?: (baseId: strin
             name={
               job.kind === 'craft'
                 ? `Craft ${itemBases[job.baseId]?.name ?? job.baseId}`
-                : job.kind === 'upgrade'
+                : job.kind === 'pack'
+                  ? `Craft ${PACKS[job.packId].name}`
+                  : job.kind === 'upgrade'
                   ? `Upgrade ${itemName(job.item)}`
                   : job.kind === 'socket'
                     ? `Open socket on ${itemName(job.item)}`
@@ -376,7 +379,9 @@ export function Craft({ accepts = () => true, part }: { accepts?: (baseId: strin
             effect={
               job.kind === 'craft'
                 ? `lvl ${job.itemLevel}${job.modifierId === null ? '' : ` · ${ITEM_MODIFIERS[job.modifierId]?.name}`}`
-                : job.kind === 'upgrade'
+                : job.kind === 'pack'
+                  ? `${PACKS[job.packId].slots} supply slots · ${job.materialId}`
+                  : job.kind === 'upgrade'
                   ? `lvl ${job.item.itemLevel} → ${job.item.itemLevel + 1}`
                   : job.kind === 'socket'
                     ? `lvl ${job.item.itemLevel} · ${job.materialId}`

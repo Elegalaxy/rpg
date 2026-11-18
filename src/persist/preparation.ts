@@ -5,6 +5,7 @@ import { SUPPLY_SLOT_COUNT } from '../sim/expedition.ts'
 import { EFFICIENT_QUIVER_CAPACITY, NODE_EFFICIENT_QUIVER, QUIVER_CAPACITY } from '../sim/classes/ranger.ts'
 import { CURSES, NODE_UNDEAD_CURSEBOUND } from '../sim/races/racialNodes.ts'
 
+import { STACK_LIMIT_REASON, limitStacks, overStacked, packSlots, stackLimit } from './pack.ts'
 import type { RosterResult } from './roster.ts'
 import { BAG_FULL_ORDERS, REPEAT_LIMITS, type BagFullOrder, type SaveData, type SavedHero } from './save.ts'
 
@@ -19,7 +20,7 @@ export type PreparationDraft = {
   carryGold: string
   /** The Warden's Echo rank for a run to the Fracture Gate. */
   fightRank: string
-  /** One supply id per slot, or an empty string for an empty slot. Always `SUPPLY_SLOT_COUNT` long. */
+  /** One supply id per slot, or an empty string for an empty slot. As long as the hero's slots (`packSlots`): 4, or 5 or 6 with a backpack. */
   supplies: string[]
   /** Standing order while away: push on while HP is at least this whole percent of maximum. */
   pushOnPercent: string
@@ -56,7 +57,7 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     specialAmmo: String(hero.specialAmmo),
     carryGold: String(hero.carryGold),
     fightRank: String(hero.fightRank),
-    supplies: Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => hero.packedSupplies[index] ?? ''),
+    supplies: fitSlots(limitStacks(hero.packedSupplies, packSlots(hero)), packSlots(hero)),
     pushOnPercent: String(hero.pushOnHpPercent),
     repeatRoute: hero.repeatRoute,
     repeatLimit: hero.repeatLimit,
@@ -68,6 +69,11 @@ export function draftFor(hero: SavedHero): PreparationDraft {
   }
 }
 
+/** The picks as a list of exactly `slotCount` entries, empty slots as ''. */
+function fitSlots(ids: readonly string[], slotCount: number): string[] {
+  return Array.from({ length: slotCount }, (_, index) => ids[index] ?? '')
+}
+
 /** How many of each supply the slots hold. */
 export function packedCounts(slots: readonly string[]): { [supplyId: string]: number } {
   const counts: { [supplyId: string]: number } = {}
@@ -76,7 +82,7 @@ export function packedCounts(slots: readonly string[]): { [supplyId: string]: nu
 }
 
 /** The slots limited to what the stash holds, so the screen never shows a pick it cannot fill. */
-export function clampToStash(slots: readonly string[], stash: { readonly [supplyId: string]: number }): string[] {
+export function clampToStash(slots: readonly string[], stash: { readonly [supplyId: string]: number }, slotCount: number = SUPPLY_SLOT_COUNT): string[] {
   const left = { ...stash }
   const kept: string[] = []
   for (const id of slots) {
@@ -84,24 +90,38 @@ export function clampToStash(slots: readonly string[], stash: { readonly [supply
     left[id] = (left[id] ?? 0) - 1
     kept.push(id)
   }
-  return Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => kept[index] ?? '')
+  return fitSlots(kept, slotCount)
 }
 
 /**
  * Pack one more or one fewer of a supply. The slots stay filled from the left, in the order the
  * supplies were first packed. Adding stops at the slot count and at what the stash holds.
  */
-export function stepPacked(slots: readonly string[], supplyId: string, delta: 1 | -1, owned: number): string[] {
+export function stepPacked(slots: readonly string[], supplyId: string, delta: 1 | -1, owned: number, slotCount: number = SUPPLY_SLOT_COUNT): string[] {
   const packed = slots.filter((id) => id !== '')
   if (delta === 1) {
-    if (packed.length >= SUPPLY_SLOT_COUNT || (packedCounts(packed)[supplyId] ?? 0) >= owned) return [...slots]
+    if (packRefusal(slots, supplyId, owned, slotCount) !== null) return [...slots]
     packed.push(supplyId)
   } else {
     const at = packed.lastIndexOf(supplyId)
     if (at < 0) return [...slots]
     packed.splice(at, 1)
   }
-  return Array.from({ length: SUPPLY_SLOT_COUNT }, (_, index) => packed[index] ?? '')
+  return fitSlots(packed, slotCount)
+}
+
+/**
+ * Why one more of this supply cannot be packed, or null when it can: the slots are full, the stash has no more,
+ * or (with a backpack, above 4 slots) the run already carries 2 of it.
+ */
+export function packRefusal(slots: readonly string[], supplyId: string, owned: number, slotCount: number = SUPPLY_SLOT_COUNT): string | null {
+  const packed = slots.filter((id) => id !== '')
+  const have = packedCounts(packed)[supplyId] ?? 0
+  if (packed.length >= slotCount) return 'Every slot is full.'
+  const limit = stackLimit(slotCount)
+  if (limit !== null && have >= limit) return STACK_LIMIT_REASON
+  if (have >= owned) return owned === 0 ? 'You have none in the stash.' : `You only have ${owned} in the stash.`
+  return null
 }
 
 /**
@@ -212,7 +232,9 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
     else autoRunMaxFights = auto
   }
   const packedSupplies = draft.supplies.filter((id) => id !== '')
-  if (draft.supplies.length > SUPPLY_SLOT_COUNT) errors.push(`Pack at most ${SUPPLY_SLOT_COUNT} supplies.`)
+  const slotCount = packSlots(hero)
+  if (draft.supplies.length > slotCount) errors.push(`Pack at most ${slotCount} supplies.`)
+  if (overStacked(packedSupplies, slotCount) !== null) errors.push(STACK_LIMIT_REASON)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
   if (!REPEAT_LIMITS.includes(draft.repeatLimit)) errors.push(`Pick a run limit of ${REPEAT_LIMITS.join(', ')} (0 is no limit).`)
   if (!BAG_FULL_ORDERS.includes(draft.bagFullOrder)) errors.push('Pick what to do when the bag is nearly full: walk home, ask or keep going.')

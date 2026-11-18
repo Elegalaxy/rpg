@@ -7,8 +7,9 @@ import { contracts as contractTable, type ContractDef } from '../content/contrac
 import { supplyTable } from '../content/supplies.ts'
 import { applyHeroUpdates } from './heroUpdates.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_TEMPER_MAX, rankable, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
-import { SUPPLY_SLOT_COUNT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
+import { SUPPLY_STACK_LIMIT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
+import { isPackId, overStacked, packSlots, type PackId } from './pack.ts'
 import { elitesFromClaimed } from './remembered.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
 import type { PriorityRow, RuleStack } from '../sim/types.ts'
@@ -99,6 +100,17 @@ export type CraftJob =
       rank: number
     }
 
+  | {
+      id: string
+      /** A crafted backpack (Step 13.22). The hero gets the pack when it ends. */
+      kind: 'pack'
+      heroId: string
+      packId: PackId
+      materialId: string
+      remainingMs: number
+      seedIndex: number
+      rank: number
+    }
   | {
       id: string
       kind: 'rank'
@@ -268,6 +280,8 @@ export type SavedHero = {
   fightRank: number
   /** A boss defeated this hero this life. Reincarnation needs it, and reincarnation clears it. */
   bossLossThisLife: boolean
+  /** The crafted backpack (Step 13.22): 5 slots (Satchel) or 6 (Field Pack). Absent means none, 4 slots. Kept through reincarnation. */
+  pack?: PackId
   /** The highest level this hero reached in a finished life. Recall doubles run XP below it. Absent until the first reincarnation after Step 13.18. */
   peakLevel?: number
   /** Reincarnation currency this hero has not spent. Bound to the hero and kept across lives. */
@@ -400,7 +414,7 @@ function assertItem(value: unknown, label: string): asserts value is ItemInstanc
 function assertJob(value: unknown): asserts value is CraftJob {
   check(isRecord(value), 'craft job must be an object')
   check(typeof value.id === 'string' && value.id.length > 0, 'craft job is missing an id')
-  check(['craft', 'upgrade', 'socket', 'infuse', 'rank'].includes(String(value.kind)), 'craft job kind must be craft, upgrade, socket, infuse or rank')
+  check(['craft', 'upgrade', 'socket', 'infuse', 'rank', 'pack'].includes(String(value.kind)), 'craft job kind must be craft, upgrade, socket, infuse, rank or pack')
   check(typeof value.heroId === 'string', 'craft job is missing a hero')
   check(typeof value.materialId === 'string', 'craft job is missing a material')
   whole(value.remainingMs, 'craft job time')
@@ -410,6 +424,8 @@ function assertJob(value: unknown): asserts value is CraftJob {
     check(typeof value.baseId === 'string' && itemBase(value.baseId) !== undefined, 'craft job has an unknown base')
     whole(value.itemLevel, 'craft job item level')
     check(value.modifierId === null || (typeof value.modifierId === 'string' && ITEM_MODIFIERS[value.modifierId] !== undefined), 'craft job has an unknown modifier')
+  } else if (value.kind === 'pack') {
+    check(isPackId(value.packId), 'pack job has an unknown pack')
   } else {
     assertItem(value.item, 'craft job item')
     check(
@@ -547,7 +563,10 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   stringList(value.packedSupplies, `${label} packed supplies`)
   stringList(value.updates, `${label} updates`)
   check(value.recoveryUntil === undefined || (typeof value.recoveryUntil === 'number' && Number.isFinite(value.recoveryUntil)), `${label} recovery time must be a number`)
-  check(value.packedSupplies.length <= SUPPLY_SLOT_COUNT, `${label} packs more than ${SUPPLY_SLOT_COUNT} supplies`)
+  check(value.pack === undefined || isPackId(value.pack), `${label} pack must be satchel or fieldPack`)
+  const slotCount = packSlots({ pack: value.pack as PackId | undefined })
+  check(value.packedSupplies.length <= slotCount, `${label} packs more than ${slotCount} supplies`)
+  check(overStacked(value.packedSupplies, slotCount) === null, `${label} packs more than ${SUPPLY_STACK_LIMIT} of one supply`)
   for (const id of value.packedSupplies) check(supplyTable[id] !== undefined, `${label} packs unknown supply ${id}`)
   whole(value.craftXp, `${label} crafting experience`)
   whole(value.legacy, `${label} Legacy`)

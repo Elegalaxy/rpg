@@ -4,6 +4,7 @@ import { itemBase } from '../content/items.ts'
 import { nodes, routeOpeningPlan, routes } from '../content/world.ts'
 import { classWebs } from '../content/webs/index.ts'
 import {
+  SUPPLY_SLOT_COUNT,
   TRAVEL_GAP_MS,
   createExpedition,
   type ExpeditionBlueprint,
@@ -14,6 +15,7 @@ import { EQUIPMENT_SLOT_IDS, gearFromEquipment, statBonusesFor } from '../sim/ec
 import { renaissanceActive } from '../sim/progression.ts'
 
 import { bagCapacity } from './bag.ts'
+import { packSlots } from './pack.ts'
 import { masteryRank } from './reincarnation.ts'
 import type { SavedHero } from './save.ts'
 
@@ -62,6 +64,7 @@ export function blueprintForHero(
     carriedGold: gold.carried,
     depositedGold: gold.deposited,
     supplies: [...supplies],
+    ...(packSlots(hero) > SUPPLY_SLOT_COUNT ? { supplySlotCount: packSlots(hero) } : {}),
     lootCapacity: bagCapacity(hero),
     durability: durabilityBySlot(hero),
     retreatThresholds: hero.retreatAtMost === null ? [] : [{ kind: 'hpFraction', atMost: hero.retreatAtMost }],

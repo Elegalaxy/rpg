@@ -6,6 +6,7 @@ import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_M
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { selectedHero } from './character.ts'
+import { PACKS, type PackId } from './pack.ts'
 import { wearerOf } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import { purseOf, updatePurse, withPurse, type CraftJob, type Purse, type SaveData, type SavedHero } from './save.ts'
@@ -424,6 +425,13 @@ function finishJob(job: CraftJob, save: SaveData): { save: SaveData; notice: Cra
       notice: { jobId: job.id, baseId: job.baseId, text: `Crafted ${name}, item level ${job.itemLevel}, quality ${Math.round(quality * 1000) / 10}%.` },
     }
   }
+  if (job.kind === 'pack') {
+    const withPack = heroes.map((hero) => (hero.id === job.heroId ? { ...hero, pack: job.packId } : hero))
+    return {
+      save: { ...save, heroes: withPack },
+      notice: { jobId: job.id, baseId: '', text: `Crafted a ${PACKS[job.packId].name}: ${PACKS[job.packId].slots} supply slots.` },
+    }
+  }
   if (job.kind === 'socket' || job.kind === 'infuse' || job.kind === 'rank') {
     const result = afterItemJob(job)
     const owner = heroes.find((entry) => entry.id === job.heroId)
@@ -679,6 +687,46 @@ function afterItemJob(job: Extract<CraftJob, { kind: 'socket' | 'infuse' | 'rank
   const infused: ItemInstance = { ...job.item, socketed: true, modifiers: [job.item.modifiers[0] ?? job.modifierId, job.modifierId].slice(0, MAX_ITEM_MODIFIERS) }
   // The new second modifier starts at rank I, with the temper of the infuse material.
   return withTempers(withRanks(infused, [modifierRankAt(job.item, 0), 1]), [tempers[0] ?? 0, temperGrade(job.modifierId, job.materialId)])
+}
+
+/** The materials a pack can be crafted from: grade (`UPGRADE_QUALITY_POINTS`) at or above the pack's minimum. */
+export function packMaterials(packId: PackId): string[] {
+  return materialIds().filter((id) => (UPGRADE_QUALITY_POINTS[id] ?? 0) >= PACKS[packId].minGrade)
+}
+
+/** Why this pack cannot be crafted now from this material, or null. A queued Satchel does not count for the Field Pack. */
+export function packCheck(save: SaveData, hero: SavedHero, packId: PackId, materialId: string): string | null {
+  const shut = closed(save)
+  if (shut !== null) return shut
+  const def = PACKS[packId]
+  if (hero.pack === packId) return `${hero.name} already has a ${def.name}.`
+  if (hero.pack === 'fieldPack') return `${hero.name} already has a better pack than the ${def.name}.`
+  if (hero.purse.craftQueue.some((job) => job.kind === 'pack' && job.packId === packId)) return `A ${def.name} is already being made.`
+  if (def.needs !== undefined && hero.pack !== def.needs) return `The ${def.name} needs the ${PACKS[def.needs].name} first.`
+  if (hero.progress.level < def.minHeroLevel) return `The ${def.name} needs hero level ${def.minHeroLevel}. This hero is level ${hero.progress.level}.`
+  if (MATERIAL_QUALITY[materialId] === undefined) return pickMaterialText()
+  if (!packMaterials(packId).includes(materialId)) return `The ${def.name} needs ${packMaterials(packId).join(', ')} (grade ${def.minGrade} or better).`
+  return spend(hero.purse, materialId, def.units, def.gold)
+}
+
+/** Pay for a pack and queue it (30 s, like every job). The slots change when the job ends. */
+export function queuePack(save: SaveData, heroId: string, packId: PackId, materialId: string): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  const problem = packCheck(save, hero, packId, materialId)
+  if (problem !== null) return { ok: false, reason: problem }
+  const job: CraftJob = {
+    id: nextJobId(hero.purse),
+    kind: 'pack',
+    heroId,
+    packId,
+    materialId,
+    remainingMs: CRAFT_MS,
+    seedIndex: hero.purse.craftCounter,
+    rank: proficiencyRank(hero.craftXp),
+  }
+  const purse = charge(hero.purse, materialId, PACKS[packId].units, PACKS[packId].gold)
+  return { ok: true, save: withPurse(save, { ...purse, craftCounter: purse.craftCounter + 1, craftQueue: [...purse.craftQueue, job] }, heroId) }
 }
 
 /** True when any hero has a job queued. */
