@@ -1189,6 +1189,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.26: Auto run modes
+- Status: `in progress`
+- Depends on: 13.14, 13.15
+- Goal: Auto run gets a mode, `repeat` (today) or `endless` (keep pushing past the route's end until a retreat condition, a defeat or the total fight limit), per GAME_DESIGN §11 "Auto run modes". Sim untouched, so every matrix stays byte-identical.
+- Parts: (1) docs only. (2) `autoRunMode` on `SavedHero` (validated, reincarnation, preparation draft), `decideHold` with the mode, live loop and away replay use it, away report line, tests. (3) UI: select and warning on the preparation screen, "Auto · endless" dock tag, Guide paragraph, CHANGELOG.
+- Part status: 1 `done`. 2 `todo`. 3 `todo`.
+- Acceptance: typecheck, lint, npm test (incl. `tests/architecture.test.ts`) and build pass; guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows, warden, causeway, elites at seed 1 x 5) byte-identical to origin/main.
+- Progress:
+  - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §11.
+
 ### Step 13.24: First-clear rewards
 - Status: `in progress`
 - Depends on: 13.23
