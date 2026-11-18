@@ -1206,11 +1206,12 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Status: `in progress`
 - Depends on: 13.22, 13.23
 - Goal: (A) a kill bounty counts every enemy that dies in a won fight, summons included (the Echo Knight's Oathbound Echo), via an optional `slain` list on the expedition history entry; old history falls back to encounter members. (B) the contract tracker names the zone or route in brackets. (C) the Trading Post sells materials in steps of 1, 10, 100 and All. (D) Guide topics for Gear and Greyhaven, plus generated modifier entries. No sim behaviour change; every guard stays byte-identical.
-- Part status: A `done`. B `done`. C `todo`. D `todo`.
+- Part status: A `done`. B `done`. C `done`. D `todo`.
 - Progress:
   - 2026-11-18: Step opened. Cause of A: `unitsFrom` read only `encounters[id].members`, and summons are not members.
   - 2026-11-18: Part A done. `ExpeditionEncounterRecord.slain?` (defIds of every enemy that died, summons included; recorded in `finishEncounter`, no sim behaviour change); `unitsFrom` counts it, old history falls back to members. `encounterEnemyIds` (members plus summons, through any depth) in `content/contracts.ts`, shared by Auto run's `contractFitsRoute`. Guards (8 matrices seed 1 x 5) identical to origin/main apart from the speed line.
   - 2026-11-18: Part B done. `contractZone(target)` in `content/contracts.ts` (derived from the target, so old stored contracts work; summoned enemies count, zones joined with " / "), `ContractTrackRow.label`, shown on the map and fight tracker. The board rows already carry the zone in their description. Tests in `persist/contracts.test.ts`.
+  - 2026-11-18: Part C done. `SELL_STEPS` (1, 10, 100, hidden above the stack) plus Sell all, each with its gold, in `TradingPost` (`ui/town/Town.tsx`); aria-labels kept ("Sell 1 shard", "Sell all shard"). No material buying. Test `ui/town/TradingPost.test.tsx`.
 
 ### Step 13.24: First-clear rewards
 - Status: `in progress`

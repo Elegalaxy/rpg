@@ -306,6 +306,9 @@ function PotionShop() {
   )
 }
 
+/** Quantity steps between selling one and selling all. A step larger than the stack is hidden. */
+const SELL_STEPS: readonly number[] = [1, 10, 100]
+
 function TradingPost() {
   const { save } = useSaveStatus()
   const { run, messages } = useMessages()
@@ -336,16 +339,19 @@ function TradingPost() {
               costs={[[{ kind: 'gold', amount: MATERIAL_SELL_PRICE[id] ?? 0, prefix: '+' }]]}
               actions={
                 <>
-                  <button
-                    type="button"
-                    className="btn-warn"
-                    disabled={closed || quantity < 1}
-                    title={quantity < 1 ? `You have no ${id}` : undefined}
-                    aria-label={`Sell 1 ${id}`}
-                    onClick={() => run(sellMaterialFromUi(id, 1), `Sold 1 ${id}.`)}
-                  >
-                    Sell 1
-                  </button>
+                  {SELL_STEPS.filter((step) => step === 1 || step <= quantity).map((step) => (
+                    <button
+                      key={step}
+                      type="button"
+                      className="btn-warn"
+                      disabled={closed || quantity < step}
+                      title={quantity < 1 ? `You have no ${id}` : undefined}
+                      aria-label={`Sell ${step} ${id}`}
+                      onClick={() => run(sellMaterialFromUi(id, step), `Sold ${step} ${id}.`)}
+                    >
+                      Sell {step} (+{step * (MATERIAL_SELL_PRICE[id] ?? 0)} g)
+                    </button>
+                  ))}
                   <button
                     type="button"
                     className="btn-warn"
@@ -354,7 +360,7 @@ function TradingPost() {
                     aria-label={`Sell all ${id}`}
                     onClick={() => run(sellMaterialFromUi(id, quantity), `Sold ${quantity} ${id}.`)}
                   >
-                    Sell all
+                    Sell all (+{quantity * (MATERIAL_SELL_PRICE[id] ?? 0)} g)
                   </button>
                 </>
               }
