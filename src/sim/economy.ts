@@ -115,7 +115,8 @@ export function equipBlock(
   }
   for (const id of item.modifiers) {
     const modifier = ITEM_MODIFIERS[id]
-    if (modifier !== undefined && modifier.minLevel > heroLevel) {
+    // An heirloom keeps all its modifiers at full strength and may be worn early (GAME_DESIGN §10).
+    if (modifier !== undefined && item.heirloom === undefined && modifier.minLevel > heroLevel) {
       return `${modifier.name} needs level ${modifier.minLevel}. This hero is level ${heroLevel}.`
     }
   }

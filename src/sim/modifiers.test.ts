@@ -414,3 +414,23 @@ describe('modifier temper', () => {
   })
 })
 })
+
+describe('an heirloom wears early (Step 13.29)', () => {
+  const base = (id: string) => (id === 'x' ? sword : undefined)
+  const heirloom: ItemInstance = { ...item('a', ['siphoning']), heirloom: { heroId: 'h', cap: 30 } }
+
+  it('equips at level 1 with its level-20 modifier, where a plain item is blocked', () => {
+    expect(equipBlock(emptyEquipment(), heirloom, 'mainHand', 1, base)).toBeNull()
+    expect(equipBlock(emptyEquipment(), item('b', ['siphoning']), 'mainHand', 1, base)).toBe('Siphoning needs level 20. This hero is level 1.')
+    expect(equipBlock(emptyEquipment(), { ...heirloom, itemLevel: 5 }, 'mainHand', 1, base)).toBe('Sword needs level 5. This hero is level 1.')
+  })
+
+  it('gives its full bonus and counts toward the stack cap', () => {
+    const equipment = emptyEquipment()
+    equipment.mainHand = heirloom
+    expect(statBonusesFor(equipment).lifestealFraction).toBeCloseTo(0.03)
+    equipment.accessory0 = item('b', ['siphoning'])
+    equipment.accessory1 = item('c', ['siphoning'])
+    expect(modifierCounts(equipment).find((entry) => entry.id === 'siphoning')).toEqual({ id: 'siphoning', worn: 3, counted: 2 })
+  })
+})

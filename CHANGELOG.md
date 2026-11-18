@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Fixed: a kept heirloom can now be worn right after reincarnating, with all its modifiers. [13.29]
 - Improved: on a phone, the Map shows a running expedition first, folds the world map and locked routes away, pins Start expedition above the tabs, and folds each preparation group to a one-line summary.
 - Improved: beating the Fractured Warden now also unlocks reincarnation, so you no longer have to lose to a boss. [13.27]
 - Improved: route cards, the outcome card, the away report and the Guide show first-clear rewards and whether they are claimed. [13.24]

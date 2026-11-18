@@ -92,7 +92,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'An upgrade raises an item’s level by one, never past the hero’s level, and keeps its modifier. The material spent can lift quality but never lowers it, so upgrading is the cheap way to keep a good item current, while crafting is for a new item or a different modifier.',
       'From a certain hero level, a socket can be opened on an item, and a second, different modifier can then be infused into it. A rank-up raises the numbers of one modifier on one item, up to a top rank. The limit above counts pieces, not ranks.',
       'The material used also sets a temper on the modifier: the better the material, the bigger the boost to its numbers.',
-      'At reincarnation all worn gear goes to the archive. One chosen heirloom carries over: its item level follows the hero’s level up to the level it had, and its quality and modifiers are kept.',
+      'At reincarnation all worn gear goes to the archive. One chosen heirloom carries over: its item level follows the hero’s level up to the level it had, and its quality and modifiers are kept. It can be worn right away, even when a modifier asks for a higher level, and all its modifiers work in full.',
     ],
   },
   {

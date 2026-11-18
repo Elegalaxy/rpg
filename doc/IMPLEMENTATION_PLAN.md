@@ -1212,12 +1212,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
 ### Step 13.29: Heirloom equip fix
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.22
 - Goal: a kept heirloom whose modifier needs a higher level than the hero (Siphoning needs 20, hero is 1) can be worn, with all its modifiers at full strength (GAME_DESIGN §10, Heirloom equip rule). Non-heirloom items keep the strict check. Only `equipBlock` changes; effects, stack cap and the harness are untouched.
 - Parts: (1) docs. (2) `equipBlock` and tests. (3) Guide, CHANGELOG, HANDOFF.
-- Part status: 1 `done`. 2 `todo`. 3 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
 - Progress:
+  - 2026-11-18: Parts 2 and 3 done. `equipBlock` skips the per-modifier level refusal when `item.heirloom !== undefined`; tests in `sim/modifiers.test.ts`; Guide sentence; CHANGELOG. Guards: the harness uses no heirloom, so no default call changes (not re-run as before/after matrices).
   - 2026-11-18: Part 1 done. Rule recorded in GAME_DESIGN §10 (first draft had dormant modifiers; the user chose full strength instead).
 
 ### Step 13.26: Auto run modes
