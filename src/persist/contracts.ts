@@ -1,5 +1,5 @@
 import { encounters } from '../content/encounters.ts'
-import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
+import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, contractZone, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
 import { zoneGateRecord } from './remembered.ts'
 import { nodes, routes } from '../content/world.ts'
 import type { ExpeditionState } from '../sim/expedition.ts'
@@ -169,6 +169,8 @@ export function unitsFrom(expedition: ExpeditionState, def: ContractDef): number
 export type ContractTrackRow = {
   contractId: string
   name: string
+  /** The name with its zone in brackets, such as "Bounty: Oathbound Echos (Drowned Causeway)". */
+  label: string
   description: string
   progress: number
   count: number
@@ -183,7 +185,9 @@ export function contractTrack(save: SaveData, expedition: ExpeditionState | null
     const def = contractFor(purse, active.contractId)
     if (def === undefined) continue
     const pending = expedition === null ? 0 : Math.min(def.count - active.progress, unitsFrom(expedition, def))
-    rows.push({ contractId: def.id, name: def.name, description: def.description, progress: active.progress, count: def.count, pending })
+    const zone = contractZone(def.target)
+    const label = zone === '' || def.name.includes(zone) ? def.name : `${def.name} (${zone})`
+    rows.push({ contractId: def.id, name: def.name, label, description: def.description, progress: active.progress, count: def.count, pending })
   }
   return rows
 }

@@ -166,6 +166,17 @@ export function encounterEnemyIds(encounterId: string): string[] {
   return found
 }
 
+/** The zone names a contract belongs to, joined with " / ". Read from the target, so contracts stored before need nothing extra. Empty when no zone matches. */
+export function contractZone(target: ContractTarget): string {
+  const zones = Object.values(nodes).filter((node) => node.kind === 'zone')
+  let found: WorldNode[]
+  if (target.kind === 'fights') found = zones.filter((node) => node.id === target.nodeId)
+  else if (target.kind === 'kill') found = zones.filter((node) => [...node.encounterIds, ...(node.drawEncounterIds ?? [])].some((id) => encounterEnemyIds(id).includes(target.enemyId)))
+  else if (target.kind === 'encounters') found = zones.filter((node) => target.encounterIds.some((id) => node.encounterIds.includes(id) || (node.drawEncounterIds ?? []).includes(id)))
+  else found = zones.filter((node) => node.resource?.materialId === target.materialId)
+  return found.map((node) => node.name).join(' / ')
+}
+
 /**
  * Everything a board could offer for these discoveries, by kind. With a hero's record, a zone the hero
  * cannot enter yet (its gate is not met) offers nothing, the same rule the route start uses.

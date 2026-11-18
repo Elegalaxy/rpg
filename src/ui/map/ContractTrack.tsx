@@ -18,7 +18,7 @@ export function ContractTrack() {
             const done = shown >= row.count
             return (
               <li key={row.contractId} className={`contract-track-row${done ? ' contract-done' : ''}`} data-testid={`contract-track-${row.contractId}`}>
-                <strong title={row.description}>{row.name}</strong>
+                <strong title={row.description}>{row.label}</strong>
                 <span className="contract-track-meta">
                   <span className="progress-bar" aria-hidden="true">
                     <span style={{ width: `${Math.round((shown / row.count) * 100)}%` }} />

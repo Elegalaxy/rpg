@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, boardPool, contractList, contracts, rewardFor, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
+import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS, boardPool, contractZone, contractList, contracts, rewardFor, rollContract, targetKey, type ContractDef } from '../content/contracts.ts'
 import { createRng, nextFloat } from '../sim/rng.ts'
 import { encounters } from '../content/encounters.ts'
 import { enemies } from '../content/enemies.ts'
@@ -638,5 +638,31 @@ describe('kills of summoned enemies', () => {
     const save = updatePurse(base, { board: [echoDef], contracts: [{ contractId: echoDef.id, progress: 0 }] })
     expect(contractTrack(save, save.expedition)[0]!.pending).toBe(2)
     expect(purseOf(addContractProgress(save, save.expedition!)).contracts[0]!.progress).toBe(2)
+  })
+})
+
+describe('the zone in a contract label', () => {
+  it('names the zone of a bounty, a patrol, an elite hunt and a salvage', () => {
+    const echo = contractZone({ kind: 'kill', enemyId: 'oathbound-echo' })
+    expect(echo).toBe(`${nodes['fallen-bastion']!.name} / ${nodes['drowned-causeway']!.name}`)
+    expect(contractZone({ kind: 'fights', nodeId: 'splintered-road' })).toBe(nodes['splintered-road']!.name)
+    expect(contractZone({ kind: 'encounters', encounterIds: ['echo-knight'] })).not.toBe('')
+    expect(contractZone({ kind: 'secure', materialId: 'riftglass' })).toBe(nodes['drowned-causeway']!.name)
+    expect(contractZone({ kind: 'kill', enemyId: 'no-such-enemy' })).toBe('')
+  })
+
+  it('puts the zone in brackets after the name, once, for contracts already stored', () => {
+    const echoDef: ContractDef = { ...contracts['cull-the-pack']!, id: 'echo-label', name: 'Bounty: Oathbound Echos', target: { kind: 'kill', enemyId: 'oathbound-echo' } }
+    const patrol: ContractDef = { ...contracts['thicket-sweep']!, id: 'patrol-label', name: 'Patrol: Splintered Road', target: { kind: 'fights', nodeId: 'splintered-road' } }
+    const save = updatePurse(heroSave(), {
+      board: [echoDef, patrol],
+      contracts: [
+        { contractId: echoDef.id, progress: 0 },
+        { contractId: patrol.id, progress: 0 },
+      ],
+    })
+    const labels = contractTrack(save, null).map((row) => row.label)
+    expect(labels[0]).toBe(`Bounty: Oathbound Echos (${nodes['fallen-bastion']!.name} / ${nodes['drowned-causeway']!.name})`)
+    expect(labels[1]).toBe('Patrol: Splintered Road')
   })
 })
