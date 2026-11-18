@@ -205,7 +205,7 @@ function skillEntry(skillId: string, owner: OwnedSkill): GuideEntry | null {
     title: facts.name,
     summary: facts.effects[0] ?? '',
     facts: [...facts.stats.map(statFact), { label: 'Unlocked by', value: owner.unlockedBy }],
-    lines: facts.effects,
+    lines: [...new Set(facts.effects)],
     prose: ['These are the base values. Skill-web nodes can change a skill’s cost, cooldown, or effects.'],
     links: [{ id: `class-${owner.classId}`, label: classIdentity[owner.classId].name }],
   }

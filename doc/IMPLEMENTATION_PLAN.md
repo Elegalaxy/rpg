@@ -1189,14 +1189,18 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.23: In-game Guide
-- Status: `in progress`
+- Status: `done`
 - Depends on: none (reads content and sim definitions only)
 - Goal: a searchable Guide page explaining the loop, classes, races, Cleric vows, skills, statuses, supplies, expeditions, Rules and reincarnation (rules in GAME_DESIGN §12, "Guide page (2026-11-18)"). Numbers are generated from definitions; hand-written prose lives only in `src/content/guide.ts` and has no digits (test).
 - Parts: (1) docs only. (2) `src/content/guide.ts` text + coverage test. (3) `src/ui/guide/guideIndex.ts`, `Guide.tsx`, the tab and the Welcome button, tests, CHANGELOG. (4) Deep links (`guideNav.ts`, `GuideLink.tsx`) and placements, tests. (5) Status, Progress, HANDOFF.
-- Part status: 1 `in progress`. 2 to 5 `pending`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done`. 5 `done`.
 - Acceptance: typecheck, lint, npm test (incl. `tests/architecture.test.ts`) and build pass; every class, race, vow, status, supply and class-owned skill has an entry; every deep-link id exists.
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §12.
+  - 2026-11-18: Part 2 done. `src/content/guide.ts` (topics, class/race tips, vow text, status summaries, `EXTRA_CLASS_SKILLS`, `HIDDEN_SKILL_IDS`) and `guide.test.ts` (coverage, no digits in prose, every non-supply skill owned once). Mage has six Convergence spells, not five.
+  - 2026-11-18: Part 3 done. `ui/guide/guideIndex.ts` (+test), `Guide.tsx` (+test), "Guide" tab after "What's new", "Read the guide" on the Welcome screen, Guide CSS in `kit.css`.
+  - 2026-11-18: Part 4 done. `guideNav.ts`, `GuideLink.tsx`, links on CreateHero, the vow picker, Combat setup, the skill web and Legacy; tests. Checked in the browser: tab renders, search "vow" lists the three vows and the Cleric, links open the section, focus the heading and flash it.
+  - 2026-11-18: Part 5 done. Known rough edge: `effectLine` (shared with the skill info tooltips) prints raw names for some effects (chain, field, arm trap, reveal) and "Heals 0%" for Mend, which heals by a coefficient.
 
 ### Step 13.22: Crafted backpack
 - Status: `in progress`

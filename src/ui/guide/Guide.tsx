@@ -196,17 +196,16 @@ export function GuideView({ entries, target = null }: { entries: readonly GuideE
   }, [nonce])
 
   useEffect(() => {
+    // Tick 0 is the first mount: a request seen then is replayed by the tick that its own state change causes.
+    if (scrollTick === 0) return
     const id = pending.current
     if (id === null) return
     pending.current = null
-    const frame = requestAnimationFrame(() => {
-      const element = document.getElementById(id)
-      if (element === null) return
-      element.scrollIntoView({ block: 'start', behavior: 'smooth' })
-      const heading = element.querySelector<HTMLElement>('[data-guide-heading]')
-      heading?.focus({ preventScroll: true })
-    })
-    return () => cancelAnimationFrame(frame)
+    // The commit that opened the section and cleared the search is already in the DOM here.
+    const element = document.getElementById(id)
+    if (element === null) return
+    element.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    element.querySelector<HTMLElement>('[data-guide-heading]')?.focus({ preventScroll: true })
   }, [scrollTick])
 
   useEffect(() => {
