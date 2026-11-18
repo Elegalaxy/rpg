@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { newItem } from '../../content/items.ts'
 import { grantCraftingKit } from '../../persist/crafting.ts'
+import { selectedHero } from '../../persist/character.ts'
 import { updatePurse } from '../../persist/save.ts'
 import type { ItemInstance } from '../../sim/economy.ts'
 import { commitSave, createHeroFromUi, getSaveStatus } from '../store.ts'
@@ -56,5 +57,19 @@ describe('the Ranks panel', () => {
     setup({ ...keenBow, modifierTempers: [5] })
     commitSave(updatePurse(getSaveStatus().save, { materials: { duskiron: 20 } }), 'test')
     expect(renderToStaticMarkup(<Ranks />)).toContain('+75% (kept)')
+  })
+
+  it('offers the free upgrade only for I to II, with a token', () => {
+    setup(keenBow)
+    expect(renderToStaticMarkup(<Ranks />)).not.toContain('Use free upgrade')
+    const hero = selectedHero(getSaveStatus().save)!
+    commitSave({ ...getSaveStatus().save, heroes: [{ ...hero, freeUpgrades: 1 }] }, 'test')
+    const html = renderToStaticMarkup(<Ranks />)
+    expect(html).toContain('Free upgrades: 1')
+    expect(html).toMatch(/<button[^>]*aria-label="Rank up free Keen on bow"[^>]*>Use free upgrade/)
+    setup({ ...keenBow, modifierRanks: [2] })
+    const second = selectedHero(getSaveStatus().save)!
+    commitSave({ ...getSaveStatus().save, heroes: [{ ...second, freeUpgrades: 1 }] }, 'test')
+    expect(renderToStaticMarkup(<Ranks />)).not.toContain('Use free upgrade')
   })
 })

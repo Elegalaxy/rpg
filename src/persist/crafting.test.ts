@@ -29,6 +29,7 @@ import {
   upgradeMaterialCost,
   planUpgradeAll,
   MATERIAL_QUALITY,
+  spendFreeUpgrade,
   UPGRADE_QUALITY_POINTS,
 } from './crafting.ts'
 import { equipFromArchive, statsFor } from './equipment.ts'
@@ -750,5 +751,58 @@ describe('Cinder Scar recipes', () => {
     expect(buyRecipe(save, 'emberward')).toEqual({ ok: false, reason: 'The Emberward recipe needs level 28. This hero is level 27.' })
     const mid = withGold(29, ['node:cinder-scar'], ['emberwrought-tyrant'])
     expect(buyRecipe(mid, 'kindled')).toEqual({ ok: false, reason: 'The Kindled recipe needs level 30. This hero is level 29.' })
+  })
+})
+
+describe('free upgrades (Step 13.24)', () => {
+  const heirloomBow = (extra: Partial<ReturnType<typeof newItem>> = {}) => ({ ...newItem('bow', 'weapon-bow', 12), modifiers: ['keen'], ...extra })
+  function tokened(level: number, item: ReturnType<typeof newItem>, tokens = 1): SaveData {
+    const base = updatePurse(stocked(level), { archive: [item], gold: 0, materials: {} })
+    return { ...base, heroes: base.heroes.map((hero) => ({ ...hero, freeUpgrades: tokens })) }
+  }
+
+  it('opens a socket for nothing, keeps quality, ranks, tempers and heirloom, and takes one token', () => {
+    const item = heirloomBow({ quality: 1.07, modifierRanks: [2], modifierTempers: [3], heirloom: { heroId: 'hero-1', cap: 12 } })
+    const result = ok(spendFreeUpgrade(tokened(10, item, 2), 'hero-1', 'bow', { kind: 'socket' }))
+    const hero = selectedHero(result)!
+    const after = hero.purse.archive[0]!
+    expect(after).toEqual({ ...item, socketed: true })
+    expect(hero.freeUpgrades).toBe(1)
+    expect(hero.purse.gold).toBe(0)
+    expect(hero.purse.craftQueue).toHaveLength(0)
+    expect(hero.craftXp).toBe(selectedHero(tokened(10, item))!.craftXp)
+  })
+
+  it('opens a socket on a worn item in place', () => {
+    const save = tokened(10, { ...newItem('bow', 'weapon-one-handed', 10), modifiers: ['keen'] })
+    const worn = ok(equipFromArchive(save, 'hero-1', 'bow'))
+    const hero = { ...selectedHero(worn)!, freeUpgrades: 1 }
+    const result = ok(spendFreeUpgrade({ ...worn, heroes: [hero] }, 'hero-1', 'bow', { kind: 'socket' }))
+    expect(selectedHero(result)!.equipment.mainHand?.socketed).toBe(true)
+  })
+
+  it('ranks a modifier I to II and leaves the temper', () => {
+    const item = heirloomBow({ modifierTempers: [4] })
+    const hero = selectedHero(ok(spendFreeUpgrade(tokened(17, item), 'hero-1', 'bow', { kind: 'rank', index: 0 })))!
+    expect(hero.purse.archive[0]!.modifierRanks).toEqual([2])
+    expect(hero.purse.archive[0]!.modifierTempers).toEqual([4])
+    expect(hero.freeUpgrades).toBe(0)
+  })
+
+  it('refuses II to III, and every other bad case', () => {
+    expect(spendFreeUpgrade(tokened(17, heirloomBow({ modifierRanks: [2] })), 'hero-1', 'bow', { kind: 'rank', index: 0 })).toEqual({ ok: false, reason: 'A free upgrade ranks up to II only.' })
+    expect(spendFreeUpgrade(tokened(10, heirloomBow(), 0), 'hero-1', 'bow', { kind: 'socket' }).ok).toBe(false)
+    expect(spendFreeUpgrade(tokened(9, heirloomBow()), 'hero-1', 'bow', { kind: 'socket' }).ok).toBe(false)
+    expect(spendFreeUpgrade(tokened(10, heirloomBow({ socketed: true })), 'hero-1', 'bow', { kind: 'socket' }).ok).toBe(false)
+    expect(spendFreeUpgrade(tokened(10, heirloomBow()), 'hero-1', 'missing', { kind: 'socket' }).ok).toBe(false)
+    const running = { ...tokened(10, heirloomBow()), expedition: {} as never }
+    expect(spendFreeUpgrade(running, 'hero-1', 'bow', { kind: 'socket' })).toEqual({ ok: false, reason: 'Crafting is closed while an expedition is running.' })
+  })
+
+  it('refuses an item held by a queued job', () => {
+    const save = tokened(17, heirloomBow())
+    const queued = ok(queueUpgrade(updatePurse(save, { gold: 5000, materials: { scrap: 20 } }), 'hero-1', 'bow', 'scrap'))
+    const withToken = { ...queued, heroes: queued.heroes.map((hero) => ({ ...hero, freeUpgrades: 1 })) }
+    expect(spendFreeUpgrade(withToken, 'hero-1', 'bow', { kind: 'socket' }).ok).toBe(false)
   })
 })

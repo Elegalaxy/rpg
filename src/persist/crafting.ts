@@ -499,14 +499,23 @@ function levelBlock(hero: SavedHero): string | null {
   return hero.progress.level < SOCKET_MIN_HERO_LEVEL ? `Sockets need hero level ${SOCKET_MIN_HERO_LEVEL}. This hero is level ${hero.progress.level}.` : null
 }
 
-/** Why a socket cannot be opened on this item with this material, or null. */
-export function socketCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, materialId: string): string | null {
+/** The highest rank a free upgrade token can reach (Step 13.24): I to II only. */
+export const FREE_RANK_MAX = 2
+
+const NO_FREE_UPGRADE = 'You have no free upgrades. Clear a zone for the first time to earn one.'
+
+/**
+ * Why a socket cannot be opened on this item with this material, or null. With `free` the check is for a free
+ * upgrade token (Step 13.24): no material and no gold, but a token is needed.
+ */
+export function socketCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, materialId: string, free = false): string | null {
   const shut = closed(save)
   if (shut !== null) return shut
   if (item === undefined) return 'That item is not in the archive or worn by this hero.'
   const low = levelBlock(hero)
   if (low !== null) return low
   if (item.socketed === true) return `${itemName(item)} already has a socket.`
+  if (free) return (hero.freeUpgrades ?? 0) > 0 ? null : NO_FREE_UPGRADE
   if (!SOCKET_MATERIALS.includes(materialId)) return 'A socket needs riftglass, duskiron or cinderite.'
   return spend(hero.purse, materialId, SOCKET_MATERIAL_COST, socketGold(item.itemLevel))
 }
@@ -544,8 +553,11 @@ export function rankMaterials(toRank: number): string[] {
   return toRank >= 3 ? [...SOCKET_MATERIALS] : materialIds()
 }
 
-/** Why the modifier in this slot of the item cannot be raised one rank with this material, or null. */
-export function rankCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, index: number, materialId: string): string | null {
+/**
+ * Why the modifier in this slot of the item cannot be raised one rank with this material, or null. With `free`
+ * the check is for a free upgrade token (Step 13.24): no material and no gold, rank II at most, a token needed.
+ */
+export function rankCheck(save: SaveData, hero: SavedHero, item: ItemInstance | undefined, index: number, materialId: string, free = false): string | null {
   const shut = closed(save)
   if (shut !== null) return shut
   if (item === undefined) return 'That item is not in the archive or worn by this hero.'
@@ -557,6 +569,10 @@ export function rankCheck(save: SaveData, hero: SavedHero, item: ItemInstance | 
   if (current >= MODIFIER_RANK_MAX) return `${modifier.name} is already rank ${rankName(MODIFIER_RANK_MAX)}.`
   if (hero.progress.level < modifier.minLevel) return `${modifier.name} needs level ${modifier.minLevel}. This hero is level ${hero.progress.level}.`
   const toRank = current + 1
+  if (free) {
+    if (toRank > FREE_RANK_MAX) return 'A free upgrade ranks up to II only.'
+    return (hero.freeUpgrades ?? 0) > 0 ? null : NO_FREE_UPGRADE
+  }
   if (!rankMaterials(toRank).includes(materialId)) return toRank >= 3 ? 'Rank III needs riftglass, duskiron or cinderite.' : pickMaterialText()
   return spend(hero.purse, materialId, RANK_MATERIAL_COST[toRank] ?? 0, rankGold(id, toRank))
 }
@@ -670,6 +686,35 @@ export function queueRankUp(save: SaveData, heroId: string, itemId: string, inde
     rank: proficiencyRank(hero.craftXp),
   }
   return queueItemJob(save, hero, found, job, materialId, RANK_MATERIAL_COST[toRank] ?? 0, rankGold(found.item.modifiers[index] ?? '', toRank))
+}
+
+/** What a free upgrade token does to one item. */
+export type FreeUpgradeChoice = { kind: 'socket' } | { kind: 'rank'; index: number }
+
+/**
+ * Spend one free upgrade token (Step 13.24) on a worn or archive item, instantly (not a craft job): open its
+ * socket, or raise one modifier from rank I to II. Quality, tempers, heirloom status and durability stay as they
+ * were. The same refusals as the paid jobs (an expedition, a held item, hero level) apply.
+ */
+export function spendFreeUpgrade(save: SaveData, heroId: string, itemId: string, choice: FreeUpgradeChoice): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  const found = jobItem(hero, itemId)
+  const problem = choice.kind === 'socket' ? socketCheck(save, hero, found?.item, '', true) : rankCheck(save, hero, found?.item, choice.index, '', true)
+  if (problem !== null || found === null) return { ok: false, reason: problem ?? 'That item is not in the archive or worn by this hero.' }
+  let upgraded: ItemInstance
+  if (choice.kind === 'socket') {
+    upgraded = { ...found.item, socketed: true }
+  } else {
+    const ranks = found.item.modifiers.map((_id, index) => modifierRankAt(found.item, index))
+    ranks[choice.index] = modifierRankAt(found.item, choice.index) + 1
+    upgraded = withRanks(found.item, ranks)
+  }
+  const tokens = (hero.freeUpgrades ?? 0) - 1
+  const purse: Purse =
+    found.slot === null ? { ...hero.purse, archive: hero.purse.archive.map((entry) => (entry.id === upgraded.id ? upgraded : entry)) } : hero.purse
+  const equipment = found.slot === null ? hero.equipment : { ...hero.equipment, [found.slot]: upgraded }
+  return { ok: true, save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment, purse, freeUpgrades: tokens } : entry)) } }
 }
 
 /** The item a finished socket, infuse or rank job hands back. */

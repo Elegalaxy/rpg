@@ -60,4 +60,15 @@ describe('the Sockets panel', () => {
     expect(infuse).toContain('<dt>Temper</dt>')
     expect(infuse).toContain('+75%')
   })
+
+  it('shows the free upgrade button and tag only with a token, and disables it below level 10', () => {
+    setup(17, keenBow)
+    expect(renderToStaticMarkup(<Sockets />)).not.toContain('Use free upgrade')
+    const hero = selectedHero(getSaveStatus().save)!
+    commitSave({ ...getSaveStatus().save, heroes: [{ ...hero, freeUpgrades: 2 }] }, 'test')
+    const html = renderToStaticMarkup(<Sockets />)
+    expect(html).toContain('Free upgrades: 2')
+    expect(html).toMatch(/<button[^>]*aria-label="Open socket free bow"[^>]*>Use free upgrade/)
+    expect(html).not.toMatch(/disabled=""[^>]*aria-label="Open socket free bow"/)
+  })
 })

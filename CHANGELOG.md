@@ -12,6 +12,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ## Unreleased
 
 - Improved: Repair everything worn here sits at the top of the Repair tab, like Queue all on Upgrade.
+- New: spend a free upgrade at the crafters to open a socket or rank a modifier up to II at no cost. [13.24]
 - New: the first time a hero clears a zone and gets home, it earns gold, the zone's material and a free gear upgrade; the three late zones also give Legacy at the next reincarnation. [13.24]
 - Tech: record first-clear rewards in the design doc. [13.24]
 - Improved: the map and a live fight show the hero's current contracts and this run's progress, so you do not have to go back to the Contract Board to check.

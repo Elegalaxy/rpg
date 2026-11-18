@@ -7,7 +7,8 @@ import { purseOf } from '../../persist/save.ts'
 import { ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_RANK_MULTIPLIER, modifierRankAt, modifierTemperAt, modifierTextAt, rankName, rankable, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
-import { queueRankUpFromUi, useSaveStatus } from '../store.ts'
+import { queueRankUpFromUi, spendFreeUpgradeFromUi, useSaveStatus } from '../store.ts'
+import { FreeUpgradeButton } from './FreeUpgrade.tsx'
 import { groupItems } from './groupItems.ts'
 import { temperText } from './materialEffect.ts'
 
@@ -35,6 +36,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
   const [error, setError] = useState<string | null>(null)
   if (hero === null) return null
   const owned = purseOf(save).materials
+  const tokens = hero.freeUpgrades ?? 0
   const targets = socketTargets(hero).filter((entry) => accepts(entry.item.baseId))
   const entries = [
     ...targets.filter((entry) => entry.slot !== null).map((entry) => ({ ...entry, count: 1 })),
@@ -55,7 +57,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
   return (
     <>
       <h4>
-        Modifier ranks
+        Modifier ranks {tokens > 0 ? <Tag kind="good">Free upgrades: {tokens}</Tag> : null}
         <Help label="About ranks">
           A modifier starts at rank I. Rank II raises its numbers by {rankPercent(2)}% and rank III by {rankPercent(3)}%, for gold by the modifier's level and materials; rank III asks for riftglass, duskiron or cinderite. Each rank-up takes {CRAFT_MS / 1000} s in the crafting queue. The stack cap counts pieces, not ranks.
         </Help>
@@ -76,6 +78,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
               const toRank = current + 1
               const material = materialFor(item, index, toRank)
               const block = rankCheck(save, hero, item, index, material)
+              const freeBlock = rankCheck(save, hero, item, index, material, true)
               const oldTemper = modifierTemperAt(item, index)
               const newTemper = Math.max(oldTemper, temperGrade(id, material))
               return (
@@ -126,6 +129,14 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
                       >
                         {maxed ? 'Highest rank' : `Rank up to ${rankName(toRank)}`}
                       </button>
+                      {tokens > 0 && toRank === 2 ? (
+                        <FreeUpgradeButton
+                          subject={`${modifier.name} on ${itemName(item)}`}
+                          reason={freeBlock}
+                          label={`Rank up free ${modifier.name} on ${item.id}`}
+                          onConfirm={() => setError(spendFreeUpgradeFromUi(item.id, { kind: 'rank', index }) ?? 'Ranked up to II with a free upgrade.')}
+                        />
+                      ) : null}
                     </div>
                   }
                 />
@@ -134,7 +145,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
           </ul>
         </>
       )}
-      {error !== null ? <p role="alert">{error}</p> : null}
+      {error !== null ? <p role="alert" data-testid="rank-result">{error}</p> : null}
     </>
   )
 }

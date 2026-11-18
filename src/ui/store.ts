@@ -8,7 +8,7 @@ import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarn
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { advanceTraining, anyTraining, trainHero } from '../persist/training.ts'
-import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueInfuse, queuePack, queueRankUp, queueSocket, queueUpgrade, type CraftRequest } from '../persist/crafting.ts'
+import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueInfuse, queuePack, queueRankUp, queueSocket, queueUpgrade, spendFreeUpgrade, type CraftRequest, type FreeUpgradeChoice } from '../persist/crafting.ts'
 import type { PackId } from '../persist/pack.ts'
 import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
@@ -1040,6 +1040,13 @@ export function queueSocketFromUi(itemId: string, materialId: string): string | 
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   return applyTown(queueSocket(saveStatus.save, hero.id, itemId, materialId), 'socket queued')
+}
+
+/** Spend a free upgrade token (Step 13.24) on an item. Returns the refusal, or null. */
+export function spendFreeUpgradeFromUi(itemId: string, choice: FreeUpgradeChoice): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(spendFreeUpgrade(saveStatus.save, hero.id, itemId, choice), 'free upgrade used')
 }
 
 export function queuePackFromUi(packId: PackId, materialId: string): string | null {

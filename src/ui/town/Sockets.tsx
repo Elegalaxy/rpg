@@ -20,7 +20,8 @@ import { purseOf } from '../../persist/save.ts'
 import { ITEM_MODIFIERS, modifierFits, modifierRankAt, rankName, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
-import { queueInfuseFromUi, queueSocketFromUi, useSaveStatus } from '../store.ts'
+import { queueInfuseFromUi, queueSocketFromUi, spendFreeUpgradeFromUi, useSaveStatus } from '../store.ts'
+import { FreeUpgradeButton } from './FreeUpgrade.tsx'
 import { groupItems } from './groupItems.ts'
 import { qualityEffectText, temperText } from './materialEffect.ts'
 
@@ -63,6 +64,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
     ...groupItems(targets.filter((entry) => entry.slot === null).map((entry) => entry.item)).map(({ item, count }) => ({ item, slot: null, count })),
   ]
   const unlocked = hero.progress.level >= SOCKET_MIN_HERO_LEVEL
+  const tokens = hero.freeUpgrades ?? 0
   const socketMaterialFor = (item: ItemInstance): string =>
     socketMaterial[item.id] ?? SOCKET_MATERIALS.find((id) => (owned[id] ?? 0) >= SOCKET_MATERIAL_COST) ?? SOCKET_MATERIALS[0] ?? 'riftglass'
   const infuseMaterialFor = (item: ItemInstance): string =>
@@ -77,7 +79,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
   return (
     <>
       <h4>
-        Sockets and infusing
+        Sockets and infusing {tokens > 0 ? <Tag kind="good">Free upgrades: {tokens}</Tag> : null}
         <Help label="About sockets">
           An item holds one modifier. Open a socket (hero level {SOCKET_MIN_HERO_LEVEL} and up) and Infuse a second, different one from a recipe you know. Infusing again replaces the second modifier. Both jobs take {CRAFT_MS / 1000} s in the crafting queue, and a socket stays when the item is upgraded.
         </Help>
@@ -101,6 +103,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
               const options = modifiersFor(item)
               const pickedModifier = infuseModifier[item.id] !== undefined && options.includes(infuseModifier[item.id] ?? '') ? (infuseModifier[item.id] ?? '') : (options[0] ?? '')
               const socketBlock = socketCheck(save, hero, item, gem)
+              const freeBlock = socketCheck(save, hero, item, gem, true)
               const infuseBlock = pickedModifier === '' ? 'No recipe you know fits this item as a second modifier.' : infuseCheck(save, hero, item, pickedModifier, mat)
               const second = item.modifiers.length >= 2
               return (
@@ -158,6 +161,14 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                         <button type="button" className="btn-primary" disabled={socketBlock !== null} aria-label={`Open socket ${item.id}`} onClick={() => setError(queueSocketFromUi(item.id, gem))}>
                           Open socket
                         </button>
+                        {tokens > 0 ? (
+                          <FreeUpgradeButton
+                            subject={itemName(item)}
+                            reason={freeBlock}
+                            label={`Open socket free ${item.id}`}
+                            onConfirm={() => setError(spendFreeUpgradeFromUi(item.id, { kind: 'socket' }) ?? 'Socket opened with a free upgrade.')}
+                          />
+                        ) : null}
                       </div>
                     ) : (
                       <div className="upgrade-actions">
@@ -197,7 +208,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
           </ul>
         </>
       )}
-      {error !== null ? <p role="alert">{error}</p> : null}
+      {error !== null ? <p role="alert" data-testid="socket-result">{error}</p> : null}
     </>
   )
 }
