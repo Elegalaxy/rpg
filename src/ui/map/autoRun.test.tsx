@@ -322,7 +322,7 @@ describe('the Auto run mode on the preparation screen (Step 13.26)', () => {
       prepare(patch)
       const run = startRun(patch)
       expect(run).not.toBeNull()
-      return renderToStaticMarkup(<RunDock />)
+      return renderToStaticMarkup(<RunDock onOpenMap={() => undefined} />)
     }
     expect(html({ autoRun: true, autoRunMode: 'endless' })).toContain('Auto · endless')
     expect(html({ autoRun: true })).not.toContain('Auto · endless')
