@@ -755,7 +755,7 @@ Echo Knight:
      - Fracture Hammer remains available.
      - Surviving Blade and Ward Echoes remain until killed.
 - Each victory unlocks a stronger personal Fracture Echo rank.
-- Losing to any available Echo rank satisfies that life’s boss-loss requirement for optional reincarnation.
+- Losing to, or beating, the Warden at any available Echo rank satisfies that life’s boss requirement for optional reincarnation (a victory counts since Step 13.27).
 - Echo ranks prevent a strong hero from being locked out of reincarnation after defeating the only MVP boss.
 - First-time Echo-rank milestones can contribute one-time personal reincarnation rewards.
 - Echo rank `R` multiplies rank-0 HP, Power, Armor, and Resistance by `1.12^R`.
@@ -2574,9 +2574,10 @@ First-playable supplies, decided 2026-11-03:
 
 ### Trigger
 
-- During every life, the hero must lose to a boss before reincarnation becomes available.
-- Reincarnation is optional after that loss.
-- Losing does not itself grant a reward.
+- During every life, the hero must face a boss before reincarnation becomes available: a loss or a victory both unlock it (changed 2026-11-18, Step 13.27; it needed a loss, which locked out strong heroes).
+- The Fractured Warden is the only boss. A victory at any Echo rank counts. It is read from the hero's `echoRank`, which a Warden victory raises and reincarnation resets to 0, so no new save field is needed and a hero who already beat the Warden this life is unlocked at once. A loss still sets `bossLossThisLife`.
+- Reincarnation is optional after that.
+- Facing the boss does not itself grant a reward: Legacy stays level-based plus one-time bonuses, so losing on purpose pays nothing extra.
 - All normal defeat costs apply before reincarnation.
 
 ### Rewards
@@ -2634,7 +2635,7 @@ Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist an
 
 - Recall: while a hero is below their peak level, ordinary run XP counts double. `peakLevel` is the highest level the hero reached in any finished life, set at reincarnation to max(old peak, level reached). With `need` = XP from the hero's current total to reach `peakLevel`: `need <= 0` gives the XP as earned; `2 * xp <= need` gives `2 * xp`; otherwise `need + (xp - ceil(need / 2))` (the part that reaches the peak is doubled, the rest counts once). Recall applies to run XP (settlement, the outcome stats, the "Experience earned" line with "(Recall +N)", and the offline summary). Trainer drills are not boosted. A hero that already reincarnated before this step has no `peakLevel` until their next reincarnation (accepted).
 - Remembered Paths: from life 2 on, the elite defeats of earlier lives (Rootmaw Stalker, Echo Knight, Tidebound Colossus, Hollowmaw Reaver, Emberwrought Tyrant) keep the zone gates open. They are stored per hero in `rememberedEnemyIds`, filled at reincarnation from the elites in `defeatedEnemyIds`, and backfilled from the `elite:*` entries in `claimedBonuses` for heroes with `lives > 0`. Only zone gates read them (the route start, the map, and the contract board, which offers a zone's contracts to a hero who can enter it). The Fracture Gate (the Warden route) never reads them, and neither do templates or the one-time Legacy bonuses (the bonus is still paid once, from `claimedBonuses`).
-- Exploit guard: nothing here pays for losing to the Warden on purpose. Reincarnation still requires a boss loss this life, Legacy is still level-based plus one-time bonuses, and the Fracture Gate still needs the elites beaten this life. Recall only speeds levels the hero already earned once, and only up to the old peak.
+- Exploit guard: nothing here pays for losing to the Warden on purpose. Reincarnation still requires facing the Warden this life (a loss or a victory, Step 13.27), Legacy is still level-based plus one-time bonuses, and the Fracture Gate still needs the elites beaten this life. Recall only speeds levels the hero already earned once, and only up to the old peak.
 - Head Start: a Legacy purchase. Head Start I starts each life at level 5 for 20 Legacy. Head Start II starts at level 10 for 35 Legacy and needs I. The hero gets the XP of that level, the attribute points and skill points of those levels unspent (nothing is placed for them), and heirloom scaling runs after. Levels from Head Start still count toward Legacy-from-level, so a hero who dies at level 20 gets the same Legacy either way.
 - Elite Legacy Skill Points (the old Section 9 line) are dropped, not built. Elites pay the one-time +3 Legacy bonus instead.
 - Screen: the Legacy screen shows Legacy, lives, mastery and peak level as key-values, a purchases table (cost, bought of max, Buy with the reason when disabled) and a "Next life" block (zones remembered, Recall up to level N, start level).
@@ -2853,7 +2854,7 @@ Broad combat swings combined with stacked losses can feel unfair, especially off
 
 ### Incentivized boss loss
 
-Boss loss is required for reincarnation. Players may intentionally throw a fight. Normal defeat costs and progress-based rewards reduce the incentive, but this behavior must be observed during testing.
+Since Step 13.27 a boss victory unlocks reincarnation as well as a loss, so throwing a fight is no longer needed or rewarded. Legacy stays level-based plus one-time bonuses.
 
 ### Permanent power growth
 

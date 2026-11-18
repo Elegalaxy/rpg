@@ -1190,6 +1190,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 1 done. Rule and reasons recorded in GAME_DESIGN §8.
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
+### Step 13.27: A boss victory also unlocks reincarnation
+- Status: `in progress`
+- Depends on: 13.18
+- Goal: beating the Fractured Warden (any Echo rank) unlocks reincarnation like losing to it, per GAME_DESIGN §10 Trigger. User chose this option 2026-11-18. Sim untouched.
+- Parts: (1) docs. (2) persist: `bossFacedThisLife` helper over `bossLossThisLife` or `echoRank > 0`, reincarnation block and guidance, tests. (3) UI wording (Legacy condition line, outcome card), Guide, CHANGELOG.
+- Part status: 1 `done`. 2 `todo`. 3 `todo`.
+- Progress:
+  - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §10, the Warden section and the risks note.
+
 ### Step 13.28: Trading Post buys materials
 - Status: `done`
 - Depends on: 13.25
