@@ -457,6 +457,99 @@
   font-variant-numeric: tabular-nums;
 }
 
+.legacy-zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+
+.legacy-reincarnate {
+  display: grid;
+  gap: var(--s4);
+  max-width: 36rem;
+}
+
+.legacy-gain {
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.legacy-gain-total {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+}
+
+.legacy-gain-total strong {
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.legacy-gain-total span {
+  color: var(--muted);
+}
+
+.legacy-breakdown {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.legacy-breakdown td,
+.legacy-breakdown th {
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+  text-align: left;
+}
+
+.legacy-breakdown tr:last-child td,
+.legacy-breakdown tr:last-child th {
+  border-bottom: 0;
+}
+
+.legacy-breakdown td.num {
+  width: 4.5rem;
+  padding-right: var(--s3);
+  color: var(--gold);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.legacy-act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--s3);
+}
+
+.legacy-act label {
+  display: grid;
+  gap: var(--s1);
+}
+
+.legacy-act label small {
+  color: var(--muted);
+}
+
+.legacy-act select {
+  min-width: 16rem;
+}
+
+.legacy-confirm {
+  display: grid;
+  gap: var(--s2);
+  justify-items: start;
+}
+
+.legacy-confirm p {
+  margin: 0;
+}
+
 @media (max-width: 640px) {
   .legacy-table thead {
     position: absolute;

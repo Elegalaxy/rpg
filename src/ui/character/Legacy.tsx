@@ -19,12 +19,13 @@ import {
   bossFaced,
   reincarnationBlock,
   skillSeedCost,
+  type LegacyPreview,
 } from '../../persist/reincarnation.ts'
 import { purseOf, type SavedHero } from '../../persist/save.ts'
 import { EQUIPMENT_SLOT_IDS } from '../../sim/economy.ts'
 import { Help } from '../Help.tsx'
 import { GuideLink } from '../guide/GuideLink.tsx'
-import { Kpi, KpiRow } from '../Kit.tsx'
+import { Kpi, KpiRow, Tag } from '../Kit.tsx'
 import { buyPurchaseFromUi, devLegacyTools, reincarnateFromUi, useSaveStatus } from '../store.ts'
 
 const ATTRIBUTES = ['strength', 'vitality', 'agility', 'intellect', 'spirit'] as const
@@ -228,7 +229,15 @@ export function Legacy() {
         </div>
         <div>
           <dt>Remembered zones</dt>
-          <dd data-testid="next-zones">{next.zones.length === 0 ? 'None yet. Defeat a zone elite.' : next.zones.join(', ')}</dd>
+          <dd className="legacy-zones" data-testid="next-zones">
+            {next.zones.length === 0
+              ? 'None yet. Defeat a zone elite.'
+              : next.zones.map((zone) => (
+                  <Tag key={zone} kind="info">
+                    {zone}
+                  </Tag>
+                ))}
+          </dd>
         </div>
       </dl>
 
@@ -245,43 +254,59 @@ export function Legacy() {
       {block !== null ? (
         <p data-testid="reincarnation-block">{block}</p>
       ) : (
-        <div>
-          <p data-testid="legacy-preview">
-            You would gain {preview.total} Legacy: {preview.fromLevel} from level and XP
-            {preview.bonuses.map((bonus) => `, ${bonus.amount} for ${bonus.text.toLowerCase()}`).join('')}.
-          </p>
-          <label>
-            Heirloom (up to {heirloomAllowance(hero)}){' '}
-            <select aria-label="Heirloom" value={heirloom} onChange={(event) => setHeirloom(event.target.value)}>
-              <option value="">None</option>
-              {candidates.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {itemName(item)} (item level {item.itemLevel})
-                </option>
-              ))}
-            </select>
-          </label>
-          {confirming ? (
-            <div role="dialog" aria-label="Confirm reincarnation">
-              <p>This cannot be undone. Reincarnate {hero.name}?</p>
-              <button
-                type="button"
-                onClick={() => {
-                  run(reincarnateFromUi(heirloom === '' ? null : heirloom), `${hero.name} was reincarnated.`)
-                  setConfirming(false)
-                }}
-              >
-                Confirm
-              </button>{' '}
-              <button type="button" onClick={() => setConfirming(false)}>
-                Cancel
+        <div className="legacy-reincarnate">
+          <div className="legacy-gain" data-testid="legacy-preview">
+            <p className="legacy-gain-total">
+              <strong>{preview.total}</strong>
+              <span>Legacy if you reincarnate now</span>
+            </p>
+            <table className="legacy-breakdown" aria-label="Where this Legacy comes from">
+              <tbody>
+                {gainLines(preview).map((line) => (
+                  <tr key={line.text}>
+                    <td className="num">+{line.amount}</td>
+                    <th scope="row">{line.text}</th>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="legacy-act">
+            <label>
+              Heirloom
+              <small>Up to {heirloomAllowance(hero)}</small>
+              <select aria-label="Heirloom" value={heirloom} onChange={(event) => setHeirloom(event.target.value)}>
+                <option value="">None</option>
+                {candidates.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {itemName(item)} (item level {item.itemLevel})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {confirming ? (
+              <div className="legacy-confirm" role="dialog" aria-label="Confirm reincarnation">
+                <p>This cannot be undone. Reincarnate {hero.name}?</p>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => {
+                    run(reincarnateFromUi(heirloom === '' ? null : heirloom), `${hero.name} was reincarnated.`)
+                    setConfirming(false)
+                  }}
+                >
+                  Confirm
+                </button>
+                <button type="button" onClick={() => setConfirming(false)}>
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="btn-primary" onClick={() => setConfirming(true)}>
+                Reincarnate…
               </button>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setConfirming(true)}>
-              Reincarnate…
-            </button>
-          )}
+            )}
+          </div>
         </div>
       )}
       {message !== null ? <p data-testid="legacy-message">{message}</p> : null}
@@ -295,4 +320,24 @@ function bossFacedText(faced: ReturnType<typeof bossFaced>): string {
   if (faced === 'won') return 'Boss faced this life: defeated the Fractured Warden.'
   if (faced === 'both') return 'Boss faced this life: lost to and defeated the Fractured Warden.'
   return 'Not yet: face the Fractured Warden. A loss or a victory both count.'
+}
+
+/** One scannable line of the Legacy preview. Echo ranks collapse into a single range. */
+function gainLines(preview: LegacyPreview): { amount: number; text: string }[] {
+  const lines: { amount: number; text: string }[] = [{ amount: preview.fromLevel, text: 'Level and XP' }]
+  const ranks = preview.bonuses.filter((bonus) => bonus.id.startsWith('rank:'))
+  for (const bonus of preview.bonuses) {
+    if (!bonus.id.startsWith('rank:')) lines.push({ amount: bonus.amount, text: bonus.text })
+  }
+  if (ranks.length === 1) {
+    const only = ranks[0]
+    if (only !== undefined) lines.push({ amount: only.amount, text: only.text })
+  } else if (ranks.length > 1) {
+    const numbers = ranks.map((bonus) => Number(bonus.id.slice('rank:'.length))).sort((a, b) => a - b)
+    lines.push({
+      amount: ranks.reduce((sum, bonus) => sum + bonus.amount, 0),
+      text: `Echo ranks ${numbers[0]}–${numbers[numbers.length - 1]} first unlocked`,
+    })
+  }
+  return lines
 }
