@@ -62,6 +62,11 @@ const CURSE_LABELS: { [curse: string]: string } = {
   'soul-debt': 'Soul Debt',
 }
 
+function vowLabel(vow: string | null): string | null {
+  if (vow === null || vow.length === 0) return null
+  return VOW_LABELS[vow] ?? vow
+}
+
 /** A short tag: which kind of run this control belongs to. */
 function PrepWho({ of }: { of: string }) {
   return <small className="prep-who">{of}</small>
@@ -580,6 +585,10 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
   const autoOn = hero?.autoRun === true
   const autoMax = hero?.autoRunMaxFights ?? null
   const autoFights = getAutoFights()
+  const vow = vowLabel(expedition.hero.vow)
+  useEffect(() => {
+    if (vow !== null) debugLog('[ui]', 'run vow', { vow: expedition.hero.vow, label: vow })
+  }, [expedition.hero.vow, vow])
   return (
     <div className="run-bar" role="group" aria-label="Run controls">
       <div className="run-bar-status">
@@ -614,6 +623,11 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
             Fight {fightNumber} / {limit}
           </p>
         )}
+        {vow !== null ? (
+          <p className="run-bar-limit" data-testid="run-vow">
+            Vow: {vow}
+          </p>
+        ) : null}
         {autoOn ? (
           <p className="run-bar-limit" data-testid="auto-run-status">
             {autoMax === null ? 'Auto run on' : `Auto run: fight ${Math.min(autoFights, autoMax)} / ${autoMax}`}

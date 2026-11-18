@@ -218,4 +218,19 @@ describe('the expedition panel', () => {
     expect(html).toContain('aria-label="Auto run"')
     expect(html).toContain('data-testid="away-plan"')
   })
+
+  it('shows the cleric vow in the run bar and hides it for other classes', () => {
+    commitSave(newSave(), 'test', false)
+    expect(createHeroFromUi({ name: 'Vi', race: 'human', classId: 'cleric' })).toBeNull()
+    const made = getSaveStatus().save
+    commitSave({ ...made, heroes: made.heroes.map((hero) => ({ ...hero, vow: 'endurance' })) }, 'test', false)
+    seeds([1])
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Vow: Endurance')
+    commitSave(newSave(), 'test', false)
+    expect(createHeroFromUi({ name: 'Ash', race: 'human', classId: 'warrior' })).toBeNull()
+    seeds([1])
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).not.toContain('Vow:')
+  })
 })

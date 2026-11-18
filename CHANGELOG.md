@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: A Cleric's run shows the vow they took in the bar that stays on screen.
 - Improved: on a phone, the status is one pinned line (hero, level, HP during a run, XP) that opens the full status, the tabs move to a bar along the bottom (Map, Town, Hero, More), and the away report shows as cards.
 - Improved: Typing a Fractured Warden Echo rank above the unlocked rank sets it to that rank. [10.1]
 - Improved: The Fractured Warden's card shows its Echo rank during the fight. [10.1]
