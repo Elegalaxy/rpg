@@ -2619,6 +2619,7 @@ Reincarnation preserves:
 - All equipment is archived and retains its normal level/tier requirements.
 - One chosen heirloom scales down to the new hero level and grows with the hero.
 - Heirloom, decided 2026-11-01: the hero picks one item at reincarnation. Its item level follows the hero's level, up to the level it had when chosen. Quality and modifiers are kept. It can only be changed at the next reincarnation. The Second Heirloom purchase lets a hero keep one more.
+- Heirloom equip rule (Step 13.29, decided 2026-11-18): an heirloom can be worn at any hero level that its scaled item level allows, even when one of its modifiers needs a higher hero level. Such a modifier is dormant: it adds no stat bonus or combat effect, does not count toward the same-modifier limit or Hauler's room, and shows as "Siphoning III (inactive until level 20)". It switches on by itself when the hero reaches that level. Other items keep the strict check: a modifier above the hero's level blocks wearing. Scaling never changes an heirloom's modifiers, ranks or tempers. Harness runs use no heirloom, so every guard is unchanged.
 
 First-playable reincarnation numbers, decided 2026-11-01:
 
