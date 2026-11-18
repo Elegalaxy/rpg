@@ -11,6 +11,8 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: the Armorer has a Backpack counter. Craft a Satchel (5 supply slots, hero level 10) and then a Field Pack (6 slots, level 17) from a good material; the pack is kept through reincarnation. With a pack a run carries at most 2 of each supply, and the packing screen says so when a third is refused. [13.22]
+- Improved: the Potion Shop Buy and Brew batches match what a run can carry of one supply (4, or 2 with a pack). [13.22]
 - Tech: a hero can own a Satchel or Field Pack (more supply slots), crafted as a queued job and kept through reincarnation; there is no screen for it yet. [13.22]
 - Tech: a run with a backpack (more than 4 supply slots) carries at most 2 of any one supply; the `--matrix pack` measurement fills the extra slots under that limit. [13.22]
 - New: a Guide page explains classes, races, Cleric vows, skills, statuses, supplies, expeditions and reincarnation, with search. [13.23]

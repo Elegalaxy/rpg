@@ -14,9 +14,11 @@ import {
   draftFor,
   packedCounts,
   quiverLimit,
+  packRefusal,
   stepPacked,
   type PreparationDraft,
 } from '../../persist/preparation.ts'
+import { PACKS, STACK_LIMIT_REASON, packSlots } from '../../persist/pack.ts'
 import { REPEAT_LIMITS, type SavedHero } from '../../persist/save.ts'
 import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
@@ -24,7 +26,7 @@ import { countNames } from '../town/groupItems.ts'
 import { outcomeStats } from '../../persist/world.ts'
 import { pendingContractProgress } from '../../persist/contracts.ts'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
-import { MOMENTUM_CAP, SUPPLY_SLOT_COUNT, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
+import { MOMENTUM_CAP, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Collapsible } from '../Collapsible.tsx'
@@ -67,7 +69,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   const status = useSaveStatus()
   const [draft, setDraft] = useState<PreparationDraft>(() => {
     const start = draftFor(hero)
-    return { ...start, supplies: clampToStash(start.supplies, hero.purse.supplies) }
+    return { ...start, supplies: clampToStash(start.supplies, hero.purse.supplies, packSlots(hero)) }
   })
   const [problems, setProblems] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
@@ -75,6 +77,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
   const limit = quiverLimit(hero)
   const counts = packedCounts(draft.supplies)
   const packedTotal = draft.supplies.filter((id) => id !== '').length
+  const slotCount = packSlots(hero)
 
   // Every change is saved as soon as it is valid, so Start never runs on stale settings. A draft that is not valid yet blocks Start.
   useEffect(() => () => setPreparationProblem(null), [])
@@ -206,12 +209,13 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
       <fieldset className="supply-pack">
         <legend>Pack for the road</legend>
         <p>
-          Backpack: <strong data-testid="pack-used">{packedTotal}</strong> of {SUPPLY_SLOT_COUNT} slots.
+          Backpack: <strong data-testid="pack-used">{packedTotal}</strong> of {slotCount} slots{hero.pack === undefined ? '' : ` (${PACKS[hero.pack].name})`}.
         </p>
         <ul className="rows">
           {SUPPLIES.filter((supply) => (hero.purse.supplies[supply.id] ?? 0) > 0 || supplyLock(status.save, supply.id) === null).map((supply) => {
             const owned = hero.purse.supplies[supply.id] ?? 0
             const count = counts[supply.id] ?? 0
+            const refusal = packRefusal(draft.supplies, supply.id, owned, slotCount)
             return (
               <Row
                 key={supply.id}
@@ -221,7 +225,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
                       type="button"
                       aria-label={`Pack one fewer ${supply.name}`}
                       disabled={count === 0}
-                      onClick={() => patch({ supplies: stepPacked(draft.supplies, supply.id, -1, owned) })}
+                      onClick={() => patch({ supplies: stepPacked(draft.supplies, supply.id, -1, owned, slotCount) })}
                     >
                       −
                     </button>
@@ -231,8 +235,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
                     <button
                       type="button"
                       aria-label={`Pack one more ${supply.name}`}
-                      disabled={packedTotal >= SUPPLY_SLOT_COUNT || count >= owned}
-                      onClick={() => patch({ supplies: stepPacked(draft.supplies, supply.id, 1, owned) })}
+                      disabled={refusal !== null}
+                      title={refusal ?? undefined}
+                      onClick={() => patch({ supplies: stepPacked(draft.supplies, supply.id, 1, owned, slotCount) })}
                     >
                       +
                     </button>
@@ -240,13 +245,18 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
                 }
               >
                 <strong>{supply.name}</strong> — {supply.effect}
+                {refusal === STACK_LIMIT_REASON ? (
+                  <small className="row-note" data-testid={`pack-limit-${supply.id}`}>
+                    {refusal}
+                  </small>
+                ) : null}
                 <small className="row-note">{owned === 0 ? (supply.price === null ? 'None in your stash. Brew some at the Potion Shop.' : 'None in your stash. Buy some at the Potion Shop.') : `${owned} in your stash.`}</small>
               </Row>
             )
           })}
         </ul>
         {packedTotal > 0 ? (
-          <button type="button" onClick={() => patch({ supplies: stepPacked([], '', 1, 0) })}>
+          <button type="button" onClick={() => patch({ supplies: stepPacked([], '', 1, 0, slotCount) })}>
             Empty the backpack
           </button>
         ) : null}

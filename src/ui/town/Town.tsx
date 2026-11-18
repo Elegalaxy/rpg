@@ -15,6 +15,8 @@ import { GearChanges } from './GearChanges.tsx'
 import { groupItems } from './groupItems.ts'
 import { ITEM_MODIFIERS, appliesToText, type ItemBase, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
+import { packSlots, stackLimit } from '../../persist/pack.ts'
+import { PackWorkshop } from './PackWorkshop.tsx'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
@@ -92,7 +94,7 @@ function PurseLine({ save }: { save: SaveData }) {
 }
 
 /** Jobs on a gear counter. One is open at a time so the counter stays one screen. */
-type GearJob = 'buy' | 'sell' | 'repair' | CraftPart
+type GearJob = 'buy' | 'sell' | 'repair' | 'backpack' | CraftPart
 
 const GEAR_JOBS: { id: GearJob; label: string; hint: string }[] = [
   { id: 'buy', label: 'Buy', hint: 'Pieces for sale at this hero’s level. A purchase goes into the archive.' },
@@ -102,6 +104,7 @@ const GEAR_JOBS: { id: GearJob; label: string; hint: string }[] = [
   { id: 'upgrade', label: 'Upgrade', hint: 'Raise a piece by one level. It cannot go above the hero’s level.' },
   { id: 'sockets', label: 'Sockets', hint: 'Open a second socket, then infuse a different modifier.' },
   { id: 'ranks', label: 'Ranks', hint: 'Raise a modifier already on a piece, from rank I to II to III.' },
+  { id: 'backpack', label: 'Backpack', hint: 'Craft a pack that adds supply slots for every run. Kept through reincarnation.' },
   { id: 'queue', label: 'Queue', hint: 'Jobs being made, from every shop, in order.' },
 ]
 
@@ -120,13 +123,15 @@ function GearShop({ place }: { place: PlaceDef }) {
   const damaged = [...worn, ...archived].filter((item) => item.durability < item.maxDurability)
   const repairAllPrice = repairAllCost(hero, mine)
   const queueCount = purseOf(save).craftQueue.length
-  const current = GEAR_JOBS.find((entry) => entry.id === job) ?? GEAR_JOBS[0]
+  // The Backpack counter is the Armorer's only.
+  const jobs = GEAR_JOBS.filter((entry) => entry.id !== 'backpack' || place.id === 'armorer')
+  const current = jobs.find((entry) => entry.id === job) ?? jobs[0]
   const waiting = (id: GearJob): number => (id === 'repair' ? damaged.length : id === 'queue' ? queueCount : 0)
   const craftPart = job === 'craft' || job === 'upgrade' || job === 'sockets' || job === 'ranks' || job === 'queue' ? job : null
   return (
     <>
       <nav className="gear-jobs" aria-label="Gear jobs">
-        {GEAR_JOBS.map((entry) => {
+        {jobs.map((entry) => {
           const count = waiting(entry.id)
           return (
             <button key={entry.id} type="button" aria-pressed={job === entry.id} onClick={() => setJob(entry.id)}>
@@ -254,6 +259,8 @@ function GearShop({ place }: { place: PlaceDef }) {
         </>
       ) : null}
 
+      {job === 'backpack' ? <PackWorkshop /> : null}
+
       {messages}
       <Craft accepts={(baseId) => dealsIn(place, baseId)} part={craftPart} />
     </>
@@ -267,10 +274,13 @@ function PotionShop() {
   const closed = save.expedition !== null
   const purse = purseOf(save)
   const gold = purse.gold
+  const slots = hero === null ? SUPPLY_SLOT_COUNT : packSlots(hero)
+  const limit = stackLimit(slots)
   return (
     <>
       <p>
-        "Pack up to {SUPPLY_SLOT_COUNT} before you set out. Whatever you don't use, you bring home."
+        "Pack up to {slots} before you set out
+        {limit === null ? '' : `, at most ${limit} of each`}. Whatever you don't use, you bring home."
       </p>
       <ul className="supply-cards">
         {SUPPLIES.map((supply) => (
@@ -281,6 +291,7 @@ function PotionShop() {
             haveMaterial={purse.materials[supply.brew.materialId] ?? 0}
             gold={gold}
             closed={closed}
+            batch={limit ?? SUPPLY_SLOT_COUNT}
             heroSelected={hero !== null}
             lock={supplyLock(save, supply.id)}
             onBuy={(quantity) => run(buySupplyFromUi(supply.id, quantity), quantity === 1 ? `Bought 1 ${supply.name}.` : `Bought ${quantity} ${supply.name}s.`)}

@@ -1,18 +1,16 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-18)
-- **Current Goal:** Step 13.23 "In-game Guide" is done, parts 1 to 5. Step 13.22 (crafted backpack) is handled by another implementer and is paused at its go/no-go.
+- **Current Goal:** Step 13.22 "Crafted backpack" is done, parts 1 to 4 (plus 2b, the stack limit). Next is the user's playtest and a call on the balance below.
 - **Recent Changes & Files Touched:**
-  - Docs: GAME_DESIGN §12 "Guide page (2026-11-18)", plan Step 13.23.
-  - Text: `src/content/guide.ts` (hand-written, NO digits, enforced by `guide.test.ts`; also checks every non-supply skill is class-owned, extra or hidden).
-  - Page: `src/ui/guide/guideIndex.ts` (pure entry builder and search; numbers come from content and sim), `Guide.tsx` (`Guide`, `GuideView`), `guideNav.ts` (`openGuide`, `useGuideTarget`), `GuideLink.tsx`; CSS appended to `src/ui/kit.css`.
-  - Wiring: `App.tsx` (Guide tab after "What's new", Welcome "Read the guide" and "Back to hero creation", tab switch on a new link nonce); `GuideLink` on `CreateHero`, `ExpeditionPanel` (vow), `Rules`, `SkillWeb`, `Legacy`.
-  - Tests: `guideIndex.test.ts`, `guide.test.tsx`, `guideNav.test.ts`, `guideLinks.test.tsx`.
+  - Docs: GAME_DESIGN §9 Inventory ("Crafted backpack (Step 13.22)", both measurements, stack limit), §10 carries-over; plan Step 13.22.
+  - Sim and harness: `supplySlotCount` and `MAX_SUPPLY_SLOTS = 6`, `SUPPLY_STACK_LIMIT = 2`, `overStackedSupply` in `src/sim/expedition.ts`; `src/harness/pack.ts` and `--matrix pack`.
+  - Persist: `src/persist/pack.ts` (Satchel 5 slots, level 10, grade 2+, 8 units, 400 gold; Field Pack 6, level 17, grade 3+, 10 units, 1,200 gold, needs the Satchel), `SavedHero.pack?`, `pack` craft job in `persist/crafting.ts`, `save.ts` checks, `preparation.ts` (`packRefusal`), `expeditionSetup.ts`.
+  - UI: `ui/town/PackWorkshop.tsx` (Armorer, Backpack tab), `ExpeditionPanel.tsx` slot count and the refusal note, `SupplyCard` batch, `Town.tsx`, `Craft.tsx` queue rows.
 - **Active Decisions / Constraints:**
-  - Prose lives only in `guide.ts`, no digits. Add a new class, race, vow, status, supply or class skill and the tests tell you what Guide text is missing.
-  - Class entries show cluster intros and keystone names only; node details stay on the Skills screen. Skill rows show base values.
-  - Gated supplies read "Unlocks after ...". Mage Convergence spells (six) are listed through `EXTRA_CLASS_SKILLS`.
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`.
-- **Known rough edge:** `effectLine` in `ui/skillInfo.ts` falls back to raw names for some effects (chain, field, arm trap, reveal) and says "Heals 0%" for Mend. Fixing it also improves the skill tooltips.
-- **Not verified:** mobile width layout of the skill table, the in-shell links (Combat setup, skill web, Legacy, vow picker) in a browser (only the Welcome flow was clicked), and the pane had zero height so smooth scrolling itself was not observed (focus and section opening were).
-- **Exact Next Step:** (1) Look at the Guide in a real browser with a hero. (2) Optionally polish `effectLine` for the rough edge above. (3) Step 13.22 parts 3 and 4 wait for the user's go/no-go.
+  - With more than 4 slots a run carries at most 2 of any supply; 4 slots unchanged. Reincarnation keeps the pack.
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
+- **Measured (seeds 1-3 x 100, mean wins, 4 / 5 / 6 slots, with the limit):** crafted prepared 88 > 86 > 95, cells at 95 or more 5 > 4 > 16 of 20; plain prepared 58 > 33 > 37. The Satchel costs a hero on the default rows power (the third Draught is cut); only the Field Pack lifts crafted wins.
+- **Also landed on main (another implementer):** Step 13.23 "In-game Guide", parts 1 to 5 (`src/content/guide.ts`, `src/ui/guide/`, Guide tab). Its text has no digits (tests enforce it), so the backpack needs no Guide change; see plan Step 13.23 for its open polish items.
+- **Not verified:** 375 px layout of the Backpack counter; the Potion Shop batch buttons with a pack in the browser (tests only).
+- **Exact Next Step:** (1) User playtest: craft a Satchel at the Armorer, pack a run, reincarnate and check the pack stays. (2) Decide the balance: a stack limit of 3, or leave it. (3) Close 13.22 into a `## 0.x.0` changelog heading.

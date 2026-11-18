@@ -17,10 +17,12 @@ export type SupplyCardProps = {
   lock: string | null
   onBuy: (quantity: number) => void
   onBrew: (quantity: number) => void
+  /** The size of the Buy and Brew batch: a full backpack of one supply (4), or the stack limit (2) with a crafted backpack. */
+  batch?: number
 }
 
 /** One Potion Shop card: what the supply does, buying it (when sold), and brewing it. */
-export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSelected, lock, onBuy, onBrew }: SupplyCardProps) {
+export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSelected, lock, onBuy, onBrew, batch = SUPPLY_SLOT_COUNT }: SupplyCardProps) {
   const missingMaterial = Math.max(0, supply.brew.quantity - haveMaterial)
   const missingBrewGold = Math.max(0, supply.brew.gold - gold)
   const brewShort =
@@ -50,7 +52,7 @@ export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSele
       </button>
     )
   }
-  const batchShort = brewShort === null && lock === null ? brewReason(SUPPLY_SLOT_COUNT) : null
+  const batchShort = brewShort === null && lock === null ? brewReason(batch) : null
   return (
     <li className="supply-card">
       <div className="supply-head">
@@ -81,11 +83,11 @@ export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSele
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={closed || !heroSelected || gold < price * SUPPLY_SLOT_COUNT}
-                  aria-label={`Buy ${SUPPLY_SLOT_COUNT} ${supply.name}`}
-                  onClick={() => onBuy(SUPPLY_SLOT_COUNT)}
+                  disabled={closed || !heroSelected || gold < price * batch}
+                  aria-label={`Buy ${batch} ${supply.name}`}
+                  onClick={() => onBuy(batch)}
                 >
-                  Buy {SUPPLY_SLOT_COUNT} <small>({price * SUPPLY_SLOT_COUNT} gold)</small>
+                  Buy {batch} <small>({price * batch} gold)</small>
                 </button>
               </span>
               {gold < price ? <small className="supply-option-note">{`Need ${price - gold} more gold`}</small> : null}
@@ -104,11 +106,11 @@ export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSele
           <span className="button-row">
             {brewButton(1, 'Brew 1', `Brew 1 ${supply.name}`)}
             {brewButton(
-              SUPPLY_SLOT_COUNT,
+              batch,
               <>
-                Brew {SUPPLY_SLOT_COUNT}
+                Brew {batch}
               </>,
-              `Brew ${SUPPLY_SLOT_COUNT} ${supply.name}`,
+              `Brew ${batch} ${supply.name}`,
             )}
             {brewButton(
               Math.max(1, brewMax),
@@ -125,7 +127,7 @@ export function SupplyCard({ supply, owned, haveMaterial, gold, closed, heroSele
           ) : brewShort !== null ? (
             <small className="supply-option-note">{brewShort}</small>
           ) : batchShort !== null ? (
-            <small className="supply-option-note">{`Brew ${SUPPLY_SLOT_COUNT}: ${batchShort.toLowerCase()}`}</small>
+            <small className="supply-option-note">{`Brew ${batch}: ${batchShort.toLowerCase()}`}</small>
           ) : null}
         </div>
       </div>
