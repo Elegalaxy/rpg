@@ -196,16 +196,16 @@ describe('the expedition panel', () => {
     expect(createHeroFromUi({ name: 'Di', race: 'human', classId: 'warrior' })).toBeNull()
     const base = getSaveStatus().save
     const stash = { 'healing-draught': 5 }
-    const plain = { ...base, heroes: base.heroes.map((hero) => ({ ...hero, purse: { ...hero.purse, supplies: stash }, packedSupplies: ['healing-draught', 'healing-draught'] })) }
+    const plain = { ...base, heroes: base.heroes.map((hero) => ({ ...hero, purse: { ...hero.purse, supplies: stash }, packedSupplies: ['healing-draught', 'healing-draught', 'healing-draught'] })) }
     commitSave(plain, 'test', false)
     const four = renderToStaticMarkup(<ExpeditionPanel />)
     expect(four).toContain('of 4 slots')
-    expect(four).not.toContain('At most 2 of each supply with a backpack.')
+    expect(four).not.toContain('At most 3 of each supply with a backpack.')
     commitSave({ ...plain, heroes: plain.heroes.map((hero) => ({ ...hero, pack: 'satchel' as const })) }, 'test', false)
     const five = renderToStaticMarkup(<ExpeditionPanel />)
     expect(five).toContain('of 5 slots (Satchel)')
-    expect(five).toContain('At most 2 of each supply with a backpack.')
-    expect(five).toMatch(/disabled=""[^>]*title="At most 2 of each supply with a backpack\."[^>]*>\+/)
+    expect(five).toContain('At most 3 of each supply with a backpack.')
+    expect(five).toMatch(/disabled=""[^>]*title="At most 3 of each supply with a backpack\."[^>]*>\+/)
   })
 
   it('says that Auto run governs going away, and that Auto run off waits at Push on', () => {

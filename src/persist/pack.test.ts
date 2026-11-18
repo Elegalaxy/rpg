@@ -52,9 +52,9 @@ describe('pack numbers', () => {
     expect(stackLimit(4)).toBeNull()
     expect(stackLimit(5)).toBe(SUPPLY_STACK_LIMIT)
     expect(limitStacks(['a', 'a', 'a', 'b'], 4)).toEqual(['a', 'a', 'a', 'b'])
-    expect(limitStacks(['a', 'a', 'a', 'b', 'a'], 5)).toEqual(['a', 'a', 'b'])
+    expect(limitStacks(['a', 'a', 'a', 'b', 'a'], 5)).toEqual(['a', 'a', 'a', 'b'])
     expect(overStacked(['a', 'a', 'a'], 4)).toBeNull()
-    expect(overStacked(['a', 'a', 'a', '', ''], 6)).toBe('a')
+    expect(overStacked(['a', 'a', 'a', 'a', '', ''], 6)).toBe('a')
   })
 })
 
@@ -139,10 +139,10 @@ describe('supply slots follow the pack', () => {
   })
 
   it('refuses a third copy with a backpack and says why, but not at 4 slots', () => {
-    const picks = ['healing-draught', 'healing-draught', '', '', '']
-    expect(packRefusal(picks, 'healing-draught', 9, 5)).toBe('At most 2 of each supply with a backpack.')
+    const picks = ['healing-draught', 'healing-draught', 'healing-draught', '', '']
+    expect(packRefusal(picks, 'healing-draught', 9, 5)).toBe('At most 3 of each supply with a backpack.')
     expect(stepPacked(picks, 'healing-draught', 1, 9, 5)).toEqual(picks)
-    expect(stepPacked(picks, 'ward-charm', 1, 9, 5)).toEqual(['healing-draught', 'healing-draught', 'ward-charm', '', ''])
+    expect(stepPacked(picks, 'ward-charm', 1, 9, 5)).toEqual(['healing-draught', 'healing-draught', 'healing-draught', 'ward-charm', ''])
     expect(packRefusal(['healing-draught', 'healing-draught', '', ''], 'healing-draught', 9, 4)).toBeNull()
     expect(stepPacked(['healing-draught', 'healing-draught', '', ''], 'healing-draught', 1, 9)).toEqual(['healing-draught', 'healing-draught', 'healing-draught', ''])
     expect(packRefusal(['a', 'b', 'c', 'd', 'e'], 'a', 9, 5)).toBe('Every slot is full.')
@@ -156,8 +156,8 @@ describe('supply slots follow the pack', () => {
     const fiveSupplies = ['healing-draught', 'healing-draught', 'ward-charm', 'antidote', '']
     expect(checkPreparation(plain, { ...draftFor(plain), supplies: fiveSupplies }).ok).toBe(false)
     expect(checkPreparation(five, { ...draftFor(five), supplies: fiveSupplies }).ok).toBe(true)
-    const third = checkPreparation(five, { ...draftFor(five), supplies: ['healing-draught', 'healing-draught', 'healing-draught', '', ''] })
-    expect(third.ok ? [] : third.errors).toContain('At most 2 of each supply with a backpack.')
+    const third = checkPreparation(five, { ...draftFor(five), supplies: ['healing-draught', 'healing-draught', 'healing-draught', 'healing-draught', ''] })
+    expect(third.ok ? [] : third.errors).toContain('At most 3 of each supply with a backpack.')
     const four = checkPreparation(plain, { ...draftFor(plain), supplies: ['healing-draught', 'healing-draught', 'healing-draught', 'healing-draught'] })
     expect(four.ok).toBe(true)
   })
@@ -166,8 +166,8 @@ describe('supply slots follow the pack', () => {
     const save = withPack(stocked(), 'satchel')
     const six = { ...save, heroes: save.heroes.map((h) => ({ ...h, packedSupplies: ['healing-draught', 'healing-draught', 'ward-charm', 'antidote', 'smoke-bomb', 'ward-charm'] })) }
     expect(() => assertSaveData(six)).toThrow(/packs more than 5/)
-    const third = { ...save, heroes: save.heroes.map((h) => ({ ...h, packedSupplies: ['healing-draught', 'healing-draught', 'healing-draught'] })) }
-    expect(() => assertSaveData(third)).toThrow(/more than 2 of one supply/)
+    const third = { ...save, heroes: save.heroes.map((h) => ({ ...h, packedSupplies: ['healing-draught', 'healing-draught', 'healing-draught', 'healing-draught'] })) }
+    expect(() => assertSaveData(third)).toThrow(/more than 3 of one supply/)
     const plain = stocked()
     const fine = { ...plain, heroes: plain.heroes.map((h) => ({ ...h, packedSupplies: ['healing-draught', 'healing-draught', 'healing-draught', 'healing-draught'] })) }
     expect(() => assertSaveData(fine)).not.toThrow()

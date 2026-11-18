@@ -148,7 +148,7 @@ export const SUPPLY_SLOT_COUNT = 4
 /** The most supply slots a crafted backpack can reach (GAME_DESIGN §9, Step 13.22). */
 export const MAX_SUPPLY_SLOTS = 6
 /** With more than `SUPPLY_SLOT_COUNT` slots, a run carries at most this many of any one supply (GAME_DESIGN §9, Step 13.22). */
-export const SUPPLY_STACK_LIMIT = 2
+export const SUPPLY_STACK_LIMIT = 3
 
 /** The id that appears more than `SUPPLY_STACK_LIMIT` times in a run above the default slot count, or null. Four slots have no limit. */
 export function overStackedSupply(ids: readonly string[], slotCount: number): string | null {

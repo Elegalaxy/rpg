@@ -10,7 +10,7 @@ import { ELITE_CELLS, ELITE_IDS, eliteSetup, type EliteCell, type EliteId } from
 
 /**
  * The crafted backpack measurement (Step 13.22 part 2): the same hero, rules and elite fight with 4, 5 and 6 supply
- * slots. Above four slots the stack limit applies (at most 2 of one supply) and the extra slots take variety
+ * slots. Above four slots the stack limit applies (at most 3 of one supply) and the extra slots take variety
  * (see `packSupplies`); the default supply rows are unchanged. Measurements only; nothing here tunes.
  */
 export const PACK_SLOT_COUNTS: readonly number[] = [SUPPLY_SLOT_COUNT, SUPPLY_SLOT_COUNT + 1, MAX_SUPPLY_SLOTS]

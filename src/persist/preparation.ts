@@ -112,7 +112,7 @@ export function stepPacked(slots: readonly string[], supplyId: string, delta: 1 
 
 /**
  * Why one more of this supply cannot be packed, or null when it can: the slots are full, the stash has no more,
- * or (with a backpack, above 4 slots) the run already carries 2 of it.
+ * or (with a backpack, above 4 slots) the run already carries 3 of it.
  */
 export function packRefusal(slots: readonly string[], supplyId: string, owned: number, slotCount: number = SUPPLY_SLOT_COUNT): string | null {
   const packed = slots.filter((id) => id !== '')

@@ -49,7 +49,7 @@ describe('the Backpack counter', () => {
     commitSave(owned, 'test')
     const html = renderToStaticMarkup(<PackWorkshop />)
     expect(html).toContain('data-testid="pack-slots">5<')
-    expect(html).toContain('At most 2 of each supply with a backpack.')
+    expect(html).toContain('At most 3 of each supply with a backpack.')
     expect(html).toContain('Owned')
   })
 })

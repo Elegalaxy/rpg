@@ -17,7 +17,7 @@ export type SupplyCardProps = {
   lock: string | null
   onBuy: (quantity: number) => void
   onBrew: (quantity: number) => void
-  /** The size of the Buy and Brew batch: a full backpack of one supply (4), or the stack limit (2) with a crafted backpack. */
+  /** The size of the Buy and Brew batch: a full backpack of one supply (4), or the stack limit (3) with a crafted backpack. */
   batch?: number
 }
 

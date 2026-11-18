@@ -1846,11 +1846,11 @@ describe('packed supplies', () => {
     expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 7 }, 1)).toThrow(/from 4 to 6/)
     expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 3 }, 1)).toThrow(/from 4 to 6/)
     expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 5, supplies: ['a', 'b', 'c', 'd', 'e', 'f'] }, 1)).toThrow(/at most 5/)
-    // Stack limit: above 4 slots at most 2 of one supply; 4 slots are unlimited.
-    expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 5, supplies: ['a', 'a', 'a'] }, 1)).toThrow(/at most 2 of one supply/)
+    // Stack limit: above 4 slots at most 3 of one supply; 4 slots are unlimited.
+    expect(() => createExpedition({ ...fixtureBlueprint(), supplySlotCount: 5, supplies: ['a', 'a', 'a', 'a'] }, 1)).toThrow(/at most 3 of one supply/)
     expect(createExpedition({ ...fixtureBlueprint(), supplySlotCount: 6, supplies: ['a', 'a', 'b', 'b', 'c', 'c'] }, 1).supplySlots).toHaveLength(6)
     expect(createExpedition({ ...fixtureBlueprint(), supplies: ['a', 'a', 'a', 'a'] }, 1).supplySlots).toHaveLength(4)
-    expect(() => assertExpedition({ ...six, supplySlots: [{ id: 'a' }, { id: 'a' }, { id: 'a' }, null, null, null] })).toThrow(/at most 2 of one supply/)
+    expect(() => assertExpedition({ ...six, supplySlots: [{ id: 'a' }, { id: 'a' }, { id: 'a' }, { id: 'a' }, null, null] })).toThrow(/at most 3 of one supply/)
     expect(() => assertExpedition({ ...six, supplySlots: [null, null, null] })).toThrow(/4 to 6 supply slots/)
   })
 
