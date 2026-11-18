@@ -19,6 +19,10 @@ export const MASTERY_XP_PER_RANK = 0.02
 export const ELITE_BONUS = 3
 export const BOSS_BONUS = 20
 export const RANK_BONUS = 5
+/** Legacy for the first clear of each of the three late zones (Step 13.24). */
+export const ZONE_CLEAR_BONUS = 2
+/** The zones that pay `ZONE_CLEAR_BONUS`, each read from `firstClearIds`. */
+const LEGACY_ZONES: readonly string[] = ['drowned-causeway', 'rift-hollows', 'cinder-scar']
 
 export const ATTRIBUTE_SEED_COST = 3
 export const ATTRIBUTE_SEED_MAX = 10
@@ -71,6 +75,10 @@ export function bonusesDue(hero: SavedHero): Bonus[] {
   if (reached('hollowmaw-reaver')) add('elite:hollowmaw-reaver', 'First defeat of the Hollowmaw Reaver', ELITE_BONUS)
   if (reached('emberwrought-tyrant')) add('elite:emberwrought-tyrant', 'First defeat of the Emberwrought Tyrant', ELITE_BONUS)
   if (reached('fractured-warden')) add('boss:fractured-warden', 'First defeat of the Fractured Warden', BOSS_BONUS)
+  for (const nodeId of LEGACY_ZONES) {
+    // Reads firstClearIds (paid on a safe return), not clearedNodeIds, so a defeated run cannot bank it early.
+    if ((hero.firstClearIds ?? []).includes(nodeId)) add(`zone:${nodeId}`, `First clear of the ${nodes[nodeId]?.name ?? nodeId}`, ZONE_CLEAR_BONUS)
+  }
   for (let rank = 1; rank <= hero.echoRank; rank += 1) add(`rank:${rank}`, `Echo rank ${rank} first unlocked`, RANK_BONUS)
   return due
 }

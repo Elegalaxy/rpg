@@ -240,6 +240,10 @@ export type SavedHero = {
   /** Elites this hero defeated in earlier lives. Zone gates read them (never the Fracture Gate). Step 13.18. */
   rememberedEnemyIds?: string[]
   clearedNodeIds: string[]
+  /** Zone nodes whose first-clear reward has been paid. Absent means none (Step 13.24); reincarnation keeps it. */
+  firstClearIds?: string[]
+  /** Unspent free upgrade tokens from first clears. Absent means 0. */
+  freeUpgrades?: number
   /** Retreat when HP falls to this fraction of maximum. Null never retreats. */
   retreatAtMost: number | null
   /** Special arrows a Ranger packs for an expedition. 0 for other classes. */
@@ -530,6 +534,8 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     `${label} stop-after-fights must be a whole number from 1 to 99, or null`,
   )
   check(value.rememberedEnemyIds === undefined || (Array.isArray(value.rememberedEnemyIds) && value.rememberedEnemyIds.every((id: unknown) => typeof id === 'string')), `${label} remembered enemies must be a list of text`)
+  check(value.firstClearIds === undefined || (Array.isArray(value.firstClearIds) && value.firstClearIds.every((id: unknown) => typeof id === 'string')), `${label} first clears must be a list of text`)
+  check(value.freeUpgrades === undefined || (typeof value.freeUpgrades === 'number' && Number.isInteger(value.freeUpgrades) && value.freeUpgrades >= 0), `${label} free upgrades must be a whole number, 0 or more`)
   check(value.autoRun === undefined || typeof value.autoRun === 'boolean', `${label} auto run must be true or false`)
   check(
     value.autoRunMaxFights === undefined ||

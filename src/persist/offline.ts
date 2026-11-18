@@ -12,7 +12,7 @@ import { advanceTraining } from './training.ts'
 import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData } from './save.ts'
 import { autoRerunRefusal, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
-import { routes } from '../content/world.ts'
+import { nodes, routes } from '../content/world.ts'
 
 /** The most time a catch-up replays: eight hours (GAME_DESIGN §11). */
 export const OFFLINE_CAP_MS = 8 * 60 * 60 * 1000
@@ -58,6 +58,8 @@ export type HeroAwaySummary = {
   autoFights?: number
   /** The away route started a run for this hero when it left. */
   awayStarted?: boolean
+  /** Names of the zones whose first-clear reward was paid during the replay (Step 13.24). Absent means none. */
+  firstClears?: string[]
 }
 
 /** The "while you were away" report: shared facts, and one row per hero that ran. The selected hero is first. */
@@ -373,7 +375,11 @@ function rerun(ctx: Ctx, auto: boolean): boolean {
   const seed = deriveSeed(expedition.seed, 7919)
   const owner = selectedHero(ctx.save)
   lane.summary.xp += owner === null ? (expedition.xpEarned ?? 0) : recallXp(owner, expedition.xpEarned ?? 0)
+  const claimedBefore = owner?.firstClearIds ?? []
   ctx.save = settleExpedition(ctx.save)
+  const claimedAfter = selectedHero(ctx.save)?.firstClearIds ?? []
+  const newlyPaid = claimedAfter.filter((id) => !claimedBefore.includes(id)).map((id) => nodes[id]?.name ?? id)
+  if (newlyPaid.length > 0) lane.summary.firstClears = [...(lane.summary.firstClears ?? []), ...newlyPaid]
   if (auto) {
     // The same refusal rule the live Auto run uses; a refusal switches Auto run off.
     const refusal = autoRerunRefusal(ctx.save, routeId)

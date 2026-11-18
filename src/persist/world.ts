@@ -21,6 +21,8 @@ import { itemBase } from '../content/items.ts'
 import { EQUIPMENT_SLOT_IDS, applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress, refreshBoard } from './contracts.ts'
 import { defeatRecordId } from './crafting.ts'
+import { firstClearsDue, payFirstClears } from './firstClear.ts'
+import type { FirstClearReward } from '../content/firstClear.ts'
 import { recallXp, scaleHeirlooms } from './reincarnation.ts'
 import { openByMemory, zoneGateRecord } from './remembered.ts'
 import { withXp } from './training.ts'
@@ -412,24 +414,35 @@ export function settleExpedition(save: SaveData, now: number | null = null): Sav
     debt: before.debt + expedition.debt,
   }
   const account = expedition.outcome === 'returned' ? reachMilestone(progressed.account, 'first-return') : progressed.account
-  const heroes = progressed.heroes.map((hero) =>
-    hero.id === selectedHero(progressed)?.id
-      ? {
-          ...hero,
-          equipment: applyDurability(hero.equipment, wornEquipment(expedition)),
-          ...withXp(hero, recallXp(hero, expedition.xpEarned ?? 0)),
-          ...unlockedRanks(hero, expedition),
-          bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
-          ...(expedition.outcome === 'defeat' && now !== null && expedition.recoveryMs > 0 ? { recoveryUntil: now + expedition.recoveryMs } : {}),
-          routeReturns:
-            expedition.outcome === 'returned' ? { ...hero.routeReturns, [expedition.id]: (hero.routeReturns[expedition.id] ?? 0) + 1 } : hero.routeReturns,
-          purse,
-        }
-      : hero,
-  )
+  const heroes = progressed.heroes.map((hero) => {
+    if (hero.id !== selectedHero(progressed)?.id) return hero
+    const settledHero: SavedHero = {
+      ...hero,
+      equipment: applyDurability(hero.equipment, wornEquipment(expedition)),
+      ...withXp(hero, recallXp(hero, expedition.xpEarned ?? 0)),
+      ...unlockedRanks(hero, expedition),
+      bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
+      ...(expedition.outcome === 'defeat' && now !== null && expedition.recoveryMs > 0 ? { recoveryUntil: now + expedition.recoveryMs } : {}),
+      routeReturns:
+        expedition.outcome === 'returned' ? { ...hero.routeReturns, [expedition.id]: (hero.routeReturns[expedition.id] ?? 0) + 1 } : hero.routeReturns,
+      purse,
+    }
+    // A node cleared on a defeated run stays due until a later safe return (Step 13.24).
+    return expedition.outcome === 'returned' ? payFirstClears(settledHero).hero : settledHero
+  })
   const settled: SaveData = { ...progressed, account, heroes, expedition: null }
   const owner = selectedHero(progressed)
   return owner === null ? settled : scaleHeirlooms(settled, owner.id)
+}
+
+/**
+ * The first-clear rewards a finished safe return will pay when it is settled (Step 13.24): the same list
+ * `settleExpedition` pays, for the outcome card. Empty while the run is ongoing, defeated or closed.
+ */
+export function firstClearPreview(save: SaveData): FirstClearReward[] {
+  if (save.expedition?.outcome !== 'returned') return []
+  const hero = selectedHero(recordProgress(save))
+  return hero === null ? [] : firstClearsDue(hero)
 }
 
 /**
