@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: Auto run can climb Echo ranks on Fracture Gate through the Bastion. A Warden win raises the next rank by one, and a loss to the Warden stops Auto run. [13.26]
 - Improved: the contract tracker names the zone after each contract, such as Bounty: Oathbound Echos (Fallen Bastion / Drowned Causeway), so you know where to go. [13.25]
 - Improved: A Cleric's run shows the vow they took in the bar that stays on screen.
 - Improved: on a phone, the status is one pinned line (hero, level, HP during a run, XP) that opens the full status, the tabs move to a bar along the bottom (Map, Town, Hero, More), and the away report shows as cards.

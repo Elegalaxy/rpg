@@ -308,17 +308,22 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
               disabled={draft.autoRun !== true}
               title={draft.autoRun === true ? undefined : 'Turn on Auto run to choose what happens when the route ends.'}
               value={draft.autoRunMode ?? 'repeat'}
-              onChange={(event) => patch({ autoRunMode: event.target.value === 'endless' ? 'endless' : 'repeat' })}
+              onChange={(event) => {
+                const mode = event.target.value
+                patch({ autoRunMode: mode === 'endless' || mode === 'echo' ? mode : 'repeat' })
+              }}
             >
               <option value="repeat">Repeat the route</option>
               <option value="endless">Keep going until I retreat or fall</option>
+              <option value="echo">Climb Echo ranks through the Bastion</option>
             </select>
           </label>
           <Help label="About Auto run">
             Uses the orders below. Off: you press Push on, and a run that is out waits there when you leave. On: the hero pushes on, walks home, and reruns the
             route, while you watch and when you leave. {AUTO_RUN_MIN}–{AUTO_RUN_MAX} total fights, empty for none; then it walks home and switches off.
             Keep going ignores the walk-home orders below (fight limit, HP floor, full bag): the hero fights on past the route's last stop until a retreat
-            brings it home safely, it is defeated, or the total fight limit is reached. After a retreat the route reruns.
+            brings it home safely, it is defeated, or the total fight limit is reached. After a retreat the route reruns. Climb Echo ranks follows those same
+            walk-home orders. On Fracture Gate through the Bastion, a Warden win raises the next Echo rank by one, and a loss to the Warden stops Auto run.
           </Help>
         </div>
         <div className="controls">
@@ -345,7 +350,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             ? 'Turn on Auto run to choose what happens when the route ends.'
             : draft.autoRunMode === 'endless'
               ? 'Keep going: ignores the walk-home orders below. Loot that does not fit the bag is lost.'
-              : 'Repeat: the orders below walk the hero home, then the route reruns.'}
+              : draft.autoRunMode === 'echo'
+                ? 'Climb Echo ranks: on Fracture Gate through the Bastion, a Warden win raises the next Echo rank by one. If the Warden defeats you, Auto run stops.'
+                : 'Repeat: the orders below walk the hero home, then the route reruns.'}
         </p>
         {draft.autoRun === true && draft.autoRunMode === 'endless' && draft.retreatPercent.trim() === '' ? (
           <p role="alert" data-testid="auto-run-endless-warning">

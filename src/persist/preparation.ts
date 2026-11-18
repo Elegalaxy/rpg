@@ -251,7 +251,7 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   if (overStacked(packedSupplies, slotCount) !== null) errors.push(STACK_LIMIT_REASON)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
   if (!REPEAT_LIMITS.includes(draft.repeatLimit)) errors.push(`Pick a run limit of ${REPEAT_LIMITS.join(', ')} (0 is no limit).`)
-  if (draft.autoRunMode !== undefined && draft.autoRunMode !== 'repeat' && draft.autoRunMode !== 'endless') errors.push('Pick what Auto run does when the route ends: repeat it or keep going.')
+  if (draft.autoRunMode !== undefined && draft.autoRunMode !== 'repeat' && draft.autoRunMode !== 'endless' && draft.autoRunMode !== 'echo') errors.push('Pick what Auto run does when the route ends: repeat it, keep going, or climb Echo ranks.')
   if (!BAG_FULL_ORDERS.includes(draft.bagFullOrder)) errors.push('Pick what to do when the bag is nearly full: walk home, ask or keep going.')
   if (draft.awayRouteId !== '' && routes[draft.awayRouteId] === undefined) errors.push('Pick a route Greyhaven knows for away runs, or none.')
   if (errors.length > 0) return { ok: false, errors }

@@ -302,7 +302,7 @@ describe('the Auto run mode on the preparation screen (Step 13.26)', () => {
     expect(html).toMatch(/<select[^>]*aria-label="Auto run mode"[^>]*disabled/)
     expect(html).toContain('Turn on Auto run to choose what happens when the route ends.')
     expect(html).toContain('Repeat the route')
-    expect(html).toContain('Keep going until I retreat or fall')
+    expect(html).toContain('Climb Echo ranks through the Bastion')
   })
 
   it('says loot is lost in the endless mode and warns when no retreat level is set', () => {

@@ -12,7 +12,7 @@ import { advanceTraining } from './training.ts'
 import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData } from './save.ts'
 import { autoContractsStep } from './autoContracts.ts'
-import { isEndlessAutoRun, autoRerunRefusal, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
+import { isEndlessAutoRun, autoRerunRefusal, autoRunDefeatNote, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 import { nodes, routes } from '../content/world.ts'
 
 /** The most time a catch-up replays: eight hours (GAME_DESIGN §11). */
@@ -111,6 +111,7 @@ export function awayBanner(hero: HeroAwaySummary): string | null {
       : `Auto run kept going while ${hero.heroName} was away: ${fights} ${fights === 1 ? 'fight' : 'fights'}, ${hero.runs} ${hero.runs === 1 ? 'run' : 'runs'}.`
     switch (hero.stopped) {
       case 'defeat':
+        if (hero.note !== null && hero.note.length > 0) return `${base} Stopped: ${hero.note}`
         return `${base} Stopped: the hero was defeated${endless ? ' before any retreat condition ended the run' : ''}.`
       case 'autoLimit':
         return `${base} Stopped: the total fight limit was reached, so Auto run is off.`
@@ -520,7 +521,12 @@ function runLane(ctx: Ctx, budget: number): void {
       lane.summary.runs += 1
       lane.summary.defeated = true
       lane.stopped = 'defeat'
-      if (mode === 'auto') switchAutoOff(ctx)
+      if (mode === 'auto') {
+        const owner = selectedHero(ctx.save)
+        const note = owner === null ? null : autoRunDefeatNote(owner, expedition)
+        if (note !== null) lane.summary.note = note
+        switchAutoOff(ctx)
+      }
       break
     }
     if (expedition.outcome === 'returned') {

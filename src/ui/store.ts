@@ -16,7 +16,7 @@ import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { autoContractsStep } from '../persist/autoContracts.ts'
-import { autoRerunRefusal, beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
+import { autoRerunRefusal, autoRunDefeatNote, beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
@@ -449,7 +449,9 @@ function afterAutoRun(expedition: ExpeditionState): void {
   const hero = selectedHero(saveStatus.save)
   if (hero === null || hero.autoRun !== true) return
   if (expedition.outcome === 'defeat' || autoLimitReached(hero.autoRunMaxFights)) {
-    autoNotice = expedition.outcome === 'defeat' ? 'Auto run stopped: the hero was defeated.' : 'Auto run stopped: the total fight limit was reached.'
+    const wardenLost = expedition.outcome === 'defeat' ? autoRunDefeatNote(hero, expedition) : null
+    autoNotice = expedition.outcome === 'defeat' ? (wardenLost === null ? 'Auto run stopped: the hero was defeated.' : `Auto run stopped: ${wardenLost}`) : 'Auto run stopped: the total fight limit was reached.'
+    debugLog('[ui]', 'auto run stopped', { outcome: expedition.outcome, route: expedition.id, wardenLost })
     autoFights = 0
     saveStatus = { ...saveStatus, save: setHeroAutoRun(saveStatus.save, false) }
     commitSave(saveStatus.save, 'auto run ended')
@@ -458,7 +460,9 @@ function afterAutoRun(expedition: ExpeditionState): void {
   if (expedition.outcome !== 'returned') return
   // Rerun the same route on any route the hero can start: the normal start checks decide, and a refusal stops Auto run.
   const routeId = expedition.id
+  const rankBefore = hero.fightRank
   settleExpeditionFromUi()
+  if (hero.autoRunMode === 'echo') debugLog('[ui]', 'echo climb', { route: routeId, before: rankBefore, after: selectedHero(saveStatus.save)?.fightRank ?? null })
   if (expedition.outcome === 'returned') {
     const contracts = autoContractsStep(saveStatus.save, routeId)
     if (contracts.save !== saveStatus.save) commitSave(contracts.save, 'auto run contracts')

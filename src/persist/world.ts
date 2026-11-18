@@ -353,6 +353,28 @@ function unlockedRanks(hero: SavedHero, expedition: ExpeditionState): { echoRank
   return { echoRank, fightRank: echoRank > hero.echoRank ? echoRank : hero.fightRank }
 }
 
+/** Fracture Gate through the Fallen Bastion. Echo climb only applies to this route. */
+const BASTION_GATE_ROUTE = 'fracture-via-bastion'
+
+/**
+ * Ranks after a finished run. A victory at Echo rank R still unlocks R + 1.
+ * Echo climb, while Auto run is on, also sets the next Bastion-gate fight to one above the rank just beaten.
+ */
+function echoRanksAfter(hero: SavedHero, expedition: ExpeditionState): { echoRank: number; fightRank: number } {
+  const unlocked = unlockedRanks(hero, expedition)
+  if (hero.autoRun !== true || hero.autoRunMode !== 'echo' || expedition.id !== BASTION_GATE_ROUTE) return unlocked
+  const beaten = bossVictoryRanks(expedition)
+  const highest = beaten.length === 0 ? null : Math.max(...beaten)
+  if (highest === null) return unlocked
+  return { echoRank: unlocked.echoRank, fightRank: Math.min(unlocked.echoRank, highest + 1) }
+}
+
+/** Words for an Auto run defeat on the Bastion gate in Echo climb, or null for an ordinary defeat. */
+export function autoRunDefeatNote(hero: Pick<SavedHero, 'autoRunMode'>, expedition: ExpeditionState): string | null {
+  if (hero.autoRunMode === 'echo' && expedition.id === BASTION_GATE_ROUTE && expedition.bossLossThisLife) return 'the Fractured Warden won.'
+  return null
+}
+
 /** Safe returns on one route that make it mastered for a hero (GAME_DESIGN §11). */
 export const MASTERY_RETURNS = 10
 
@@ -420,7 +442,7 @@ export function settleExpedition(save: SaveData, now: number | null = null): Sav
       ...hero,
       equipment: applyDurability(hero.equipment, wornEquipment(expedition)),
       ...withXp(hero, recallXp(hero, expedition.xpEarned ?? 0)),
-      ...unlockedRanks(hero, expedition),
+      ...echoRanksAfter(hero, expedition),
       bossLossThisLife: hero.bossLossThisLife || expedition.bossLossThisLife,
       ...(expedition.outcome === 'defeat' && now !== null && expedition.recoveryMs > 0 ? { recoveryUntil: now + expedition.recoveryMs } : {}),
       routeReturns:

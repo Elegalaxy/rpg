@@ -141,6 +141,7 @@ describe('Auto run mode in the preparation (Step 13.26)', () => {
     expect(endless).toMatchObject({ ok: true, hero: { autoRunMode: 'endless' } })
     if (!endless.ok) throw new Error('refused')
     expect(draftFor(endless.hero).autoRunMode).toBe('endless')
+    expect(checkPreparation(warrior, { ...base, autoRunMode: 'echo' })).toMatchObject({ ok: true, hero: { autoRunMode: 'echo' } })
     const { autoRunMode: _left, ...without } = draftFor(endless.hero)
     expect(checkPreparation(endless.hero, without)).toMatchObject({ ok: true, hero: { autoRunMode: 'endless' } })
     expect(checkPreparation(warrior, { ...base, autoRunMode: 'forever' as never })).toMatchObject({ ok: false })

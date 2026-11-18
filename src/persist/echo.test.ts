@@ -104,6 +104,26 @@ describe('unlocking ranks and the loss flag', () => {
     expect(hero(lower)).toMatchObject({ echoRank: 4, fightRank: 1 })
   })
 
+  it('climbs one Echo rank after a Bastion-gate win while Echo climb is on, and leaves other runs alone', () => {
+    function climbing(save: SaveData, routeId: string, rank: number): SaveData {
+      const armed = { ...save, heroes: save.heroes.map((entry) => ({ ...entry, autoRun: true, autoRunMode: 'echo' as const })) }
+      const run = startExpedition(hero(armed), routeId, 1)
+      run.history = run.opening.map((fight, index) => ({ index, encounterId: fight.id, seed: index, outcome: 'victory' as const, durationMs: 1 }))
+      const warden = run.opening[wardenIndex(run)]!.enemies[0]!
+      warden.rank = rank
+      run.outcome = 'returned'
+      return settleExpedition({ ...armed, expedition: run })
+    }
+    expect(hero(climbing(heroSave(5, 1), 'fracture-via-bastion', 1))).toMatchObject({ echoRank: 5, fightRank: 2 })
+    expect(hero(climbing(heroSave(1, 1), 'fracture-via-bastion', 1))).toMatchObject({ echoRank: 2, fightRank: 2 })
+    expect(hero(climbing(heroSave(5, 1), 'fracture-via-grove', 1))).toMatchObject({ echoRank: 5, fightRank: 1 })
+    const retreated = startExpedition(hero(heroSave(5, 1)), 'fracture-via-bastion', 1)
+    retreated.outcome = 'returned'
+    retreated.history = []
+    const armed = { ...heroSave(5, 1), heroes: heroSave(5, 1).heroes.map((entry) => ({ ...entry, autoRun: true, autoRunMode: 'echo' as const })) }
+    expect(hero(settleExpedition({ ...armed, expedition: retreated }))).toMatchObject({ echoRank: 5, fightRank: 1 })
+  })
+
   it('says so on the outcome screen', () => {
     const won = winWarden(heroSave(0, 0), 0).expedition!
     expect(outcomeSummary(won).lines).toContain('The Fractured Warden fell at Echo rank 0. Echo rank 1 is unlocked.')

@@ -60,6 +60,8 @@ describe('the save', () => {
     expect(parseSave(serializeSave(save)).ok).toBe(true)
     const endless = parseSave(serializeSave({ ...save, heroes: save.heroes.map((entry) => ({ ...entry, autoRunMode: 'endless' as const })) }))
     expect(endless.ok && endless.data.heroes[0]?.autoRunMode).toBe('endless')
+    const echo = parseSave(serializeSave({ ...save, heroes: save.heroes.map((entry) => ({ ...entry, autoRunMode: 'echo' as const })) }))
+    expect(echo.ok && echo.data.heroes[0]?.autoRunMode).toBe('echo')
     expect(parseSave(JSON.stringify({ ...save, heroes: save.heroes.map((entry) => ({ ...entry, autoRunMode: 'loop' })) })).ok).toBe(false)
   })
 })
