@@ -12,7 +12,8 @@ import {
 } from '../../content/guide.ts'
 import { enemies } from '../../content/enemies.ts'
 import { FIRST_CLEAR_NODE_IDS, firstClearReward, firstClearRewardText } from '../../content/firstClear.ts'
-import { LEGACY_ZONES, ZONE_CLEAR_BONUS } from '../../persist/reincarnation.ts'
+import { CARRY_PERCENT_BASE, STOCKPILE_PERCENTS } from '../../persist/carryOver.ts'
+import { ARTISAN_TOKENS, HEAD_START_LEVELS, LEGACY_ZONES, LONG_MEMORY_LEVELS, ZONE_CLEAR_BONUS } from '../../persist/reincarnation.ts'
 import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS } from '../../content/contracts.ts'
 import { itemBases } from '../../content/items.ts'
 import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE } from '../../content/shop.ts'
@@ -413,6 +414,17 @@ function firstClearFacts(): GuideFact[] {
   })
 }
 
+/** Numbers behind the reincarnation text, read from the constants so the Guide cannot drift. */
+function reincarnationFacts(): GuideFact[] {
+  return [
+    { label: 'Carried share', value: `${CARRY_PERCENT_BASE}% of gold, materials and supplies; Stockpile I to III: ${STOCKPILE_PERCENTS.map((percent) => `${percent}%`).join(' / ')}` },
+    { label: 'Earlier-life gear', value: 'Sells for the carried share of its normal price' },
+    { label: 'Head Start', value: `Start at level ${HEAD_START_LEVELS.join(' / ')}` },
+    { label: 'Artisan’s Favor', value: `+${ARTISAN_TOKENS.join(' / +')} free upgrade tokens each new life` },
+    { label: 'Long Memory', value: `Recall reaches ${LONG_MEMORY_LEVELS.map((levels) => `+${levels}`).join(' / ')} levels above your peak` },
+  ]
+}
+
 function topicEntry(id: GuideTopicId): GuideEntry {
   const found = GUIDE_TOPICS.find((candidate) => candidate.id === id)
   if (found === undefined) throw new Error(`guide topic ${id} is missing`)
@@ -421,7 +433,7 @@ function topicEntry(id: GuideTopicId): GuideEntry {
     section: TOPIC_SECTION[found.id],
     title: found.title,
     summary: found.summary,
-    facts: found.id === 'gear' ? gearFacts() : found.id === 'greyhaven' ? townFacts() : found.id === 'expeditions' ? firstClearFacts() : [],
+    facts: found.id === 'gear' ? gearFacts() : found.id === 'greyhaven' ? townFacts() : found.id === 'expeditions' ? firstClearFacts() : found.id === 'reincarnation' ? reincarnationFacts() : [],
     lines: found.id === 'expeditions' ? [MASTERY_HELP] : [],
     prose: found.body,
     links: found.id === 'greyhaven' ? [{ id: 'topic-gear', label: 'Gear' }] : found.id === 'gear' ? [{ id: 'topic-greyhaven', label: 'Greyhaven and its shops' }] : [],

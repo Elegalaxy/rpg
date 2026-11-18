@@ -1,15 +1,17 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-18)
-- **Current Goal:** Step 13.30 "Legacy purchases apply now" is done (3 parts). Next is the user's playtest. Step 13.22 (crafted backpack) still awaits its playtest and the Satchel balance call (see below).
-- **Recent Changes & Files Touched (13.30):**
-  - Docs: GAME_DESIGN §10 ("Purchases apply now" bullet, Head Start bullet), plan Step 13.30, CHANGELOG `Unreleased` [13.30].
-  - Code: `buyPurchase` in `src/persist/reincarnation.ts` now also updates `hero.progress` via `applyToCurrentLife` (Attribute Seed +1 to that attribute, Skill Point Seed +1 `legacySkillPoints`, Head Start raises a lower hero with `awardXp` of the XP difference so level-up points stay unspent; a hero at or above the tier level changes nothing) and runs `scaleHeirlooms` when the level changed. Second Heirloom and Deep Pockets unchanged.
-  - UI: `src/ui/character/Legacy.tsx` purchase rows say "Applies now and every later life" / "Applies at your next reincarnation" (Second Heirloom), buy messages updated; Guide reincarnation text in `src/content/guide.ts`.
-  - Tests: `src/persist/reincarnation.test.ts` (apply now, no double count on reincarnate, Head Start variants, heirloom scaling), `src/ui/character/Legacy.test.tsx`.
+- **Current Goal:** Step 13.31 "Lean inheritance" is done (parts 1 to 4). Reincarnating keeps only a share of gold, materials and supplies; five new Legacy purchases carry long-run growth. Next is the user's playtest and a balance call.
+- **Recent Changes & Files Touched:**
+  - Docs: GAME_DESIGN §10 "Carry-over and Stockpile (Step 13.31)", §9 sell line, plan Step 13.31, CHANGELOG `Unreleased` [13.31].
+  - Persist: new `src/persist/carryOver.ts` (share 20%, Stockpile 30/40/50, `carryOver`, `carriedPurse`, `carrySummary`); `save.ts` (optional `purchases.stockpile/artisan/longMemory/thirdHeirloom`, `pastLifeItemIds`, Head Start check up to 3); `reincarnation.ts` (new constants, `recallTarget`, `artisanTokens`, craft-queue block, tiered heirloom, new purchase kinds, `nextLifePreview.carry/tokens`); `town.ts` (`sellPriceFor`, `sellItem` prunes the id).
+  - UI: `Legacy.tsx` (two purchase groups, Carried share KPI, "Carries over" block, confirm line), `Town.tsx` (earlier-life price and tag), `groupItems.ts`, `character.css`, Guide (`content/guide.ts`, `guideIndex.ts` facts).
 - **Active Decisions / Constraints:**
-  - Purchases bought before 13.30 are NOT applied retroactively (cannot tell what the current life has); they take effect at the next reincarnation as before. No save fields, no version bump. Sim untouched.
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it. Docs files use CRLF: keep line endings when editing.
-- **13.22 Satchel note:** above 4 slots a run carries at most 3 of any supply; plain prepared 57.6 / 57.6 / 57.6 wins (4/5/6 slots), crafted 88.2 / 90.9 / 96.5. The Satchel is neutral for default rows; only the Field Pack is a large step.
-- **Not verified:** the Legacy screen in a browser or at 375 px (render tests only); buying mid-life in the live game.
-- **Exact Next Step:** (1) User playtest: buy a seed and a Head Start on a low-level hero, check attributes, points and heirloom level update at once. (2) Decide on the Satchel balance. (3) Close 13.22 and 13.30 into a `## 0.x.0` changelog heading.
+  - Carry rule: `kept = floor(n * pct / 100)` per material and supply id; debt is paid from gold first, then gold' = floor, debt' = ceil. The rest is lost, not converted to Legacy.
+  - Gear, free upgrades, pack, recipes, craft XP, route returns and mastery stay whole. Guard A: archive items at reincarnation sell at the carried share (`pastLifeItemIds`). Guard B: reincarnation is refused while the craft queue is not empty.
+  - Purchases: Stockpile 20/35/50, Artisan's Favor 30/45 (tokens stack across lives, +1 token on buy), Long Memory 25/40 (Recall to peak +3/+6), Head Start III 55 (level 15), Third Heirloom 50. 335 Legacy over 9 buys.
+  - `src/sim`, content numbers and the harness are untouched: no matrix run was needed.
+  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
+- **Risks:** the first reincarnation after this change cuts an existing hoard (10,000 gold keeps 2,000 at the base share). Guard B blocks reincarnating while craft jobs run, which can surprise a player with a long queue.
+- **Not verified:** the Legacy screen and the Town sell tab in a browser, and at 375 px (tests are static markup only).
+- **Exact Next Step:** (1) User playtest: reincarnate with gold and materials, check the preview numbers match, buy Stockpile and see them change. (2) Decide whether the shares or Legacy costs need tuning. (3) Close 13.31 into a `## 0.x.0` changelog heading.

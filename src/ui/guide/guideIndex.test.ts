@@ -91,4 +91,17 @@ describe('searchGuide', () => {
     expect(fact('First clear: Fracture Gate')).toBe('600 g · 1 free upgrade')
     expect(topic.facts).toHaveLength(7)
   })
+
+  it('reads the reincarnation numbers from the constants (Step 13.31)', () => {
+    const topic = entries.find((entry) => entry.id === 'topic-reincarnation')!
+    const fact = (label: string) => topic.facts.find((item) => item.label === label)?.value
+    expect(fact('Carried share')).toBe('20% of gold, materials and supplies; Stockpile I to III: 30% / 40% / 50%')
+    expect(fact('Head Start')).toBe('Start at level 5 / 10 / 15')
+    expect(fact('Long Memory')).toBe('Recall reaches +3 / +6 levels above your peak')
+    expect(fact('Artisan’s Favor')).toBe('+1 / +2 free upgrade tokens each new life')
+    const prose = topic.prose.join(' ')
+    expect(prose).toContain('Stockpile')
+    expect(prose).toContain('The rest is lost')
+    expect(prose).not.toContain('gold, materials, and the archive stay')
+  })
 })
