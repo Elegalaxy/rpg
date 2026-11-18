@@ -11,6 +11,8 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: Typing a Fractured Warden Echo rank above the unlocked rank sets it to that rank. [10.1]
+- Improved: The Fractured Warden's card shows its Echo rank during the fight. [10.1]
 - New: Auto run can now keep going until you retreat or fall, instead of repeating the route; choose it next to the Auto run switch, and the away report says how an endless run ended. [13.26]
 - Improved: Repair everything worn here sits at the top of the Repair tab, like Queue all on Upgrade.
 - New: spend a free upgrade at the crafters to open a socket or rank a modifier up to II at no cost. [13.24]

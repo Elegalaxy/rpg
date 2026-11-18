@@ -160,6 +160,14 @@ export type PreparationResult =
   | { ok: true; hero: SavedHero }
   | { ok: false; errors: string[] }
 
+/** A whole Echo rank above the unlocked maximum becomes that maximum. Other text stays as typed. */
+export function snapEchoRank(text: string, maxRank: number): string {
+  const trimmed = text.trim()
+  const rank = Number(trimmed)
+  if (trimmed.length === 0 || !Number.isInteger(rank) || rank < 0 || rank <= maxRank) return text
+  return String(maxRank)
+}
+
 /** Check a draft against this hero. Every message names the setting. */
 export function checkPreparation(hero: SavedHero, draft: PreparationDraft): PreparationResult {
   const errors: string[] = []
@@ -203,9 +211,9 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
     carryGold = carry
   }
   let fightRank = hero.fightRank
-  const rankText = draft.fightRank.trim()
+  const rankText = snapEchoRank(draft.fightRank, hero.echoRank).trim()
   const rank = Number(rankText)
-  if (rankText.length === 0 || !Number.isInteger(rank) || rank < 0 || rank > hero.echoRank) {
+  if (rankText.length === 0 || !Number.isInteger(rank) || rank < 0) {
     errors.push(`Echo rank must be a whole number from 0 to ${hero.echoRank}.`)
   } else {
     fightRank = rank

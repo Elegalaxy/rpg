@@ -62,14 +62,12 @@ describe('the Fractured Warden at an Echo rank', () => {
     expect(third.armor / base.armor).toBeCloseTo(1.12 ** 3, 1)
   })
 
-  it('lets a hero choose a rank from 0 up to the rank unlocked, and no higher', () => {
+  it('lets a hero choose a rank from 0 up to the rank unlocked, and snaps a higher number to that rank', () => {
     const saved = hero(heroSave(2, 0))
     expect(draftFor(saved).fightRank).toBe('0')
     expect(checkPreparation(saved, { ...draftFor(saved), fightRank: '2' })).toMatchObject({ ok: true, hero: { fightRank: 2 } })
-    expect(checkPreparation(saved, { ...draftFor(saved), fightRank: '3' })).toMatchObject({
-      ok: false,
-      errors: ['Echo rank must be a whole number from 0 to 2.'],
-    })
+    expect(checkPreparation(saved, { ...draftFor(saved), fightRank: '3' })).toMatchObject({ ok: true, hero: { fightRank: 2 } })
+    expect(checkPreparation(saved, { ...draftFor(saved), fightRank: '99' })).toMatchObject({ ok: true, hero: { fightRank: 2 } })
     expect(checkPreparation(saved, { ...draftFor(saved), fightRank: '-1' }).ok).toBe(false)
     expect(checkPreparation(saved, { ...draftFor(saved), fightRank: '1.5' }).ok).toBe(false)
     expect(checkPreparation(saved, { ...draftFor(saved), fightRank: '' }).ok).toBe(false)

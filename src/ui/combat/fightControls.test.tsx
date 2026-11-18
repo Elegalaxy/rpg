@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { gameDefs, setupForScenario, WARRIOR_VS_STANDARD_ID } from '../../content/scenarios.ts'
+import { gameDefs, setupForScenario, WARRIOR_VS_STANDARD_ID, WARRIOR_VS_WARDEN_ID } from '../../content/scenarios.ts'
 import { queueManualAction } from '../../sim/automation.ts'
 import { createCombat, stepCombat } from '../../sim/combat.ts'
 import { setManualStack, setRuleStacks } from '../../sim/stacks.ts'
@@ -101,6 +101,18 @@ describe('the fight view controls', () => {
     expect(html).toContain('roll 12% vs 55%')
     state.log.push({ ...base, timeMs: 7000, success: false, hp: 30.400000000000034, maxHp: 275.40000000000003 })
     expect(renderToStaticMarkup(<FightView combat={state} title="test" />)).toContain('HP 30.4/275.4')
+  })
+
+  it('shows the Fractured Warden Echo rank on its card and hides it for an ordinary enemy', () => {
+    const defs = gameDefs()
+    const ordinary = renderToStaticMarkup(<FightView combat={createCombat(setupForScenario(WARRIOR_VS_STANDARD_ID), defs, 1)} title="test" />)
+    expect(ordinary).not.toContain('Echo rank')
+    const warden = createCombat(setupForScenario(WARRIOR_VS_WARDEN_ID), defs, 1)
+    expect(renderToStaticMarkup(<FightView combat={warden} title="test" />)).toContain('Echo rank 0')
+    const boss = warden.enemies.find((enemy) => enemy.defId === 'fractured-warden')
+    if (boss === undefined) throw new Error('no warden')
+    boss.rank = 4
+    expect(renderToStaticMarkup(<FightView combat={warden} title="test" />)).toContain('Echo rank 4')
   })
 })
 

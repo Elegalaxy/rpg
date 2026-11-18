@@ -11,6 +11,7 @@ import {
   canPickCurse,
   checkPreparation,
   clampToStash,
+  snapEchoRank,
   draftFor,
   packedCounts,
   quiverLimit,
@@ -30,6 +31,7 @@ import { MOMENTUM_CAP, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type E
 import { CURSES } from '../../sim/races/racialNodes.ts'
 import { SUPPLIES, supplyName } from '../../content/supplies.ts'
 import { Collapsible } from '../Collapsible.tsx'
+import { debugLog } from '../debug.ts'
 import { Help } from '../Help.tsx'
 import { GuideLink } from '../guide/GuideLink.tsx'
 import { HoldActions } from '../HoldActions.tsx'
@@ -197,7 +199,12 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
                 value={draft.fightRank}
                 inputMode="numeric"
                 size={3}
-                onChange={(event) => patch({ fightRank: event.target.value })}
+                onChange={(event) => {
+                  const typed = event.target.value
+                  const snapped = snapEchoRank(typed, hero.echoRank)
+                  if (snapped !== typed) debugLog('[ui]', 'echo rank snapped', { typed, snapped, max: hero.echoRank })
+                  patch({ fightRank: snapped })
+                }}
               />
             </label>{' '}
             <Help label="About Echo ranks">

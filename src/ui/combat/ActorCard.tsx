@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { enemies } from '../../content/enemies.ts'
 import { skills } from '../../content/skills.ts'
 import { queueManualAction, skipReason } from '../../sim/automation.ts'
 import type {
@@ -160,6 +161,12 @@ function badgeText(badge: StatusBadge): string {
   if (badge.intensity !== null) text += ` · intensity ${badge.intensity}`
   if (badge.remainingMs !== null) text += ` · ${seconds(badge.remainingMs)}`
   return text
+}
+
+/** The Fractured Warden's Echo rank, shown for the whole fight. Other enemies have none. */
+function echoRankText(actor: CombatActor): string | null {
+  if (actor.side !== 'enemy' || enemies[actor.defId]?.echoRank !== true) return null
+  return `Echo rank ${actor.rank}`
 }
 
 function phaseLabel(actor: CombatActor): string {
@@ -374,10 +381,14 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
   const actSignature = latestActSignature(log, actor.id)
   const telegraphTag = actor.telegraph === null ? null : actor.telegraph.tag
   const bossPhase = actor.boss ? actor.bossPhase : null
+  const echoRank = echoRankText(actor)
   const barrierActive = actor.barrier > 0 && timeMs < actor.barrierExpiresMs
 
   useDisplayedChange(actor.id, 'telegraph', telegraphTag)
   useDisplayedChange(actor.id, 'boss phase', bossPhase)
+  useEffect(() => {
+    if (echoRank !== null) debugLog('[ui]', 'echo rank shown', { actorId: actor.id, rank: actor.rank })
+  }, [actor.id, actor.rank, echoRank])
 
   useLayoutEffect(() => {
     const card = cardRef.current
@@ -412,6 +423,7 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
         <div>
           <h2 className="actor-name">{actor.name}</h2>
           {actor.alive ? null : <p className="actor-dead">Dead</p>}
+          {echoRank !== null ? <p className="actor-phase">{echoRank}</p> : null}
           {actor.boss ? <p className="actor-phase">{phaseLabel(actor)}</p> : null}
           {actor.pressureStacks > 0 ? <p className="actor-pressure">Pressure {actor.pressureStacks}</p> : null}
         </div>
