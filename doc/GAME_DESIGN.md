@@ -2147,6 +2147,13 @@ Starting-skill node bonuses (each node keeps its unlock and gains one small bonu
 
 Greyhaven's places, decided 2026-11-04 (user): the town is a set of places, each with its own trade, like a real RPG town. The Weaponsmith (weapons and off-hands), the Armorer (head, chest, hands, feet), and the Jeweler (rings and charms) each buy, sell, repair, craft, and upgrade only their own kind of item. The Potion Shop sells supplies, the Trading Post buys materials, the Enchanter teaches recipes, the Contract Board holds contracts, and the Bank takes debt payments. Prices and rules are unchanged.
 
+**Trading Post: buying materials (Step 13.28).** Decided 2026-11-18 (user: "yes, and it should cost more since it is a shortcut"). The Trading Post also sells the common materials, as a shortcut for a hero who is short a few units.
+- Buy price per unit is `MATERIAL_BUY_MULTIPLIER = 5` times the sell price (`MATERIAL_BUY_PRICE`, derived from `MATERIAL_SELL_PRICE` so they cannot drift): scrap 10, shard 15, hide 15, witherbark 20, oathsteel 20 gold.
+- Only the common materials are for sale (`BUYABLE_MATERIALS`: scrap, hide, shard, witherbark, oathsteel). Riftglass, duskiron and cinderite are never for sale: they stay gated by exploring the Causeway, the Hollows and the Cinder Scar, so buying cannot skip the route progression.
+- No gold loop: buy is five times sell, so buying and re-selling loses four fifths of the gold (a test asserts buy > sell for every buyable material).
+- Sink arithmetic: a craft or a rank II costs 6 of one material (scrap 60 gold, shard or hide 90, witherbark or oathsteel 120), an upgrade 3 (witherbark 2). Gold is the shortcut price for time spent exploring.
+- Buying is refused during an expedition, for a quantity under 1, for any other material, and when the selected hero's gold is short (same gold rules as the Potion Shop; debt is not touched). Materials have no capacity limit. The UI offers Buy 1, 10 and 100 with the gold each costs.
+
 First-playable town numbers, decided 2026-10-31:
 
 - Gold comes from enemies. Each regular enemy drops its level × 2 gold. An elite or the boss drops its level × 3. Gold is added to the gold the hero is carrying.
