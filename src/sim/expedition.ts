@@ -193,6 +193,8 @@ export type ExpeditionEncounterRecord = {
   seed: number
   outcome: Exclude<CombatOutcome, 'ongoing'> | 'retreat'
   durationMs: number
+  /** Enemy definition ids of every enemy that died in the fight, summons included, one entry per body. Older saves omit it. */
+  slain?: string[]
 }
 
 export type CarriedHero = {
@@ -1273,6 +1275,7 @@ function finishEncounter(state: ExpeditionState, defs: GameDefs): void {
     seed: current.seed,
     outcome: combat.outcome,
     durationMs: durationMs(combat),
+    slain: combat.enemies.filter((enemy) => !enemy.alive).map((enemy) => enemy.defId),
   })
   noteTrapperEncounter(state)
   if (combat.outcome === 'victory') {

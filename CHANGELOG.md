@@ -17,6 +17,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - Improved: The Fractured Warden's card shows its Echo rank during the fight. [10.1]
 - New: Auto run can hand in finished contracts and take board contracts that fit the route every time the hero gets home; switch it on under the Auto run controls. [13.26]
 - New: Auto run can now keep going until you retreat or fall, instead of repeating the route; choose it next to the Auto run switch, and the away report says how an endless run ended. [13.26]
+- Fixed: kill bounties now count enemies that join a fight as summons, such as the Oathbound Echo called by the Echo Knight. [13.25]
 - Improved: Repair everything worn here sits at the top of the Repair tab, like Queue all on Upgrade.
 - New: spend a free upgrade at the crafters to open a socket or rank a modifier up to II at no cost. [13.24]
 - New: the first time a hero clears a zone and gets home, it earns gold, the zone's material and a free gear upgrade; the three late zones also give Legacy at the next reincarnation. [13.24]

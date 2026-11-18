@@ -1,5 +1,4 @@
-import type { ContractDef } from '../content/contracts.ts'
-import { encounters } from '../content/encounters.ts'
+import { encounterEnemyIds, type ContractDef } from '../content/contracts.ts'
 import { nodes, routes } from '../content/world.ts'
 
 import { selectedHero } from './character.ts'
@@ -21,7 +20,7 @@ export function contractFitsRoute(def: ContractDef, routeId: string): boolean {
       return routeNodes.some((node) => node.resource?.materialId === target.materialId)
     case 'kill':
       return routeNodes.some((node) =>
-        [...node.encounterIds, ...(node.drawEncounterIds ?? [])].some((id) => encounters[id]?.members.some((member) => member.enemyId === target.enemyId) === true),
+        [...node.encounterIds, ...(node.drawEncounterIds ?? [])].some((id) => encounterEnemyIds(id).includes(target.enemyId)),
       )
   }
 }

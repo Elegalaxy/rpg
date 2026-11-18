@@ -153,7 +153,9 @@ export function unitsFrom(expedition: ExpeditionState, def: ContractDef): number
     } else if (target.kind === 'secure') {
       continue
     } else {
-      for (const member of encounters[entry.encounterId]?.members ?? []) if (member.enemyId === target.enemyId) units += 1
+      // Summons are not encounter members, so a recorded fight counts the bodies that died. Older history falls back to the members.
+      if (entry.slain !== undefined) units += entry.slain.filter((enemyId) => enemyId === target.enemyId).length
+      else for (const member of encounters[entry.encounterId]?.members ?? []) if (member.enemyId === target.enemyId) units += 1
     }
   }
   if (def.target.kind === 'secure') {

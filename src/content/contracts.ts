@@ -152,6 +152,20 @@ function zoneMonsters(node: WorldNode): { enemyId: string; level: number }[] {
   return found
 }
 
+/** Enemy ids an encounter can put in the fight: its members and anything its enemies summon, through any depth. Members first. */
+export function encounterEnemyIds(encounterId: string): string[] {
+  const found: string[] = []
+  const visit = (enemyId: string): void => {
+    if (found.includes(enemyId)) return
+    found.push(enemyId)
+    for (const skill of enemies[enemyId]?.skills ?? []) {
+      for (const effect of skill.effects) if (effect.kind === 'summon') visit(effect.enemyId)
+    }
+  }
+  for (const member of encounters[encounterId]?.members ?? []) visit(member.enemyId)
+  return found
+}
+
 /**
  * Everything a board could offer for these discoveries, by kind. With a hero's record, a zone the hero
  * cannot enter yet (its gate is not met) offers nothing, the same rule the route start uses.

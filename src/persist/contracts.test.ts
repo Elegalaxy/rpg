@@ -603,3 +603,40 @@ describe('Cinder Scar Salvage', () => {
     expect(unitsFrom(run([], [{ materialId: 'cinderite', quantity: 5 }]), def)).toBe(0)
   })
 })
+
+describe('kills of summoned enemies', () => {
+  const echoDef: ContractDef = { ...contracts['cull-the-pack']!, id: 'echo-test', target: { kind: 'kill', enemyId: 'oathbound-echo' }, count: 5 }
+  function runWith(slain: string[] | undefined, encounterId: string) {
+    const save = withRun(heroSave(), 'splintered-road')
+    save.expedition!.history = [{ index: 0, encounterId, seed: 1, outcome: 'victory', durationMs: 1, ...(slain === undefined ? {} : { slain }) }]
+    return save
+  }
+
+  it('counts a summoned Echo that died in an Echo Knight fight', () => {
+    const save = runWith(['echo-knight', 'oathbound-echo', 'oathbound-echo'], 'echo-knight')
+    expect(unitsFrom(save.expedition!, echoDef)).toBe(2)
+  })
+
+  it('still counts a normal encounter member', () => {
+    const save = runWith(['wolf', 'wolf'], 'wolf-pair')
+    expect(unitsFrom(save.expedition!, { ...echoDef, target: { kind: 'kill', enemyId: 'wolf' } })).toBe(2)
+  })
+
+  it('does not count a body that did not die', () => {
+    const save = runWith(['echo-knight'], 'echo-knight')
+    expect(unitsFrom(save.expedition!, echoDef)).toBe(0)
+  })
+
+  it('falls back to the encounter members for history without the list', () => {
+    const save = runWith(undefined, 'wolf-pair')
+    const members = encounters['wolf-pair']!.members.filter((member) => member.enemyId === 'wolf').length
+    expect(unitsFrom(save.expedition!, { ...echoDef, target: { kind: 'kill', enemyId: 'wolf' } })).toBe(members)
+  })
+
+  it('live tracker, settle and the offline replay agree', () => {
+    const base = runWith(['echo-knight', 'oathbound-echo', 'oathbound-echo'], 'echo-knight')
+    const save = updatePurse(base, { board: [echoDef], contracts: [{ contractId: echoDef.id, progress: 0 }] })
+    expect(contractTrack(save, save.expedition)[0]!.pending).toBe(2)
+    expect(purseOf(addContractProgress(save, save.expedition!)).contracts[0]!.progress).toBe(2)
+  })
+})

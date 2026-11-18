@@ -1202,6 +1202,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 3 done. "When the route ends" select (disabled with a reason while Auto run is off), a note line that says loot that does not fit is lost, a warning with no retreat level, "Auto · endless" dock tag, one Guide paragraph, CHANGELOG line, render tests. Not checked in a browser or at 375 px.
   - 2026-11-18: Part 4 done. `persist/autoContracts.ts` (`autoContractsStep`, `contractFitsRoute`) shared by `store.ts afterAutoRun` and `offline.ts rerun`; `autoContracts?` on the hero and draft, checkbox, away report line, Guide sentence, CHANGELOG. Summoned enemies are not matched for bounties. Full `npm test` under load showed 2 timeouts; every file passes when run in two groups. Browser and 375 px not checked; sim untouched so guards not re-run.
 
+### Step 13.25: Playtest fixes (contract kills, tracker route, material sell steps, guide gaps)
+- Status: `in progress`
+- Depends on: 13.22, 13.23
+- Goal: (A) a kill bounty counts every enemy that dies in a won fight, summons included (the Echo Knight's Oathbound Echo), via an optional `slain` list on the expedition history entry; old history falls back to encounter members. (B) the contract tracker names the zone or route in brackets. (C) the Trading Post sells materials in steps of 1, 10, 100 and All. (D) Guide topics for Gear and Greyhaven, plus generated modifier entries. No sim behaviour change; every guard stays byte-identical.
+- Part status: A `done`. B `todo`. C `todo`. D `todo`.
+- Progress:
+  - 2026-11-18: Step opened. Cause of A: `unitsFrom` read only `encounters[id].members`, and summons are not members.
+  - 2026-11-18: Part A done. `ExpeditionEncounterRecord.slain?` (defIds of every enemy that died, summons included; recorded in `finishEncounter`, no sim behaviour change); `unitsFrom` counts it, old history falls back to members. `encounterEnemyIds` (members plus summons, through any depth) in `content/contracts.ts`, shared by Auto run's `contractFitsRoute`. Guards (8 matrices seed 1 x 5) identical to origin/main apart from the speed line.
+
 ### Step 13.24: First-clear rewards
 - Status: `in progress`
 - Depends on: 13.23

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { contracts as contractTable } from '../content/contracts.ts'
+import { contracts as contractTable, type ContractDef } from '../content/contracts.ts'
 
 import { autoContractsStep, contractFitsRoute } from './autoContracts.ts'
 import { selectedHero } from './character.ts'
@@ -40,6 +40,13 @@ describe('which contracts fit a route', () => {
     expect(contractFitsRoute(grove, 'splintered-road')).toBe(false)
     expect(contractFitsRoute(contractTable['break-the-elite']!, 'splintered-road')).toBe(false)
     expect(contractFitsRoute(contractTable['bastion-patrol']!, 'nope')).toBe(false)
+  })
+
+  it('matches a bounty for an enemy that only appears as a summon', () => {
+    const echo: ContractDef = { ...wolves, id: 'echo-fit', target: { kind: 'kill', enemyId: 'oathbound-echo' } }
+    expect(contractFitsRoute(echo, 'fallen-bastion')).toBe(true)
+    expect(contractFitsRoute(echo, 'sunken-causeway')).toBe(true)
+    expect(contractFitsRoute(echo, 'splintered-road')).toBe(false)
   })
 })
 
