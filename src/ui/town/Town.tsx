@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { PLACES, dealsIn, placeTable, type PlaceDef, type PlaceId } from '../../content/places.ts'
-import { MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
+import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE, itemSellPrice, repairCost, shopStock } from '../../content/shop.ts'
 import { materialSources } from '../../content/materialSources.ts'
 import { SUPPLIES } from '../../content/supplies.ts'
 import { selectedHero } from '../../persist/character.ts'
@@ -33,6 +33,7 @@ import {
   sellItemFromUi,
   sellMaterialFromUi,
   trainHeroFromUi,
+  buyMaterialFromUi,
   useSaveStatus,
 } from '../store.ts'
 import { Contracts } from './Contracts.tsx'
@@ -308,19 +309,24 @@ function PotionShop() {
 
 /** Quantity steps between selling one and selling all. A step larger than the stack is hidden. */
 const SELL_STEPS: readonly number[] = [1, 10, 100]
+/** Quantity steps for buying a common material. All are always shown so the row does not change shape. */
+const BUY_STEPS: readonly number[] = [1, 10, 100]
 
 function TradingPost() {
   const { save } = useSaveStatus()
   const { run, messages } = useMessages()
   const closed = save.expedition !== null
   const owned = purseOf(save).materials
+  const gold = purseOf(save).gold
   const ids = [...new Set([...Object.keys(MATERIAL_SELL_PRICE), ...Object.keys(owned)])]
   return (
     <>
+      <Help label="About buying materials">Buying costs five times what selling pays; only common materials are for sale.</Help>
       <ul className="shop-rows">
         {ids.map((id) => {
           const quantity = owned[id] ?? 0
           const sources = materialSources(id)
+          const buyUnit = BUYABLE_MATERIALS.includes(id) ? MATERIAL_BUY_PRICE[id] : undefined
           const elsewhere = [...sources.enemies, ...sources.resources]
           return (
             <ShopRow
@@ -339,6 +345,8 @@ function TradingPost() {
               costs={[[{ kind: 'gold', amount: MATERIAL_SELL_PRICE[id] ?? 0, prefix: '+' }]]}
               actions={
                 <>
+                  <span className="trade-group">
+                    <span className="trade-label">Sell</span>
                   {SELL_STEPS.filter((step) => step === 1 || step <= quantity).map((step) => (
                     <button
                       key={step}
@@ -362,6 +370,32 @@ function TradingPost() {
                   >
                     Sell all (+{quantity * (MATERIAL_SELL_PRICE[id] ?? 0)} g)
                   </button>
+                  </span>
+                  {buyUnit === undefined ? null : (
+                    <span className="trade-group">
+                      <span className="trade-label">Buy</span>
+                      {BUY_STEPS.map((step) => {
+                        const cost = step * buyUnit
+                        const reason = closed ? 'Closed during an expedition' : gold < cost ? `Need ${cost - gold} more gold` : undefined
+                        return (
+                          <button
+                            key={step}
+                            type="button"
+                            className="btn-info"
+                            disabled={reason !== undefined}
+                            title={reason}
+                            aria-label={`Buy ${step} ${id}`}
+                            onClick={() => run(buyMaterialFromUi(id, step), `Bought ${step} ${id}.`)}
+                          >
+                            Buy {step} (-{cost} g)
+                          </button>
+                        )
+                      })}
+                      <small className="row-note trade-reason" data-testid={`buy-reason-${id}`}>
+                        {closed ? 'Closed during an expedition' : gold < buyUnit ? `Need ${buyUnit - gold} more gold to buy 1` : ''}
+                      </small>
+                    </span>
+                  )}
                 </>
               }
             />

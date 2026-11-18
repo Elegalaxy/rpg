@@ -784,6 +784,31 @@ li.row + li.row {
   font-size: 0.85rem;
 }
 
+/* Trading Post: a text label names each side so Sell and Buy never differ by colour alone. */
+.trade-label {
+  min-width: 2.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.trade-group {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+/* Reserves one line so the row does not move when the reason appears. */
+.trade-reason {
+  flex: 1 0 100%;
+  min-height: 1.3em;
+  text-align: right;
+}
+
 /* ---- Two-column screens ---- */
 
 .split {

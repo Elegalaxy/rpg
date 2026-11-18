@@ -1190,14 +1190,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.28: Trading Post buys materials
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.25
 - Goal: the Trading Post sells the five common materials at five times their sell price (rules in GAME_DESIGN §9, "Trading Post: buying materials"). Rare materials stay exploration-gated. Sim untouched, so every guard stays identical.
 - Parts: (1) docs. (2) `content/shop.ts` constants, `persist/town.ts` `buyMaterial`, store action, tests. (3) Trading Post Buy buttons, Guide, CHANGELOG.
-- Part status: 1 `done`. 2 `done`. 3 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §9.
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
+  - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
 ### Step 13.26: Auto run modes
 - Status: `done`

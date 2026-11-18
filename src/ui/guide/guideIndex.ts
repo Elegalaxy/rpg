@@ -13,7 +13,7 @@ import {
 import { enemies } from '../../content/enemies.ts'
 import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS } from '../../content/contracts.ts'
 import { itemBases } from '../../content/items.ts'
-import { MATERIAL_SELL_PRICE } from '../../content/shop.ts'
+import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE } from '../../content/shop.ts'
 import { statuses } from '../../content/statuses.ts'
 import { SUPPLIES, type SupplyDef } from '../../content/supplies.ts'
 import { skills } from '../../content/skills.ts'
@@ -390,8 +390,10 @@ function townFacts(): GuideFact[] {
   const prices = Object.entries(MATERIAL_SELL_PRICE)
     .map(([id, price]) => `${capitalize(id)} ${price}`)
     .join(' · ')
+  const buyPrices = BUYABLE_MATERIALS.map((id) => `${capitalize(id)} ${MATERIAL_BUY_PRICE[id] ?? 0}`).join(' · ')
   return [
     { label: 'Material sell price (gold each)', value: prices },
+    { label: 'Material buy price (gold each, common only)', value: buyPrices },
     { label: 'Satchel', value: `${PACKS.satchel.slots} supply slots, hero level ${PACKS.satchel.minHeroLevel}, ${PACKS.satchel.gold} gold` },
     { label: 'Field Pack', value: `${PACKS.fieldPack.slots} supply slots, hero level ${PACKS.fieldPack.minHeroLevel}, ${PACKS.fieldPack.gold} gold` },
     { label: 'Contracts held at once', value: String(MAX_ACTIVE_CONTRACTS) },
