@@ -1190,17 +1190,17 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 2 done. `gearWearOf`, `wornEquipment`, `WEAR_FIGHTS_PER_POINT`, `WEAR_ELITE_WEIGHT` in `persist/world.ts`; `settleExpedition` writes the worn durability; `outcomeStats.gearWear`, a "Gear wear: -N durability on each worn piece." summary line and card note (`ExpeditionPanel.tsx`). Offline/away runs settle through `settleExpedition`, so they wear too (test). Elite or boss is read from the run's `opening`/`draw` encounter by id. Tests in `persist/gearWear.test.ts`. Guards (8 matrices, seed 1, 5 runs) byte-identical; no sim, harness or content change. Not built: a live "wear so far" display (needs per-run state), away report gear line (the report lists none). Browser not checked.
 
 ### Step 13.26: Auto run modes
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.14, 13.15
 - Goal: Auto run gets a mode, `repeat` (today) or `endless` (keep pushing past the route's end until a retreat condition, a defeat or the total fight limit), per GAME_DESIGN §11 "Auto run modes". Sim untouched, so every matrix stays byte-identical.
 - Parts: (1) docs only. (2) `autoRunMode` on `SavedHero` (validated, reincarnation, preparation draft), `decideHold` with the mode, live loop and away replay use it, away report line, tests. (3) UI: select and warning on the preparation screen, "Auto · endless" dock tag, Guide paragraph, CHANGELOG.
-- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `in progress` (Auto run contracts: `autoContracts` toggle, shared `autoContractsStep`, away report line, Guide sentence).
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done` (Auto run contracts: `autoContracts` toggle, shared `autoContractsStep`, away report line, Guide sentence).
 - Acceptance: typecheck, lint, npm test (incl. `tests/architecture.test.ts`) and build pass; guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows, warden, causeway, elites at seed 1 x 5) byte-identical to origin/main.
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §11.
   - 2026-11-18: Part 2 done. `AutoRunMode`/`SavedHero.autoRunMode?` (validated, kept by reincarnation through `...hero`), `isEndlessAutoRun` and the mode in `decideHold` (`persist/world.ts`; live loop and replay already share it, so no change in `store.ts`), draft field in `persist/preparation.ts`, away summary `endless`/`endlessRetreats` and banner text in `persist/offline.ts`. Tests: `persist/autoRunMode.test.ts`, live loop and live-vs-away agreement in `ui/map/autoRun.test.tsx`, draft round trip. Sim untouched.
   - 2026-11-18: Part 3 done. "When the route ends" select (disabled with a reason while Auto run is off), a note line that says loot that does not fit is lost, a warning with no retreat level, "Auto · endless" dock tag, one Guide paragraph, CHANGELOG line, render tests. Not checked in a browser or at 375 px.
-  - 2026-11-18: Part 4 started. Rules recorded in GAME_DESIGN §11 first.
+  - 2026-11-18: Part 4 done. `persist/autoContracts.ts` (`autoContractsStep`, `contractFitsRoute`) shared by `store.ts afterAutoRun` and `offline.ts rerun`; `autoContracts?` on the hero and draft, checkbox, away report line, Guide sentence, CHANGELOG. Summoned enemies are not matched for bounties. Full `npm test` under load showed 2 timeouts; every file passes when run in two groups. Browser and 375 px not checked; sim untouched so guards not re-run.
 
 ### Step 13.24: First-clear rewards
 - Status: `in progress`

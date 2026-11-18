@@ -22,7 +22,7 @@ function hero(save: SaveData) {
 
 describe('preparation', () => {
   it('starts from the usual defaults, per class', () => {
-    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, repeatLimit: 0, stopAfterFights: '', autoRun: false, autoRunMaxFights: '', autoRunMode: 'repeat', bagFullOrder: 'home', awayRouteId: '' })
+    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, repeatLimit: 0, stopAfterFights: '', autoRun: false, autoRunMaxFights: '', autoRunMode: 'repeat', autoContracts: false, bagFullOrder: 'home', awayRouteId: '' })
     expect(draftFor(hero(heroSave('cleric'))).vow).toBe('zeal')
     expect(draftFor(hero(heroSave('ranger'))).specialAmmo).toBe('6')
   })
@@ -144,5 +144,11 @@ describe('Auto run mode in the preparation (Step 13.26)', () => {
     const { autoRunMode: _left, ...without } = draftFor(endless.hero)
     expect(checkPreparation(endless.hero, without)).toMatchObject({ ok: true, hero: { autoRunMode: 'endless' } })
     expect(checkPreparation(warrior, { ...base, autoRunMode: 'forever' as never })).toMatchObject({ ok: false })
+  })
+
+  it('round-trips the contracts toggle', () => {
+    const warrior = hero(heroSave('warrior'))
+    const result = checkPreparation(warrior, { ...draftFor(warrior), autoContracts: true })
+    expect(result).toMatchObject({ ok: true, hero: { autoContracts: true } })
   })
 })

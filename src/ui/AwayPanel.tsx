@@ -56,6 +56,8 @@ export function AwayReportView({ report }: { report: AwayReport }) {
       : `You were away ${duration(report.awayMs)}.`
   const withMaterials = report.heroes.filter((hero) => Object.keys(hero.materials).length > 0)
   const contracts = report.heroes.reduce((sum, hero) => sum + hero.contractsFinished, 0)
+  const handedIn = report.heroes.reduce((sum, hero) => sum + (hero.contractsHandedIn ?? 0), 0)
+  const taken = report.heroes.reduce((sum, hero) => sum + (hero.contractsTaken ?? 0), 0)
   const banners = report.heroes.flatMap((hero) => {
     const line = awayBanner(hero)
     return line === null ? [] : [{ heroId: hero.heroId, line }]
@@ -114,6 +116,11 @@ export function AwayReportView({ report }: { report: AwayReport }) {
         {report.crafts.map((craft, index) => (
           <li key={`${index}-${craft}`}>{craft}</li>
         ))}
+        {handedIn + taken > 0 ? (
+          <li data-testid="away-auto-contracts">
+            Contracts handed in: {handedIn}, taken: {taken}.
+          </li>
+        ) : null}
         {contracts > 0 ? <li>Contracts finished: {contracts}. Collect them at the Contract Board.</li> : null}
         {report.discovered.length > 0 ? <li>Discovered: {report.discovered.join(', ')}.</li> : null}
       </ul>

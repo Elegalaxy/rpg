@@ -1,14 +1,16 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-18)
-- **Current Goal:** Step 13.22 "Crafted backpack" is done (parts 1 to 4, 2b, 2c). 2c raised the stack limit from 2 to 3 above 4 slots (user's choice). Next is the user's playtest and the call on the Satchel balance below.
+- **Current Goal:** Step 13.26 "Auto run modes" is done (parts 1 to 4). Next is the user's playtest.
 - **Recent Changes & Files Touched:**
-  - Docs: GAME_DESIGN §9 Inventory ("Crafted backpack (Step 13.22)": stack limit changed to 3, measurement with limit 3), plan Step 13.22 (Part 2c), CHANGELOG `Unreleased` [13.22].
-  - Code: `SUPPLY_STACK_LIMIT = 3` in `src/sim/expedition.ts` (the refusal text, `persist/pack.ts`, save check, Potion Shop batch all follow the constant); `src/harness/pack.ts` fillers now fill under 3 of each (plain 5 slots = 3 Draughts, Ward Charm, Antidote; crafted 5 = 3 Greater Draughts, Riftglass Ward, Ward Charm); tests updated (sim, persist, harness, UI strings "At most 3 of each supply with a backpack.").
+  - Docs: GAME_DESIGN §11 "Auto run modes" and "Auto run contracts", plan Step 13.26, CHANGELOG `Unreleased` [13.26] (two New lines).
+  - Mode: `SavedHero.autoRunMode?: 'repeat' | 'endless'` (`persist/save.ts`, validated; kept by reincarnation through `...hero`). `isEndlessAutoRun` and the mode inside `decideHold` (`persist/world.ts`): endless gives `push` at every hold, so the live loop (`ui/store.ts`) and the away replay (`persist/offline.ts`) needed no new branch. Away summary `endless`/`endlessRetreats` and a banner (`offline.ts`). Draft field in `persist/preparation.ts`.
+  - Contracts: `SavedHero.autoContracts?: boolean`; `persist/autoContracts.ts` (`autoContractsStep`, `contractFitsRoute`) called after a safe return is settled and before the rerun, in `store.ts afterAutoRun` and `offline.ts rerun`. Away summary `contractsHandedIn`/`contractsTaken`, a line in `ui/AwayPanel.tsx`.
+  - UI: "When the route ends" select, mode note, no-retreat warning, "Hand in and take contracts at home" checkbox in `ui/map/ExpeditionPanel.tsx`; "Auto · endless" tag in `ui/RunDock.tsx`; styles in `ui/kit.css`; two Guide sentences in `content/guide.ts` (expeditions topic).
+  - Tests: `persist/autoRunMode.test.ts`, `persist/autoContracts.test.ts`, additions in `ui/map/autoRun.test.tsx` (live loop, live vs away agreement, render) and `persist/preparation.test.ts`.
 - **Active Decisions / Constraints:**
-  - Above 4 slots a run carries at most 3 of any supply; 4 slots unchanged. Reincarnation keeps the pack.
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
-- **Measured (seeds 1-3 x 100, mean wins, 4 / 5 / 6 slots, limit 3):** plain prepared 57.6 / 57.6 / 57.6 (extra slots hold Antidote and Smoke Bomb, which the default rows never use, so the Satchel is neutral); crafted prepared 88.2 / 90.9 / 96.5, cells at 95 or more 5 / 8 / 16 of 20. Only the Field Pack is a large step. Guards at 4 slots identical to before.
-- **Also on main (another implementer):** Step 13.23 "In-game Guide"; its text has no digits, so no Guide change was needed.
-- **Not verified:** 375 px layout of the Backpack counter; the Potion Shop batch buttons (3 with a pack) in a browser (tests only).
-- **Exact Next Step:** (1) User playtest: craft a Satchel at the Armorer, pack a run, reincarnate and check the pack stays. (2) Decide whether the Satchel should do something for plain default rows (needs rules that use the extra slots, for example another Ward Charm row). (3) Close 13.22 into a `## 0.x.0` changelog heading.
+  - Endless ignores Stop after fights, the push-on HP floor and the bag order; it ends by retreat (then the route reruns), defeat, or the total fight limit. Loot that does not fit is lost.
+  - Contract matching: kill = enemy in an encounter at a route node, fights = node on route, encounters = encounter at a route node, secure = a route node's resource. Summoned enemies are not considered (tidy-ui 13.25 had not landed). The board is rerolled on return, so the offers taken come from the refreshed board.
+  - Sim, harness and content untouched. Never remove `// admin code`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
+- **Not verified:** the preparation screen and dock in a browser or at 375 px (render tests only); guard matrices were not re-run (no sim change).
+- **Exact Next Step:** (1) User playtest: endless with and without a retreat level, contracts toggle over a few reruns. (2) Consider counting summoned enemies for bounty matching once 13.25 is on main. (3) Close 13.26 into a `## 0.x.0` changelog heading.

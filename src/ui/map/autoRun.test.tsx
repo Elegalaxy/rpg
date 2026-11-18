@@ -1,11 +1,13 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { contracts } from '../../content/contracts.ts'
+import { contractFitsRoute } from '../../persist/autoContracts.ts'
 import { routes } from '../../content/world.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { createHero } from '../../persist/roster.ts'
 import { runOffline } from '../../persist/offline.ts'
-import { newSave, parseSave, serializeSave, type SaveData, type SavedHero } from '../../persist/save.ts'
+import { contractFor, newSave, parseSave, serializeSave, type SaveData, type SavedHero } from '../../persist/save.ts'
 import { advanceExpedition, commitSave, expeditionWaiting, getAutoNotice, getSaveStatus, pushOnFromUi, setAutoRunFromUi, startExpeditionFromUi } from '../store.ts'
 import { ExpeditionPanel } from './ExpeditionPanel.tsx'
 
@@ -316,6 +318,13 @@ describe('the Auto run mode on the preparation screen (Step 13.26)', () => {
     expect(prepare({ autoRun: true, autoRunMode: 'repeat', retreatAtMost: null })).not.toContain('auto-run-endless-warning')
   })
 
+  it('shows the contracts checkbox, disabled with a reason while Auto run is off', () => {
+    const off = prepare({ autoRun: false })
+    expect(off).toMatch(/<input[^>]*aria-label="Auto run contracts"[^>]*disabled/)
+    expect(off).toContain('Turn on Auto run to hand in and take contracts at home.')
+    expect(prepare({ autoRun: true, autoContracts: true })).toMatch(/<input[^>]*aria-label="Auto run contracts"[^>]*checked/)
+  })
+
   it('tags the run dock Auto · endless', async () => {
     const { RunDock } = await import('../RunDock.tsx')
     const html = (patch: Partial<SavedHero>) => {
@@ -327,4 +336,41 @@ describe('the Auto run mode on the preparation screen (Step 13.26)', () => {
     expect(html({ autoRun: true, autoRunMode: 'endless' })).toContain('Auto · endless')
     expect(html({ autoRun: true })).not.toContain('Auto · endless')
   })
+})
+
+describe('Auto run contracts at home (Step 13.26)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  const offers = [contracts['cull-the-pack']!, contracts['thicket-sweep']!]
+
+  function withBoard(on: boolean) {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    return startRun({ autoRun: true, autoContracts: on, repeatRoute: false, pushOnHpPercent: 1, stopAfterFights: 1, autoRunMaxFights: 2, purse: { ...made.save.heroes[0]!.purse, board: offers } })
+  }
+
+  it('takes a fitting offer at home when on, and the same offline', () => {
+    const first = withBoard(true)
+    const away = JSON.parse(JSON.stringify(getSaveStatus().save)) as SaveData
+    play(() => getSaveStatus().save.expedition !== first)
+    const live = hero()!.purse.contracts.map((entry) => entry.contractId)
+    const purse = hero()!.purse
+    expect(live.length).toBeGreaterThan(0)
+    for (const entry of purse.contracts) expect(contractFitsRoute(contractFor(purse, entry.contractId)!, 'splintered-road')).toBe(true)
+    const replay = runOffline(away, 30 * 60_000, true)
+    expect(selectedHero(replay.save)!.purse.contracts.map((entry) => entry.contractId)).toEqual(live)
+  }, 240_000)
+
+  it('takes nothing when off', () => {
+    const first = withBoard(false)
+    play(() => getSaveStatus().save.expedition !== first)
+    expect(hero()!.purse.contracts).toHaveLength(0)
+  }, 240_000)
 })

@@ -14,6 +14,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - Improved: on a phone, the status is one pinned line (hero, level, HP during a run, XP) that opens the full status, the tabs move to a bar along the bottom (Map, Town, Hero, More), and the away report shows as cards.
 - Improved: Typing a Fractured Warden Echo rank above the unlocked rank sets it to that rank. [10.1]
 - Improved: The Fractured Warden's card shows its Echo rank during the fight. [10.1]
+- New: Auto run can hand in finished contracts and take board contracts that fit the route every time the hero gets home; switch it on under the Auto run controls. [13.26]
 - New: Auto run can now keep going until you retreat or fall, instead of repeating the route; choose it next to the Auto run switch, and the away report says how an endless run ended. [13.26]
 - Improved: Repair everything worn here sits at the top of the Repair tab, like Queue all on Upgrade.
 - New: spend a free upgrade at the crafters to open a socket or rank a modifier up to II at no cost. [13.24]

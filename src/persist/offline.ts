@@ -11,6 +11,7 @@ import { advanceCrafting } from './crafting.ts'
 import { advanceTraining } from './training.ts'
 import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData } from './save.ts'
+import { autoContractsStep } from './autoContracts.ts'
 import { isEndlessAutoRun, autoRerunRefusal, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 import { nodes, routes } from '../content/world.ts'
 
@@ -54,6 +55,9 @@ export type HeroAwaySummary = {
   walkedHomeFights?: number
   /** Auto run was in the endless mode (Step 13.26). Absent means the repeat mode. */
   endless?: boolean
+  /** Contracts handed in and taken at home by Auto run while away (Step 13.26). Absent counts as 0. */
+  contractsHandedIn?: number
+  contractsTaken?: number
   /** Endless runs that ended by a retreat while away. Absent counts as 0. */
   endlessRetreats?: number
   /** Auto run was on when the player left, so the run kept going under the standing orders. */
@@ -386,6 +390,12 @@ function rerun(ctx: Ctx, auto: boolean): boolean {
   lane.summary.xp += owner === null ? (expedition.xpEarned ?? 0) : recallXp(owner, expedition.xpEarned ?? 0)
   const claimedBefore = owner?.firstClearIds ?? []
   ctx.save = settleExpedition(ctx.save)
+  if (auto && expedition.outcome === 'returned') {
+    const contracts = autoContractsStep(ctx.save, routeId)
+    ctx.save = contracts.save
+    if (contracts.handedIn > 0) lane.summary.contractsHandedIn = (lane.summary.contractsHandedIn ?? 0) + contracts.handedIn
+    if (contracts.taken > 0) lane.summary.contractsTaken = (lane.summary.contractsTaken ?? 0) + contracts.taken
+  }
   const claimedAfter = selectedHero(ctx.save)?.firstClearIds ?? []
   const newlyPaid = claimedAfter.filter((id) => !claimedBefore.includes(id)).map((id) => nodes[id]?.name ?? id)
   if (newlyPaid.length > 0) lane.summary.firstClears = [...(lane.summary.firstClears ?? []), ...newlyPaid]

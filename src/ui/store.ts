@@ -15,6 +15,7 @@ import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
+import { autoContractsStep } from '../persist/autoContracts.ts'
 import { autoRerunRefusal, beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
@@ -458,6 +459,10 @@ function afterAutoRun(expedition: ExpeditionState): void {
   // Rerun the same route on any route the hero can start: the normal start checks decide, and a refusal stops Auto run.
   const routeId = expedition.id
   settleExpeditionFromUi()
+  if (expedition.outcome === 'returned') {
+    const contracts = autoContractsStep(saveStatus.save, routeId)
+    if (contracts.save !== saveStatus.save) commitSave(contracts.save, 'auto run contracts')
+  }
   const refusal = autoRerunRefusal(saveStatus.save, routeId, Date.now())
   const reason = refusal !== null ? refusal.reason : startExpeditionFromUi(routeId)
   if (reason === null) return

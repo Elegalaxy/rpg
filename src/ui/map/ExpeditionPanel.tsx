@@ -316,6 +316,25 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             brings it home safely, it is defeated, or the total fight limit is reached. After a retreat the route reruns.
           </Help>
         </div>
+        <div className="controls">
+          <label>
+            <input
+              type="checkbox"
+              aria-label="Auto run contracts"
+              data-testid="auto-contracts"
+              disabled={draft.autoRun !== true}
+              title={draft.autoRun === true ? undefined : 'Turn on Auto run to hand in and take contracts at home.'}
+              checked={draft.autoContracts === true}
+              onChange={(event) => patch({ autoContracts: event.target.checked })}
+            />
+            Hand in and take contracts at home
+          </label>
+          <Help label="About Auto run contracts">
+            When Auto run gets home: hand in finished contracts and take board contracts that fit the route. Needs Auto run on. Up to the active limit; offers
+            that do not fit the route are left on the board.
+          </Help>
+        </div>
+        {draft.autoRun === true ? null : <p className="muted">Turn on Auto run to hand in and take contracts at home.</p>}
         <p className="muted auto-mode-note" data-testid="auto-run-mode-note">
           {draft.autoRun !== true
             ? 'Turn on Auto run to choose what happens when the route ends.'
