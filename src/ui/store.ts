@@ -10,7 +10,7 @@ import { abandonContract, acceptContract, collectContract } from '../persist/con
 import { advanceTraining, anyTraining, trainHero } from '../persist/training.ts'
 import { advanceCrafting, anyCrafting, buyRecipe, grantCraftingKit, planUpgradeAll, queueCraft, queueInfuse, queuePack, queueRankUp, queueSocket, queueUpgrade, spendFreeUpgrade, type CraftRequest, type FreeUpgradeChoice } from '../persist/crafting.ts'
 import type { PackId } from '../persist/pack.ts'
-import { brewSupply, buyItem, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
+import { brewSupply, buyItem, buyMaterial, buySupply, grantGold, payDebt, repairAll, repairOne, sellItem, sellMaterial, wearGear } from '../persist/town.ts'
 import type { RosterResult } from '../persist/roster.ts'
 import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
@@ -763,6 +763,10 @@ function applyTown(result: RosterResult, reason: string): string | null {
 /** Town services for the account and the selected hero. Each returns the refusal message, or null. */
 export function sellMaterialFromUi(materialId: string, quantity: number): string | null {
   return applyTown(sellMaterial(saveStatus.save, materialId, quantity), 'sold material')
+}
+
+export function buyMaterialFromUi(materialId: string, quantity: number): string | null {
+  return applyTown(buyMaterial(saveStatus.save, materialId, quantity), 'bought material')
 }
 
 export function sellItemFromUi(itemId: string): string | null {

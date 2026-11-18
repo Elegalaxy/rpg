@@ -1,5 +1,5 @@
 import { itemBase, newItem } from '../content/items.ts'
-import { MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, repairCost } from '../content/shop.ts'
+import { MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, repairCost } from '../content/shop.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { EQUIPMENT_SLOT_IDS, classBlock, type Equipment, type ItemInstance } from '../sim/economy.ts'
 
@@ -27,6 +27,21 @@ export function sellMaterial(save: SaveData, materialId: string, quantity: numbe
   if (owned === quantity) delete materials[materialId]
   else materials[materialId] = owned - quantity
   return { ok: true, save: updatePurse(save, { materials, gold: purse.gold + price * quantity }) }
+}
+
+/** Buy some of a common material with the selected hero's gold. Rare materials are not for sale. */
+export function buyMaterial(save: SaveData, materialId: string, quantity: number): RosterResult {
+  const shut = closed(save)
+  if (shut !== null) return { ok: false, reason: shut }
+  const unit = MATERIAL_BUY_PRICE[materialId]
+  if (unit === undefined) return { ok: false, reason: 'Greyhaven does not sell that.' }
+  if (!Number.isInteger(quantity) || quantity < 1) return { ok: false, reason: 'Buy at least 1.' }
+  if (save.selectedHeroId === null) return { ok: false, reason: 'Select a hero first.' }
+  const purse = purseOf(save)
+  const price = unit * quantity
+  if (purse.gold < price) return { ok: false, reason: `That costs ${price} gold. You have ${purse.gold}.` }
+  const materials = { ...purse.materials, [materialId]: (purse.materials[materialId] ?? 0) + quantity }
+  return { ok: true, save: updatePurse(save, { gold: purse.gold - price, materials }) }
 }
 
 /**

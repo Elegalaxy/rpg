@@ -14,6 +14,17 @@ export const MATERIAL_SELL_PRICE: { readonly [materialId: string]: number } = {
   cinderite: 10,
 }
 
+/** Buying a material costs this many times what selling it pays (Step 13.28), so buying never undercuts selling. */
+export const MATERIAL_BUY_MULTIPLIER = 5
+
+/** The materials Greyhaven sells. The rare ones (riftglass, duskiron, cinderite) stay gated by exploring. */
+export const BUYABLE_MATERIALS: readonly string[] = ['scrap', 'hide', 'shard', 'witherbark', 'oathsteel']
+
+/** Gold Greyhaven charges for one unit of a buyable material. */
+export const MATERIAL_BUY_PRICE: { readonly [materialId: string]: number } = Object.fromEntries(
+  BUYABLE_MATERIALS.map((id) => [id, (MATERIAL_SELL_PRICE[id] ?? 0) * MATERIAL_BUY_MULTIPLIER]),
+)
+
 /** Half up, so 2.5 pays 3. */
 function roundHalfUp(value: number): number {
   return Math.floor(value + 0.5)

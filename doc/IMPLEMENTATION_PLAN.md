@@ -1194,9 +1194,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.25
 - Goal: the Trading Post sells the five common materials at five times their sell price (rules in GAME_DESIGN §9, "Trading Post: buying materials"). Rare materials stay exploration-gated. Sim untouched, so every guard stays identical.
 - Parts: (1) docs. (2) `content/shop.ts` constants, `persist/town.ts` `buyMaterial`, store action, tests. (3) Trading Post Buy buttons, Guide, CHANGELOG.
-- Part status: 1 `done`. 2 `todo`. 3 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `todo`.
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §9.
+  - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
 
 ### Step 13.26: Auto run modes
 - Status: `done`

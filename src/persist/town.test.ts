@@ -4,14 +4,14 @@ import { dealsIn, placeTable } from '../content/places.ts'
 import { encounters, toExpeditionEncounter } from '../content/encounters.ts'
 import { gameDefs } from '../content/scenarios.ts'
 import { newItem } from '../content/items.ts'
-import { MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, repairCost, shopStock } from '../content/shop.ts'
+import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, repairCost, shopStock } from '../content/shop.ts'
 import { stepExpedition } from '../sim/expedition.ts'
 
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, newSave, type SaveData, purseOf, updatePurse } from './save.ts'
-import { buyItem, payDebt, repairAll, repairAllCost, repairOne, sellItem, sellMaterial, wearGear } from './town.ts'
+import { buyItem, payDebt, repairAll, repairAllCost, repairOne, sellItem, sellMaterial, wearGear, buyMaterial } from './town.ts'
 import { beginExpedition, settleExpedition } from './world.ts'
 
 function heroSave(gold = 0): SaveData {
@@ -233,5 +233,39 @@ describe('gold on the road', () => {
     expect(buyItem(running, 'hero-1', 'weapon-bow')).toEqual(shut)
     expect(repairOne(running, 'hero-1-mainHand')).toEqual(shut)
     expect(payDebt(running, 1)).toEqual(shut)
+  })
+})
+
+describe('buying materials at the Trading Post', () => {
+  it('prices common materials at five times the sell price, always above it', () => {
+    expect(MATERIAL_BUY_PRICE).toEqual({ scrap: 10, hide: 15, shard: 15, witherbark: 20, oathsteel: 20 })
+    for (const id of BUYABLE_MATERIALS) expect(MATERIAL_BUY_PRICE[id]).toBeGreaterThan(MATERIAL_SELL_PRICE[id] ?? Infinity)
+  })
+
+  it('spends the exact gold and adds the materials', () => {
+    const save = updatePurse(heroSave(500), { materials: { shard: 2 } })
+    const bought = ok(buyMaterial(save, 'shard', 10))
+    expect(purseOf(bought).gold).toBe(500 - 150)
+    expect(purseOf(bought).materials).toEqual({ shard: 12 })
+    const fresh = ok(buyMaterial(save, 'scrap', 1))
+    expect(purseOf(fresh).gold).toBe(490)
+    expect(purseOf(fresh).materials).toEqual({ shard: 2, scrap: 1 })
+  })
+
+  it('refuses rare or unknown materials, bad quantities and short gold', () => {
+    const save = heroSave(100)
+    for (const id of ['riftglass', 'duskiron', 'cinderite', 'nonsense']) expect(buyMaterial(save, id, 1).ok).toBe(false)
+    expect(buyMaterial(save, 'scrap', 0).ok).toBe(false)
+    expect(buyMaterial(save, 'scrap', 1.5).ok).toBe(false)
+    const short = buyMaterial(save, 'scrap', 11)
+    expect(short.ok).toBe(false)
+    if (!short.ok) expect(short.reason).toBe('That costs 110 gold. You have 100.')
+    expect(buyMaterial(newSave(), 'scrap', 1).ok).toBe(false)
+  })
+
+  it('is closed during an expedition', () => {
+    const save = heroSave(500)
+    const running = { ...save, expedition: startExpedition(hero(save), 'splintered-road', 1) }
+    expect(buyMaterial(running, 'scrap', 1)).toEqual({ ok: false, reason: 'Town services are closed while an expedition is running.' })
   })
 })
