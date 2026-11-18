@@ -147,6 +147,19 @@ export const MATERIAL_RARITY: readonly string[] = ['scrap', 'hide', 'shard', 'wi
 export const SUPPLY_SLOT_COUNT = 4
 /** The most supply slots a crafted backpack can reach (GAME_DESIGN §9, Step 13.22). */
 export const MAX_SUPPLY_SLOTS = 6
+/** With more than `SUPPLY_SLOT_COUNT` slots, a run carries at most this many of any one supply (GAME_DESIGN §9, Step 13.22). */
+export const SUPPLY_STACK_LIMIT = 2
+
+/** The id that appears more than `SUPPLY_STACK_LIMIT` times in a run above the default slot count, or null. Four slots have no limit. */
+export function overStackedSupply(ids: readonly string[], slotCount: number): string | null {
+  if (slotCount <= SUPPLY_SLOT_COUNT) return null
+  const counts: { [id: string]: number } = {}
+  for (const id of ids) {
+    counts[id] = (counts[id] ?? 0) + 1
+    if (counts[id] > SUPPLY_STACK_LIMIT) return id
+  }
+  return null
+}
 /** Stored rare-node chance, in percentage points. The road does not roll or spawn a node. */
 export const RARE_NODE_CHANCE_PER_STACK = 2
 /** +5% material quantity per stack already held. Counted in thousandths so 4 × 1.15 is 4.6. */
@@ -571,6 +584,7 @@ function assertSupplySlots(slots: unknown): void {
   if (!Array.isArray(slots) || slots.length < SUPPLY_SLOT_COUNT || slots.length > MAX_SUPPLY_SLOTS) {
     throw new Error(`expedition needs ${SUPPLY_SLOT_COUNT} to ${MAX_SUPPLY_SLOTS} supply slots, received ${describeValue(slots)}`)
   }
+  const carried: string[] = []
   for (let index = 0; index < slots.length; index += 1) {
     const slot: unknown = slots[index]
     if (slot === null) continue
@@ -581,7 +595,10 @@ function assertSupplySlots(slots: unknown): void {
     if (typeof id !== 'string' || id.length === 0) {
       throw new Error(`supply slot ${index + 1} needs a non-empty id, received ${describeValue(id)}`)
     }
+    carried.push(id)
   }
+  const over = overStackedSupply(carried, slots.length)
+  if (over !== null) throw new Error(`a run above ${SUPPLY_SLOT_COUNT} slots carries at most ${SUPPLY_STACK_LIMIT} of one supply, received more ${over}`)
 }
 
 function assertIdList(ids: unknown, label: string): void {
@@ -650,6 +667,8 @@ function packedSupplySlots(supplies: readonly string[] | undefined, supplySlotCo
   if (!Array.isArray(supplies) || supplies.length > count) {
     throw new Error(`an expedition packs at most ${count} supplies, received ${describeValue(supplies)}`)
   }
+  const over = overStackedSupply(supplies, count)
+  if (over !== null) throw new Error(`a run above ${SUPPLY_SLOT_COUNT} slots carries at most ${SUPPLY_STACK_LIMIT} of one supply, received more ${over}`)
   supplies.forEach((id: unknown, index) => {
     if (typeof id !== 'string' || id.length === 0) throw new Error(`packed supply ${index + 1} needs a non-empty id`)
     slots[index] = { id }

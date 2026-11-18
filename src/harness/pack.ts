@@ -1,7 +1,7 @@
 import { gameDefs } from '../content/scenarios.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
-import { MAX_SUPPLY_SLOTS, SUPPLY_SLOT_COUNT } from '../sim/expedition.ts'
+import { MAX_SUPPLY_SLOTS, SUPPLY_SLOT_COUNT, SUPPLY_STACK_LIMIT } from '../sim/expedition.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import type { CombatSetup } from '../sim/types.ts'
 
@@ -10,8 +10,8 @@ import { ELITE_CELLS, ELITE_IDS, eliteSetup, type EliteCell, type EliteId } from
 
 /**
  * The crafted backpack measurement (Step 13.22 part 2): the same hero, rules and elite fight with 4, 5 and 6 supply
- * slots. The extra slots hold more of the tier's main healing supply (a Healing Draught at the prepared tier, a Greater
- * Draught at the crafted tier), so the default supply rows are unchanged. Measurements only; nothing here tunes.
+ * slots. Above four slots the stack limit applies (at most 2 of one supply) and the extra slots take variety
+ * (see `packSupplies`); the default supply rows are unchanged. Measurements only; nothing here tunes.
  */
 export const PACK_SLOT_COUNTS: readonly number[] = [SUPPLY_SLOT_COUNT, SUPPLY_SLOT_COUNT + 1, MAX_SUPPLY_SLOTS]
 
@@ -29,19 +29,38 @@ export type PackRow = {
   hpLost: number
 }
 
-/** The supply id the extra slots hold at this tier. */
-export function packFillerId(tier: PackTier): string {
-  return tier === 'prepared-crafted' ? 'greater-draught' : 'healing-draught'
+/**
+ * The supplies a tier carries at `slots`. Four slots are the tier's own list. Above four, the stack limit (at most
+ * `SUPPLY_STACK_LIMIT` of one supply) cuts the list down and the rest is filled with variety, in this order: plain
+ * Healing Draught, Ward Charm, Antidote, Smoke Bomb; crafted Greater Draught, Riftglass Ward, Ward Charm, Healing Draught (one each
+ * not carried yet), then a second Healing Draught or Ward Charm.
+ */
+export function packSupplies(base: readonly string[], tier: PackTier, slots: number): string[] {
+  if (slots <= SUPPLY_SLOT_COUNT) return [...base]
+  const crafted = tier === 'prepared-crafted'
+  const fillers = crafted ? CRAFTED_FILLERS : PLAIN_FILLERS
+  const seconds = crafted ? CRAFTED_SECONDS : PLAIN_SECONDS
+  const out: string[] = []
+  const count = (id: string): number => out.filter((entry) => entry === id).length
+  for (const id of base) if (count(id) < SUPPLY_STACK_LIMIT && out.length < slots) out.push(id)
+  // One of each filler not carried yet, for variety; then a second copy of the main ones.
+  for (const id of fillers) if (count(id) === 0 && out.length < slots) out.push(id)
+  for (const id of seconds) if (count(id) < SUPPLY_STACK_LIMIT && out.length < slots) out.push(id)
+  return out
 }
 
-/** The elite fight for a class with the tier's supplies topped up to `slots`. */
+const PLAIN_FILLERS = ['healing-draught', 'ward-charm', 'antidote', 'smoke-bomb']
+const CRAFTED_FILLERS = ['greater-draught', 'riftglass-ward', 'ward-charm', 'healing-draught']
+const PLAIN_SECONDS = ['healing-draught', 'ward-charm']
+const CRAFTED_SECONDS = ['healing-draught', 'ward-charm']
+
+/** The elite fight for a class with the tier's supplies fitted to `slots`. */
 export function packSetup(classId: HeroClass, cell: EliteCell, slots: number): CombatSetup {
   if (!Number.isInteger(slots) || slots < SUPPLY_SLOT_COUNT || slots > MAX_SUPPLY_SLOTS) {
     throw new Error(`slots must be a whole number from ${SUPPLY_SLOT_COUNT} to ${MAX_SUPPLY_SLOTS}, received ${slots}`)
   }
   const base = eliteSetup(classId, cell)
-  const extra = Array.from({ length: slots - base.hero.supplies!.length }, () => packFillerId(cell.tier as PackTier))
-  const supplies = [...base.hero.supplies!, ...extra]
+  const supplies = packSupplies(base.hero.supplies!, cell.tier as PackTier, slots)
   return {
     ...base,
     hero: { ...base.hero, supplies, ...(classId === 'ranger' ? { carriedSupplyCount: supplies.length } : {}) },

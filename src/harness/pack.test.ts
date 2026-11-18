@@ -12,14 +12,15 @@ describe('pack matrix', () => {
     expect(PACK_SLOT_COUNTS).toEqual([4, 5, 6])
   })
 
-  it('tops the tier supplies up with its main healing supply and leaves 4 slots as they were', () => {
+  it('keeps 4 slots as the tier had them and fills 5 and 6 under the stack limit with variety', () => {
     for (const classId of HERO_CLASSES) {
       const prepared = cell('warden', 'prepared')
-      const four = packSetup(classId, prepared, 4)
-      expect(four.hero.supplies).toEqual(['healing-draught', 'healing-draught', 'healing-draught', 'ward-charm'])
-      expect(packSetup(classId, prepared, 6).hero.supplies).toEqual([...four.hero.supplies!, 'healing-draught', 'healing-draught'])
-      const crafted = packSetup(classId, cell('colossus', 'prepared-crafted'), 5)
-      expect(crafted.hero.supplies).toEqual(['greater-draught', 'greater-draught', 'greater-draught', 'riftglass-ward', 'greater-draught'])
+      expect(packSetup(classId, prepared, 4).hero.supplies).toEqual(['healing-draught', 'healing-draught', 'healing-draught', 'ward-charm'])
+      expect(packSetup(classId, prepared, 5).hero.supplies).toEqual(['healing-draught', 'healing-draught', 'ward-charm', 'antidote', 'smoke-bomb'])
+      const crafted = cell('colossus', 'prepared-crafted')
+      expect(packSetup(classId, crafted, 4).hero.supplies).toEqual(['greater-draught', 'greater-draught', 'greater-draught', 'riftglass-ward'])
+      expect(packSetup(classId, crafted, 5).hero.supplies).toEqual(['greater-draught', 'greater-draught', 'riftglass-ward', 'ward-charm', 'healing-draught'])
+      expect(packSetup(classId, crafted, 6).hero.supplies).toEqual(['greater-draught', 'greater-draught', 'riftglass-ward', 'ward-charm', 'healing-draught', 'healing-draught'])
     }
     expect(packSetup('ranger', cell('reaver', 'prepared'), 5).hero.carriedSupplyCount).toBe(5)
     expect(() => packSetup('warrior', cell('warden', 'prepared'), 7)).toThrow(/from 4 to 6/)
