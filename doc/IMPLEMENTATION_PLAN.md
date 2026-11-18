@@ -1194,12 +1194,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.14, 13.15
 - Goal: Auto run gets a mode, `repeat` (today) or `endless` (keep pushing past the route's end until a retreat condition, a defeat or the total fight limit), per GAME_DESIGN §11 "Auto run modes". Sim untouched, so every matrix stays byte-identical.
 - Parts: (1) docs only. (2) `autoRunMode` on `SavedHero` (validated, reincarnation, preparation draft), `decideHold` with the mode, live loop and away replay use it, away report line, tests. (3) UI: select and warning on the preparation screen, "Auto · endless" dock tag, Guide paragraph, CHANGELOG.
-- Part status: 1 `done`. 2 `done`. 3 `done`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `in progress` (Auto run contracts: `autoContracts` toggle, shared `autoContractsStep`, away report line, Guide sentence).
 - Acceptance: typecheck, lint, npm test (incl. `tests/architecture.test.ts`) and build pass; guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows, warden, causeway, elites at seed 1 x 5) byte-identical to origin/main.
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §11.
   - 2026-11-18: Part 2 done. `AutoRunMode`/`SavedHero.autoRunMode?` (validated, kept by reincarnation through `...hero`), `isEndlessAutoRun` and the mode in `decideHold` (`persist/world.ts`; live loop and replay already share it, so no change in `store.ts`), draft field in `persist/preparation.ts`, away summary `endless`/`endlessRetreats` and banner text in `persist/offline.ts`. Tests: `persist/autoRunMode.test.ts`, live loop and live-vs-away agreement in `ui/map/autoRun.test.tsx`, draft round trip. Sim untouched.
   - 2026-11-18: Part 3 done. "When the route ends" select (disabled with a reason while Auto run is off), a note line that says loot that does not fit is lost, a warning with no retreat level, "Auto · endless" dock tag, one Guide paragraph, CHANGELOG line, render tests. Not checked in a browser or at 375 px.
+  - 2026-11-18: Part 4 started. Rules recorded in GAME_DESIGN §11 first.
 
 ### Step 13.24: First-clear rewards
 - Status: `in progress`
