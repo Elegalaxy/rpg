@@ -11,7 +11,8 @@ import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, newSave, type SaveData, purseOf, updatePurse } from './save.ts'
-import { buyItem, payDebt, repairAll, repairAllCost, repairOne, sellItem, sellMaterial, wearGear, buyMaterial } from './town.ts'
+import { reincarnate } from './reincarnation.ts'
+import { buyItem, payDebt, repairAll, repairAllCost, repairOne, sellItem, sellMaterial, sellPriceFor, wearGear, buyMaterial } from './town.ts'
 import { beginExpedition, settleExpedition } from './world.ts'
 
 function heroSave(gold = 0): SaveData {
@@ -267,5 +268,54 @@ describe('buying materials at the Trading Post', () => {
     const save = heroSave(500)
     const running = { ...save, expedition: startExpedition(hero(save), 'splintered-road', 1) }
     expect(buyMaterial(running, 'scrap', 1)).toEqual({ ok: false, reason: 'Town services are closed while an expedition is running.' })
+  })
+})
+
+describe('earlier-life gear (Step 13.31)', () => {
+  function armed(gold: number, stockpile = 0): SaveData {
+    const base = heroSave(gold)
+    return { ...base, heroes: base.heroes.map((h) => ({ ...h, bossLossThisLife: true, purchases: { ...h.purchases, stockpile } })) }
+  }
+
+  it('sells earlier-life items at the carried share and prunes the id when sold', () => {
+    const item = newItem('old-1', 'weapon-bow', 10, 1)
+    const fresh = newItem('new-1', 'weapon-bow', 10, 1)
+    const next = ok(reincarnate(updatePurse(armed(0), { archive: [item] }), 'hero-1', null))
+    const withNew = updatePurse(next, { archive: [...purseOf(next).archive, fresh] })
+    expect(hero(withNew).pastLifeItemIds).toContain('old-1')
+    expect(sellPriceFor(hero(withNew), item)).toBe(Math.floor((itemSellPrice(item) * 20) / 100))
+    expect(sellPriceFor(hero(withNew), fresh)).toBe(itemSellPrice(fresh))
+    const sold = ok(sellItem(withNew, 'old-1'))
+    expect(purseOf(sold).gold).toBe(purseOf(withNew).gold + 10)
+    expect(hero(sold).pastLifeItemIds).not.toContain('old-1')
+    // A new item that reuses the id sells in full.
+    const reused = updatePurse(sold, { archive: [...purseOf(sold).archive, newItem('old-1', 'weapon-bow', 10, 1)] })
+    expect(sellPriceFor(hero(reused), purseOf(reused).archive.find((entry) => entry.id === 'old-1')!)).toBe(itemSellPrice(item))
+  })
+
+  it('follows Stockpile for the sell share', () => {
+    const item = newItem('old-1', 'weapon-bow', 10, 1)
+    const base = armed(0, 3)
+    const flagged = { ...base, heroes: base.heroes.map((h) => ({ ...h, pastLifeItemIds: ['old-1'] })) }
+    expect(sellPriceFor(hero(flagged), item)).toBe(Math.floor(itemSellPrice(item) / 2))
+  })
+
+  it('cannot launder gold: buy shop gear, reincarnate and sell it all, and end with no more than the share of the gold', () => {
+    for (const stockpile of [0, 1, 2, 3]) {
+      const percent = [20, 30, 40, 50][stockpile]!
+      let save = armed(2000, stockpile)
+      for (let count = 0; count < 500; count += 1) {
+        const bought = buyItem(save, 'hero-1', 'weapon-one-handed')
+        if (!bought.ok) break
+        save = bought.save
+      }
+      expect(purseOf(save).archive.length).toBeGreaterThan(100)
+      save = ok(reincarnate(save, 'hero-1', null))
+      for (const item of [...purseOf(save).archive]) {
+        const sold = sellItem(save, item.id)
+        if (sold.ok) save = sold.save
+      }
+      expect(purseOf(save).gold).toBeLessThanOrEqual(Math.floor((2000 * percent) / 100))
+    }
   })
 })

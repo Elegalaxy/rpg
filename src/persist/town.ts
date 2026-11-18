@@ -3,6 +3,7 @@ import { MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE, itemBuyPrice, itemSellPrice, r
 import { supplyTable } from '../content/supplies.ts'
 import { EQUIPMENT_SLOT_IDS, classBlock, type Equipment, type ItemInstance } from '../sim/economy.ts'
 
+import { carryPercent } from './carryOver.ts'
 import { selectedHero } from './character.ts'
 import { supplyLock } from './crafting.ts'
 import { previewEquip, wearerOf, type EquipPreview } from './equipment.ts'
@@ -45,6 +46,16 @@ export function buyMaterial(save: SaveData, materialId: string, quantity: number
 }
 
 /**
+ * What Greyhaven pays this hero for an item. Gear kept from an earlier life (`pastLifeItemIds`) pays only the
+ * carried share, so shop gear cannot carry gold through a reincarnation (Step 13.31, guard A).
+ */
+export function sellPriceFor(hero: SavedHero | null, item: ItemInstance): number {
+  const full = itemSellPrice(item)
+  if (hero === null || !(hero.pastLifeItemIds ?? []).includes(item.id)) return full
+  return Math.floor((full * carryPercent(hero.purchases)) / 100)
+}
+
+/**
  * Sell an item from the selected hero's archive, or one the hero is wearing (its slot is left empty, so the hero
  * cannot fight until it is filled). An heirloom cannot be sold.
  */
@@ -59,13 +70,16 @@ export function sellItem(save: SaveData, itemId: string): RosterResult {
   const item = archived ?? worn
   if (item === null || item === undefined) return { ok: false, reason: 'That item is not in the archive or worn by the selected hero.' }
   if (item.heirloom !== undefined) return { ok: false, reason: 'An heirloom cannot be sold.' }
-  const gold = purse.gold + itemSellPrice(item)
+  const gold = purse.gold + sellPriceFor(hero, item)
+  const past = hero?.pastLifeItemIds
+  const pruned = past === undefined ? {} : { pastLifeItemIds: past.filter((id) => id !== itemId) }
   if (archived !== undefined) {
-    return { ok: true, save: updatePurse(save, { gold, archive: purse.archive.filter((entry) => entry.id !== itemId) }) }
+    const next = updatePurse(save, { gold, archive: purse.archive.filter((entry) => entry.id !== itemId) })
+    return { ok: true, save: { ...next, heroes: next.heroes.map((entry) => (entry.id === hero?.id ? { ...entry, ...pruned } : entry)) } }
   }
   const next = updatePurse(save, { gold })
   const heroes = next.heroes.map((entry) =>
-    entry.id === hero?.id && slot !== undefined ? { ...entry, equipment: { ...entry.equipment, [slot]: null } } : entry,
+    entry.id === hero?.id && slot !== undefined ? { ...entry, ...pruned, equipment: { ...entry.equipment, [slot]: null } } : entry,
   )
   return { ok: true, save: { ...next, heroes } }
 }

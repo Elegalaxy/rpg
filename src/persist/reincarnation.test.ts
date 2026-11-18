@@ -17,24 +17,27 @@ import { createHero } from './roster.ts'
 import {
   ATTRIBUTE_SEED_COST,
   HEAD_START_COSTS,
+  HEAD_START_LEVELS,
   SECOND_HEIRLOOM_COST,
   SKILL_SEED_COSTS,
   bonusesDue,
   buyPurchase,
   headStartCost,
   headStartLevel,
+  heirloomAllowance,
   heirloomLevel,
   legacyPreview,
   masteryRank,
   masteryXpFactor,
   nextLifePreview,
   recallNeed,
+  recallTarget,
   recallXp,
   reincarnate,
   reincarnationBlock,
   scaleHeirlooms,
 } from './reincarnation.ts'
-import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, purseOf, updatePurse } from './save.ts'
+import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, type SavedHero, purseOf, updatePurse } from './save.ts'
 import { outcomeStats, outcomeSummary, settleExpedition } from './world.ts'
 
 function heroSave(race: 'human' | 'elf' = 'human'): SaveData {
@@ -163,7 +166,7 @@ describe('what reincarnation resets', () => {
     expect(purseOf(save).contracts).toEqual([])
   })
 
-  it('keeps mastery, purchases, Legacy, discoveries, recipes, crafting experience, gold, materials, and the archive', () => {
+  it('keeps mastery, purchases, Legacy, discoveries, recipes, crafting experience, a share of gold and materials, and the archive', () => {
     const before = veteran()
     const save = ok(reincarnate(before, 'hero-1', null))
     const next = hero(save)
@@ -174,8 +177,8 @@ describe('what reincarnation resets', () => {
     expect(save.account.discoveries).toEqual(before.account.discoveries)
     expect(save.account.recipes).toEqual(['keen', 'precise', 'nimble'])
     expect(next.craftXp).toBe(9)
-    expect(purseOf(save).gold).toBe(77)
-    expect(purseOf(save).materials).toEqual({ shard: 5 })
+    expect(purseOf(save).gold).toBe(15)
+    expect(purseOf(save).materials).toEqual({ shard: 1 })
     expect(purseOf(save).archive.find((item) => item.id === 'spare')).toEqual(purseOf(before).archive[0])
     expect(next.vow).toBe(hero(before).vow)
     expect(next.name).toBe('Ash')
@@ -305,7 +308,9 @@ describe('purchases', () => {
     const save = ok(buyPurchase(rich(), 'hero-1', 'heirloom'))
     expect(hero(save).legacy).toBe(200 - SECOND_HEIRLOOM_COST)
     expect(hero(save).purchases.secondHeirloom).toBe(true)
-    expect(buyPurchase(save, 'hero-1', 'heirloom')).toEqual({ ok: false, reason: 'You already have the Second Heirloom.' })
+    const third = ok(buyPurchase(save, 'hero-1', 'heirloom'))
+    expect(hero(third).purchases.thirdHeirloom).toBe(true)
+    expect(buyPurchase(third, 'hero-1', 'heirloom')).toEqual({ ok: false, reason: 'You already have every heirloom slot.' })
   })
 
   describe('apply to the current life (Step 13.30)', () => {
@@ -566,20 +571,24 @@ describe('Recall XP (Step 13.18)', () => {
 describe('Head Start (Step 13.18)', () => {
   function rich(): SaveData {
     const base = veteran()
-    return { ...base, heroes: base.heroes.map((h) => ({ ...h, legacy: 100 })) }
+    return { ...base, heroes: base.heroes.map((h) => ({ ...h, legacy: 200 })) }
   }
 
-  it('sells tier I for 20 Legacy and tier II for 35, in order, and nothing past that', () => {
+  it('sells tier I for 20 Legacy, II for 35 and III for 55, in order, and nothing past that', () => {
     let save = rich()
     expect(hero(save).purchases.headStart).toBe(0)
     save = ok(buyPurchase(save, 'hero-1', 'headStart'))
     expect(hero(save).purchases.headStart).toBe(1)
-    expect(hero(save).legacy).toBe(100 - HEAD_START_COSTS[0]!)
+    expect(hero(save).legacy).toBe(200 - HEAD_START_COSTS[0]!)
     save = ok(buyPurchase(save, 'hero-1', 'headStart'))
     expect(hero(save).purchases.headStart).toBe(2)
-    expect(hero(save).legacy).toBe(100 - HEAD_START_COSTS[0]! - HEAD_START_COSTS[1]!)
-    const third = buyPurchase(save, 'hero-1', 'headStart')
-    expect(third.ok).toBe(false)
+    expect(hero(save).legacy).toBe(200 - HEAD_START_COSTS[0]! - HEAD_START_COSTS[1]!)
+    save = ok(buyPurchase(save, 'hero-1', 'headStart'))
+    expect(hero(save).purchases.headStart).toBe(3)
+    expect(hero(save).legacy).toBe(200 - 20 - 35 - 55)
+    expect(HEAD_START_LEVELS).toEqual([5, 10, 15])
+    const fourth = buyPurchase(save, 'hero-1', 'headStart')
+    expect(fourth.ok).toBe(false)
     expect(headStartCost(hero(save).purchases)).toBeNull()
   })
 
@@ -595,7 +604,7 @@ describe('Head Start (Step 13.18)', () => {
     expect(hero(ok(reincarnate(rich(), 'hero-1', null))).progress.level).toBeGreaterThan(0)
     const none = hero(ok(reincarnate(rich(), 'hero-1', null)))
     expect(none.progress).toMatchObject({ level: 1, xp: 0, unspentAttributePoints: 0, unspentSkillPoints: 0 })
-    for (const [tier, level] of [[1, 5], [2, 10]] as const) {
+    for (const [tier, level] of [[1, 5], [2, 10], [3, 15]] as const) {
       const base = rich()
       const bought = { ...base, heroes: base.heroes.map((h) => ({ ...h, purchases: { ...h.purchases, headStart: tier, skillSeeds: 1 } })) }
       const started = hero(ok(reincarnate(bought, 'hero-1', null)))
@@ -620,7 +629,7 @@ describe('Head Start (Step 13.18)', () => {
     delete raw.heroes[0].purchases.headStart
     const parsed = parseSave(JSON.stringify(raw))
     expect(parsed.ok && hero(parsed.data).purchases.headStart).toBe(0)
-    raw.heroes[0].purchases.headStart = 3
+    raw.heroes[0].purchases.headStart = 4
     expect(parseSave(JSON.stringify(raw)).ok).toBe(false)
   })
 })
@@ -643,5 +652,120 @@ describe('nextLifePreview (Step 13.18)', () => {
     expect(plain.startLevel).toBe(1)
     expect(plain.recallUntil).toBe(hero(base).progress.level)
     expect(nextLifePreview(hero(heroSave()), []).recallUntil).toBeNull()
+  })
+})
+
+describe('lean inheritance (Step 13.31)', () => {
+  function stocked(patch: Partial<SavedHero> = {}, purchases: Partial<SavedHero['purchases']> = {}): SaveData {
+    const base = veteran()
+    return {
+      ...base,
+      heroes: base.heroes.map((h) => ({
+        ...h,
+        legacy: 500,
+        ...patch,
+        purchases: { ...h.purchases, ...purchases },
+        purse: { ...h.purse, gold: 10000, debt: 0, materials: { shard: 100, scrap: 7 }, supplies: { 'healing-draught': 3, antidote: 2 } },
+      })),
+    }
+  }
+
+  it('keeps 20% of gold, materials and supplies and drops stacks that round to nothing', () => {
+    const next = ok(reincarnate(stocked(), 'hero-1', null))
+    expect(purseOf(next).gold).toBe(2000)
+    expect(purseOf(next).materials).toEqual({ shard: 20, scrap: 1 })
+    expect(purseOf(next).supplies).toEqual({})
+    const preview = nextLifePreview(hero(stocked()), [])
+    expect(preview.carry.gold).toEqual({ now: 10000, kept: 2000 })
+  })
+
+  it('keeps the whole archive, the pack, free upgrades and recipes, and flags every archive item as earlier-life', () => {
+    const before = stocked({ pack: 'satchel', freeUpgrades: 2 })
+    const next = ok(reincarnate(before, 'hero-1', 'spare'))
+    expect(purseOf(next).archive.length).toBe(purseOf(before).archive.length + 8)
+    expect(hero(next).pastLifeItemIds).toEqual(purseOf(next).archive.map((item) => item.id))
+    expect(purseOf(next).archive.find((item) => item.id === 'spare')?.heirloom).toBeDefined()
+    expect(hero(next).pack).toBe('satchel')
+    expect(hero(next).freeUpgrades).toBe(2)
+    expect(next.account.recipes).toEqual(before.account.recipes)
+  })
+
+  it('refuses while crafting jobs are queued or running', () => {
+    const base = stocked()
+    const job = { id: 'job-1' } as unknown as SavedHero['purse']['craftQueue'][number]
+    const queued = { ...base, heroes: base.heroes.map((h) => ({ ...h, purse: { ...h.purse, craftQueue: [job] } })) }
+    expect(reincarnate(queued, 'hero-1', null)).toEqual({ ok: false, reason: 'Wait for the crafters: jobs are queued or running. They finish first.' })
+  })
+
+  it('loads an old save without the new fields and reads them as none', () => {
+    const raw = JSON.parse(serializeSave(stocked()))
+    for (const key of ['stockpile', 'artisan', 'longMemory', 'thirdHeirloom']) delete raw.heroes[0].purchases[key]
+    delete raw.heroes[0].pastLifeItemIds
+    const parsed = parseSave(JSON.stringify(raw))
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    expect(nextLifePreview(hero(parsed.data), []).carry.percent).toBe(20)
+    raw.heroes[0].purchases.stockpile = 4
+    expect(parseSave(JSON.stringify(raw)).ok).toBe(false)
+  })
+
+  it('Stockpile costs 20, 35 and 50, raises the share at once, and stops after III', () => {
+    let save = stocked()
+    for (const [tier, cost, percent] of [[1, 20, 30], [2, 35, 40], [3, 50, 50]] as const) {
+      const before = hero(save).legacy
+      save = ok(buyPurchase(save, 'hero-1', 'stockpile'))
+      expect(hero(save).purchases.stockpile).toBe(tier)
+      expect(hero(save).legacy).toBe(before - cost)
+      expect(nextLifePreview(hero(save), []).carry.percent).toBe(percent)
+    }
+    expect(purseOf(ok(reincarnate(save, 'hero-1', null))).gold).toBe(5000)
+    expect(buyPurchase(save, 'hero-1', 'stockpile').ok).toBe(false)
+  })
+
+  it('Artisan Favor costs 30 and 45, gives a token now and starts each life with 1 or 2 more', () => {
+    let save = stocked({ freeUpgrades: 1 })
+    save = ok(buyPurchase(save, 'hero-1', 'artisan'))
+    expect(hero(save).legacy).toBe(470)
+    expect(hero(save).freeUpgrades).toBe(2)
+    expect(nextLifePreview(hero(save), []).tokens).toBe(3)
+    expect(hero(ok(reincarnate(save, 'hero-1', null))).freeUpgrades).toBe(3)
+    save = ok(buyPurchase(save, 'hero-1', 'artisan'))
+    expect(hero(save).legacy).toBe(425)
+    expect(hero(save).freeUpgrades).toBe(3)
+    // Tokens stack across lives: 3 now plus 2 for the next life.
+    expect(hero(ok(reincarnate(save, 'hero-1', null))).freeUpgrades).toBe(5)
+    expect(buyPurchase(save, 'hero-1', 'artisan').ok).toBe(false)
+  })
+
+  it('Third Heirloom needs the Second, costs 50, and allows a third heirloom', () => {
+    const base = stocked()
+    expect(hero(base).purchases.secondHeirloom).toBe(false)
+    let save = ok(buyPurchase(base, 'hero-1', 'heirloom'))
+    expect(hero(save).purchases).toMatchObject({ secondHeirloom: true })
+    expect(heirloomAllowance(hero(save))).toBe(2)
+    save = ok(buyPurchase(save, 'hero-1', 'heirloom'))
+    expect(hero(save).legacy).toBe(500 - SECOND_HEIRLOOM_COST - 50)
+    expect(heirloomAllowance(hero(save))).toBe(3)
+    expect(buyPurchase(save, 'hero-1', 'heirloom')).toEqual({ ok: false, reason: 'You already have every heirloom slot.' })
+    expect(heirloomAllowance(hero(base))).toBe(1)
+  })
+
+  it('Long Memory costs 25 and 40 and lifts the Recall target to peak + 3 / + 6', () => {
+    const base = stocked({ peakLevel: 10 })
+    expect(recallTarget(hero(base))).toBe(10)
+    const one = ok(buyPurchase(base, 'hero-1', 'memory'))
+    expect(hero(one).legacy).toBe(475)
+    expect(recallTarget(hero(one))).toBe(13)
+    const two = ok(buyPurchase(one, 'hero-1', 'memory'))
+    expect(hero(two).legacy).toBe(435)
+    expect(recallTarget(hero(two))).toBe(16)
+    expect(buyPurchase(two, 'hero-1', 'memory').ok).toBe(false)
+    const low = { ...hero(heroSave()), peakLevel: 10 }
+    const need = (tier: number) => recallNeed({ ...low, purchases: { ...low.purchases, longMemory: tier } })
+    expect(need(0)).toBe(cumulativeXpToReachLevel(10))
+    expect(need(1)).toBe(cumulativeXpToReachLevel(13))
+    expect(need(2)).toBe(cumulativeXpToReachLevel(16))
+    expect(recallTarget({ ...low, peakLevel: undefined })).toBeNull()
+    expect(nextLifePreview({ ...hero(two), peakLevel: 10 }, []).recallUntil).toBe(Math.max(16, hero(two).progress.level + 6))
   })
 })

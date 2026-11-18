@@ -208,6 +208,14 @@ export type HeroPurchases = {
   deepPockets: boolean
   /** Head Start tiers bought: 0 none, 1 start at level 5, 2 start at level 10 (Step 13.18). */
   headStart: number
+  /** Stockpile tiers bought, 0 to 3: the carried share becomes 30, 40 or 50% (Step 13.31). Absent means 0. */
+  stockpile?: number
+  /** Artisan's Favor tiers bought, 0 to 2: each new life starts with that many more free upgrade tokens. Absent means 0. */
+  artisan?: number
+  /** Long Memory tiers bought, 0 to 2: Recall reaches 3 or 6 levels above the peak. Absent means 0. */
+  longMemory?: number
+  /** Whether the Third Heirloom was bought. Absent means false. */
+  thirdHeirloom?: boolean
 }
 
 export const EMPTY_PURCHASES: HeroPurchases = {
@@ -247,6 +255,8 @@ export type SavedHero = {
   firstClearIds?: string[]
   /** Unspent free upgrade tokens from first clears. Absent means 0. */
   freeUpgrades?: number
+  /** Ids of the archive items kept from earlier lives. They sell at the carried share only (Step 13.31). Absent means none. */
+  pastLifeItemIds?: string[]
   /** Retreat when HP falls to this fraction of maximum. Null never retreats. */
   retreatAtMost: number | null
   /** Special arrows a Ranger packs for an expedition. 0 for other classes. */
@@ -601,9 +611,15 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check(typeof value.purchases.secondHeirloom === 'boolean', `${label} second heirloom must be true or false`)
   check(typeof value.purchases.deepPockets === 'boolean', `${label} deep pockets must be true or false`)
   check(
-    typeof value.purchases.headStart === 'number' && Number.isInteger(value.purchases.headStart) && value.purchases.headStart >= 0 && value.purchases.headStart <= 2,
-    `${label} head start must be 0, 1 or 2`,
+    typeof value.purchases.headStart === 'number' && Number.isInteger(value.purchases.headStart) && value.purchases.headStart >= 0 && value.purchases.headStart <= 3,
+    `${label} head start must be 0, 1, 2 or 3`,
   )
+  for (const [key, max, text] of [['stockpile', 3, 'stockpile'], ['artisan', 2, "artisan's favor"], ['longMemory', 2, 'long memory']] as const) {
+    const tier = value.purchases[key]
+    check(tier === undefined || (typeof tier === 'number' && Number.isInteger(tier) && tier >= 0 && tier <= max), `${label} ${text} must be a whole number from 0 to ${max}`)
+  }
+  check(value.purchases.thirdHeirloom === undefined || typeof value.purchases.thirdHeirloom === 'boolean', `${label} third heirloom must be true or false`)
+  check(value.pastLifeItemIds === undefined || (Array.isArray(value.pastLifeItemIds) && value.pastLifeItemIds.every((id: unknown) => typeof id === 'string')), `${label} earlier-life items must be a list of text`)
   whole(value.echoRank, `${label} Echo rank`)
   whole(value.fightRank, `${label} fight rank`)
   check(value.fightRank <= value.echoRank, `${label} fight rank is above the Echo rank it has unlocked`)

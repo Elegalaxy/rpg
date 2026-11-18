@@ -9,6 +9,7 @@ import { awardXp, createProgress, legacyFromProgress, type HeroProgress } from '
 import { cumulativeXpToReachLevel, type Attributes } from '../sim/stats.ts'
 
 import { DEEP_POCKETS_COST } from './bag.ts'
+import { STOCKPILE_COSTS, carriedPurse, carryOver, type CarryOver } from './carryOver.ts'
 import { unionElites } from './remembered.ts'
 import { reachMilestone, type HeroPurchases, type SaveData, type SavedHero } from './save.ts'
 import type { RosterResult } from './roster.ts'
@@ -29,8 +30,16 @@ export const ATTRIBUTE_SEED_MAX = 10
 export const SKILL_SEED_COSTS: readonly number[] = [8, 12, 16]
 export const SECOND_HEIRLOOM_COST = 25
 /** Head Start tiers (Step 13.18): the level each new life starts at, and the Legacy each tier costs. */
-export const HEAD_START_LEVELS: readonly number[] = [5, 10]
-export const HEAD_START_COSTS: readonly number[] = [20, 35]
+export const HEAD_START_LEVELS: readonly number[] = [5, 10, 15]
+export const HEAD_START_COSTS: readonly number[] = [20, 35, 55]
+/** Third Heirloom (Step 13.31): keep a third heirloom. Needs the Second Heirloom. */
+export const THIRD_HEIRLOOM_COST = 50
+/** Artisan's Favor tiers: free upgrade tokens each new life starts with, and the Legacy each tier costs. */
+export const ARTISAN_TOKENS: readonly number[] = [1, 2]
+export const ARTISAN_COSTS: readonly number[] = [30, 45]
+/** Long Memory tiers: the levels above the peak that Recall reaches, and the Legacy each tier costs. */
+export const LONG_MEMORY_LEVELS: readonly number[] = [3, 6]
+export const LONG_MEMORY_COSTS: readonly number[] = [25, 40]
 
 export type Bonus = { id: string; text: string; amount: number }
 
@@ -43,11 +52,18 @@ export function masteryXpFactor(rank: number): number {
   return 1 + MASTERY_XP_PER_RANK * rank
 }
 
-/** XP the hero still needs to reach their peak level from where they stand. 0 without a peak or at or above it. */
-export function recallNeed(hero: SavedHero): number {
+/** The level Recall doubles run XP up to: the peak plus the Long Memory levels, or null without a peak. */
+export function recallTarget(hero: SavedHero): number | null {
   const peak = hero.peakLevel
-  if (peak === undefined) return 0
-  const need = cumulativeXpToReachLevel(peak) - (cumulativeXpToReachLevel(hero.progress.level) + hero.progress.xp)
+  if (peak === undefined) return null
+  return peak + (LONG_MEMORY_LEVELS[(hero.purchases.longMemory ?? 0) - 1] ?? 0)
+}
+
+/** XP the hero still needs to reach their recall target from where they stand. 0 without a peak or at or above it. */
+export function recallNeed(hero: SavedHero): number {
+  const target = recallTarget(hero)
+  if (target === null) return 0
+  const need = cumulativeXpToReachLevel(target) - (cumulativeXpToReachLevel(hero.progress.level) + hero.progress.xp)
   return need > 0 ? need : 0
 }
 
@@ -111,13 +127,14 @@ export function bossFaced(hero: Pick<SavedHero, 'bossLossThisLife' | 'echoRank'>
 export function reincarnationBlock(save: SaveData, hero: SavedHero): string | null {
   if (save.expedition !== null) return 'Finish the expedition first.'
   if ((hero.training?.queue.length ?? 0) > 0) return 'Wait for the Trainer: drills are queued or running. They finish first.'
+  if (hero.purse.craftQueue.length > 0) return 'Wait for the crafters: jobs are queued or running. They finish first.'
   if (bossFaced(hero) === null) return 'Face a boss first. Reincarnation opens after you lose to or defeat the Fractured Warden this life.'
   return null
 }
 
-/** How many heirlooms this hero may keep: one, or two with the Second Heirloom. */
+/** How many heirlooms this hero may keep: one, plus the Second and the Third Heirloom. */
 export function heirloomAllowance(hero: SavedHero): number {
-  return hero.purchases.secondHeirloom ? 2 : 1
+  return 1 + (hero.purchases.secondHeirloom ? 1 : 0) + (hero.purchases.thirdHeirloom === true ? 1 : 0)
 }
 
 export function heirloomLevel(item: ItemInstance, heroLevel: number): number {
@@ -171,6 +188,11 @@ function startingAttributes(hero: SavedHero): Attributes {
   }
 }
 
+/** Free upgrade tokens a new life starts with from Artisan's Favor. */
+export function artisanTokens(purchases: HeroPurchases): number {
+  return ARTISAN_TOKENS[(purchases.artisan ?? 0) - 1] ?? 0
+}
+
 /** What a new life starts with: the racial base, the seeds, the Head Start level and the Skill Point Seeds. */
 export function startingProgress(hero: SavedHero): HeroProgress {
   const web = classWebs[hero.classId]
@@ -187,6 +209,10 @@ export type NextLife = {
   zones: string[]
   /** The level Recall doubles run XP up to, or null when the hero would have no peak above their start. */
   recallUntil: number | null
+  /** What the reincarnation keeps of gold, debt, materials and supplies (Step 13.31). */
+  carry: CarryOver
+  /** Free upgrade tokens the hero will hold at the start of the next life. */
+  tokens: number
   startLevel: number
   attributePoints: number
   skillPoints: number
@@ -201,9 +227,12 @@ export function nextLifePreview(hero: SavedHero, discoveries: readonly string[])
     .map((node) => node.name)
   const start = startingProgress(hero)
   const peak = Math.max(hero.peakLevel ?? 0, hero.progress.level)
+  const target = peak + (LONG_MEMORY_LEVELS[(hero.purchases.longMemory ?? 0) - 1] ?? 0)
   return {
     zones,
-    recallUntil: peak > start.level ? peak : null,
+    recallUntil: target > start.level ? target : null,
+    carry: carryOver(hero),
+    tokens: (hero.freeUpgrades ?? 0) + artisanTokens(hero.purchases),
     startLevel: start.level,
     attributePoints: start.unspentAttributePoints,
     skillPoints: start.unspentSkillPoints,
@@ -273,21 +302,24 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     peakLevel: Math.max(hero.peakLevel ?? 0, hero.progress.level),
     claimedBonuses: [...hero.claimedBonuses, ...preview.bonuses.map((bonus) => bonus.id)],
     equipment: starterEquipment(hero.id, hero.classId, lives),
-    purse: { ...hero.purse, archive: nextArchive, contracts: [] },
+    // Step 13.31: only the carried share of gold, debt, materials and supplies stays; all gear stays.
+    purse: carriedPurse({ ...hero.purse, archive: nextArchive, contracts: [] }, carryOver(hero)),
+    pastLifeItemIds: nextArchive.map((item) => item.id),
+    freeUpgrades: (hero.freeUpgrades ?? 0) + artisanTokens(hero.purchases),
   }
   const account = reachMilestone(save.account, 'first-reincarnation')
   const next: SaveData = { ...save, account, heroes: save.heroes.map((entry) => (entry.id === heroId ? renewed : entry)) }
   return { ok: true, save: scaleHeirlooms(next, heroId), hero: renewed }
 }
 
-export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets' | 'headStart'
+export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets' | 'headStart' | 'stockpile' | 'artisan' | 'memory'
 
 /** The level each new life starts at: 1, or the level of the Head Start tier bought. */
 export function headStartLevel(purchases: HeroPurchases): number {
   return HEAD_START_LEVELS[purchases.headStart - 1] ?? 1
 }
 
-/** The Legacy cost of the next Head Start tier, or null when both are bought. */
+/** The Legacy cost of the next Head Start tier, or null when all are bought. */
 export function headStartCost(purchases: HeroPurchases): number | null {
   return HEAD_START_COSTS[purchases.headStart] ?? null
 }
@@ -329,19 +361,42 @@ export function buyPurchase(
     purchases = { ...purchases, deepPockets: true }
   } else if (kind === 'headStart') {
     const price = headStartCost(hero.purchases)
-    if (price === null) return { ok: false, reason: 'You already have both Head Starts.' }
+    if (price === null) return { ok: false, reason: 'You already have every Head Start.' }
     cost = price
     purchases = { ...purchases, headStart: purchases.headStart + 1 }
-  } else {
-    if (hero.purchases.secondHeirloom) return { ok: false, reason: 'You already have the Second Heirloom.' }
+  } else if (kind === 'stockpile') {
+    const price = STOCKPILE_COSTS[hero.purchases.stockpile ?? 0]
+    if (price === undefined) return { ok: false, reason: 'You already have every Stockpile.' }
+    cost = price
+    purchases = { ...purchases, stockpile: (hero.purchases.stockpile ?? 0) + 1 }
+  } else if (kind === 'artisan') {
+    const price = ARTISAN_COSTS[hero.purchases.artisan ?? 0]
+    if (price === undefined) return { ok: false, reason: "You already have every Artisan's Favor." }
+    cost = price
+    purchases = { ...purchases, artisan: (hero.purchases.artisan ?? 0) + 1 }
+  } else if (kind === 'memory') {
+    const price = LONG_MEMORY_COSTS[hero.purchases.longMemory ?? 0]
+    if (price === undefined) return { ok: false, reason: 'You already have every Long Memory.' }
+    cost = price
+    purchases = { ...purchases, longMemory: (hero.purchases.longMemory ?? 0) + 1 }
+  } else if (!hero.purchases.secondHeirloom) {
     cost = SECOND_HEIRLOOM_COST
     purchases = { ...purchases, secondHeirloom: true }
+  } else if (hero.purchases.thirdHeirloom !== true) {
+    cost = THIRD_HEIRLOOM_COST
+    purchases = { ...purchases, thirdHeirloom: true }
+  } else {
+    return { ok: false, reason: 'You already have every heirloom slot.' }
   }
   if (hero.legacy < cost) return { ok: false, reason: `That costs ${cost} Legacy. ${hero.name} has ${hero.legacy}.` }
   const progress = applyToCurrentLife(hero.progress, kind, attribute, purchases)
+  // Artisan's Favor also hands over one token now (Step 13.31); later lives add the tier total at reincarnation.
+  const freeUpgrades = (hero.freeUpgrades ?? 0) + (kind === 'artisan' ? 1 : 0)
   const bought: SaveData = {
     ...save,
-    heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, legacy: entry.legacy - cost, purchases, progress } : entry)),
+    heroes: save.heroes.map((entry) =>
+      entry.id === heroId ? { ...entry, legacy: entry.legacy - cost, purchases, progress, ...(kind === 'artisan' ? { freeUpgrades } : {}) } : entry,
+    ),
   }
   // A Head Start can raise the level, so heirlooms are brought to the new level.
   return { ok: true, save: progress.level === hero.progress.level ? bought : scaleHeirlooms(bought, heroId) }
