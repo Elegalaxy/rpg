@@ -2594,6 +2594,18 @@ Building blocks live in `src/ui/Kit.tsx` and `src/ui/kit.css`. Use the existing 
 - Long lists fold into `Collapsible` sections with a count in the summary. Enchanter recipes group by the first kind of item they fit (weapons, off-hands, armor, accessories), sorted by minimum level, price, then name; the group with the newest learnable recipe opens first. The Trading Post lists every material with where it drops (`materialSources`: routes whose last node yields it, then enemies and resource nodes). Which recipes the player has seen is local UI state (`rpg.enchanterSeen`), not part of the save.
 - Avoid extra section cards and boxes; group with spacing first.
 
+### Guide page (2026-11-18)
+
+An in-game Guide explains the game in one searchable place. It is a main tab after "What's new" and is also reachable from the Welcome (no-hero) screen with a "Read the guide" button.
+
+- Sections: Basics (the loop, getting started), Classes (one entry per class, plus the three Cleric vows as a "Cleric vows" group), Races, Skills (one entry per class-owned skill, grouped by class; skills that a class web does not grant directly are listed with how they unlock, hidden helper skills have no entry), Statuses, Supplies (every supply, gated ones labelled "Unlocks after ..."), Expeditions (including Rules and mastery) and Reincarnation.
+- Generated numbers: every number shown comes from the content and sim definitions (skill costs, cooldowns, supply prices, status fields, vow constants). Changing a number in code changes the Guide with no extra edit.
+- No digits in hand-written prose: the prose lives only in `src/content/guide.ts` and must contain no digits, so it can never go stale against the numbers. A test enforces this. Prose explains how things work; the generated facts carry the values.
+- Class entries show the cluster introductions and keystone names only; node details stay on the Skills screen (the entry links there). Skill-web nodes can change base values, so the Guide shows base values and says so.
+- Vow conditions mirror section 4 (Cleric: Faith): Zeal generates Faith when a hero action deals direct HP damage, at most once per hero action; Endurance generates Faith for HP lost or barrier damage absorbed, capped per enemy action; Temperance generates Faith after an action ends in a middle band of HP without overhealing or resource overcap. Failing an ordinary vow condition only stops generation.
+- Deep links: small "Guide" links sit next to the existing Help on hero creation (race and class), the vow picker, Combat setup (Rules), the skill web and Legacy. A link switches to the Guide tab, clears search and filter, opens the section, scrolls to the entry, focuses its heading and highlights it briefly.
+- Search is case-insensitive over title, summary, facts, effect lines and prose. A search with no result shows an empty state with a Clear button.
+
 ## 13. Technical Direction
 
 - TypeScript and React are the preferred starting stack.
