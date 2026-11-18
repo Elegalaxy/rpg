@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: a Guide page explains classes, races, Cleric vows, skills, statuses, supplies, expeditions and reincarnation, with search. [13.23]
 - Fixed: Auto run no longer waits for you when the bag is nearly full and the order is "Hold and wait for me"; it walks home, banks the loot and reruns the route, live and while you are away.
 - Tech: the road can run with 5 or 6 supply slots (not used yet), and a new `--matrix pack` measures 4, 5 and 6 slots against the elites. [13.22]
 - Tech: the design for a craftable backpack (Satchel 5 slots, Field Pack 6) is written down; nothing changes in play yet. [13.22]

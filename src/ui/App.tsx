@@ -12,6 +12,7 @@ import { scenarios } from '../content/scenarios.ts'
 import type { CombatState } from '../sim/types.ts'
 import { CHANGELOG_SECTIONS, changelogKey } from './whatsNew/changelog.ts'
 import { WhatsNew } from './whatsNew/WhatsNew.tsx'
+import { Guide } from './guide/Guide.tsx'
 import { readSeen, writeSeen } from './whatsNew/seen.ts'
 
 import { Attributes } from './character/Attributes.tsx'
@@ -72,7 +73,7 @@ function shownTimeMs(combat: CombatState): number {
   return combat.timeMs
 }
 
-type AppTab = Tab | 'whatsnew'
+type AppTab = Tab | 'whatsnew' | 'guide'
 
 const TABS: { id: AppTab; label: string }[] = [
   { id: 'heroes', label: 'Hero' },
@@ -81,6 +82,7 @@ const TABS: { id: AppTab; label: string }[] = [
   { id: 'roster', label: 'Roster' },
   { id: 'combat', label: 'Combat viewer' },
   { id: 'whatsnew', label: "What's new" },
+  { id: 'guide', label: 'Guide' },
 ]
 
 type HeroPart = 'overview' | 'skills' | 'combat' | 'gear' | 'legacy'
@@ -313,6 +315,7 @@ export function CombatViewer() {
 
 function App() {
   const [tab, setTab] = useState<AppTab>('heroes')
+  const [welcomeGuide, setWelcomeGuide] = useState(false)
   const latestKey = changelogKey(CHANGELOG_SECTIONS)
   const [seenKey, setSeenKey] = useState<string | null>(readSeen)
   const [heroPart, setHeroPart] = useState<HeroPart>('overview')
@@ -384,7 +387,23 @@ function App() {
             Lead a hero out of Greyhaven along the Splintered Road, gather loot, and grow strong enough to face the Fractured Warden at the
             Fracture Gate. Fights play out by themselves from the rules you set. Start by creating a hero.
           </p>
-          <CreateHero />
+          {welcomeGuide ? (
+            <>
+              <button type="button" onClick={() => setWelcomeGuide(false)}>
+                Back to hero creation
+              </button>
+              <Guide />
+            </>
+          ) : (
+            <>
+              <p>
+                <button type="button" onClick={() => setWelcomeGuide(true)}>
+                  Read the guide
+                </button>
+              </p>
+              <CreateHero />
+            </>
+          )}
         </section>
       ) : (
         <>
@@ -469,6 +488,7 @@ function App() {
               ) : null}
               {tab === 'combat' ? <CombatViewer /> : null}
               {tab === 'whatsnew' ? <WhatsNew /> : null}
+              {tab === 'guide' ? <Guide /> : null}
             </main>
             {docked ? <RunDock onOpenMap={() => setTab('map')} /> : null}
           </div>
