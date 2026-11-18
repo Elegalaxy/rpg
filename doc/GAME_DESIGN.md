@@ -2224,6 +2224,42 @@ Timing (Step 13.11). A drill takes `DRILL_MS = 45,000` (45 seconds). Drills run 
 
 Not decided and not built: any change to item level caps, a shared vault, selling or reforging modifiers.
 
+### First-clear rewards (Step 13.24)
+
+Why: the gold and material sinks above are fed by repeating routes, and the first time a hero finishes a zone is the one moment nothing marks it. A first clear now pays a small one-time reward, so reaching a new zone is a step forward in its own right. The sim, content numbers and every harness matrix are untouched.
+
+**Rule.** The first time a hero clears a zone node and gets home safely, the hero earns all three rewards together (not a choice):
+
+- Gold and material: `rewardFor(30, node.levels.max, resource)` from `src/content/contracts.ts` without its XP, so gold is `30 x node.levels.max` and the material is `ceil(30 / 2) = 15` of the node's resource. The Fracture Gate has no resource, so it pays gold only.
+- One free upgrade token (`FIRST_CLEAR_TOKENS = 1`).
+- At the Drowned Causeway, Rift Hollows and Cinder Scar only: +2 Legacy (`ZONE_CLEAR_BONUS`), claimed at the next reincarnation (section 10).
+
+| Node | Max level | Gold | Material | Token | Legacy |
+|---|---|---|---|---|---|
+| Splintered Road | 6 | 180 | 15 scrap | 1 | none |
+| Withered Grove | 14 | 420 | 15 hide | 1 | none |
+| Fallen Bastion | 16 | 480 | 15 shard | 1 | none |
+| Fracture Gate | 20 | 600 | none | 1 | none |
+| Drowned Causeway | 22 | 660 | 15 riftglass | 1 | +2 |
+| Rift Hollows | 28 | 840 | 15 duskiron | 1 | +2 |
+| Cinder Scar | 34 | 1,020 | 15 cinderite | 1 | +2 |
+
+- Once per hero per zone node, not per route. The Fracture Gate ends two routes and pays once. It is paid only when the run's outcome is `returned`: a node cleared on a run that ends in defeat stays due until a later safe return. Reincarnation never resets it, so a re-clear in a later life pays nothing.
+- Paid when the run is settled, the same function for a live run and an away run, so both give the same purse. A run that clears several unpaid nodes pays all of them (for example a Grove run pays the Splintered Road's reward too if it was never paid).
+- Old saves are paid retroactively: a hero whose `clearedNodeIds` already hold a node, with no `firstClearIds` field, is owed that node's reward at the next safe return. Absent field means nothing claimed.
+- No hero-card title (a follow-up, not built).
+
+**Free upgrade token.** A token is spent at the crafters, instantly (not a craft job), to do one of two things on one item:
+
+- Open a socket: hero level 10 or more, as for the paid job; no quality lift, no gold and no material. The item must have no socket yet. Quality, ranks, tempers, heirloom status and durability stay as they were.
+- Rank a modifier from I to II: the hero's level must reach the modifier's `minLevel`; no gold and no material; the temper stays as it was. Never from II to III (`FREE_RANK_MAX = 2`), and not for Hauler's.
+
+Like all crafting it is refused during an expedition, and for an item held by a queued job. A token cannot be cancelled or refunded once spent. Crafting XP is unchanged.
+
+**Save fields.** `SavedHero.firstClearIds?: string[]` (nodes already paid) and `SavedHero.freeUpgrades?: number` (whole number, 0 or more). Both are optional, absent means none, there is no version bump, and both carry through reincarnation.
+
+**Sink arithmetic.** A hero can earn at most 7 tokens in all. Seven free sockets replace at most 7 x 880 gold (the dearest socket, level 22 x 40) and 56 of the rare material, once per hero. The gold and material of the rewards total 4,200 gold and 90 material once per hero, small beside a run's loot.
+
 ### Equipment math
 
 MVP combat slots:
@@ -2483,6 +2519,7 @@ Reincarnation preserves:
 - Individual mastery and purchased legacy upgrades
 - Known map locations
 - Route returns (`routeReturns`)
+- First-clear records and unspent free upgrades (`firstClearIds`, `freeUpgrades`, Step 13.24)
 - The crafted backpack (`pack`, Step 13.22)
 - Recipes and crafting proficiency
 - Deposited gold
@@ -2499,6 +2536,7 @@ First-playable reincarnation numbers, decided 2026-11-01:
 
 - Currency is Legacy: `2 × (level − 1) + floor(5 × XP into the level ÷ XP to the next level)`, so a level 20 hero gets about 38.
 - One-time bonuses per hero, claimed at the next reincarnation after the hero first reaches them: +3 for each elite first defeated (Rootmaw Stalker, Echo Knight), +20 for the first Warden defeat, and +5 for each Echo rank first unlocked.
+- First clear of a late zone (Step 13.24): +2 for each of the Drowned Causeway, Rift Hollows and Cinder Scar (`ZONE_CLEAR_BONUS = 2`), once that zone's first-clear reward has been paid. It reads `firstClearIds`, not `clearedNodeIds`, so a zone cleared on a run that ended in defeat does not count yet. Claimed at the next reincarnation like the others.
 - Legacy buys hero-bound purchases that last across lives. Attribute Seed adds 1 to a starting attribute of the hero's choice and costs 3, up to 10 in total. Skill Point Seed gives 1 unallocated skill point at the start of each life and costs 8, then 12, then 16, up to 3. Second Heirloom lets the hero keep one more heirloom and costs 25, once.
 - Mastery is the hero's completed lives, up to 10. Each rank adds 2% ordinary XP, up to +20%, and nothing else.
 - The reset and preserve lists above apply. The hero's current contracts are cleared. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
@@ -2615,6 +2653,7 @@ An in-game Guide explains the game in one searchable place. It is a main tab aft
 - Class entries show the cluster introductions and keystone names only; node details stay on the Skills screen (the entry links there). Skill-web nodes can change base values, so the Guide shows base values and says so.
 - Vow conditions mirror section 4 (Cleric: Faith): Zeal generates Faith when a hero action deals direct HP damage, at most once per hero action; Endurance generates Faith for HP lost or barrier damage absorbed, capped per enemy action; Temperance generates Faith after an action ends in a middle band of HP without overhealing or resource overcap. Failing an ordinary vow condition only stops generation.
 - Deep links: small "Guide" links sit next to the existing Help on hero creation (race and class), the vow picker, Combat setup (Rules), the skill web and Legacy. A link switches to the Guide tab, clears search and filter, opens the section, scrolls to the entry, focuses its heading and highlights it briefly.
+- First-clear rewards (Step 13.24) get a line in the Expeditions entry (prose, no digits) and generated facts per zone (gold, material, free upgrade, Legacy) read from the first-clear table in code.
 - Search is case-insensitive over title, summary, facts, effect lines and prose. A search with no result shows an empty state with a Clear button.
 
 ## 13. Technical Direction
