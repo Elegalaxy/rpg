@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '../../content/world.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { createHero } from '../../persist/roster.ts'
-import { newSave, parseSave, serializeSave, type SavedHero } from '../../persist/save.ts'
+import { runOffline } from '../../persist/offline.ts'
+import { newSave, parseSave, serializeSave, type SaveData, type SavedHero } from '../../persist/save.ts'
 import { advanceExpedition, commitSave, expeditionWaiting, getAutoNotice, getSaveStatus, pushOnFromUi, setAutoRunFromUi, startExpeditionFromUi } from '../store.ts'
 import { ExpeditionPanel } from './ExpeditionPanel.tsx'
 
@@ -153,6 +154,76 @@ describe('Auto run in a live run', () => {
     pushOnFromUi()
     expect(expeditionWaiting()).toBe(false)
   }, 120_000)
+})
+
+describe('Auto run in the endless mode (Step 13.26)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('does not walk home for the HP floor, the fight order or a full bag', () => {
+    const run = startRun({ autoRun: true, autoRunMode: 'endless', repeatRoute: false, pushOnHpPercent: 100, stopAfterFights: 1, bagFullOrder: 'home' })
+    play(() => run.history.length >= 4 || run.outcome !== 'ongoing')
+    expect(run.history.length).toBeGreaterThanOrEqual(4)
+    expect(run.outcome).toBe('ongoing')
+    run.unsecured = [{ materialId: 'hide', quantity: run.lootCapacity ?? 26 }]
+    const fights = run.history.length
+    play(() => run.history.length >= fights + 2 || run.outcome !== 'ongoing')
+    expect(run.history.length).toBeGreaterThanOrEqual(fights + 2)
+    expect(run.outcome).toBe('ongoing')
+  }, 240_000)
+
+  it('repeats the route after a retreat ends the run', () => {
+    const run = startRun({ autoRun: true, autoRunMode: 'endless', repeatRoute: false, pushOnHpPercent: 100 })
+    play(() => expeditionWaiting() || run.history.length >= 1)
+    run.retreatThresholds = [{ kind: 'hpFraction', atMost: 0.5 }]
+    run.hero.hp = Math.floor(run.hero.maxHp * 0.3)
+    play(() => getSaveStatus().save.expedition !== run)
+    const next = getSaveStatus().save.expedition
+    expect(next).not.toBeNull()
+    expect(next).not.toBe(run)
+    expect(run.outcome).toBe('returned')
+    expect(hero()?.autoRun).toBe(true)
+  }, 240_000)
+
+  it('stops at the total fight limit like the repeat mode', () => {
+    const run = startRun({ autoRun: true, autoRunMode: 'endless', repeatRoute: true, pushOnHpPercent: 100, autoRunMaxFights: 3 })
+    play(() => run.outcome !== 'ongoing')
+    expect(run.history).toHaveLength(3)
+    expect(hero()?.autoRun).toBe(false)
+  }, 240_000)
+
+  it('stops and switches off on a defeat', () => {
+    const run = startRun({ autoRun: true, autoRunMode: 'endless', repeatRoute: true, retreatAtMost: null })
+    run.retreatThresholds = []
+    run.heroTemplate.attributes = { strength: 1, vitality: 1, agility: 1, intellect: 1, spirit: 1 }
+    run.hero.maxHp = 20
+    run.hero.hp = 1
+    play(() => run.outcome !== 'ongoing')
+    expect(run.outcome).toBe('defeat')
+    expect(hero()?.autoRun).toBe(false)
+    expect(getAutoNotice()).toContain('defeated')
+  }, 120_000)
+
+  it('plays the same fights live and in the away replay', () => {
+    const settings = { autoRun: true, autoRunMode: 'endless' as const, repeatRoute: false, pushOnHpPercent: 100, stopAfterFights: 1, autoRunMaxFights: 5 }
+    const run = startRun(settings)
+    const away = JSON.parse(JSON.stringify(getSaveStatus().save)) as SaveData
+    play(() => run.outcome !== 'ongoing')
+    const live = run.history.map((entry) => entry.encounterId)
+    const replay = runOffline(away, 30 * 60_000, true)
+    const heroAway = replay.summary.heroes[0]
+    expect(live).toHaveLength(5)
+    expect(replay.save.expedition?.history.map((entry) => entry.encounterId)).toEqual(live)
+    expect(heroAway?.stopped).toBe('autoLimit')
+    expect(replay.save.heroes[0]?.autoRun).toBe(false)
+    expect(hero()?.autoRun).toBe(false)
+  }, 240_000)
 })
 
 describe('Auto run in the save', () => {

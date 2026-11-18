@@ -469,6 +469,11 @@ export function fightLimitReached(expedition: ExpeditionState, limit: number | n
   return limit !== null && expedition.history.length >= limit
 }
 
+/** True when Auto run is on in the endless mode: the run only ends by a retreat, a defeat or the total fight limit. */
+export function isEndlessAutoRun(hero: Pick<SavedHero, 'autoRun' | 'autoRunMode'>): boolean {
+  return hero.autoRun === true && hero.autoRunMode === 'endless'
+}
+
 /** What the standing orders say at a hold: walk home (`fights`, `hp`, `bag`), wait for the player (`ask`, bag full with the hold order), or `push` on. */
 export type HoldVerdict = 'fights' | 'hp' | 'bag' | 'ask' | 'push'
 
@@ -476,7 +481,9 @@ export type HoldVerdict = 'fights' | 'hp' | 'bag' | 'ask' | 'push'
  * The one decision both the away replay and a live Auto run use at a hold, so they cannot drift.
  * Order: the fight limit, then the push-on HP floor, then a nearly full bag (skipped with the `keep` order).
  */
-export function decideHold(expedition: ExpeditionState, hero: Pick<SavedHero, 'stopAfterFights' | 'pushOnHpPercent' | 'bagFullOrder'>): HoldVerdict {
+export function decideHold(expedition: ExpeditionState, hero: Pick<SavedHero, 'stopAfterFights' | 'pushOnHpPercent' | 'bagFullOrder' | 'autoRun' | 'autoRunMode'>): HoldVerdict {
+  // Endless Auto run (Step 13.26): no standing order walks the hero home. A retreat, a defeat or the total fight limit (decided by the caller) end the run.
+  if (isEndlessAutoRun(hero)) return 'push'
   if (fightLimitReached(expedition, hero.stopAfterFights)) return 'fights'
   const hpPercent = (expedition.hero.hp / expedition.hero.maxHp) * 100
   if (hpPercent < hero.pushOnHpPercent) return 'hp'

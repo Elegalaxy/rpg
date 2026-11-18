@@ -11,7 +11,7 @@ import { advanceCrafting } from './crafting.ts'
 import { advanceTraining } from './training.ts'
 import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData } from './save.ts'
-import { autoRerunRefusal, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
+import { isEndlessAutoRun, autoRerunRefusal, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 import { nodes, routes } from '../content/world.ts'
 
 /** The most time a catch-up replays: eight hours (GAME_DESIGN §11). */
@@ -52,6 +52,10 @@ export type HeroAwaySummary = {
   walkedHomeHp?: number
   walkedHomeBag?: number
   walkedHomeFights?: number
+  /** Auto run was in the endless mode (Step 13.26). Absent means the repeat mode. */
+  endless?: boolean
+  /** Endless runs that ended by a retreat while away. Absent counts as 0. */
+  endlessRetreats?: number
   /** Auto run was on when the player left, so the run kept going under the standing orders. */
   autoRan?: boolean
   /** Fights fought while away under Auto run. */
@@ -96,10 +100,14 @@ export function ordersLine(hero: HeroAwaySummary): string {
 export function awayBanner(hero: HeroAwaySummary): string | null {
   if (hero.autoRan === true) {
     const fights = hero.autoFights ?? 0
-    const base = `Auto run kept going while ${hero.heroName} was away: ${fights} ${fights === 1 ? 'fight' : 'fights'}, ${hero.runs} ${hero.runs === 1 ? 'run' : 'runs'}.`
+    const endless = hero.endless === true
+    const retreats = hero.endlessRetreats ?? 0
+    const base = endless
+      ? `Endless Auto run kept going while ${hero.heroName} was away: ${fights} ${fights === 1 ? 'fight' : 'fights'}, ${retreats} ${retreats === 1 ? 'retreat' : 'retreats'} (${hero.runs} ${hero.runs === 1 ? 'run' : 'runs'}).`
+      : `Auto run kept going while ${hero.heroName} was away: ${fights} ${fights === 1 ? 'fight' : 'fights'}, ${hero.runs} ${hero.runs === 1 ? 'run' : 'runs'}.`
     switch (hero.stopped) {
       case 'defeat':
-        return `${base} Stopped: the hero was defeated.`
+        return `${base} Stopped: the hero was defeated${endless ? ' before any retreat condition ended the run' : ''}.`
       case 'autoLimit':
         return `${base} Stopped: the total fight limit was reached, so Auto run is off.`
       case 'supplies':
@@ -260,6 +268,7 @@ function newLane(view: SaveData, heroId: string, note: string | null, stopped: O
       stopped: null,
       note,
       autoRan: hero?.autoRun === true,
+      endless: hero !== undefined && hero !== null && isEndlessAutoRun(hero) ? true : undefined,
       autoFights: 0,
       awayStarted: started,
     },
@@ -428,6 +437,8 @@ function afterReturn(ctx: Ctx, mode: Mode): boolean {
     return false
   }
   if (mode === 'auto') {
+    const last = expedition.history[expedition.history.length - 1]
+    if (isEndlessAutoRun(hero) && last?.outcome === 'retreat') lane.summary.endlessRetreats = (lane.summary.endlessRetreats ?? 0) + 1
     if (autoLimitReached(ctx)) {
       switchAutoOff(ctx)
       lane.stopped = 'autoLimit'

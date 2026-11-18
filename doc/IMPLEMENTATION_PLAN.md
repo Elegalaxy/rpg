@@ -1194,10 +1194,11 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.14, 13.15
 - Goal: Auto run gets a mode, `repeat` (today) or `endless` (keep pushing past the route's end until a retreat condition, a defeat or the total fight limit), per GAME_DESIGN §11 "Auto run modes". Sim untouched, so every matrix stays byte-identical.
 - Parts: (1) docs only. (2) `autoRunMode` on `SavedHero` (validated, reincarnation, preparation draft), `decideHold` with the mode, live loop and away replay use it, away report line, tests. (3) UI: select and warning on the preparation screen, "Auto · endless" dock tag, Guide paragraph, CHANGELOG.
-- Part status: 1 `done`. 2 `todo`. 3 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `todo`.
 - Acceptance: typecheck, lint, npm test (incl. `tests/architecture.test.ts`) and build pass; guards (golden duel-basic, reference CSV, telegraph, built, modded, cinder, hollows, warden, causeway, elites at seed 1 x 5) byte-identical to origin/main.
 - Progress:
   - 2026-11-18: Part 1 done. Rules recorded in GAME_DESIGN §11.
+  - 2026-11-18: Part 2 done. `AutoRunMode`/`SavedHero.autoRunMode?` (validated, kept by reincarnation through `...hero`), `isEndlessAutoRun` and the mode in `decideHold` (`persist/world.ts`; live loop and replay already share it, so no change in `store.ts`), draft field in `persist/preparation.ts`, away summary `endless`/`endlessRetreats` and banner text in `persist/offline.ts`. Tests: `persist/autoRunMode.test.ts`, live loop and live-vs-away agreement in `ui/map/autoRun.test.tsx`, draft round trip. Sim untouched.
 
 ### Step 13.24: First-clear rewards
 - Status: `in progress`

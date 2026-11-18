@@ -221,6 +221,9 @@ export const EMPTY_PURCHASES: HeroPurchases = {
 /** A hero's drills (Step 13.11). `queue` has 1 to `MAX_DRILLS_PER_LEVEL` entries; the first is running. */
 export type TrainingQueue = { remainingMs: number; queue: { xp: number }[] }
 
+/** Auto run mode (Step 13.26): rerun the route after each run, or keep going until a retreat, a defeat or the fight limit. */
+export type AutoRunMode = 'repeat' | 'endless'
+
 export type SavedHero = {
   id: string
   name: string
@@ -264,6 +267,8 @@ export type SavedHero = {
   autoRun?: boolean
   /** Auto run session limit: total fights since Auto run was switched on (1 to 9999). Null or absent is no limit. */
   autoRunMaxFights?: number | null
+  /** What Auto run does when the route's orders say go home: `repeat` (default, absent) reruns the route; `endless` keeps pushing on until a retreat, a defeat or the fight limit (Step 13.26). */
+  autoRunMode?: AutoRunMode
   /** Trainer drills bought at the current level (0 to 3). Back to 0 whenever the level rises. */
   drillsThisLevel: number
   /** Drills paid for and not yet finished. `queue[0]` is the running drill with `remainingMs` left; each entry's XP was fixed when it was queued. Absent when none. */
@@ -537,6 +542,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check(value.firstClearIds === undefined || (Array.isArray(value.firstClearIds) && value.firstClearIds.every((id: unknown) => typeof id === 'string')), `${label} first clears must be a list of text`)
   check(value.freeUpgrades === undefined || (typeof value.freeUpgrades === 'number' && Number.isInteger(value.freeUpgrades) && value.freeUpgrades >= 0), `${label} free upgrades must be a whole number, 0 or more`)
   check(value.autoRun === undefined || typeof value.autoRun === 'boolean', `${label} auto run must be true or false`)
+  check(value.autoRunMode === undefined || value.autoRunMode === 'repeat' || value.autoRunMode === 'endless', `${label} auto run mode must be repeat or endless`)
   check(
     value.autoRunMaxFights === undefined ||
       value.autoRunMaxFights === null ||

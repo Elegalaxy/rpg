@@ -7,7 +7,7 @@ import { CURSES, NODE_UNDEAD_CURSEBOUND } from '../sim/races/racialNodes.ts'
 
 import { STACK_LIMIT_REASON, limitStacks, overStacked, packSlots, stackLimit } from './pack.ts'
 import type { RosterResult } from './roster.ts'
-import { BAG_FULL_ORDERS, REPEAT_LIMITS, type BagFullOrder, type SaveData, type SavedHero } from './save.ts'
+import { BAG_FULL_ORDERS, REPEAT_LIMITS, type AutoRunMode, type BagFullOrder, type SaveData, type SavedHero } from './save.ts'
 
 /** What the preparation screen edits for the selected hero. Text fields keep what was typed. */
 export type PreparationDraft = {
@@ -34,6 +34,8 @@ export type PreparationDraft = {
   autoRun?: boolean
   /** Auto run session fight limit. Blank is no limit. Left out keeps the hero's setting. */
   autoRunMaxFights?: string
+  /** What Auto run does when the route ends. Left out keeps the hero's setting. */
+  autoRunMode?: AutoRunMode
   /** Standing order while away: what to do when the bag is nearly full. */
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the player leaves with no run. An empty string never starts one. */
@@ -64,6 +66,7 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     stopAfterFights: hero.stopAfterFights === null ? '' : String(hero.stopAfterFights),
     autoRun: hero.autoRun === true,
     autoRunMaxFights: hero.autoRunMaxFights == null ? '' : String(hero.autoRunMaxFights),
+    autoRunMode: hero.autoRunMode ?? 'repeat',
     bagFullOrder: hero.bagFullOrder,
     awayRouteId: hero.awayRouteId ?? '',
   }
@@ -237,6 +240,7 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
   if (overStacked(packedSupplies, slotCount) !== null) errors.push(STACK_LIMIT_REASON)
   if (packedSupplies.some((id) => supplyTable[id] === undefined)) errors.push('Pick a supply Greyhaven sells, or leave the slot empty.')
   if (!REPEAT_LIMITS.includes(draft.repeatLimit)) errors.push(`Pick a run limit of ${REPEAT_LIMITS.join(', ')} (0 is no limit).`)
+  if (draft.autoRunMode !== undefined && draft.autoRunMode !== 'repeat' && draft.autoRunMode !== 'endless') errors.push('Pick what Auto run does when the route ends: repeat it or keep going.')
   if (!BAG_FULL_ORDERS.includes(draft.bagFullOrder)) errors.push('Pick what to do when the bag is nearly full: walk home, ask or keep going.')
   if (draft.awayRouteId !== '' && routes[draft.awayRouteId] === undefined) errors.push('Pick a route Greyhaven knows for away runs, or none.')
   if (errors.length > 0) return { ok: false, errors }
@@ -257,6 +261,7 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
       stopAfterFights,
       autoRun: draft.autoRun ?? hero.autoRun === true,
       autoRunMaxFights,
+      autoRunMode: draft.autoRunMode ?? hero.autoRunMode,
       bagFullOrder: draft.bagFullOrder,
       awayRouteId: draft.awayRouteId === '' ? null : draft.awayRouteId,
     },

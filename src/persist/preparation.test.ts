@@ -22,7 +22,7 @@ function hero(save: SaveData) {
 
 describe('preparation', () => {
   it('starts from the usual defaults, per class', () => {
-    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, repeatLimit: 0, stopAfterFights: '', autoRun: false, autoRunMaxFights: '', bagFullOrder: 'home', awayRouteId: '' })
+    expect(draftFor(hero(heroSave('warrior')))).toEqual({ retreatPercent: '40', vow: '', curse: '', specialAmmo: '0', carryGold: '25', fightRank: '0', supplies: ['', '', '', ''], pushOnPercent: '50', repeatRoute: true, repeatLimit: 0, stopAfterFights: '', autoRun: false, autoRunMaxFights: '', autoRunMode: 'repeat', bagFullOrder: 'home', awayRouteId: '' })
     expect(draftFor(hero(heroSave('cleric'))).vow).toBe('zeal')
     expect(draftFor(hero(heroSave('ranger'))).specialAmmo).toBe('6')
   })
@@ -129,5 +129,20 @@ describe('standing orders for time away', () => {
         errors: [expect.stringMatching(/Push on while HP is at least/)],
       })
     }
+  })
+})
+
+describe('Auto run mode in the preparation (Step 13.26)', () => {
+  it('round-trips the mode, keeps the hero setting when the draft leaves it out, and refuses a bad value', () => {
+    const warrior = hero(heroSave('warrior'))
+    const base = draftFor(warrior)
+    expect(base.autoRunMode).toBe('repeat')
+    const endless = checkPreparation(warrior, { ...base, autoRunMode: 'endless' })
+    expect(endless).toMatchObject({ ok: true, hero: { autoRunMode: 'endless' } })
+    if (!endless.ok) throw new Error('refused')
+    expect(draftFor(endless.hero).autoRunMode).toBe('endless')
+    const { autoRunMode: _left, ...without } = draftFor(endless.hero)
+    expect(checkPreparation(endless.hero, without)).toMatchObject({ ok: true, hero: { autoRunMode: 'endless' } })
+    expect(checkPreparation(warrior, { ...base, autoRunMode: 'forever' as never })).toMatchObject({ ok: false })
   })
 })
