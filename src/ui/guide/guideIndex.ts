@@ -13,6 +13,7 @@ import {
 import { enemies } from '../../content/enemies.ts'
 import { FIRST_CLEAR_NODE_IDS, firstClearReward, firstClearRewardText } from '../../content/firstClear.ts'
 import { CARRY_PERCENT_BASE, STOCKPILE_PERCENTS } from '../../persist/carryOver.ts'
+import { LOADOUT_SLOT_COUNT, MAX_LOADOUT_SLOTS } from '../../sim/progression.ts'
 import { ARTISAN_TOKENS, HEAD_START_LEVELS, LEGACY_ZONES, LONG_MEMORY_LEVELS, ZONE_CLEAR_BONUS } from '../../persist/reincarnation.ts'
 import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS } from '../../content/contracts.ts'
 import { itemBases } from '../../content/items.ts'
@@ -419,6 +420,7 @@ function reincarnationFacts(): GuideFact[] {
   return [
     { label: 'Carried share', value: `${CARRY_PERCENT_BASE}% of gold, materials and supplies; Stockpile I to III: ${STOCKPILE_PERCENTS.map((percent) => `${percent}%`).join(' / ')}` },
     { label: 'Earlier-life gear', value: 'Sells for the carried share of its normal price' },
+    { label: 'Fifth Skill Slot', value: `${MAX_LOADOUT_SLOTS} skills in the loadout instead of ${LOADOUT_SLOT_COUNT}` },
     { label: 'Head Start', value: `Start at level ${HEAD_START_LEVELS.join(' / ')}` },
     { label: 'Artisan’s Favor', value: `+${ARTISAN_TOKENS.join(' / +')} free upgrade tokens each new life` },
     { label: 'Long Memory', value: `Recall reaches ${LONG_MEMORY_LEVELS.map((levels) => `+${levels}`).join(' / ')} levels above your peak` },

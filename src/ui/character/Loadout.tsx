@@ -7,6 +7,8 @@ import { useState } from 'react'
 import { skillName } from '../../persist/loadout.ts'
 import { selectedHero } from '../../persist/character.ts'
 import type { SavedHero } from '../../persist/save.ts'
+import { loadoutSlots } from '../../persist/skillSlots.ts'
+import { LOADOUT_SLOT_COUNT } from '../../sim/progression.ts'
 import { saveLoadoutFromUi, useSaveStatus } from '../store.ts'
 
 function LoadoutForm({ hero }: { hero: SavedHero }) {
@@ -47,7 +49,8 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
       </li>
     )
   }
-  const tooMany = chosen.length > 4
+  const slots = loadoutSlots(hero)
+  const tooMany = chosen.length > slots
   const equippedIds = hero.progress.learnedSkillIds.filter((id) => hero.progress.loadout.includes(id))
   const spareIds = hero.progress.learnedSkillIds.filter((id) => !hero.progress.loadout.includes(id))
   const unequipped = spareIds.length
@@ -55,8 +58,13 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
     <section aria-label="Loadout">
       <h2>Loadout — {hero.name}</h2>
       <p>
-        Selected: <strong data-testid="loadout-count">{chosen.length}</strong> of 4.
-        <Help label="About the loadout">Choose 1 to 4 skills.</Help>
+        Selected: <strong data-testid="loadout-count">{chosen.length}</strong> of {slots}.{' '}
+        {slots > LOADOUT_SLOT_COUNT ? <Tag kind="info">Fifth slot</Tag> : null}
+        <Help label="About the loadout">
+          {slots > LOADOUT_SLOT_COUNT
+            ? `Choose 1 to ${slots} skills.`
+            : `Choose 1 to ${slots} skills. The Legacy purchase Fifth Skill Slot adds one more.`}
+        </Help>
       </p>
       {unequipped > 0 ? (
         <p role="status" data-testid="loadout-unequipped">
@@ -83,7 +91,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
             <ul>{group.ids.map(skillRow)}</ul>
           </Collapsible>
         ))}
-      {tooMany ? <p role="alert">Pick at most 4 skills.</p> : null}
+      {tooMany ? <p role="alert">Pick at most {slots} skills.</p> : null}
       <button type="button" disabled={chosen.length < 1 || tooMany} onClick={save}>
         Save loadout
       </button>

@@ -22,6 +22,7 @@ type Patch = {
   tokens?: number
   stockpile?: number
   artisan?: number
+  fifthSlot?: boolean
 }
 
 function show(patch: Patch): string {
@@ -38,7 +39,7 @@ function show(patch: Patch): string {
       bossLossThisLife: patch.bossLoss ?? false,
       echoRank: patch.echoRank ?? 0,
       rememberedEnemyIds: ['rootmaw-stalker', 'echo-knight'],
-      purchases: { ...hero.purchases, headStart: patch.headStart ?? 0, stockpile: patch.stockpile ?? 0, artisan: patch.artisan ?? 0 },
+      purchases: { ...hero.purchases, headStart: patch.headStart ?? 0, stockpile: patch.stockpile ?? 0, artisan: patch.artisan ?? 0, ...(patch.fifthSlot ? { fifthSlot: true } : {}) },
       freeUpgrades: patch.tokens ?? 0,
       purse: {
         ...hero.purse,
@@ -86,6 +87,16 @@ describe('Legacy screen', () => {
     expect(html).toContain('Doubles run XP until level 12.')
     expect(html).toContain('Drowned Causeway')
     expect(html).toContain('data-testid="reincarnation-block"')
+  })
+
+  it('lists the Fifth Skill Slot, with the missing Legacy, and shows it bought', () => {
+    const poor = show({ legacy: 80 })
+    expect(poor).toContain('Fifth Skill Slot')
+    expect(poor).toContain('90 Legacy')
+    expect(poor).toContain('Needs 10 more Legacy.')
+    expect(poor).toContain('One more skill in your loadout (5 instead of 4)')
+    const bought = show({ legacy: 200, fifthSlot: true })
+    expect(bought).toContain('1 of 1')
   })
 
   it('offers a free heirloom slot on the items the hero owns', () => {

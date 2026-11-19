@@ -1212,13 +1212,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
 ### Step 13.34: Fifth skill slot
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.30, 13.31
 - Goal: a Legacy purchase, Fifth Skill Slot (90 Legacy, once, hero-bound, applies now and in every later life), raises the loadout from 4 to 5 skills (GAME_DESIGN §10, "Fifth skill slot"). Nothing is auto-equipped. Combat, content and the default harness are untouched.
 - Parts: (1) docs only. (2) `LOADOUT_SLOT_COUNT` and `MAX_LOADOUT_SLOTS` and `setLoadout` slot count in `sim/progression.ts`, harness `--matrix slots` (four vs five, both orders), measurement and a GO/NO-GO stop. (3) Persist: purchase, save field, slot count read by `setLoadout` callers. (4) UI: Legacy row, Loadout fifth slot, Guide, CHANGELOG, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `pending`. 4 `pending`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done`.
 - Acceptance: guards (golden duel-basic, reports/2026-10-23-reference.csv, matrices telegraph, built, modded, cinder, hollows, warden, causeway, elites at `npm run sim -- --matrix <m> --seed 1 --runs 5`) byte-identical to origin/main. Go/no-go after Part 2: NO-GO if at the prepared tier the best five variant for any class raises that class's mean elite win rate by more than 10 points, or takes more than half of the 20 class x elite prepared cells from below 95% to 95% or more, or cuts median win time by more than 20%.
 - Progress:
+  - 2026-11-19: Parts 3 and 4 done. `persist/skillSlots.ts` (`loadoutSlots`), optional `purchases.fifthSlot` (no migration; a save with five skills and no purchase is refused), `FIFTH_SLOT_COST` 90 in `buyPurchase`, `saveLoadout` passes the slot count; Loadout screen "of 4/5" and Fifth slot tag, Legacy row, Guide text and fact, CHANGELOG. Sim, content and harness untouched.
   - 2026-11-19: Part 2 done. `LOADOUT_SLOT_COUNT`, `MAX_LOADOUT_SLOTS`, `setLoadout(progress, ids, slotCount)` in `sim/progression.ts` (+ tests); `src/harness/slots.ts` (+ test) and `--matrix slots` (four vs five-last vs five-first, prepared and crafted prepared, 10 candidates). Measured seeds 1-3 x 100 and recorded in GAME_DESIGN §10: best five at the prepared tier changes the class means by +0.0 (Warrior), +2.6, -32.7, -46.2 and +9.2 (Cleric); 0 of 20 cells cross to 95; median win time at most -3.7%. GO. Guards (golden duel in `npm test`, reference CSV, eight matrices at seed 1 x 5) identical to origin/main. Parts 3 and 4 wait for the user.
   - 2026-11-19: Part 1 done. Rules recorded in GAME_DESIGN §10; "four skills" lines in §4, §5, §7 and §9 reworded.
 

@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: Fifth Skill Slot, a Legacy purchase: equip five skills instead of four, now and in every later life. [13.34]
 - Fixed: skill descriptions in the Guide and skill web no longer show "Heals 0% of max HP" or internal names; they use plain wording and status names (Expose, Poison), and an effect that does nothing is left out. [13.33]
 - Tech: `--matrix slots` measures a fifth equipped skill (last row or ahead of the reference rows) against the four reference skills at the elite fights, and `setLoadout` takes a slot count (4 or 5). [13.34]
 

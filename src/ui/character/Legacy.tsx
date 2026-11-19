@@ -13,6 +13,7 @@ import {
   HEAD_START_LEVELS,
   LONG_MEMORY_COSTS,
   LONG_MEMORY_LEVELS,
+  FIFTH_SLOT_COST,
   THIRD_HEIRLOOM_COST,
   MASTERY_MAX,
   SECOND_HEIRLOOM_COST,
@@ -31,6 +32,7 @@ import {
   type LegacyPreview,
 } from '../../persist/reincarnation.ts'
 import { purseOf, type SavedHero } from '../../persist/save.ts'
+import { LOADOUT_SLOT_COUNT, MAX_LOADOUT_SLOTS } from '../../sim/progression.ts'
 import { EQUIPMENT_SLOT_IDS, slotsFor, type ItemInstance } from '../../sim/economy.ts'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
@@ -145,6 +147,17 @@ export function Legacy() {
       controls: 'single',
       buy: () => buyPurchaseFromUi('skill'),
       done: 'Bought a skill point seed. The point is added now.',
+    },
+    {
+      id: 'fifthSlot',
+      group: 'life',
+      name: 'Fifth Skill Slot',
+      effect: `One more skill in your loadout (${MAX_LOADOUT_SLOTS} instead of ${LOADOUT_SLOT_COUNT}). Applies now and every later life`,
+      cost: hero.purchases.fifthSlot === true ? null : FIFTH_SLOT_COST,
+      bought: `${hero.purchases.fifthSlot === true ? 1 : 0} of 1`,
+      controls: 'single',
+      buy: () => buyPurchaseFromUi('fifthSlot'),
+      done: 'Bought the fifth skill slot. Pick a fifth skill in the Loadout.',
     },
     {
       id: 'headStart',
