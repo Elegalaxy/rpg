@@ -2619,6 +2619,7 @@ Reincarnation preserves:
 - All equipment is archived and retains its normal level/tier requirements.
 - One chosen heirloom scales down to the new hero level and grows with the hero.
 - Heirloom, decided 2026-11-01: the hero picks one item at reincarnation. Its item level follows the hero's level, up to the level it had when chosen. Quality and modifiers are kept. It can only be changed at the next reincarnation. The Second Heirloom purchase lets a hero keep one more.
+- Claim an heirloom now (Step 13.32, decided 2026-11-19): a free heirloom slot (allowance minus items already flagged for the hero, worn or archived) can be used at once on any worn or archived item that is not already an heirloom, with `claimHeirloom`. The item gets `heirloom { heroId, cap: itemLevel }` and is scaled to the hero's level immediately, with the same full-strength modifiers as any heirloom. It costs no gold or materials and is refused during an expedition. An item that is another hero's heirloom, or already an heirloom, is refused. The earlier-life carried-share guards are unchanged (`pastLifeItemIds` is not touched, and an heirloom cannot be sold). The reincarnation choice and allowance rules are unchanged, so a claimed heirloom is kept at the next reincarnation within the allowance. Sim and harness untouched.
 - Heirloom equip rule (Step 13.29, decided 2026-11-18): the heirloom keeps its quality and all its modifiers at full strength; it can be worn at any hero level its scaled item level allows, even when a modifier's own level is higher. Other items keep the strict check: a modifier above the hero's level blocks wearing. An heirloom is bound to its own hero, and a hero keeps one (two with Second Heirloom). Scaling never changes modifiers, ranks or tempers. This allows an early power spike (for example a rank III Siphoning weapon at level 1); the 13.18 Later-lives numbers were not re-measured with it and nothing was tuned. Harness runs use no heirloom, so every guard is unchanged.
 
 First-playable reincarnation numbers, decided 2026-11-01:
@@ -2652,7 +2653,7 @@ Decided 2026-11-18 (user: "go with all my picks"). Persist and UI only; `src/sim
 | Artisan's Favor I / II | 30 / 45 | Each new life starts with +1 / +2 free upgrade tokens (they stack with unspent ones). Buying adds +1 token now. |
 | Long Memory I / II | 25 / 40 | Recall doubles run XP up to peak level + 3 / + 6 (needs a peak; applies now when the hero has one). |
 | Head Start III | 55 (needs II) | Start at level 15 (levels 5 / 10 / 15 cost 20 / 35 / 55). Raises a lower hero to 15 now, as I and II do. |
-| Third Heirloom | 50 (needs Second Heirloom) | Keep a third heirloom (allowance 1 + second + third). Takes effect at the next reincarnation. |
+| Third Heirloom | 50 (needs Second Heirloom) | Keep a third heirloom (allowance 1 + second + third). The free slot can be used at once on an item you own (Step 13.32), or chosen at reincarnation. |
 
   The nine new buys cost 335 Legacy in total.
 - Long Memory deliberately widens the earlier exploit guard line in "Later lives" ("Recall only speeds levels the hero already earned once, and only up to the old peak"): with Long Memory it runs up to 3 or 6 levels above the old peak. It still pays nothing for losing on purpose.

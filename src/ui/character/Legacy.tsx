@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { itemName } from '../../content/items.ts'
+import { itemBase, itemName } from '../../content/items.ts'
 import { supplyTable } from '../../content/supplies.ts'
 import { DEEP_POCKETS_COST, DEEP_POCKETS_ROOM } from '../../persist/bag.ts'
 import { STOCKPILE_COSTS, STOCKPILE_PERCENTS, carrySummary, type CarryLine } from '../../persist/carryOver.ts'
@@ -19,6 +19,8 @@ import {
   SKILL_SEED_COSTS,
   attributeSeedTotal,
   headStartCost,
+  claimableItems,
+  freeHeirloomSlots,
   heirloomAllowance,
   legacyPreview,
   masteryRank,
@@ -29,12 +31,12 @@ import {
   type LegacyPreview,
 } from '../../persist/reincarnation.ts'
 import { purseOf, type SavedHero } from '../../persist/save.ts'
-import { EQUIPMENT_SLOT_IDS } from '../../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, slotsFor, type ItemInstance } from '../../sim/economy.ts'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { GuideLink } from '../guide/GuideLink.tsx'
 import { Kpi, KpiRow, Tag } from '../Kit.tsx'
-import { buyPurchaseFromUi, devLegacyTools, reincarnateFromUi, useSaveStatus } from '../store.ts'
+import { buyPurchaseFromUi, claimHeirloomFromUi, devLegacyTools, reincarnateFromUi, useSaveStatus } from '../store.ts'
 
 const ATTRIBUTES = ['strength', 'vitality', 'agility', 'intellect', 'spirit'] as const
 
@@ -81,6 +83,7 @@ export function Legacy() {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const [heirloom, setHeirloom] = useState('')
+  const [claim, setClaim] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -105,6 +108,9 @@ export function Legacy() {
     ...EQUIPMENT_SLOT_IDS.flatMap((slot) => (hero.equipment[slot] === null ? [] : [hero.equipment[slot]!])),
     ...purseOf(save).archive.filter((item) => item.heirloom === undefined || item.heirloom.heroId === hero.id),
   ]
+
+  const freeSlots = freeHeirloomSlots(hero)
+  const claimable = claimableItems(hero)
 
   function run(problem: string | null, done: string): void {
     setError(problem)
@@ -188,12 +194,12 @@ export function Legacy() {
       id: 'heirloom',
       group: 'carry',
       name: heirloomBought === 0 ? 'Second Heirloom' : heirloomBought === 1 ? 'Third Heirloom' : 'Heirloom slots',
-      effect: 'Keep one more heirloom. Applies at your next reincarnation',
+      effect: 'Keep one more heirloom. Use it right away on an item you own, or choose at your next reincarnation',
       cost: heirloomBought === 0 ? SECOND_HEIRLOOM_COST : heirloomBought === 1 ? THIRD_HEIRLOOM_COST : null,
       bought: `${heirloomBought} of 2`,
       controls: 'single',
       buy: () => buyPurchaseFromUi('heirloom'),
-      done: 'Bought an heirloom slot. It applies at your next reincarnation.',
+      done: 'Bought an heirloom slot. Use it now on an item you own, or at your next reincarnation.',
     },
     {
       id: 'pockets',
@@ -358,6 +364,40 @@ export function Legacy() {
       </Collapsible>
       <p className="legacy-lost">The rest is lost. Spend gold and materials on gear before you go.</p>
 
+      {freeSlots > 0 && claimable.length > 0 ? (
+        <div className="legacy-claim" data-testid="heirloom-claim">
+          <h3>Heirloom slot free</h3>
+          <p className="legacy-hint">
+            {freeSlots} free. Make an item you own an heirloom now: it works at your level at once and is kept when you reincarnate.
+          </p>
+          <div className="legacy-act">
+            <label>
+              Item
+              <select aria-label="Item to make an heirloom" value={claim} onChange={(event) => setClaim(event.target.value)}>
+                <option value="">Choose an item</option>
+                {claimable.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {itemName(item)} ({slotLabel(item)}, item level {item.itemLevel})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={claim === '' || running}
+              onClick={() => {
+                run(claimHeirloomFromUi(claim), 'The item is now an heirloom.')
+                setClaim('')
+              }}
+            >
+              Make heirloom now
+            </button>
+            {running ? <small className="legacy-hint">Finish the expedition first.</small> : null}
+          </div>
+        </div>
+      ) : null}
+
       <h3>
         Reincarnate
         <Help label="What reincarnating resets">
@@ -435,6 +475,20 @@ export function Legacy() {
       {error !== null ? <p role="alert">{error}</p> : null}
     </section>
   )
+}
+
+const CLAIM_SLOT_LABELS: { [slot: string]: string } = {
+  mainHand: 'Main hand',
+  offHand: 'Off-hand',
+  accessory0: 'Accessory',
+  accessory1: 'Accessory',
+}
+
+function slotLabel(item: ItemInstance): string {
+  const base = itemBase(item.baseId)
+  if (base === undefined) return 'Item'
+  const slot = slotsFor(base)[0] ?? ''
+  return CLAIM_SLOT_LABELS[slot] ?? slot.charAt(0).toUpperCase() + slot.slice(1)
 }
 
 function bossFacedText(faced: ReturnType<typeof bossFaced>): string {

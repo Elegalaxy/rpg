@@ -151,6 +151,44 @@ function allItems(hero: SavedHero): ItemInstance[] {
   return [...equipped, ...hero.purse.archive]
 }
 
+/** How many heirloom slots this hero has free right now (the allowance minus items already flagged for them). */
+export function freeHeirloomSlots(hero: SavedHero): number {
+  const used = allItems(hero).filter((item) => item.heirloom?.heroId === hero.id).length
+  return Math.max(0, heirloomAllowance(hero) - used)
+}
+
+/** Worn and archived items this hero could make an heirloom now: not already an heirloom of anyone. */
+export function claimableItems(hero: SavedHero): ItemInstance[] {
+  return allItems(hero).filter((item) => item.heirloom === undefined)
+}
+
+/**
+ * Step 13.32: use a free heirloom slot on an item right now, without reincarnating. The item keeps its level
+ * as the cap and is scaled to the hero's level at once. No gold or materials. Earlier-life gear stays in
+ * `pastLifeItemIds`, so the carried-share sell guard is unchanged (an heirloom cannot be sold at all).
+ */
+export function claimHeirloom(save: SaveData, heroId: string, itemId: string): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  if (save.expedition !== null) return { ok: false, reason: 'Finish the expedition first.' }
+  const item = allItems(hero).find((entry) => entry.id === itemId)
+  if (item === undefined) return { ok: false, reason: 'That item is not yours to keep.' }
+  if (item.heirloom !== undefined) {
+    return { ok: false, reason: item.heirloom.heroId === heroId ? 'That item is already an heirloom.' : "That is another hero's heirloom." }
+  }
+  if (freeHeirloomSlots(hero) <= 0) return { ok: false, reason: 'No heirloom slot is free. Buy another slot, or choose at reincarnation.' }
+  const mark = (entry: ItemInstance): ItemInstance => (entry.id === itemId ? { ...entry, heirloom: { heroId, cap: entry.itemLevel } } : entry)
+  const equipment = { ...hero.equipment }
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const worn = equipment[slot]
+    if (worn !== null) equipment[slot] = mark(worn)
+  }
+  const claimed: SavedHero = { ...hero, equipment, purse: { ...hero.purse, archive: hero.purse.archive.map(mark) } }
+  const next: SaveData = { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? claimed : entry)) }
+  const scaled = scaleHeirlooms(next, heroId)
+  return { ok: true, save: scaled, hero: scaled.heroes.find((entry) => entry.id === heroId) ?? claimed }
+}
+
 /** Bring every one of this hero's heirlooms to the level their level allows. Run after any level change. */
 export function scaleHeirlooms(save: SaveData, heroId: string): SaveData {
   const hero = save.heroes.find((entry) => entry.id === heroId)

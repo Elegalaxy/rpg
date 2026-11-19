@@ -4,7 +4,7 @@ import { dealsIn, type PlaceDef } from '../content/places.ts'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../persist/equipment.ts'
-import { buyPurchase, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
+import { buyPurchase, claimHeirloom, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { advanceTraining, anyTraining, trainHero } from '../persist/training.ts'
@@ -1138,6 +1138,13 @@ export function reincarnateFromUi(heirloomItemId: string | null): string | null 
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   return applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemId), 'reincarnated')
+}
+
+/** Make an item an heirloom of the selected hero now, using a free slot. Returns the refusal, or null. */
+export function claimHeirloomFromUi(itemId: string): string | null {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return 'Select a hero first.'
+  return applyTown(claimHeirloom(saveStatus.save, hero.id, itemId), 'heirloom claimed')
 }
 
 /** Spend the selected hero's Legacy. Returns the refusal, or null. */

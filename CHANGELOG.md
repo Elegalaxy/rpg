@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: a free heirloom slot can be used right away on an item you own (Legacy screen, "Make heirloom now"), not only at the next reincarnation. [13.32]
 - Improved: the Legacy screen shows what carries over (gold, debt, tokens, materials, supplies) before you reincarnate, and the shop marks earlier-life gear with the lower price it pays. [13.31]
 - Improved: the Guide's Reincarnation page explains the carried share, Stockpile and the new purchases, with the numbers listed. [13.31]
 - Balance: reincarnating keeps 20% of gold, materials and supplies; all gear is still kept. [13.31]

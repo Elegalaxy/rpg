@@ -81,11 +81,18 @@ describe('Legacy screen', () => {
     expect(html).toContain('Head Start I')
     expect(html).toContain('20 Legacy')
     expect(html).toContain('Applies now and every later life')
-    expect(html).toContain('Applies at your next reincarnation')
+    expect(html).toContain('choose at your next reincarnation')
     expect(html).toContain('Needs 4 more Legacy.')
     expect(html).toContain('Doubles run XP until level 12.')
     expect(html).toContain('Drowned Causeway')
     expect(html).toContain('data-testid="reincarnation-block"')
+  })
+
+  it('offers a free heirloom slot on the items the hero owns', () => {
+    const html = show({})
+    expect(html).toContain('data-testid="heirloom-claim"')
+    expect(html).toContain('Heirloom slot free')
+    expect(html).toContain('Make heirloom now')
   })
 
   it('names Head Start II once the first tier is bought and starts the next life at its level', () => {

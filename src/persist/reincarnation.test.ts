@@ -22,6 +22,9 @@ import {
   SKILL_SEED_COSTS,
   bonusesDue,
   buyPurchase,
+  claimHeirloom,
+  claimableItems,
+  freeHeirloomSlots,
   headStartCost,
   headStartLevel,
   heirloomAllowance,
@@ -767,5 +770,67 @@ describe('lean inheritance (Step 13.31)', () => {
     expect(need(2)).toBe(cumulativeXpToReachLevel(16))
     expect(recallTarget({ ...low, peakLevel: undefined })).toBeNull()
     expect(nextLifePreview({ ...hero(two), peakLevel: 10 }, []).recallUntil).toBe(Math.max(16, hero(two).progress.level + 6))
+  })
+})
+
+describe('claiming an heirloom now (Step 13.32)', () => {
+  function withSlots(extra: boolean): SaveData {
+    const base = updatePurse(veteran(), { archive: [newItem('a', 'weapon-bow', 9, 1.05), newItem('b', 'weapon-dagger', 6)] })
+    const level = { ...base, heroes: base.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 4 }, purchases: { ...h.purchases, secondHeirloom: extra } })) }
+    return level
+  }
+
+  it('claims an archive item, caps it at its level and scales it to the hero at once', () => {
+    const save = ok(claimHeirloom(withSlots(false), 'hero-1', 'a'))
+    const item = purseOf(save).archive.find((entry) => entry.id === 'a')!
+    expect(item.heirloom).toEqual({ heroId: 'hero-1', cap: 9 })
+    expect(item.itemLevel).toBe(4)
+    expect(item.quality).toBe(1.05)
+    expect(hero(save).purse.gold).toBe(hero(withSlots(false)).purse.gold)
+  })
+
+  it('claims a worn item', () => {
+    const base = withSlots(false)
+    const worn = hero(base).equipment.mainHand!
+    const save = ok(claimHeirloom(base, 'hero-1', worn.id))
+    expect(hero(save).equipment.mainHand?.heirloom?.heroId).toBe('hero-1')
+  })
+
+  it('counts free slots and refuses when none is free', () => {
+    const one = ok(claimHeirloom(withSlots(false), 'hero-1', 'a'))
+    expect(freeHeirloomSlots(hero(withSlots(false)))).toBe(1)
+    expect(freeHeirloomSlots(hero(one))).toBe(0)
+    expect(claimHeirloom(one, 'hero-1', 'b')).toEqual({ ok: false, reason: 'No heirloom slot is free. Buy another slot, or choose at reincarnation.' })
+    expect(claimableItems(hero(one)).some((item) => item.id === 'a')).toBe(false)
+    const two = ok(claimHeirloom(withSlots(true), 'hero-1', 'a'))
+    expect(freeHeirloomSlots(hero(two))).toBe(1)
+    expect(ok(claimHeirloom(two, 'hero-1', 'b')).heroes[0]!.purse.archive.filter((item) => item.heirloom !== undefined)).toHaveLength(2)
+  })
+
+  it('refuses an item that is already an heirloom, another hero\'s heirloom, or not owned', () => {
+    const base = withSlots(true)
+    const claimed = ok(claimHeirloom(base, 'hero-1', 'a'))
+    expect(claimHeirloom(claimed, 'hero-1', 'a')).toEqual({ ok: false, reason: 'That item is already an heirloom.' })
+    const foreign = updatePurse(base, { archive: [{ ...newItem('f', 'weapon-bow', 5), heirloom: { heroId: 'hero-9', cap: 5 } }] })
+    expect(claimHeirloom(foreign, 'hero-1', 'f')).toEqual({ ok: false, reason: 'That is another hero\'s heirloom.' })
+    expect(claimHeirloom(base, 'hero-1', 'nothing')).toEqual({ ok: false, reason: 'That item is not yours to keep.' })
+    expect(claimHeirloom(base, 'ghost', 'a')).toEqual({ ok: false, reason: 'That hero is not on the roster.' })
+  })
+
+  it('is kept by the next reincarnation under the existing allowance rules', () => {
+    const claimed = ok(claimHeirloom(withSlots(false), 'hero-1', 'a'))
+    const next = ok(reincarnate(claimed, 'hero-1', null))
+    const item = purseOf(next).archive.find((entry) => entry.id === 'a')!
+    expect(item.heirloom).toEqual({ heroId: 'hero-1', cap: 9 })
+    expect(item.itemLevel).toBe(1)
+    // Choosing another item at reincarnation with one slot releases the claimed one.
+    const swapped = ok(reincarnate(claimed, 'hero-1', 'b'))
+    expect(purseOf(swapped).archive.find((entry) => entry.id === 'a')?.heirloom).toBeUndefined()
+    expect(purseOf(swapped).archive.find((entry) => entry.id === 'b')?.heirloom).toBeDefined()
+  })
+
+  it('leaves the earlier-life list alone, so the carried share still guards selling', () => {
+    const lived = { ...withSlots(false), heroes: withSlots(false).heroes.map((h) => ({ ...h, pastLifeItemIds: ['a'] })) }
+    expect(hero(ok(claimHeirloom(lived, 'hero-1', 'a'))).pastLifeItemIds).toEqual(['a'])
   })
 })

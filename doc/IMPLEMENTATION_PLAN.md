@@ -1211,6 +1211,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.32: Claim an heirloom now
+- Status: `done`
+- Depends on: 13.29, 13.31
+- Goal: a bought heirloom slot is usable at once: `claimHeirloom` flags a worn or archived item as the hero's heirloom and scales it to the hero's level now (GAME_DESIGN §10, "Claim an heirloom now"). Legacy screen shows an "Heirloom slot free" block. Carried-share guards, `reincarnate` and the sim are untouched.
+- Parts: (1) docs. (2) persist `claimHeirloom`, `freeHeirloomSlots`, `claimableItems`, tests. (3) Legacy UI, store, Guide, CHANGELOG, HANDOFF.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
+- Progress:
+  - 2026-11-19: Done. Persist function, store `claimHeirloomFromUi`, Legacy block with select and "Make heirloom now", purchase text, Guide sentence. Not checked in a browser or at 375 px.
+
 ### Step 13.31: Lean inheritance
 - Status: `done`
 - Depends on: 13.18, 13.24, 13.30

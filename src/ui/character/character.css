@@ -572,6 +572,21 @@
   min-width: 16rem;
 }
 
+.legacy-claim {
+  display: grid;
+  gap: var(--s2);
+}
+
+.legacy-claim h3,
+.legacy-claim p {
+  margin: 0;
+}
+
+.legacy-claim select {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .legacy-confirm {
   display: grid;
   gap: var(--s2);
