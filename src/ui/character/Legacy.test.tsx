@@ -23,6 +23,7 @@ type Patch = {
   stockpile?: number
   artisan?: number
   fifthSlot?: boolean
+  heirlooms?: number
 }
 
 function show(patch: Patch): string {
@@ -39,7 +40,15 @@ function show(patch: Patch): string {
       bossLossThisLife: patch.bossLoss ?? false,
       echoRank: patch.echoRank ?? 0,
       rememberedEnemyIds: ['rootmaw-stalker', 'echo-knight'],
-      purchases: { ...hero.purchases, headStart: patch.headStart ?? 0, stockpile: patch.stockpile ?? 0, artisan: patch.artisan ?? 0, ...(patch.fifthSlot ? { fifthSlot: true } : {}) },
+      purchases: {
+        ...hero.purchases,
+        headStart: patch.headStart ?? 0,
+        stockpile: patch.stockpile ?? 0,
+        artisan: patch.artisan ?? 0,
+        ...(patch.fifthSlot ? { fifthSlot: true } : {}),
+        ...(patch.heirlooms !== undefined && patch.heirlooms >= 2 ? { secondHeirloom: true } : {}),
+        ...(patch.heirlooms === 3 ? { thirdHeirloom: true } : {}),
+      },
       freeUpgrades: patch.tokens ?? 0,
       purse: {
         ...hero.purse,
@@ -64,7 +73,11 @@ describe('Legacy screen', () => {
     expect(lost).not.toContain('data-testid="reincarnation-block"')
     expect(lost).toContain('Legacy if you reincarnate now')
     expect(lost).toContain('Level and XP')
-    expect(lost).not.toContain('You would gain')
+    expect(lost).toContain('aria-label="Heirloom"')
+    expect(lost).not.toContain('aria-label="Heirloom 2"')
+    const two = show({ bossLoss: true, heirlooms: 2 })
+    expect(two).toContain('Heirloom 1 of 2')
+    expect(two).toContain('aria-label="Heirloom 2"')
     const won = show({ echoRank: 5, bossLoss: true })
     expect(won).toContain('Echo ranks 1–5 first unlocked')
     expect(won).toContain('+25')

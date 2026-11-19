@@ -264,6 +264,9 @@ describe('the heirloom', () => {
     expect(purseOf(one).archive.find((item) => item.id === 'a')?.heirloom).toBeUndefined()
     const second = { ...armed, heroes: armed.heroes.map((h) => ({ ...h, purchases: { ...h.purchases, secondHeirloom: true } })) }
     expect(flagged(ok(reincarnate(second, 'hero-1', 'b')))).toEqual(['a', 'b'])
+    const both = ok(reincarnate(updatePurse(second, { archive: [...purseOf(second).archive, newItem('c', 'weapon-one-handed', 4)] }), 'hero-1', ['b', 'c']))
+    expect(flagged(both)).toEqual(['b', 'c'])
+    expect(reincarnate(second, 'hero-1', ['b', 'c', 'a'])).toEqual({ ok: false, reason: 'You can keep 2 heirlooms.' })
     expect(reincarnate(lost, 'hero-1', 'nothing')).toEqual({ ok: false, reason: 'That item is not yours to keep.' })
   })
 })

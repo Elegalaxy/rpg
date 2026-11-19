@@ -553,22 +553,25 @@
 }
 
 .legacy-act {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
+  display: grid;
   gap: var(--s3);
+  justify-items: start;
 }
 
-.legacy-act label {
+.legacy-heirlooms {
+  display: grid;
+  gap: var(--s2);
+  width: min(100%, 28rem);
+}
+
+.legacy-heirlooms label {
   display: grid;
   gap: var(--s1);
 }
 
-.legacy-act label small {
-  color: var(--muted);
-}
-
+.legacy-heirlooms select,
 .legacy-act select {
+  width: 100%;
   min-width: 16rem;
 }
 

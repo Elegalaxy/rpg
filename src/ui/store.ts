@@ -1133,11 +1133,12 @@ export function collectContractFromUi(contractId: string): string | null {
   return applyTown(collectContract(saveStatus.save, hero.id, contractId), 'contract collected')
 }
 
-/** Reincarnate the selected hero, keeping the chosen item as an heirloom. Returns the refusal, or null. */
-export function reincarnateFromUi(heirloomItemId: string | null): string | null {
+/** Reincarnate the selected hero, keeping each chosen item as an heirloom. Returns the refusal, or null. */
+export function reincarnateFromUi(heirloomItemIds: readonly string[]): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
-  return applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemId), 'reincarnated')
+  debugLog('[ui]', 'reincarnate heirlooms', { ids: heirloomItemIds })
+  return applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemIds), 'reincarnated')
 }
 
 /** Make an item an heirloom of the selected hero now, using a free slot. Returns the refusal, or null. */

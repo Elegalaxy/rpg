@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { debugLog } from '../debug.ts'
+
 import { itemBase, itemName } from '../../content/items.ts'
 import { supplyTable } from '../../content/supplies.ts'
 import { DEEP_POCKETS_COST, DEEP_POCKETS_ROOM } from '../../persist/bag.ts'
@@ -84,7 +86,6 @@ function whyNot(row: PurchaseRow, hero: SavedHero, running: boolean): string | n
 export function Legacy() {
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
-  const [heirloom, setHeirloom] = useState('')
   const [claim, setClaim] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -442,46 +443,24 @@ export function Legacy() {
               </tbody>
             </table>
           </div>
-          <div className="legacy-act">
-            <label>
-              Heirloom
-              <small>Up to {heirloomAllowance(hero)}</small>
-              <select aria-label="Heirloom" value={heirloom} onChange={(event) => setHeirloom(event.target.value)}>
-                <option value="">None</option>
-                {candidates.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {itemName(item)} (item level {item.itemLevel})
-                  </option>
-                ))}
-              </select>
-            </label>
-            {confirming ? (
-              <div className="legacy-confirm" role="dialog" aria-label="Confirm reincarnation">
-                <p>This cannot be undone. Reincarnate {hero.name}?</p>
-                <p data-testid="confirm-carry">
-                  {carrySummary(carry)}
-                </p>
-                <p className="legacy-hint">Spend gold and materials on gear before you go.</p>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => {
-                    run(reincarnateFromUi(heirloom === '' ? null : heirloom), `${hero.name} was reincarnated.`)
-                    setConfirming(false)
-                  }}
-                >
-                  Confirm
-                </button>
-                <button type="button" onClick={() => setConfirming(false)}>
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button type="button" className="btn-primary" onClick={() => setConfirming(true)}>
-                Reincarnate…
-              </button>
-            )}
-          </div>
+          <HeirloomChoices
+            key={`${hero.id}:${heirloomAllowance(hero)}:${candidates
+              .filter((item) => item.heirloom?.heroId === hero.id)
+              .map((item) => item.id)
+              .join(',')}`}
+            allowance={heirloomAllowance(hero)}
+            candidates={candidates}
+            initial={candidates.filter((item) => item.heirloom?.heroId === hero.id).map((item) => item.id)}
+            confirming={confirming}
+            heroName={hero.name}
+            carryText={carrySummary(carry)}
+            onConfirm={(ids) => {
+              run(reincarnateFromUi(ids), `${hero.name} was reincarnated.`)
+              setConfirming(false)
+            }}
+            onAsk={() => setConfirming(true)}
+            onCancel={() => setConfirming(false)}
+          />
         </div>
       )}
       {message !== null ? <p data-testid="legacy-message">{message}</p> : null}
@@ -495,6 +474,73 @@ const CLAIM_SLOT_LABELS: { [slot: string]: string } = {
   offHand: 'Off-hand',
   accessory0: 'Accessory',
   accessory1: 'Accessory',
+}
+
+function HeirloomChoices({
+  allowance,
+  candidates,
+  initial,
+  confirming,
+  heroName,
+  carryText,
+  onConfirm,
+  onAsk,
+  onCancel,
+}: {
+  allowance: number
+  candidates: ItemInstance[]
+  initial: string[]
+  confirming: boolean
+  heroName: string
+  carryText: string
+  onConfirm: (ids: string[]) => void
+  onAsk: () => void
+  onCancel: () => void
+}) {
+  const [picks, setPicks] = useState<string[]>(() => Array.from({ length: allowance }, (_, index) => initial[index] ?? ''))
+  function choose(index: number, value: string): void {
+    const next = picks.map((pick, at) => (at === index ? value : pick === value && value !== '' ? '' : pick))
+    debugLog('[ui]', 'heirloom picks', { allowance, picks: next })
+    setPicks(next)
+  }
+  return (
+    <div className="legacy-act">
+      <div className="legacy-heirlooms">
+        {picks.map((value, index) => (
+          <label key={index}>
+            {allowance === 1 ? 'Heirloom' : `Heirloom ${index + 1} of ${allowance}`}
+            <select aria-label={allowance === 1 ? 'Heirloom' : `Heirloom ${index + 1}`} value={value} onChange={(event) => choose(index, event.target.value)}>
+              <option value="">None</option>
+              {candidates
+                .filter((item) => item.id === value || !picks.includes(item.id))
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {itemName(item)} (item level {item.itemLevel})
+                  </option>
+                ))}
+            </select>
+          </label>
+        ))}
+      </div>
+      {confirming ? (
+        <div className="legacy-confirm" role="dialog" aria-label="Confirm reincarnation">
+          <p>This cannot be undone. Reincarnate {heroName}?</p>
+          <p data-testid="confirm-carry">{carryText}</p>
+          <p className="legacy-hint">Spend gold and materials on gear before you go.</p>
+          <button type="button" className="btn-primary" onClick={() => onConfirm(picks.filter((id) => id !== ''))}>
+            Confirm
+          </button>
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="btn-primary" onClick={onAsk}>
+          Reincarnate…
+        </button>
+      )}
+    </div>
+  )
 }
 
 function slotLabel(item: ItemInstance): string {

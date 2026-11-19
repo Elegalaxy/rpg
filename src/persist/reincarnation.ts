@@ -283,19 +283,34 @@ export function nextLifePreview(hero: SavedHero, discoveries: readonly string[])
  * Reincarnate a hero. Level, XP, attributes, the skill web, personal gates and Echo ranks, and the
  * hero's contracts reset. Mastery, purchases, Legacy, discoveries, recipes, crafting experience,
  * the hero's deposited gold, materials, debt, and archive stay. All worn gear goes to the archive and the hero gets
- * fresh starter gear, and the chosen item becomes an heirloom.
+ * fresh starter gear, and the chosen items become heirlooms.
+ * A single id, or null, still keeps older heirlooms in any slot that pick leaves free.
+ * A list is the player's full choice: only those items stay heirlooms.
  */
-export function reincarnate(save: SaveData, heroId: string, heirloomItemId: string | null): RosterResult {
+export function reincarnate(save: SaveData, heroId: string, heirloomItemId: string | null | readonly string[]): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
   const block = reincarnationBlock(save, hero)
   if (block !== null) return { ok: false, reason: block }
 
   const owned = allItems(hero)
-  const chosen = heirloomItemId === null ? null : owned.find((item) => item.id === heirloomItemId)
-  if (heirloomItemId !== null && chosen === undefined) return { ok: false, reason: 'That item is not yours to keep.' }
-  if (chosen !== null && chosen !== undefined && chosen.heirloom !== undefined && chosen.heirloom.heroId !== heroId) {
-    return { ok: false, reason: 'That is another hero\'s heirloom.' }
+  const explicit = Array.isArray(heirloomItemId)
+  const requested: string[] = []
+  const seen = new Set<string>()
+  const raw = explicit ? heirloomItemId : heirloomItemId === null || heirloomItemId === '' ? [] : [heirloomItemId]
+  for (const id of raw) {
+    if (id === '' || seen.has(id)) continue
+    seen.add(id)
+    requested.push(id)
+  }
+  const allowance = heirloomAllowance(hero)
+  if (requested.length > allowance) {
+    return { ok: false, reason: `You can keep ${allowance} ${allowance === 1 ? 'heirloom' : 'heirlooms'}.` }
+  }
+  for (const id of requested) {
+    const item = owned.find((entry) => entry.id === id)
+    if (item === undefined) return { ok: false, reason: 'That item is not yours to keep.' }
+    if (item.heirloom !== undefined && item.heirloom.heroId !== heroId) return { ok: false, reason: 'That is another hero\'s heirloom.' }
   }
 
   const preview = legacyPreview(hero)
@@ -309,15 +324,16 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     const item = hero.equipment[slot]
     if (item !== null) archive.push(item)
   }
-  const allowance = heirloomAllowance(hero)
-  const previous = archive.filter((item) => item.heirloom?.heroId === heroId && item.id !== heirloomItemId)
-  const keepPrevious = new Set(previous.slice(0, Math.max(0, allowance - (heirloomItemId === null ? 0 : 1))).map((item) => item.id))
+  const chosen = new Set(requested)
+  const previous = archive.filter((item) => item.heirloom?.heroId === heroId && !chosen.has(item.id))
+  const room = explicit ? 0 : Math.max(0, allowance - chosen.size)
+  const keepPrevious = new Set(previous.slice(0, room).map((item) => item.id))
   const nextArchive = archive.map((item): ItemInstance => {
-    if (item.id === heirloomItemId) {
+    if (chosen.has(item.id) || keepPrevious.has(item.id)) {
       const cap = item.heirloom?.cap ?? item.itemLevel
       return { ...item, heirloom: { heroId, cap } }
     }
-    if (item.heirloom?.heroId === heroId && !keepPrevious.has(item.id)) {
+    if (item.heirloom?.heroId === heroId) {
       const { heirloom, ...plain } = item
       return { ...plain, itemLevel: heirloom.cap }
     }
