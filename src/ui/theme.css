@@ -667,6 +667,76 @@ nav[aria-label='Main'] button {
     flex: none;
     white-space: nowrap;
   }
+
+  /* Town on phones: the place picker and a gear shop's job row stay pinned under the status line. */
+  :root {
+    --place-h: 56px;
+  }
+
+  .place-picker {
+    position: sticky;
+    top: var(--status-h);
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: var(--place-h);
+    margin: 0 calc(-1 * var(--s4)) var(--s3);
+    padding: 0 var(--s4);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .place-picker label {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+    font-weight: 600;
+  }
+
+  .place-picker select {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .content .gear-jobs {
+    position: sticky;
+    top: calc(var(--status-h) + var(--place-h));
+    z-index: 3;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-right: calc(-1 * var(--s4));
+    margin-left: calc(-1 * var(--s4));
+    padding: var(--s2) var(--s4);
+    background: var(--bg);
+  }
+
+  .gear-jobs button {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .purse-materials > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .purse-materials > summary::after {
+    content: '▾';
+    color: var(--muted);
+  }
+
+  .purse-materials[open] > summary::after {
+    content: '▴';
+  }
 }
 
 /* ---- Choice chips: radio groups (race, class, route) ---- */

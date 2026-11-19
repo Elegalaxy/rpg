@@ -20,6 +20,7 @@ import { PackWorkshop } from './PackWorkshop.tsx'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
 import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
+import { useNarrow } from '../useNarrow.ts'
 import {
   buyItemFromUi,
   equipFromUi,
@@ -66,6 +67,8 @@ function useMessages(): { run: (problem: string | null, done: string) => void; m
 function PurseLine({ save }: { save: SaveData }) {
   const hero = selectedHero(save)
   const purse = purseOf(save)
+  const narrow = useNarrow()
+  const materials = Object.keys(MATERIAL_SELL_PRICE).map((id) => <Kpi compact key={id} label={id} value={purse.materials[id] ?? 0} />)
   return (
     <div className="purse">
       <div className="purse-head">
@@ -84,11 +87,17 @@ function PurseLine({ save }: { save: SaveData }) {
       </div>
       <KpiRow label="Purse">
         <Kpi compact tone="gold" label="Gold" value={<span data-testid="gold">{purse.gold}</span>} />
-        <Kpi compact tone={purse.debt > 0 ? 'bad' : undefined} label="Debt" value={<span data-testid="debt">{purse.debt}</span>} />
-        {Object.keys(MATERIAL_SELL_PRICE).map((id) => (
-          <Kpi compact key={id} label={id} value={purse.materials[id] ?? 0} />
-        ))}
+        {narrow && purse.debt === 0 ? null : (
+          <Kpi compact tone={purse.debt > 0 ? 'bad' : undefined} label="Debt" value={<span data-testid="debt">{purse.debt}</span>} />
+        )}
+        {narrow ? null : materials}
       </KpiRow>
+      {narrow ? (
+        <details className="purse-materials" data-testid="purse-materials">
+          <summary>Materials</summary>
+          <KpiRow label="Materials">{materials}</KpiRow>
+        </details>
+      ) : null}
       {save.expedition !== null ? <p>Greyhaven is closed while an expedition is running.</p> : null}
     </div>
   )

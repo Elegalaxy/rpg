@@ -34,6 +34,7 @@ import { Help } from './Help.tsx'
 import { MASTERY_HELP } from './masteryHelp.ts'
 import { newRecipeIds, useSeenRecipes } from './town/enchanterSeen.ts'
 import { PLACES, Town, type PlaceId } from './town/Town.tsx'
+import { PlacePicker } from './town/PlacePicker.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { PALETTES, applyPalette, applyTheme, storedPalette, storedTheme, type PaletteChoice, type ThemeChoice } from './theme.ts'
 import { debugLog } from './debug.ts'
@@ -361,6 +362,13 @@ function App() {
   const openShop = tab === 'town' ? PLACE_LIST.find((place) => place.id === townPart && place.gear !== undefined) : undefined
   const craftsAt = (place: PlaceDef) => unseenCrafts.filter((baseId) => dealsIn(place, baseId)).length
   const narrow = useNarrow()
+  const townBadges = {
+    'contract-board': { count: finishedContracts, what: 'finished contracts to collect' },
+    enchanter: { count: newRecipes, what: 'new recipes to learn' },
+    ...Object.fromEntries(
+      PLACE_LIST.filter((place) => place.gear !== undefined).map((place) => [place.id, { count: craftsAt(place), what: 'finished crafts' }]),
+    ),
+  }
 
   function tabBadge(id: AppTab) {
     if (id === 'town') return <Badge count={finishedContracts + unseenCrafts.length + newRecipes} what="things waiting in town" />
@@ -504,18 +512,11 @@ function App() {
               ) : null}
               {tab === 'town' ? (
                 <>
-                  <SubTabs
-                    tabs={TOWN_PARTS}
-                    current={townPart}
-                    onPick={setTownPart}
-                    badges={{
-                      'contract-board': { count: finishedContracts, what: 'finished contracts to collect' },
-                      enchanter: { count: newRecipes, what: 'new recipes to learn' },
-                      ...Object.fromEntries(
-                        PLACE_LIST.filter((place) => place.gear !== undefined).map((place) => [place.id, { count: craftsAt(place), what: 'finished crafts' }]),
-                      ),
-                    }}
-                  />
+                  {narrow ? (
+                    <PlacePicker places={TOWN_PARTS} current={townPart} onPick={setTownPart} badges={townBadges} />
+                  ) : (
+                    <SubTabs tabs={TOWN_PARTS} current={townPart} onPick={setTownPart} badges={townBadges} />
+                  )}
                   <Town place={townPart} />
                 </>
               ) : null}
