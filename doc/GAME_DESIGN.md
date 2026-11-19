@@ -2687,6 +2687,51 @@ Decided 2026-11-19 (user approved). A Legacy purchase that lets the hero equip a
   The best candidate per class is the same in the crafted prepared tier except Warrior (Cleave, last, +1.1) and Ranger (Hunter's Mark, last, -19.7). Crafted prepared tier: four means Warrior 90.8, Assassin 92.4, Ranger 92.6, Mage 94.1 (92.3 over three elites), Cleric 75.6; best five changes +1.1, +0.2, -19.7, -43.6 and +7.6 (Cleric Consecration, last); 2 of 20 cells cross to 95 or more (Warrior Cleave at one elite, Cleric Consecration at the Colossus, 79 to 96 in seed 1), 5 of 20 were already there; median win time at most -3.1%. Most other variants are worse than four: an unconditional fifth row spends Ranger Readiness, Mage mana, Cleric HP or Fury ahead of the reference rows (`five-first`) or in place of the basic attack (`five-last`), and Penance and Volley drop the win rate by 40 to 90 points. The Cleric's Consecration is the only candidate that helps clearly (+9.2 plain, per seed +9.8, +8.5, +9.3; Colossus 55 to 77). Warrior Reckless Strike changes nothing in these fights (results identical to four). This measures a naive unconditional row, not a tuned rotation.
 - Go/no-go (Part 2): GO. At the prepared tier no class gains more than 10 points (best +9.2, Cleric, close to the line), 0 of the 20 class x elite cells move from below 95% to 95% or more, and no variant cuts median win time (best -3.7%, `five-first` Consecration, which loses 4.5 points). Parts 3 and 4 wait for the user's decision.
 
+#### Tuned fifth skill rows (Step 13.34 follow-up, 2026-11-19)
+
+The Part 2 measurement above used one unconditional row per fifth skill, which spends Readiness, mana, HP or Fury ahead of the reference rows, so the Ranger, Mage and Cleric (Penance) results were far too pessimistic. This follow-up gives each candidate a conditional row built only from the existing rule vocabulary. Harness only (`src/harness/slots.ts`, `TUNED_ROWS`; shard runner `src/harness/slotsTuned.ts`); `src/sim`, content, the default `--matrix slots` and every guard are unchanged. Nothing player-visible changes, whatever the verdict.
+
+Two placements per skill, both measured against the same `four`: `tuned-first` puts the rows ahead of the first reference skill row (after the supply rows); `tuned-last` puts them after every conditional reference row but before the unconditional fallback attack, because a row after that attack could never fire. Resource thresholds are on the 0 to 100 meter (Fury, Readiness, mana, Faith). One attempt per skill, written before measuring, not fitted to the results, with the two refinements listed below.
+
+| Skill | Row condition (all must pass) |
+| --- | --- |
+| Cleave | 2 or more enemies; Fury at least 50 |
+| Reckless Strike | hero HP at least 70%; Fury at least 60 |
+| Smoke Step | hero HP at most 50% |
+| Fan of Knives | 2 or more enemies |
+| Hunter's Mark | fight time at most 1 second (opener) |
+| Flame Arrow | Readiness at least 60; target not burning; special ammo at least 1 |
+| Volley | Readiness at least 80 |
+| Chain Lightning | 2 or more enemies; mana at least 60 |
+| Penance | hero HP at least 70%; Faith at most 50 |
+| Consecration | row 1: 2 or more enemies; Faith at least 50. Row 2 (the OR): target HP at least 50%; Faith at least 60 |
+
+- "The target is an elite" cannot be read by a rule, so Consecration row 2 uses a healthy target (50% or more HP) as the stand-in: cast it early in a long fight.
+- Refinement 1 (Hunter's Mark): the first gate was "target not marked" (`mark` absent). Hunter's Mark only reveals the target and sets no status the rule can read, and the `mark` condition reads the Assassin's Mark for Death, so the gate never closed and the skill was recast every cooldown (Ranger -36.4 at best). It is now an opener. Result: no effect (+0.0 in every cell; the skill has no damage).
+- Refinement 2 (Smoke Step): the first draft had two rows (opener, or HP at most 50%), which passes the 12-row cap for the Assassin (11 rows with supplies), so it was never run. It is now the HP row only.
+- Consecration was also run as a single row (healthy target and Faith 60 only) so it fits the Cinder Tyrant under the 12-row cap. It measured worse (best -4.5 over four elites), so the two-row version stays, and the Tyrant is recorded as `row cap` for it, like the Mage. The Mage and Cleric rows below are therefore over three elites (Warden, Colossus, Reaver), each with its own `four` mean.
+
+Method: the full set is 10 candidates x 4 elites x 2 tiers x 3 variants (`four` and the two tuned placements) x 300 runs. It ran as 15 parallel Node processes (`npx tsx src/harness/slotsTuned.ts <class> <seed> <runs> <out.json> [skills]`, one per class and seed, seeds 1 to 3, 100 runs per cell), and the JSON was merged by a throwaway script that averages the win rate over the three seeds per cell. The refinements were re-run as extra shards (Hunter's Mark, Smoke Step, the one-row Consecration) and replace the first draft. The naive variants were not re-run; they are quoted from Part 2. Median win time is the mean over cells of each cell's change in the seed-averaged median.
+
+Results at the plain `prepared` tier (best tuned variant per class by mean win change; "cells crossing" counts cells that move from below 95% to 95% or more):
+
+| Class | Four (mean win) | Best tuned five | Win change | Median win time | Cells crossing |
+| --- | --- | --- | --- | --- | --- |
+| Warrior | 49.4 | Cleave, tuned-first | +7.6 | -3.1% | 0 of 4 |
+| Assassin | 64.6 | Fan of Knives, tuned-last | +7.1 | -1.6% | 0 of 4 |
+| Ranger | 61.1 | none helps (Hunter's Mark and Volley-last +0.0) | +0.0 | 0.0% | 0 of 4 |
+| Mage (3 elites) | 58.3 | Chain Lightning, tuned-first | +7.4 | -0.1% | 0 of 3 |
+| Cleric (3 elites) | 53.8 | Consecration, tuned-last | +5.4 | -2.5% | 0 of 3 |
+
+- Other tuned candidates at `prepared`: Warrior Cleave last +7.0, Reckless Strike +0.0 (never fires in these fights); Assassin Fan of Knives first +5.3 (one cell crosses, Tyrant 95 to 96), Smoke Step last +1.3 and first -2.2; Ranger Volley first -6.9, Flame Arrow last -7.3 and first -14.2; Mage Chain Lightning last +5.7; Cleric Consecration first +2.9, Penance -13.1 in both placements.
+- Naive row (Part 2) against tuned, best per class: Warrior +0.0 to +7.6, Assassin +2.6 to +7.1, Mage -46.2 to +7.4, Ranger -32.7 to +0.0. The Cleric went the other way: naive Consecration +9.2 (four elites, Tyrant included) against +5.4 tuned (three elites) and -4.5 for the one-row version over four. The unconditional Consecration cast more often than the gated one.
+- `prepared-crafted` tier: best change +0.9 Warrior (Cleave first, Warden 94 to 97), +1.4 Assassin (Fan last), +0.0 Ranger, +2.9 Mage (Chain Lightning first, 92.3 to 95.2), +5.1 Cleric (Consecration first, 78.3 to 83.4). At most one cell per class crosses to 95 or more. Median win time never improves by more than 3.9% (Cleric Consecration first).
+- Reading the losses: Penance (-13 to -19) and Flame Arrow (-7 to -14) lose even when gated, because the HP and Readiness they spend are what the reference rows live on. Volley fires only at Readiness 80, so behind Aimed Shot it almost never fires. These fights are mostly single-target, so Cleave, Fan of Knives and Chain Lightning gain only where adds appear (the Warden and the Colossus).
+
+Go/no-go on the same thresholds (best class gain over 10 points; more than half of the 20 prepared cells crossing to 95 or more; median win time cut by more than 20%): GO. The best class gain is +7.6 (Warrior), 0 of the 18 measured prepared cells cross, and the best median win time change is -3.9%. A well-played fifth skill is a modest edge (about 5 to 8 points of win rate at the elites for four of the five classes, none for the Ranger), not a new tier of power.
+
+Price: the 90 Legacy price still looks right. The slot is worth at most about 8 points of win rate in the hardest fights, mostly for the Warrior, Mage and Assassin (and the Cleric with an unconditional Consecration), and the Ranger has no useful fifth skill in the current kit. No change is proposed. This measures a hand-built rotation at the four elites, not a player's skill web, so it is a floor for a thoughtful player rather than a ceiling.
+
 ### Later lives (Step 13.18)
 
 Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.

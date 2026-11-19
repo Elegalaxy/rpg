@@ -5,7 +5,7 @@ import { HERO_CLASSES } from '../sim/constants.ts'
 import { createCombat } from '../sim/combat.ts'
 
 import { ELITE_CELLS } from './elites.ts'
-import { FIFTH_SKILL_CANDIDATES, SLOT_VARIANTS, formatSlotsTable, runSlotsMatrix, slotSetup } from './slots.ts'
+import { FIFTH_SKILL_CANDIDATES, SLOT_VARIANTS, TUNED_ROWS, TUNED_VARIANTS, formatSlotsTable, runSlotsMatrix, slotSetup } from './slots.ts'
 
 const cell = (elite: string, tier: string) => ELITE_CELLS.find((entry) => entry.elite === elite && entry.tier === tier)!
 
@@ -75,5 +75,42 @@ describe('slots matrix', () => {
     const rows = runSlotsMatrix(1, 1, { classes: ['mage'], elites: ['tyrant'], tiers: ['prepared'] })
     expect(rows.map((row) => [row.variant, row.note])).toEqual([['four', null], ['five-last', 'row cap'], ['five-first', 'row cap']])
     expect(formatSlotsTable(rows)).toContain('five-last: row cap')
+  })
+
+  it('has tuned rows for every candidate and builds valid, deterministic tuned setups', () => {
+    const defs = gameDefs()
+    for (const classId of HERO_CLASSES) {
+      for (const skillId of FIFTH_SKILL_CANDIDATES[classId]) {
+        expect(TUNED_ROWS[skillId]!.length).toBeGreaterThan(0)
+        for (const tier of ['prepared', 'prepared-crafted']) {
+          const four = slotSetup(classId, cell('colossus', tier), skillId, 'four')!
+          for (const variant of TUNED_VARIANTS) {
+            const five = slotSetup(classId, cell('colossus', tier), skillId, variant)
+            if (five === null) continue
+            const equipped = five.hero.equippedSkillIds ?? []
+            expect(equipped).toHaveLength(5)
+            expect(new Set(equipped).size).toBe(5)
+            expect(equipped).toContain(skillId)
+            expect(five.hero.allocatedNodeIds).toEqual(four.hero.allocatedNodeIds)
+            expect(() => createCombat(five, defs, 1)).not.toThrow()
+            expect(slotSetup(classId, cell('colossus', tier), skillId, variant)).toEqual(five)
+          }
+        }
+      }
+    }
+  })
+
+  it('puts tuned rows ahead of the reference rows or just before the fallback attack', () => {
+    const first = slotSetup('cleric', cell('warden', 'prepared'), 'consecration', 'tuned-first')!.hero.priorityRows!
+    const at = first.findIndex((row) => row.skillId === 'consecration')
+    expect(referenceLoadoutFor('cleric').equippedSkillIds).toContain(first[at + 2]!.skillId)
+    const last = slotSetup('cleric', cell('warden', 'prepared'), 'consecration', 'tuned-last')!.hero.priorityRows!
+    expect(last.at(-1)).toEqual({ skillId: 'smite', targetPriority: 'lowestResistance' })
+    expect(last.at(-2)!.skillId).toBe('consecration')
+  })
+
+  it('runs the tuned variants through the matrix filter', () => {
+    const rows = runSlotsMatrix(1, 2, { classes: ['cleric'], skills: ['consecration'], elites: ['warden'], tiers: ['prepared'], variants: ['four', 'tuned-last', 'tuned-first'] })
+    expect(rows.map((row) => row.variant)).toEqual(['four', 'tuned-last', 'tuned-first'])
   })
 })

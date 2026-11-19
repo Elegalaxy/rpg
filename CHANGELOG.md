@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Tech: the fifth-skill measurement now has conditional "tuned" rows for every candidate (harness only) and finds the slot worth up to about 8 points of win rate at the elites, so the 90 Legacy price stays. [13.34]
+
 ## 0.18.0 · 2026-11-19 · Fifth skill slot
 
 - Improved: on a phone, Greyhaven picks its place from one "Place" list with waiting counts, pins it and a shop's job row under the status line, keeps the jobs on one sideways row, folds the materials so the purse shows just gold, and drops the place heading the list already names.

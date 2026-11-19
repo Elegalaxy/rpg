@@ -5,7 +5,7 @@ import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
 import { MAX_LOADOUT_SLOTS } from '../sim/progression.ts'
 import { deriveSeed } from '../sim/rng.ts'
-import type { CombatSetup, PriorityRow } from '../sim/types.ts'
+import type { AutomationCondition, CombatSetup, PriorityRow } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 import { ELITE_CELLS, ELITE_IDS, eliteSetup, type EliteCell, type EliteId } from './elites.ts'
@@ -25,7 +25,9 @@ export const FIFTH_SKILL_CANDIDATES: { readonly [classId in HeroClass]: readonly
 }
 
 export const SLOT_VARIANTS = ['four', 'five-last', 'five-first'] as const
-export type SlotVariant = (typeof SLOT_VARIANTS)[number]
+/** The tuned variants (Step 13.34 follow-up): the fifth skill on conditional rows, before the unconditional fallback row (`tuned-last`) or ahead of the reference rows (`tuned-first`). */
+export const TUNED_VARIANTS = ['tuned-last', 'tuned-first'] as const
+export type SlotVariant = (typeof SLOT_VARIANTS)[number] | (typeof TUNED_VARIANTS)[number]
 
 /** The tiers measured: the prepared tier and its crafted-supplies variant. */
 export const SLOT_TIERS = ['prepared', 'prepared-crafted'] as const
@@ -49,6 +51,40 @@ export type SlotRow = {
 
 /** Recorded on a variant that was not run because the extra row would pass `MAX_PRIORITY_ROWS`. */
 export const ROW_CAP_NOTE = 'row cap'
+
+const atLeast = (kind: 'classResource', value: number): AutomationCondition => ({ kind, operator: 'atLeast', value })
+const atMostResource = (value: number): AutomationCondition => ({ kind: 'classResource', operator: 'atMost', value })
+const enemies2: AutomationCondition = { kind: 'enemyCount', operator: 'atLeast', value: 2 }
+const heroHp = (operator: 'atLeast' | 'atMost', value: number): AutomationCondition => ({ kind: 'hpPercent', who: 'hero', operator, value })
+
+/**
+ * The tuned rows for a fifth skill: conditions built only from the existing rule vocabulary (see GAME_DESIGN section 10,
+ * "Tuned fifth skill rows"). A skill may have two rows (the same skill on a later row is the OR). One reasonable attempt
+ * per skill, not fitted to the results.
+ */
+export const TUNED_ROWS: { readonly [skillId: string]: readonly PriorityRow[] } = {
+  cleave: [{ skillId: 'cleave', conditions: [enemies2, atLeast('classResource', 50)] }],
+  'reckless-strike': [{ skillId: 'reckless-strike', conditions: [heroHp('atLeast', 70), atLeast('classResource', 60)] }],
+  // One row, because a second row passes the 12-row cap for the Assassin (11 rows with supplies). First draft had an opener row as well.
+  'smoke-step': [{ skillId: 'smoke-step', conditions: [heroHp('atMost', 50)] }],
+  'fan-of-knives': [{ skillId: 'fan-of-knives', conditions: [enemies2] }],
+  // Refined once: the first gate (`mark` absent) never closes, because Hunter's Mark only reveals and sets no status the rule can read, so it was recast every cooldown. It is now an opener.
+  'hunters-mark': [{ skillId: 'hunters-mark', conditions: [{ kind: 'fightTime', operator: 'atMost', value: 1000 }] }],
+  'flame-arrow': [
+    {
+      skillId: 'flame-arrow',
+      conditions: [atLeast('classResource', 60), { kind: 'status', who: 'target', statusId: 'burn', measure: 'presence', operator: 'absent' }, { kind: 'specialAmmo', operator: 'atLeast', value: 1 }],
+    },
+  ],
+  volley: [{ skillId: 'volley', conditions: [atLeast('classResource', 80)] }],
+  'chain-lightning': [{ skillId: 'chain-lightning', conditions: [enemies2, atLeast('classResource', 60)] }],
+  penance: [{ skillId: 'penance', conditions: [heroHp('atLeast', 70), atMostResource(50)] }],
+  // Two rows (the same skill twice is the OR). They fit the 12-row cap everywhere except the Cinder Tyrant, which is recorded as `row cap` like the Mage. A one-row draft (healthy target and resource only) fitted the Tyrant and measured worse; see GAME_DESIGN.
+  consecration: [
+    { skillId: 'consecration', conditions: [enemies2, atLeast('classResource', 50)] },
+    { skillId: 'consecration', conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atLeast', value: 50 }, atLeast('classResource', 60)] },
+  ],
+}
 
 /** The node that unlocks `skillId` and every node before it in its chain, earliest first. */
 function nodesToUnlock(classId: HeroClass, skillId: string): string[] {
@@ -79,8 +115,22 @@ export function slotSetup(classId: HeroClass, cell: EliteCell, skillId: string, 
   const nodes = [...held, ...nodesToUnlock(classId, skillId).filter((id) => !held.includes(id))]
   const hero = { ...base.hero, allocatedNodeIds: nodes }
   if (variant === 'four') return { ...base, hero: { ...hero, equippedSkillIds: equipped, priorityRows: rows } }
-  const row: PriorityRow = { skillId }
   let next: PriorityRow[]
+  if (variant === 'tuned-first' || variant === 'tuned-last') {
+    const tuned = TUNED_ROWS[skillId]
+    if (tuned === undefined) throw new Error(`no tuned rows for ${skillId}`)
+    if (variant === 'tuned-first') {
+      const index = rows.findIndex((entry) => isReference(entry.skillId))
+      next = index < 0 ? [...rows, ...tuned] : [...rows.slice(0, index), ...tuned, ...rows.slice(index)]
+    } else {
+      // A row after the unconditional fallback attack could never fire, so go just before it.
+      const last = rows.at(-1)
+      next = last !== undefined && (last.conditions ?? []).length === 0 ? [...rows.slice(0, -1), ...tuned, last] : [...rows, ...tuned]
+    }
+    if (next.length > MAX_PRIORITY_ROWS) return null
+    return { ...base, hero: { ...hero, equippedSkillIds: [...equipped, skillId], priorityRows: next } }
+  }
+  const row: PriorityRow = { skillId }
   if (variant === 'five-last') {
     next = [...rows, row]
   } else {
@@ -95,6 +145,10 @@ export type SlotsFilter = {
   classes?: readonly HeroClass[]
   elites?: readonly EliteId[]
   tiers?: readonly SlotTier[]
+  /** Default `SLOT_VARIANTS`. */
+  variants?: readonly SlotVariant[]
+  /** Only these candidate skills. */
+  skills?: readonly string[]
 }
 
 /** Every class, candidate, elite and tier with the four variants, in rules mode. A variant that would pass the row cap is not run and is listed with the note `row cap`. */
@@ -105,12 +159,13 @@ export function runSlotsMatrix(seed: number, runs: number, filter: SlotsFilter =
   for (const classId of HERO_CLASSES) {
     if (filter.classes !== undefined && !filter.classes.includes(classId)) continue
     for (const skillId of FIFTH_SKILL_CANDIDATES[classId]) {
+      if (filter.skills !== undefined && !filter.skills.includes(skillId)) continue
       for (const elite of ELITE_IDS) {
         if (filter.elites !== undefined && !filter.elites.includes(elite)) continue
         for (const tier of SLOT_TIERS) {
           if (filter.tiers !== undefined && !filter.tiers.includes(tier)) continue
           const cell = ELITE_CELLS.find((entry) => entry.elite === elite && entry.tier === tier)!
-          for (const variant of SLOT_VARIANTS) {
+          for (const variant of filter.variants ?? SLOT_VARIANTS) {
             const setup = slotSetup(classId, cell, skillId, variant)
             if (setup === null) {
               rows.push({ classId, elite, tier, skillId, variant, winRate: null, hpLost: null, medianWinMs: null, note: ROW_CAP_NOTE })
