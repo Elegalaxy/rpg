@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Fixed: skill descriptions in the Guide and skill web no longer show "Heals 0% of max HP" or internal names; they use plain wording and status names (Expose, Poison), and an effect that does nothing is left out. [13.33]
+
 ## 0.17.0 · 2026-11-19 · Lean inheritance
 
 - Improved: a free heirloom slot can be used right away on an item you own (Legacy screen, "Make heirloom now"), not only at the next reincarnation. [13.32]

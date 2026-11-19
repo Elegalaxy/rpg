@@ -209,7 +209,7 @@ export const statusGuide: Record<string, { summary: string }> = {
   chill: { summary: 'Slows the target’s actions. Each stack slows a little more than the last, and reapplication refreshes the duration.' },
   stun: { summary: 'Pushes the target’s next action later by a short time instead of freezing it.' },
   mark: { summary: 'A guaranteed target designation. What it enables depends on the class that uses it.' },
-  expose: { summary: 'Lowers armor and or resistance. Only the strongest Expose on a target counts, and new applications refresh its duration.' },
+  expose: { summary: 'Lowers armor, resistance or both. Only the strongest Expose on a target counts, and new applications refresh its duration.' },
 }
 
 /** Class-owned skills that no web node or starting slot names directly. The value says how the hero gets them. */

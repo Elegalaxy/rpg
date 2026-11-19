@@ -1211,6 +1211,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.33: Plain Guide skill text
+- Status: `done`
+- Depends on: 13.25
+- Goal: the skill effect lines in the Guide, the skill web, Loadout and rules read as plain player text: no zero-value effects ("Heals 0% of max HP"), no internal kind names ("chain", "arm trap", "lose hp"), display names for statuses, one line per distinct effect. `effectLine` in `ui/skillInfo.ts` is the only generator; a test scans every skill and Guide entry for artefacts. `src/sim`, content numbers and the harness are untouched.
+- Parts: (1) generator and Guide text fix. (2) artefact test, CHANGELOG.
+- Part status: 1 `done`. 2 `done`.
+- Progress:
+  - 2026-11-19: Done. `effectLine` rewritten with an exhaustive switch and empty lines dropped; new test in `ui/skillInfo.test.ts`; Expose summary typo fixed in `content/guide.ts`.
+
 ### Step 13.32: Claim an heirloom now
 - Status: `done`
 - Depends on: 13.29, 13.31
