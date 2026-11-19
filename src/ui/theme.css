@@ -1197,8 +1197,35 @@ button.help-mark {
 }
 
 .help:hover .help-tip,
-.help:focus-within .help-tip {
+.help:focus-within .help-tip,
+.help.is-open .help-tip {
   display: block;
+}
+
+/* Phones: a tapped hint opens as a panel above the tabs, so it never runs off the screen's edge. */
+@media (max-width: 899px) {
+  .help:hover:not(.is-open) .help-tip,
+  .help:focus-within:not(.is-open) .help-tip {
+    display: none;
+  }
+
+  span.help .help-tip {
+    position: fixed;
+    right: var(--s4);
+    bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom) + var(--s3));
+    left: var(--s4);
+    top: auto;
+    width: auto;
+    max-width: none;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 /* A rule's plain-language sentence, under its controls */

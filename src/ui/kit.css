@@ -723,6 +723,38 @@ li.contract-track-row {
   flex: none;
 }
 
+.contract-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.contract-fold-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contract-fold > summary::after {
+  content: '▾';
+  color: var(--muted);
+}
+
+.contract-fold[open] > summary::after {
+  content: '▴';
+}
+
+.contract-fold[open] > summary {
+  margin-bottom: var(--s2);
+}
+
 /* ---- Going in with: the pre-flight summary above Start expedition ---- */
 
 .going-in {
@@ -1382,6 +1414,7 @@ dl.upgrade-facts dd {
   white-space: nowrap;
 }
 
+/* Phones: two rows. Status and counts on top, the four controls as equal buttons below. */
 @media (max-width: 899px) {
   .run-bar {
     top: var(--status-h);
@@ -1389,13 +1422,41 @@ dl.upgrade-facts dd {
   }
 
   .run-bar-meta {
-    grid-column: 1;
-    flex-wrap: wrap;
+    gap: var(--s2);
   }
 
   .run-bar-actions {
     grid-column: 1 / -1;
-    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .run-bar-actions .hold-actions,
+  .run-bar-actions .button-row {
+    display: contents;
+  }
+
+  .run-bar-actions > .hold-actions button,
+  .run-bar-escape {
+    flex: 1 1 auto;
+  }
+
+  .run-bar-actions button {
+    padding-right: var(--s2);
+    padding-left: var(--s2);
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .run-bar-escape {
+    display: block;
+  }
+
+  .run-bar-escape > button {
+    width: 100%;
+  }
+
+  .run-bar .help {
+    display: none;
   }
 }
 

@@ -641,6 +641,7 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
   const autoMax = hero?.autoRunMaxFights ?? null
   const autoFights = getAutoFights()
   const vow = vowLabel(expedition.hero.vow)
+  const narrow = useNarrow()
   useEffect(() => {
     if (vow !== null) debugLog('[ui]', 'run vow', { vow: expedition.hero.vow, label: vow })
   }, [expedition.hero.vow, vow])
@@ -690,11 +691,17 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
         ) : null}
       </div>
       <div className="run-bar-actions">
-        <HoldActions waiting={waiting} whyDisabled="Available once the fight is over." />
+        <HoldActions waiting={waiting} whyDisabled="Available once the fight is over." compact={narrow} />
         {expedition.outcome === 'ongoing' ? (
           <span className="run-bar-escape">
-            <button type="button" data-testid="auto-run-toggle" aria-pressed={autoOn} onClick={() => setAutoRunFromUi(!autoOn)}>
-              Auto run: {autoOn ? 'On' : 'Off'}
+            <button
+              type="button"
+              data-testid="auto-run-toggle"
+              aria-pressed={autoOn}
+              aria-label={narrow ? 'Auto run' : undefined}
+              onClick={() => setAutoRunFromUi(!autoOn)}
+            >
+              {narrow ? 'Auto' : 'Auto run'}: {autoOn ? 'On' : 'Off'}
             </button>
             <Help label="About Auto run">
               When on, the hero pushes on or walks home after each fight by your standing orders, and reruns this route after each safe return. Switch it off to take over; Push on and Return
@@ -704,8 +711,13 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
         ) : null}
         {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
           <span className="run-bar-escape">
-            <button type="button" aria-pressed={expedition.autoEscapeOff !== true} onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}>
-              Auto-escape: {expedition.autoEscapeOff === true ? 'Off' : 'On'}
+            <button
+              type="button"
+              aria-pressed={expedition.autoEscapeOff !== true}
+              aria-label={narrow ? 'Auto-escape' : undefined}
+              onClick={() => setAutoEscapeFromUi(expedition.autoEscapeOff === true)}
+            >
+              {narrow ? 'Escape' : 'Auto-escape'}: {expedition.autoEscapeOff === true ? 'Off' : 'On'}
             </button>
             <Help label="About auto-escape">
               When on, the hero tries to escape once HP falls to your retreat setting. Switch it off to fight on; it also stops a pending retry.
