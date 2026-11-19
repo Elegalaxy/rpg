@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.18.0 · 2026-11-19 · Fifth skill slot
 
 - Improved: on a phone, Greyhaven picks its place from one "Place" list with waiting counts, pins it and a shop's job row under the status line, keeps the jobs on one sideways row, folds the materials so the purse shows just gold, and drops the place heading the list already names.
 - Improved: reincarnation offers one heirloom picker for each slot you own, so a second or third slot is a real choice.
