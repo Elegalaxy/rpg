@@ -66,3 +66,15 @@ describe('Grove run', () => {
     expect(units('scrap')).toBe(0)
   })
 })
+
+describe('five equipped skills (Step 13.34)', () => {
+  it('passes all five to the blueprint and runs a fight', () => {
+    const base = hero()
+    const progress = { ...base.progress, learnedSkillIds: [...base.progress.learnedSkillIds, 'smite'], loadout: [...base.progress.loadout, 'smite'] }
+    const five = { ...base, progress, purchases: { ...base.purchases, fifthSlot: true } }
+    const blueprint = blueprintForHero(five, 'splintered-road')
+    expect(blueprint.hero.equippedSkillIds).toHaveLength(5)
+    const state = createExpedition(blueprint, 1)
+    expect(() => runExpedition(state, gameDefs(), 1, 600_000)).not.toThrow()
+  })
+})

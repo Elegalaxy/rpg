@@ -11,6 +11,7 @@ import { SUPPLY_STACK_LIMIT, assertExpedition, type ExpeditionState } from '../s
 import { assertProgress, type HeroProgress } from '../sim/progression.ts'
 import { isPackId, overStacked, packSlots, type PackId } from './pack.ts'
 import { elitesFromClaimed } from './remembered.ts'
+import { loadoutSlots } from './skillSlots.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
 import type { PriorityRow, RuleStack } from '../sim/types.ts'
 
@@ -216,6 +217,8 @@ export type HeroPurchases = {
   longMemory?: number
   /** Whether the Third Heirloom was bought. Absent means false. */
   thirdHeirloom?: boolean
+  /** Whether the Fifth Skill Slot was bought: five equipped skills instead of four (Step 13.34). Absent means false. */
+  fifthSlot?: boolean
 }
 
 export const EMPTY_PURCHASES: HeroPurchases = {
@@ -619,6 +622,9 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
     check(tier === undefined || (typeof tier === 'number' && Number.isInteger(tier) && tier >= 0 && tier <= max), `${label} ${text} must be a whole number from 0 to ${max}`)
   }
   check(value.purchases.thirdHeirloom === undefined || typeof value.purchases.thirdHeirloom === 'boolean', `${label} third heirloom must be true or false`)
+  check(value.purchases.fifthSlot === undefined || typeof value.purchases.fifthSlot === 'boolean', `${label} fifth slot must be true or false`)
+  const slots = loadoutSlots({ purchases: value.purchases as HeroPurchases })
+  check(value.progress.loadout.length <= slots, `${label} equips more than ${slots} skills`)
   check(value.pastLifeItemIds === undefined || (Array.isArray(value.pastLifeItemIds) && value.pastLifeItemIds.every((id: unknown) => typeof id === 'string')), `${label} earlier-life items must be a list of text`)
   whole(value.echoRank, `${label} Echo rank`)
   whole(value.fightRank, `${label} fight rank`)

@@ -24,8 +24,10 @@ import {
   validateRules,
   type RowDraft,
 } from './loadout.ts'
+import { FIFTH_SLOT_COST } from './reincarnation.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, newSave, type SaveData } from './save.ts'
+import { loadoutSlots } from './skillSlots.ts'
 
 function heroSave(classId: (typeof HERO_CLASSES)[number] = 'assassin'): SaveData {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId })
@@ -359,5 +361,45 @@ describe('starting rules for a reset', () => {
     const drafts = startingRuleDrafts(hero)
     const allowed = ruleSkillIds(hero)
     expect(drafts.every((row) => allowed.includes(row.skillId))).toBe(true)
+  })
+})
+
+describe('fifth skill slot', () => {
+  /** An assassin who knows a fifth skill and holds the given purchase. */
+  function fiveSkills(bought: boolean) {
+    const save = heroSave()
+    const base = hero(save)
+    const fifth = 'smite'
+    const learned = [...new Set([...base.progress.learnedSkillIds, fifth])]
+    const ids = [...base.progress.loadout, fifth]
+    const heroes = save.heroes.map((entry) => ({
+      ...entry,
+      progress: { ...entry.progress, learnedSkillIds: learned },
+      purchases: { ...entry.purchases, ...(bought ? { fifthSlot: true } : {}) },
+    }))
+    return { save: { ...save, heroes }, ids, fifth }
+  }
+
+  it('refuses five skills without the purchase and saves them with it', () => {
+    const without = fiveSkills(false)
+    expect(loadoutSlots(hero(without.save))).toBe(4)
+    expect(without.ids).toHaveLength(5)
+    expect(saveLoadout(without.save, 'hero-1', without.ids).ok).toBe(false)
+    const withIt = fiveSkills(true)
+    expect(loadoutSlots(hero(withIt.save))).toBe(5)
+    const result = saveLoadout(withIt.save, 'hero-1', withIt.ids)
+    if (!result.ok) throw new Error(result.reason)
+    expect(hero(result.save).progress.loadout).toEqual(withIt.ids)
+    expect(() => assertSaveData(result.save)).not.toThrow()
+    expect(saveLoadout(withIt.save, 'hero-1', [...withIt.ids, 'cleave']).ok).toBe(false)
+    expect(FIFTH_SLOT_COST).toBe(90)
+  })
+
+  it('lets a rule name the fifth skill', () => {
+    const { save, ids, fifth } = fiveSkills(true)
+    const result = saveLoadout(save, 'hero-1', ids)
+    if (!result.ok) throw new Error(result.reason)
+    expect(ruleSkillIds(hero(result.save))).toContain(fifth)
+    expect(validateRules(hero(result.save), [draft(fifth)]).ok).toBe(true)
   })
 })

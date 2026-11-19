@@ -18,6 +18,7 @@ import {
   ATTRIBUTE_SEED_COST,
   HEAD_START_COSTS,
   HEAD_START_LEVELS,
+  FIFTH_SLOT_COST,
   SECOND_HEIRLOOM_COST,
   SKILL_SEED_COSTS,
   bonusesDue,
@@ -770,6 +771,35 @@ describe('lean inheritance (Step 13.31)', () => {
     expect(need(2)).toBe(cumulativeXpToReachLevel(16))
     expect(recallTarget({ ...low, peakLevel: undefined })).toBeNull()
     expect(nextLifePreview({ ...hero(two), peakLevel: 10 }, []).recallUntil).toBe(Math.max(16, hero(two).progress.level + 6))
+  })
+})
+
+describe('Fifth Skill Slot (Step 13.34)', () => {
+  function stocked(): SaveData {
+    const base = veteran()
+    return { ...base, heroes: base.heroes.map((h) => ({ ...h, legacy: 500 })) }
+  }
+
+  it('costs 90, can be bought once, and is refused without the Legacy or during an expedition', () => {
+    const base = stocked()
+    const bought = ok(buyPurchase(base, 'hero-1', 'fifthSlot'))
+    expect(FIFTH_SLOT_COST).toBe(90)
+    expect(hero(bought).purchases.fifthSlot).toBe(true)
+    expect(hero(bought).legacy).toBe(hero(base).legacy - 90)
+    expect(buyPurchase(bought, 'hero-1', 'fifthSlot')).toEqual({ ok: false, reason: 'You already have the fifth skill slot.' })
+    const poor = { ...base, heroes: base.heroes.map((h) => ({ ...h, legacy: 89 })) }
+    expect(buyPurchase(poor, 'hero-1', 'fifthSlot')).toEqual({ ok: false, reason: 'That costs 90 Legacy. Ash has 89.' })
+    const running = { ...base, expedition: startExpedition(hero(base), 'splintered-road', 1) }
+    expect(buyPurchase(running, 'hero-1', 'fifthSlot')).toEqual({ ok: false, reason: 'Finish the expedition first.' })
+    expect(hero(bought).progress).toEqual(hero(base).progress)
+  })
+
+  it('survives reincarnation, and the new life starts with four skills equipped', () => {
+    const bought = ok(buyPurchase(stocked(), 'hero-1', 'fifthSlot'))
+    const next = hero(ok(reincarnate(bought, 'hero-1', null)))
+    expect(next.purchases.fifthSlot).toBe(true)
+    expect(next.progress.loadout).toHaveLength(4)
+    expect(() => assertSaveData(ok(reincarnate(bought, 'hero-1', null)))).not.toThrow()
   })
 })
 

@@ -34,6 +34,8 @@ export const HEAD_START_LEVELS: readonly number[] = [5, 10, 15]
 export const HEAD_START_COSTS: readonly number[] = [20, 35, 55]
 /** Third Heirloom (Step 13.31): keep a third heirloom. Needs the Second Heirloom. */
 export const THIRD_HEIRLOOM_COST = 50
+/** Fifth Skill Slot (Step 13.34): equip five skills instead of four. */
+export const FIFTH_SLOT_COST = 90
 /** Artisan's Favor tiers: free upgrade tokens each new life starts with, and the Legacy each tier costs. */
 export const ARTISAN_TOKENS: readonly number[] = [1, 2]
 export const ARTISAN_COSTS: readonly number[] = [30, 45]
@@ -350,7 +352,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
   return { ok: true, save: scaleHeirlooms(next, heroId), hero: renewed }
 }
 
-export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets' | 'headStart' | 'stockpile' | 'artisan' | 'memory'
+export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets' | 'headStart' | 'stockpile' | 'artisan' | 'memory' | 'fifthSlot'
 
 /** The level each new life starts at: 1, or the level of the Head Start tier bought. */
 export function headStartLevel(purchases: HeroPurchases): number {
@@ -417,6 +419,10 @@ export function buyPurchase(
     if (price === undefined) return { ok: false, reason: 'You already have every Long Memory.' }
     cost = price
     purchases = { ...purchases, longMemory: (hero.purchases.longMemory ?? 0) + 1 }
+  } else if (kind === 'fifthSlot') {
+    if (hero.purchases.fifthSlot === true) return { ok: false, reason: 'You already have the fifth skill slot.' }
+    cost = FIFTH_SLOT_COST
+    purchases = { ...purchases, fifthSlot: true }
   } else if (!hero.purchases.secondHeirloom) {
     cost = SECOND_HEIRLOOM_COST
     purchases = { ...purchases, secondHeirloom: true }
@@ -442,7 +448,8 @@ export function buyPurchase(
 
 /**
  * Step 13.30: a purchase also applies to the current life. Each later life still rebuilds from the racial base
- * plus every seed (`startingProgress`), so nothing is counted twice. Second Heirloom and Deep Pockets change nothing here.
+ * plus every seed (`startingProgress`), so nothing is counted twice. Second Heirloom and Deep Pockets change nothing here,
+ * and neither does the Fifth Skill Slot: the slot count is read from `purchases` (`loadoutSlots`).
  */
 function applyToCurrentLife(
   progress: HeroProgress,

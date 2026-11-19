@@ -7,6 +7,7 @@ import { createExpedition, SPLINTERED_ROAD_ID, stepExpedition, type ExpeditionBl
 import { createProgress } from '../sim/progression.ts'
 import type { GameDefs } from '../sim/types.ts'
 import { HERO_UPDATES } from './heroUpdates.ts'
+import { createHero } from './roster.ts'
 
 import {
   CORRUPT_KEY_PREFIX,
@@ -288,5 +289,35 @@ describe('last seen time and standing orders in the save', () => {
     raw.lastSeenAt = 1_700_000_000_000
     raw.heroes[0]!.pushOnHpPercent = 0
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: expect.stringMatching(/push-on percent/) })
+  })
+})
+
+describe('fifth slot in a save (Step 13.34)', () => {
+  function raw() {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    return JSON.parse(serializeSave(made.save))
+  }
+
+  it('loads an old save without the field', () => {
+    const data = raw()
+    delete data.heroes[0].purchases.fifthSlot
+    expect(parseSave(JSON.stringify(data)).ok).toBe(true)
+  })
+
+  it('refuses five equipped skills without the purchase, and accepts them with it', () => {
+    const data = raw()
+    data.heroes[0].progress.learnedSkillIds = [...data.heroes[0].progress.learnedSkillIds, 'smite']
+    data.heroes[0].progress.loadout = [...data.heroes[0].progress.loadout.slice(0, 4), 'smite']
+    expect(data.heroes[0].progress.loadout).toHaveLength(5)
+    expect(parseSave(JSON.stringify(data)).ok).toBe(false)
+    data.heroes[0].purchases.fifthSlot = true
+    expect(parseSave(JSON.stringify(data)).ok).toBe(true)
+  })
+
+  it('refuses a fifth slot that is not true or false', () => {
+    const data = raw()
+    data.heroes[0].purchases.fifthSlot = 1
+    expect(parseSave(JSON.stringify(data)).ok).toBe(false)
   })
 })

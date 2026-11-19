@@ -18,6 +18,7 @@ import {
 } from '../sim/types.ts'
 
 import type { RosterResult } from './roster.ts'
+import { loadoutSlots } from './skillSlots.ts'
 import type { SaveData, SavedHero } from './save.ts'
 
 export { MAX_PRIORITY_ROWS, MAX_RULE_STACKS, MAX_STACK_NAME_LENGTH }
@@ -390,7 +391,7 @@ export function startingRuleDrafts(hero: SavedHero): RowDraft[] {
   return draftsFromRows(startingRules(referenceLoadoutFor(hero.classId).priorityRows)).filter((row) => allowed.includes(row.skillId))
 }
 
-/** Skills a rule row may name for this hero: the equipped four, the temporary slot skills, and the supplies a rule uses. */
+/** Skills a rule row may name for this hero: the equipped skills, the temporary slot skills, and the supplies a rule uses. */
 export function ruleSkillIds(hero: SavedHero): string[] {
   const ids = [...hero.progress.loadout, ...RULE_SUPPLY_IDS]
   const nodes = hero.progress.allocatedNodeIds
@@ -559,7 +560,7 @@ export function saveRuleStacks(save: SaveData, heroId: string, drafts: readonly 
 }
 
 /**
- * Choose 1 to 4 learned skills. Rules that name a skill that is no longer equipped are removed, and
+ * Choose 1 to 4 learned skills (5 with the Fifth Skill Slot). Rules that name a skill that is no longer equipped are removed, and
  * the result says how many, so the player is never left with a rule the fight would skip.
  */
 export function saveLoadout(
@@ -571,7 +572,7 @@ export function saveLoadout(
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
   let progress
   try {
-    progress = setLoadout(hero.progress, skillIds)
+    progress = setLoadout(hero.progress, skillIds, loadoutSlots(hero))
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : String(error) }
   }
