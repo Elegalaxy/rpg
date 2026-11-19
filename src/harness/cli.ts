@@ -22,6 +22,7 @@ import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
 import { formatCinderTable, runCinderMatrix } from './cinder.ts'
 import { ELITE_CELLS, ELITE_IDS, ELITE_MODES, formatElitesTable, runElitesMatrix, type EliteFilter } from './elites.ts'
 import { formatPackTable, runPackMatrix } from './pack.ts'
+import { formatSlotsTable, runSlotsMatrix } from './slots.ts'
 import { formatWardenTable, runWardenMatrix } from './warden.ts'
 import { formatMatrixCsv, runReferenceMatrix } from './report.ts'
 
@@ -274,8 +275,8 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'modded' && args.matrix !== 'free') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites, pack, modded, free`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'slots' && args.matrix !== 'modded' && args.matrix !== 'free') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites, pack, slots, modded, free`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
@@ -305,6 +306,15 @@ function printMatrix(args: ParsedArgs): void {
     const rows = runElitesMatrix(seed, runs, parseElitesFilter(args))
     const elapsedMs = performance.now() - started
     process.stdout.write(formatElitesTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
+  if (args.matrix === 'slots') {
+    console.log(`[sim] matrix slots seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const rows = runSlotsMatrix(seed, runs)
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatSlotsTable(rows))
     printTiming(rows.length * runs, elapsedMs)
     return
   }

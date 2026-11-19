@@ -27,6 +27,11 @@ const LOWER_ENEMY_XP_FLOOR = 0.1
 const HIGHER_ENEMY_XP_PER_LEVEL = 0.05
 const HIGHER_ENEMY_XP_CAP = 1.25
 
+/** Skills a loadout holds by default. */
+export const LOADOUT_SLOT_COUNT = 4
+/** Skills a loadout holds with the Fifth Skill Slot purchase (Step 13.34). Structural bound only. */
+export const MAX_LOADOUT_SLOTS = 5
+
 export type HeroProgress = {
   race: HeroRace
   level: number
@@ -37,7 +42,7 @@ export type HeroProgress = {
   attributes: Attributes
   allocatedNodeIds: string[]
   learnedSkillIds: string[]
-  /** Equipped skill ids. Empty, or one to four learned ids. */
+  /** Equipped skill ids. Empty, or one to `MAX_LOADOUT_SLOTS` learned ids (four, or five with the Fifth Skill Slot). */
   loadout: string[]
   legacySkillPoints: number
   attachmentSlots: [null, null]
@@ -148,7 +153,7 @@ export function assertProgress(progress: unknown): asserts progress is HeroProgr
   assertAttributes(record.attributes)
   assertIdList(record.allocatedNodeIds, 'allocated node', 0, null)
   assertIdList(record.learnedSkillIds, 'learned skill', 0, null)
-  assertIdList(record.loadout, 'loadout skill', 0, 4)
+  assertIdList(record.loadout, 'loadout skill', 0, MAX_LOADOUT_SLOTS)
   const learned = record.learnedSkillIds as readonly string[]
   const loadout = record.loadout as readonly string[]
   for (const id of loadout) {
@@ -569,12 +574,15 @@ export function grantLegacySkillPoint(progress: HeroProgress): HeroProgress {
   return next
 }
 
-/** Replace the loadout with 1 to 4 unique learned skill ids. */
-export function setLoadout(progress: HeroProgress, ids: readonly string[]): HeroProgress {
+/** Replace the loadout with 1 to `slotCount` unique learned skill ids (4 by default, 5 with the Fifth Skill Slot). */
+export function setLoadout(progress: HeroProgress, ids: readonly string[], slotCount: number = LOADOUT_SLOT_COUNT): HeroProgress {
   assertProgress(progress)
+  if (!Number.isInteger(slotCount) || slotCount < LOADOUT_SLOT_COUNT || slotCount > MAX_LOADOUT_SLOTS) {
+    throw new Error(`loadout slot count must be a whole number from ${LOADOUT_SLOT_COUNT} to ${MAX_LOADOUT_SLOTS}, received ${describeValue(slotCount)}`)
+  }
   if (!Array.isArray(ids)) throw new Error(`loadout ids must be a list, received ${describeValue(ids)}`)
-  if (ids.length < 1 || ids.length > 4) {
-    throw new Error(`loadout must contain 1 to 4 skills, received ${ids.length}`)
+  if (ids.length < 1 || ids.length > slotCount) {
+    throw new Error(`loadout must contain 1 to ${slotCount} skills, received ${ids.length}`)
   }
   const seen: { [id: string]: boolean } = {}
   for (const id of ids) {

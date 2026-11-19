@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { cumulativeXpToReachLevel, xpToNextLevel } from './stats.ts'
 import {
   HERO_RACES,
+  LOADOUT_SLOT_COUNT,
+  MAX_LOADOUT_SLOTS,
+  assertProgress,
   allocateAttribute,
   allocateNode,
   awardXp,
@@ -343,6 +346,20 @@ describe('skill allocation', () => {
     )
     expect(() => setAttachment(started, 2, 'human-quick-study')).toThrow(/slot must be 0 or 1/)
     expect(started.attachmentSlots).toEqual([null, null])
+  })
+
+  it('holds five loadout skills only with a slot count of five', () => {
+    const started = createProgress('human', human, { startingSkillIds: ['a', 'b', 'c', 'd'] })
+    const learned: HeroProgress = { ...started, learnedSkillIds: ['a', 'b', 'c', 'd', 'e', 'f'] }
+    expect(LOADOUT_SLOT_COUNT).toBe(4)
+    expect(MAX_LOADOUT_SLOTS).toBe(5)
+    expect(() => setLoadout(learned, ['a', 'b', 'c', 'd', 'e'])).toThrow('loadout must contain 1 to 4 skills, received 5')
+    expect(setLoadout(learned, ['a', 'b', 'c', 'd', 'e'], 5).loadout).toEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(() => setLoadout(learned, ['a', 'b', 'c', 'd', 'e', 'f'], 5)).toThrow('loadout must contain 1 to 5 skills, received 6')
+    expect(() => setLoadout(learned, ['a'], 3)).toThrow(/slot count/)
+    expect(() => setLoadout(learned, ['a'], 6)).toThrow(/slot count/)
+    expect(() => assertProgress({ ...learned, loadout: ['a', 'b', 'c', 'd', 'e'] })).not.toThrow()
+    expect(() => assertProgress({ ...learned, loadout: ['a', 'b', 'c', 'd', 'e', 'f'] })).toThrow()
   })
 
   it('previews a blocked keystone without changing progress', () => {
