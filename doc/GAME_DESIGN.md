@@ -212,7 +212,7 @@ Each class has:
 - A unique combat resource and rhythm.
 - A free-form skill web organized into connected thematic clusters.
 - Build-defining keystones.
-- Four equipped active skills plus passive effects.
+- Four equipped active skills (five with the Fifth Skill Slot, §10) plus passive effects.
 - Preferred weapons and armor, with unconventional equipment enabled through skill-web investment.
 
 #### Warrior: Fury
@@ -331,7 +331,7 @@ Initial coefficients are defined in the combat-mathematics section. They remain 
 - MVP target: approximately 12-15 meaningful nodes and 2-3 keystones per class.
 - A well-progressed life normally reaches approximately 7-9 of 15 class nodes, preserving distinct build directions.
 - A hero may activate one build-defining major keystone per life plus compatible minor keystones.
-- Each MVP class offers six learnable active skills for a four-skill loadout.
+- Each MVP class offers six learnable active skills for a skill loadout of four (five with the Fifth Skill Slot, §10).
 - Most skill nodes add specific behavior changes; only a few use repeated numerical ranks.
 - A compact, color-coded racial branch attaches to several points on the class web and uses the same skill points.
 - Difficult race/class combinations can unlock a small hybrid branch through combination-specific mastery milestones.
@@ -542,7 +542,7 @@ The chosen major keystone cannot change until reincarnation.
 
 1. Select the active hero.
 2. Review the destination, route, enemy information, expected resources, and regional conditions.
-3. Configure attributes, equipment, four skills, priority rules, consumables, and retreat conditions.
+3. Configure attributes, equipment, the skill loadout (four skills, five with the Fifth Skill Slot, §10), priority rules, consumables, and retreat conditions.
 4. Travel and resolve real-time encounters automatically.
 5. Build expedition momentum while deciding how deeply to push.
 6. Return safely to secure loot, deposit gold, repair, craft, trade, and complete contracts.
@@ -1854,7 +1854,7 @@ Target (rules beat blind by at least 10 win points and at least 8 HP points for 
 
 ### Automation
 
-Each loadout supports up to 12 ordered priority rows for its four equipped active skills.
+Each loadout supports up to 12 ordered priority rows for its equipped active skills (four, or five with the Fifth Skill Slot, §10).
 
 When the hero is ready to act:
 
@@ -2518,7 +2518,7 @@ First-playable supplies, decided 2026-11-03:
 
 - Supplies are bought in Greyhaven with the hero's own gold and kept in the hero's stash. They are not shared between heroes.
 - Before a run the player picks what goes in each of the 4 slots. The run takes the picked items out of the stash. A pick the stash cannot cover leaves that slot empty.
-- Healing Draught and Antidote are used by priority rules. A rule can name a supply instead of a skill. The row is usable only while a slot holds that supply, and otherwise skips with `none left`. Using one is a hero action at 0.5× action time with no cost and no cooldown. It needs no target, is not a skill for class or race effects, and is not part of the four-skill loadout.
+- Healing Draught and Antidote are used by priority rules. A rule can name a supply instead of a skill. The row is usable only while a slot holds that supply, and otherwise skips with `none left`. Using one is a hero action at 0.5× action time with no cost and no cooldown. It needs no target, is not a skill for class or race effects, and is not part of the skill loadout (four skills, five with the Fifth Skill Slot, §10).
 - An Antidote with no Poison or Bleed on the hero still uses the action and the item, so its rule should say when.
 - New heroes start with the two default rules at the top of their rules. A hero made before supplies gets them once when the save loads, unless a rule already names a supply; one the player removes later does not come back.
 - Added 2026-11-04 (user approved):
@@ -2627,7 +2627,7 @@ First-playable reincarnation numbers, decided 2026-11-01:
 - Currency is Legacy: `2 × (level − 1) + floor(5 × XP into the level ÷ XP to the next level)`, so a level 20 hero gets about 38.
 - One-time bonuses per hero, claimed at the next reincarnation after the hero first reaches them: +3 for each elite first defeated (Rootmaw Stalker, Echo Knight), +20 for the first Warden defeat, and +5 for each Echo rank first unlocked.
 - First clear of a late zone (Step 13.24): +2 for each of the Drowned Causeway, Rift Hollows and Cinder Scar (`ZONE_CLEAR_BONUS = 2`), once that zone's first-clear reward has been paid. It reads `firstClearIds`, not `clearedNodeIds`, so a zone cleared on a run that ended in defeat does not count yet. Claimed at the next reincarnation like the others.
-- Legacy buys hero-bound purchases that last across lives. Attribute Seed adds 1 to a starting attribute of the hero's choice and costs 3, up to 10 in total. Skill Point Seed gives 1 unallocated skill point at the start of each life and costs 8, then 12, then 16, up to 3. Second Heirloom lets the hero keep one more heirloom and costs 25, once.
+- Legacy buys hero-bound purchases that last across lives. Attribute Seed adds 1 to a starting attribute of the hero's choice and costs 3, up to 10 in total. Skill Point Seed gives 1 unallocated skill point at the start of each life and costs 8, then 12, then 16, up to 3. Second Heirloom lets the hero keep one more heirloom and costs 25, once. Fifth Skill Slot adds a fifth loadout slot and costs 90, once (Step 13.34, below).
 - Purchases apply now (Step 13.30, decided 2026-11-18): a purchase also applies to the hero's current life at once, except Second Heirloom (the heirloom is chosen at reincarnation, so it takes effect then). Attribute Seed adds 1 to that attribute on the current life now; Skill Point Seed adds 1 unspent skill point now; Head Start raises the hero to its level now (see Head Start below); Deep Pockets already applied at once. Each later life still starts from the fresh racial base plus every seed, so nothing is counted twice. Purchases bought before this change are not applied retroactively: the game cannot tell what the current life already has, so those seeds and Head Starts take effect from the next reincarnation as before.
 - Mastery is the hero's completed lives, up to 10. Each rank adds 2% ordinary XP, up to +20%, and nothing else.
 - The reset and preserve lists above apply. The hero's current contracts are cleared. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
@@ -2659,6 +2659,22 @@ Decided 2026-11-18 (user: "go with all my picks"). Persist and UI only; `src/sim
 - Long Memory deliberately widens the earlier exploit guard line in "Later lives" ("Recall only speeds levels the hero already earned once, and only up to the old peak"): with Long Memory it runs up to 3 or 6 levels above the old peak. It still pays nothing for losing on purpose.
 - Gear economy (Section 9): gear from an earlier life sells at the carried share of its normal sell price (see Guard A); gear bought or found this life is unchanged.
 - Risk accepted: the first reincarnation after this change cuts an existing hoard (10,000 gold keeps 2,000 at the base share), and Guard B blocks reincarnating while craft jobs run.
+
+### Fifth skill slot (Step 13.34)
+
+Decided 2026-11-19 (user approved). A Legacy purchase that lets the hero equip a fifth active skill. Persist and UI only; `src/sim` combat, content and the default harness stay as they are, so every guard stays identical. The only sim change is a pair of exported loadout constants and a `slotCount` argument on `setLoadout` (Part 2).
+
+| Purchase | Cost (Legacy) | Prerequisite | Group | Effect |
+| --- | --- | --- | --- | --- |
+| Fifth Skill Slot | 90, once | none | Each new life, after Skill Point Seed | Loadout holds 1 to 5 skills instead of 1 to 4. Hero-bound. |
+
+- Rule: the loadout holds 1 to 5 skills with the purchase, otherwise 1 to 4. The slot count is read from the hero's purchases when the loadout is set.
+- Applies now: the slot is usable on the current life at once. Nothing is auto-equipped; the player picks the fifth skill in Loadout. Priority rows may name it like any equipped skill.
+- Reincarnation keeps the purchase. A new life starts with the four starting skills and the fifth slot empty (the old loadout is not carried).
+- Sim, content and the default harness are untouched, so the golden duel, the reference CSV and every matrix stay byte-identical.
+- Mage note: the Mage has only five loadout skills, so the fifth slot means equipping everything.
+- Assassin harness note: the harness `builtSetup` already equips Smoke Step as a fifth skill; it is left alone.
+- Measurement (Part 2): pending. `npm run sim -- --matrix slots` compares four skills with five skills (candidate last in the rows, or first among the reference rows) at the prepared and crafted-prepared tiers, seeds 1 to 3 x 100. Go/no-go before any UI (Parts 3 and 4): NO-GO if at the prepared tier the best five variant for any class raises that class's mean elite win rate by more than 10 points, or moves more than half of the 20 class x elite prepared cells from below 95% to 95% or more, or cuts median win time by more than 20%.
 
 ### Later lives (Step 13.18)
 

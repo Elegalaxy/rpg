@@ -1211,6 +1211,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.34: Fifth skill slot
+- Status: `in progress`
+- Depends on: 13.30, 13.31
+- Goal: a Legacy purchase, Fifth Skill Slot (90 Legacy, once, hero-bound, applies now and in every later life), raises the loadout from 4 to 5 skills (GAME_DESIGN §10, "Fifth skill slot"). Nothing is auto-equipped. Combat, content and the default harness are untouched.
+- Parts: (1) docs only. (2) `LOADOUT_SLOT_COUNT` and `MAX_LOADOUT_SLOTS` and `setLoadout` slot count in `sim/progression.ts`, harness `--matrix slots` (four vs five, both orders), measurement and a GO/NO-GO stop. (3) Persist: purchase, save field, slot count read by `setLoadout` callers. (4) UI: Legacy row, Loadout fifth slot, Guide, CHANGELOG, HANDOFF.
+- Part status: 1 `done`. 2 `in progress`. 3 `pending`. 4 `pending`.
+- Acceptance: guards (golden duel-basic, reports/2026-10-23-reference.csv, matrices telegraph, built, modded, cinder, hollows, warden, causeway, elites at `npm run sim -- --matrix <m> --seed 1 --runs 5`) byte-identical to origin/main. Go/no-go after Part 2: NO-GO if at the prepared tier the best five variant for any class raises that class's mean elite win rate by more than 10 points, or takes more than half of the 20 class x elite prepared cells from below 95% to 95% or more, or cuts median win time by more than 20%.
+- Progress:
+  - 2026-11-19: Part 1 done. Rules recorded in GAME_DESIGN §10; "four skills" lines in §4, §5, §7 and §9 reworded.
+
 ### Step 13.33: Plain Guide skill text
 - Status: `done`
 - Depends on: 13.25
