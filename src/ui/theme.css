@@ -703,6 +703,11 @@ nav[aria-label='Main'] button {
     font-size: 16px;
   }
 
+  /* The picker already names the place. */
+  .place-picker + section > h2 {
+    display: none;
+  }
+
   .content .gear-jobs {
     position: sticky;
     top: calc(var(--status-h) + var(--place-h));

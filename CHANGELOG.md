@@ -11,7 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
-- Improved: on a phone, Greyhaven picks its place from one "Place" list with waiting counts, pins it and a shop's job row under the status line, keeps the jobs on one sideways row, and folds the materials so the purse shows just gold.
+- Improved: on a phone, Greyhaven picks its place from one "Place" list with waiting counts, pins it and a shop's job row under the status line, keeps the jobs on one sideways row, folds the materials so the purse shows just gold, and drops the place heading the list already names.
 - Improved: reincarnation offers one heirloom picker for each slot you own, so a second or third slot is a real choice.
 - New: Fifth Skill Slot, a Legacy purchase: equip five skills instead of four, now and in every later life. [13.34]
 - Fixed: skill descriptions in the Guide and skill web no longer show "Heals 0% of max HP" or internal names; they use plain wording and status names (Expose, Poison), and an effect that does nothing is left out. [13.33]
