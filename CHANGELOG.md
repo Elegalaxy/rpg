@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.17.0 · 2026-11-19 · Lean inheritance
 
 - Improved: a free heirloom slot can be used right away on an item you own (Legacy screen, "Make heirloom now"), not only at the next reincarnation. [13.32]
 - Improved: the Legacy screen shows what carries over (gold, debt, tokens, materials, supplies) before you reincarnate, and the shop marks earlier-life gear with the lower price it pays. [13.31]
