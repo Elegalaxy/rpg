@@ -2732,6 +2732,47 @@ Go/no-go on the same thresholds (best class gain over 10 points; more than half 
 
 Price: the 90 Legacy price still looks right. The slot is worth at most about 8 points of win rate in the hardest fights, mostly for the Warrior, Mage and Assassin (and the Cleric with an unconditional Consecration), and the Ranger has no useful fifth skill in the current kit. No change is proposed. This measures a hand-built rotation at the four elites, not a player's skill web, so it is a floor for a thoughtful player rather than a ceiling.
 
+#### Ranger fifth skill (Step 13.35, 2026-11-20)
+
+Why the Ranger gains nothing from the slot: Readiness has no regeneration in combat (`regenPerSecond` 0) and only hit basic attacks give it (about 22 per hit). The reference rows (Fade Back on a telegraph, Aimed Shot at 40 or more, an unconditional Piercing Arrow) already spend all of it, so any extra skill costs a basic attack, which is the income. Hunter's Mark only reveals, and every enemy starts revealed, so it does nothing. The reference loadout also has Snare Trap equipped with no row.
+
+Harness only. The content variants are patched copies of the skill definition (`{ ...defs, skills: { ...defs.skills, [id]: patched } }`, `gameDefs()` is never mutated) and the player-visible game does not change. Tools: `slotSetup` and `runSlotsMatrix` in `src/harness/slots.ts` take optional rows and defs overrides and a `swap` variant (the candidate replaces Snare Trap, four skills); the variants and the shard runner are in `src/harness/slotsRanger.ts`. Hunter's Mark keeps cost 0 Readiness and action time 0.5x in every variant.
+
+| Variant | Skill change | Row (all conditions) |
+| --- | --- | --- |
+| HM-X | Hunter's Mark tags mark and physical, cooldown 8, effects: reveal, Expose (chance 1, armor 30%, resistance 30%) | target Expose absent |
+| HM-XR | HM-X plus 10 Readiness | target Expose absent |
+| HM-R | Hunter's Mark cooldown 8, effects: reveal, 20 Readiness | Readiness at most 60 |
+| FA-0 | Flame Arrow cost 0 Readiness (still 1 special arrow) | target Burn absent; special ammo at least 1 |
+| P-snare | none (Snare Trap is already equipped) | opener: fight time at most 1 second |
+| P-volley | none (Volley as fifth skill) | 2 or more enemies; Readiness at least 55 |
+| P-flame | none (Flame Arrow as fifth skill) | Readiness at least 90; target Burn absent; special ammo at least 1 |
+
+Placements: `tuned-first` (ahead of the first reference skill row) and `tuned-last` (before the unconditional Piercing Arrow); a variant that gains is also run as `swap` (four skills, Snare Trap out). Runs: Ranger, four elites x prepared and prepared-crafted, seeds 1 to 3 x 100, sharded by variant, placement, seed and tier (`npx tsx src/harness/slotsRanger.ts`). Side check: a four-skill Ranger with the winning Hunter's Mark swapped in at the built fights (nine-point build: Rootmaw Stalker, Echo Knight, Warden); flag if it gains more than 10 points.
+
+Verdict rule: pick a variant if the Ranger prepared mean gains +4 or more in every seed, at most +10, with at most half of the 4 prepared cells crossing from below 95% to 95% or more and the median win time cut by at most 20%. Preference order HM-X, HM-XR, HM-R, FA-0. If none qualifies, the recommendation is the stopgap label (the Ranger's fifth slot is documented as no use yet).
+
+Results (seeds 1 to 3 x 100, Ranger, four elites; prepared four mean 61.1, prepared-crafted four mean 92.6; win change in points, per seed in brackets, cells crossing to 95 or more, median win time change):
+
+| Variant, placement | Prepared change | Per seed | Crossing | Median win time | Crafted change |
+| --- | --- | --- | --- | --- | --- |
+| HM-X, first | -13.7 | -11.8, -17.5, -11.8 | 0 of 4 | +3.7% | -7.2 |
+| HM-X, last | -6.7 | -4.7, -9.8, -5.5 | 0 of 4 | +4.5% | -4.3 |
+| HM-XR, first | -3.6 | +1.7, -9.3, -3.3 | 0 of 4 | +0.9% | -1.5 |
+| HM-XR, last | +7.1 | +8.0, +3.2, +10.0 | 0 of 4 | +1.2% | +2.6 (1 cell crosses) |
+| HM-R, first | +2.9 | +4.7, +3.2, +0.7 | 0 of 4 | +0.6% | +1.7 |
+| HM-R, last | +7.3 | +8.8, +6.2, +7.0 | 0 of 4 | +2.6% | +2.2 (1 cell crosses) |
+| FA-0, first | -15.3 | -13.5, -16.0, -16.5 | 0 of 4 | +1.9% | -5.6 |
+| FA-0, last | -17.4 | -14.5, -21.5, -16.3 | 0 of 4 | 0.0% | -8.0 |
+| P-snare opener (either) | +0.0 | 0, 0, 0 | 0 of 4 | 0.0% | +0.0 |
+| P-volley, first / last | -6.9 / +0.0 | -7.5, -7.3, -6.0 / 0, 0, 0 | 0 of 4 | +0.2% / 0.0% | -4.0 / +0.0 |
+| P-flame, first / last | -5.8 / +0.0 | -5.0, -7.0, -5.5 / 0, 0, 0 | 0 of 4 | +3.0% / 0.0% | -1.7 / +0.0 |
+
+- Why: the gain is the Readiness, not the Expose. HM-X (Expose only) loses 7 to 14 points because casting it costs a basic attack and the Expose does not repay it; adding 10 Readiness (HM-XR) turns it positive when the row runs late, and 20 Readiness at cooldown 8 (HM-R, Readiness at most 60) gives about the same +7. Flame Arrow at cost 0 still burns the special arrows and a turn, and loses 15 to 17. The three probes with unchanged content are inert or negative: the Snare Trap opener and the `last` placements of Volley and Flame Arrow changed no result at all (+0.0 in every cell; why was not investigated), and the `first` placements lose 6 to 7 points.
+- `swap` (candidate replaces Snare Trap, four skills) is identical to five skills for both HM-R and HM-XR (+7.3 and +7.1 with the same per-seed values): Snare Trap has no row in the reference rules, so it never fires and the slot it holds is free. The Ranger's gain does not need the fifth slot at all.
+- Side check (nine-point Ranger, four skills with the variant swapped in for Snare Trap, seeds 1 to 3 x 100): HM-R last Rootmaw Stalker 94.0 to 89.7, Echo Knight 38.3 to 35.3, Warden 0 to 0; HM-XR last Rootmaw 94.0 to 98.3, Echo Knight 38.3 to 45.7, Warden 0 to 0. Nothing gains more than 10 points, so no flag.
+- Verdict (rule read strictly: at least +4 in every seed): HM-X fails (negative), HM-XR fails on seed 2 (+3.2; its mean +7.1 passes), HM-R last QUALIFIES (+7.3 mean, +6.2 to +8.8 per seed, 0 of 4 cells crossing, median win time +2.6%, i.e. not cut). If the rule is read as the mean only, HM-XR last also qualifies but HM-R is the better-behaved variant, and by the preference order HM-XR would come first. Recommendation to the user: this is a content change (Hunter's Mark would grant Readiness), so it needs a decision; the measurement shows a Ranger fifth skill worth about +7 only because Hunter's Mark becomes a Readiness battery, and that same +7 is available with four skills (swap), so the slot itself is not what pays. The alternative is the stopgap label (the slot has no Ranger skill that helps). Nothing in the game changed in this step.
+
 ### Later lives (Step 13.18)
 
 Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.

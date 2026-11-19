@@ -5,7 +5,7 @@ import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
 import { MAX_LOADOUT_SLOTS } from '../sim/progression.ts'
 import { deriveSeed } from '../sim/rng.ts'
-import type { AutomationCondition, CombatSetup, PriorityRow } from '../sim/types.ts'
+import type { AutomationCondition, CombatSetup, GameDefs, PriorityRow } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 import { ELITE_CELLS, ELITE_IDS, eliteSetup, type EliteCell, type EliteId } from './elites.ts'
@@ -27,7 +27,20 @@ export const FIFTH_SKILL_CANDIDATES: { readonly [classId in HeroClass]: readonly
 export const SLOT_VARIANTS = ['four', 'five-last', 'five-first'] as const
 /** The tuned variants (Step 13.34 follow-up): the fifth skill on conditional rows, before the unconditional fallback row (`tuned-last`) or ahead of the reference rows (`tuned-first`). */
 export const TUNED_VARIANTS = ['tuned-last', 'tuned-first'] as const
-export type SlotVariant = (typeof SLOT_VARIANTS)[number] | (typeof TUNED_VARIANTS)[number]
+/** The Ranger swap variant (Step 13.35): the candidate replaces Snare Trap, so the loadout stays at four skills. Rows go before the fallback attack, or ahead of the reference rows with `placement: 'first'`. */
+export const SWAP_VARIANT = 'swap'
+export type SlotVariant = (typeof SLOT_VARIANTS)[number] | (typeof TUNED_VARIANTS)[number] | typeof SWAP_VARIANT
+
+/** The skill each class gives up in the `swap` variant. */
+export const SWAP_OUT: { readonly [classId in HeroClass]?: string } = { ranger: 'snare-trap' }
+
+/** Optional overrides for `slotSetup`. Without them the setup is exactly the one the tuned and naive variants always built. */
+export type SlotOptions = {
+  /** Rows for the candidate instead of `TUNED_ROWS[skillId]` (tuned and swap variants). */
+  rows?: readonly PriorityRow[]
+  /** Where the `swap` variant puts its rows. Default `last`. */
+  placement?: 'first' | 'last'
+}
 
 /** The tiers measured: the prepared tier and its crafted-supplies variant. */
 export const SLOT_TIERS = ['prepared', 'prepared-crafted'] as const
@@ -101,11 +114,21 @@ function nodesToUnlock(classId: HeroClass, skillId: string): string[] {
   return chain
 }
 
+/** Put `extra` ahead of the first row for a reference skill (`first`), or just before an unconditional fallback row (`last`; a row after it could never fire). */
+export function placeRows(rows: readonly PriorityRow[], extra: readonly PriorityRow[], placement: 'first' | 'last', isReference: (skillId: string) => boolean): PriorityRow[] {
+  if (placement === 'first') {
+    const index = rows.findIndex((entry) => isReference(entry.skillId))
+    return index < 0 ? [...rows, ...extra] : [...rows.slice(0, index), ...extra, ...rows.slice(index)]
+  }
+  const last = rows.at(-1)
+  return last !== undefined && (last.conditions ?? []).length === 0 ? [...rows.slice(0, -1), ...extra, last] : [...rows, ...extra]
+}
+
 /**
  * The elite fight for a class with exactly the reference skills (`four`), or with `skillId` as a fifth skill. Returns
  * null when the extra row would pass `MAX_PRIORITY_ROWS`.
  */
-export function slotSetup(classId: HeroClass, cell: EliteCell, skillId: string, variant: SlotVariant): CombatSetup | null {
+export function slotSetup(classId: HeroClass, cell: EliteCell, skillId: string, variant: SlotVariant, options: SlotOptions = {}): CombatSetup | null {
   const base = eliteSetup(classId, cell, 'rules')
   const reference = referenceLoadoutFor(classId).equippedSkillIds
   const isReference = (id: string): boolean => reference.includes(id)
@@ -116,17 +139,20 @@ export function slotSetup(classId: HeroClass, cell: EliteCell, skillId: string, 
   const hero = { ...base.hero, allocatedNodeIds: nodes }
   if (variant === 'four') return { ...base, hero: { ...hero, equippedSkillIds: equipped, priorityRows: rows } }
   let next: PriorityRow[]
+  if (variant === 'swap') {
+    const out = SWAP_OUT[classId]
+    if (out === undefined) throw new Error(`${classId} has no swap-out skill`)
+    const tuned = options.rows ?? TUNED_ROWS[skillId]
+    if (tuned === undefined) throw new Error(`no rows for ${skillId}`)
+    next = placeRows(rows, tuned, options.placement ?? 'last', isReference)
+    if (next.length > MAX_PRIORITY_ROWS) return null
+    return { ...base, hero: { ...hero, equippedSkillIds: [...equipped.filter((id) => id !== out), skillId], priorityRows: next } }
+  }
   if (variant === 'tuned-first' || variant === 'tuned-last') {
-    const tuned = TUNED_ROWS[skillId]
+    const tuned = options.rows ?? TUNED_ROWS[skillId]
     if (tuned === undefined) throw new Error(`no tuned rows for ${skillId}`)
-    if (variant === 'tuned-first') {
-      const index = rows.findIndex((entry) => isReference(entry.skillId))
-      next = index < 0 ? [...rows, ...tuned] : [...rows.slice(0, index), ...tuned, ...rows.slice(index)]
-    } else {
-      // A row after the unconditional fallback attack could never fire, so go just before it.
-      const last = rows.at(-1)
-      next = last !== undefined && (last.conditions ?? []).length === 0 ? [...rows.slice(0, -1), ...tuned, last] : [...rows, ...tuned]
-    }
+    // A row after the unconditional fallback attack could never fire, so `last` goes just before it.
+    next = placeRows(rows, tuned, variant === 'tuned-first' ? 'first' : 'last', isReference)
     if (next.length > MAX_PRIORITY_ROWS) return null
     return { ...base, hero: { ...hero, equippedSkillIds: [...equipped, skillId], priorityRows: next } }
   }
@@ -149,12 +175,35 @@ export type SlotsFilter = {
   variants?: readonly SlotVariant[]
   /** Only these candidate skills. */
   skills?: readonly string[]
+  /** Definitions to run against instead of `gameDefs()` (a patched copy; never mutate the real one). */
+  defs?: GameDefs
+  /** Rows for the candidate instead of `TUNED_ROWS` (tuned and swap variants). */
+  rows?: readonly PriorityRow[]
+  /** Where the `swap` variant puts its rows. */
+  placement?: 'first' | 'last'
+}
+
+/** Win rate, mean HP lost and median win time of one setup over `runs` seeded fights. */
+export function measureSlot(setup: CombatSetup, defs: GameDefs, seed: number, runs: number): { winRate: number; hpLost: number; medianWinMs: number | null } {
+  let wins = 0
+  let lost = 0
+  const winTimes: number[] = []
+  for (let index = 0; index < runs; index += 1) {
+    const state = runCombat(createCombat(setup, defs, deriveSeed(seed, index)), defs, HARNESS_LIMIT_MS)
+    if (state.outcome === 'victory') {
+      wins += 1
+      winTimes.push(state.timeMs)
+    }
+    lost += 1 - Math.max(0, state.hero.hp) / state.hero.maxHp
+  }
+  winTimes.sort((a, b) => a - b)
+  return { winRate: wins / runs, hpLost: lost / runs, medianWinMs: winTimes[Math.floor(winTimes.length / 2)] ?? null }
 }
 
 /** Every class, candidate, elite and tier with the four variants, in rules mode. A variant that would pass the row cap is not run and is listed with the note `row cap`. */
 export function runSlotsMatrix(seed: number, runs: number, filter: SlotsFilter = {}): SlotRow[] {
   if (!Number.isInteger(runs) || runs < 1 || runs > MAX_BATCH_RUNS) throw new Error(`runs must be an integer from 1 to ${MAX_BATCH_RUNS}, received ${runs}`)
-  const defs = gameDefs()
+  const defs = filter.defs ?? gameDefs()
   const rows: SlotRow[] = []
   for (const classId of HERO_CLASSES) {
     if (filter.classes !== undefined && !filter.classes.includes(classId)) continue
@@ -166,24 +215,13 @@ export function runSlotsMatrix(seed: number, runs: number, filter: SlotsFilter =
           if (filter.tiers !== undefined && !filter.tiers.includes(tier)) continue
           const cell = ELITE_CELLS.find((entry) => entry.elite === elite && entry.tier === tier)!
           for (const variant of filter.variants ?? SLOT_VARIANTS) {
-            const setup = slotSetup(classId, cell, skillId, variant)
+            const setup = slotSetup(classId, cell, skillId, variant, { rows: filter.rows, placement: filter.placement })
             if (setup === null) {
               rows.push({ classId, elite, tier, skillId, variant, winRate: null, hpLost: null, medianWinMs: null, note: ROW_CAP_NOTE })
               continue
             }
-            let wins = 0
-            let lost = 0
-            const winTimes: number[] = []
-            for (let index = 0; index < runs; index += 1) {
-              const state = runCombat(createCombat(setup, defs, deriveSeed(seed, index)), defs, HARNESS_LIMIT_MS)
-              if (state.outcome === 'victory') {
-                wins += 1
-                winTimes.push(state.timeMs)
-              }
-              lost += 1 - Math.max(0, state.hero.hp) / state.hero.maxHp
-            }
-            winTimes.sort((a, b) => a - b)
-            rows.push({ classId, elite, tier, skillId, variant, winRate: wins / runs, hpLost: lost / runs, medianWinMs: winTimes[Math.floor(winTimes.length / 2)] ?? null, note: null })
+            const result = measureSlot(setup, defs, seed, runs)
+            rows.push({ classId, elite, tier, skillId, variant, winRate: result.winRate, hpLost: result.hpLost, medianWinMs: result.medianWinMs, note: null })
           }
         }
       }

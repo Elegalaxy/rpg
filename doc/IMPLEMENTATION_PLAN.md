@@ -1211,6 +1211,16 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.35: Ranger fifth skill
+- Status: `done`
+- Depends on: 13.34
+- Goal: measure whether a redesigned Hunter's Mark or Flame Arrow makes the fifth slot worth +4 or more win-rate points for the Ranger (GAME_DESIGN §10, "Ranger fifth skill (Step 13.35)"). Harness only: patched copies of the skill definitions, never the content. `src/sim`, content, the default `--matrix slots` and every guard stay as they are.
+- Parts: (1) docs. (2) `slots.ts` options (`defs`, `rows`, `swap`), `slotsRanger.ts` shard runner, tests. (3) Measure (seeds 1 to 3 x 100, Ranger, 4 elites, prepared and prepared-crafted) and record the verdict.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
+- Progress:
+  - 2026-11-20: Parts 2 and 3 done. `slots.ts` gains `SlotOptions` (rows, placement), `placeRows`, `measureSlot`, the `swap` variant and `defs`/`rows` filters; `slotsRanger.ts` (shard runner, merge, verdict) and tests. Result: HM-R last (Hunter's Mark: reveal plus 20 Readiness, cooldown 8, row Readiness at most 60) qualifies at +7.3; HM-XR last +7.1 (seed 2 +3.2); HM-X and FA-0 lose; probes inert. Swap for Snare Trap equals five (Snare Trap never fires). Side check no flag. Awaiting the user's call on a content change. Recorded in GAME_DESIGN section 10.
+  - 2026-11-20: Part 1 done. Variants, probes and verdict rule recorded in GAME_DESIGN §10.
+
 ### Step 13.34: Fifth skill slot
 - Status: `done`
 - Depends on: 13.30, 13.31
