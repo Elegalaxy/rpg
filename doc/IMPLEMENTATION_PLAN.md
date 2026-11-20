@@ -1216,8 +1216,9 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.30, 13.31, 13.32, 13.34
 - Goal: reincarnation opens a planner where this life's Legacy is already spendable, so Stockpile, heirloom slots and Head Start can be bought before the reset and their effect is previewed; one atomic `reincarnate(..., plan)` commits (GAME_DESIGN §10, "Planning the next life"). Nothing is saved between screens. `src/sim`, content and the harness are untouched.
 - Parts: (1) docs. (2) persist: `pricePurchase`, `stageNextLife`, `reincarnate` plan argument, tests. (3) UI: `legacyParts.tsx`, `NextLifePlanner.tsx`, Legacy screen, store, tests. (4) Guide, CHANGELOG, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `todo`. 4 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `todo`.
 - Progress:
+  - 2026-11-20: Part 3 done. `ui/character/legacyParts.tsx` (shared purchase tables, carry and heirloom parts), `NextLifePlanner.tsx` (Between lives planner), Legacy screen opens it from "Plan your next life...", `reincarnateFromUi(ids, plan)`; tests. CHANGELOG line added here. Not checked in a browser or at 375 px.
   - 2026-11-20: Part 2 done. `pricePurchase` (shared by `buyPurchase`), `PlannedPurchase`, `stageNextLife`, `reincarnate(..., plan)` in `persist/reincarnation.ts`; tests in `reincarnation.test.ts`.
   - 2026-11-20: Part 1 done. Rules recorded in GAME_DESIGN §10.
 

@@ -4,7 +4,7 @@ import { dealsIn, type PlaceDef } from '../content/places.ts'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../persist/equipment.ts'
-import { buyPurchase, claimHeirloom, reincarnate, type PurchaseKind } from '../persist/reincarnation.ts'
+import { buyPurchase, claimHeirloom, reincarnate, type PlannedPurchase, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
 import { advanceTraining, anyTraining, trainHero } from '../persist/training.ts'
@@ -1134,11 +1134,11 @@ export function collectContractFromUi(contractId: string): string | null {
 }
 
 /** Reincarnate the selected hero, keeping each chosen item as an heirloom. Returns the refusal, or null. */
-export function reincarnateFromUi(heirloomItemIds: readonly string[]): string | null {
+export function reincarnateFromUi(heirloomItemIds: readonly string[], plan: readonly PlannedPurchase[] = []): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
-  debugLog('[ui]', 'reincarnate heirlooms', { ids: heirloomItemIds })
-  return applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemIds), 'reincarnated')
+  debugLog('[ui]', 'reincarnate heirlooms', { ids: heirloomItemIds, plan })
+  return applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemIds, plan), 'reincarnated')
 }
 
 /** Make an item an heirloom of the selected hero now, using a free slot. Returns the refusal, or null. */

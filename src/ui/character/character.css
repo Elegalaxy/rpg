@@ -605,6 +605,37 @@
   color: var(--muted);
 }
 
+.legacy-plan {
+  max-width: 56rem;
+}
+
+.legacy-plan h3 {
+  margin: var(--s4) 0 var(--s2);
+}
+
+.legacy-plan .legacy-gain {
+  max-width: 36rem;
+  margin-top: var(--s3);
+}
+
+.legacy-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+
+.legacy-plan-list {
+  display: grid;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  font-variant-numeric: tabular-nums;
+}
+
+.legacy-plan-list p {
+  margin: 0;
+}
+
 @media (max-width: 640px) {
   .legacy-table thead {
     position: absolute;
@@ -631,6 +662,11 @@
   .legacy-facts > div {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .legacy-plan-actions button {
+    flex: 1 1 100%;
+    min-height: 44px;
   }
 }
 

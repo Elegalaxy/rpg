@@ -26,7 +26,7 @@ type Patch = {
   heirlooms?: number
 }
 
-function show(patch: Patch): string {
+function show(patch: Patch, planning = false): string {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
   if (!made.ok) throw new Error(made.reason)
   const save: SaveData = {
@@ -60,7 +60,7 @@ function show(patch: Patch): string {
     })),
   }
   commitSave(save, 'test', false)
-  return renderToStaticMarkup(<Legacy />)
+  return renderToStaticMarkup(<Legacy initialPlanning={planning} />)
 }
 
 describe('Legacy screen', () => {
@@ -73,11 +73,9 @@ describe('Legacy screen', () => {
     expect(lost).not.toContain('data-testid="reincarnation-block"')
     expect(lost).toContain('Legacy if you reincarnate now')
     expect(lost).toContain('Level and XP')
-    expect(lost).toContain('aria-label="Heirloom"')
-    expect(lost).not.toContain('aria-label="Heirloom 2"')
-    const two = show({ bossLoss: true, heirlooms: 2 })
-    expect(two).toContain('Heirloom 1 of 2')
-    expect(two).toContain('aria-label="Heirloom 2"')
+    expect(lost).toContain('data-testid="plan-next-life"')
+    expect(lost).toContain('Plan your next life')
+    expect(lost).not.toContain('aria-label="Heirloom"')
     const won = show({ echoRank: 5, bossLoss: true })
     expect(won).toContain('Echo ranks 1–5 first unlocked')
     expect(won).toContain('+25')
@@ -85,6 +83,13 @@ describe('Legacy screen', () => {
     const victory = show({ echoRank: 1 })
     expect(victory).toContain('Boss faced this life: defeated the Fractured Warden.')
     expect(won).not.toContain('data-testid="reincarnation-block"')
+  })
+
+  it('opens the next life planner instead of the Legacy tab when planning', () => {
+    const html = show({ bossLoss: true }, true)
+    expect(html).toContain('aria-label="Next life"')
+    expect(html).toContain('Between lives')
+    expect(html).not.toContain('aria-label="Legacy"')
   })
 
   it('shows the summary, the purchases with reasons for the disabled ones, and the next life', () => {
