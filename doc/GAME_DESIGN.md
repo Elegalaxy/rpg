@@ -2830,6 +2830,8 @@ Modifiers (delta against `current` with the same nodes): `+to` 08 / 09 / 10 empt
 
 Reading: the only cell the passive breaks is the Warden at the prepared tier (a boss, Poison cap 3 to 4): each Venom Edge cast is replaced by nothing, so the boss fight loses direct damage and the passive's stacks cap early; Toxic Opportunity and Toxic Sovereign make it worse because `current` gains more from them there. Elsewhere the passive is a small gain at 0.08 to 0.10 and runs away above 0.12. No `-empty` variant is GO. Nearest: passive-10-empty (fails the prepared tier by 0.7 points, Warden prepared within the band) and passive-08-empty (Warden prepared 0.7 over). Proposed choice for the user: tick 0.10 with the slot empty, accepting the 0.7 miss, plus a boss-side fix (for example the Warden prepared fight is where Venom Edge's own 90% hit mattered) before Part 3; alternative: passive-06-fan is the only GO but needs the freed slot for Fan of Knives.
 
+Boss compensation round (2026-11-20, user decision: Venom Edge becomes a true passive at a 10% tick). The Warden prepared cell loses the Venom Edge hit, so three compensations are measured with the freed slot empty and no Toxic Opportunity or Sovereign: A) basic attack coefficient +10, +20, +30%; B) Shadow Cut coefficient +10, +20, +30% (the Marked 135% and the unmarked 110% alike); C) only if A and B both fail, a boss-only tick of 12%. Same GO/NO-GO rule and seeds (results follow below once measured).
+
 ### Later lives (Step 13.18)
 
 Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.
