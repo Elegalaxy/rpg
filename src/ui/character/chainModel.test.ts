@@ -5,7 +5,7 @@ import { createHero } from '../../persist/roster.ts'
 import { newSave } from '../../persist/save.ts'
 import type { LogEvent } from '../../sim/types.ts'
 
-import { buildChain, fallbackText, fireCount, ruleFireCounts, stackFireTotal } from './chainModel.ts'
+import { buildChain, fallbackText, fireCount, remapFireCounts, ruleFireCounts, skillOptions, stackFireTotal } from './chainModel.ts'
 
 function warrior() {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
@@ -78,5 +78,41 @@ describe('ruleFireCounts', () => {
   it('limits the count to one hero', () => {
     const other = { ...use(0, 0), actorId: 'someone' } as LogEvent
     expect(ruleFireCounts([other, use(0, 1)], 'hero').default).toEqual([1])
+  })
+})
+
+describe('waiting rules (Step 13.37)', () => {
+  const cleave = { skillId: 'cleave', conditions: [], targetPriority: '' as const }
+  const stack = (rows: (typeof ready)[], when: { type: 'skillReady'; operator: string; value: string; statusId: string; skillId: string }[] = []) => ({ id: 'stack-1', name: 'Crowd', when, rows })
+
+  it('marks a waiting rule and does not let it shadow a later rule', () => {
+    const chain = buildChain(warrior(), [cleave, { ...cleave, conditions: [hp('50')] }, ready], [], ['cleave'])
+    expect(chain.rules.map((rule) => rule.waitingFor)).toEqual(['Cleave', 'Cleave', null])
+    const same = buildChain(warrior(), [{ skillId: 'driving-blow', conditions: [{ type: 'skillReady', operator: 'present', value: '', statusId: '', skillId: 'cleave' }], targetPriority: '' }, ready, { ...ready, conditions: [hp('50')] }], [], ['cleave'])
+    expect(same.rules[0]!.waitingFor).toBe('Cleave')
+    expect(same.rules[2]!.shadowedBy).toBe(2)
+    expect(buildChain(warrior(), [cleave], []).rules[0]!.waitingFor).toBeNull()
+  })
+
+  it('marks a stack left out of fights', () => {
+    const trigger = { type: 'skillReady' as const, operator: 'present', value: '', statusId: '', skillId: 'cleave' }
+    const router = buildChain(warrior(), [], [stack([ready], [trigger]), stack([cleave]), stack([ready, cleave]), stack([])], ['cleave']).router
+    expect(router.map((entry) => entry.waitingFor)).toEqual(['Cleave', 'Cleave', null, null])
+  })
+
+  it('puts fire counts back on the editor rows', () => {
+    const counts = { default: [4, 2], 'stack-1': [1] }
+    expect(remapFireCounts(counts, { default: [1, 2] })).toEqual({ default: [undefined, 4, 2], 'stack-1': [1] })
+    expect(remapFireCounts(null, {})).toBeNull()
+    expect(fireCount(remapFireCounts(counts, { default: [1, 2] }), 'default', 0)).toBe(0)
+    expect(fireCount(remapFireCounts(counts, { default: [1, 2] }), 'default', 2)).toBe(2)
+  })
+
+  it('lists waiting skills after the usable ones, marked as not relearned', () => {
+    expect(skillOptions(['driving-blow'], ['cleave'])).toEqual([
+      { id: 'driving-blow', label: 'Driving Blow' },
+      { id: 'cleave', label: 'Cleave (not relearned)' },
+    ])
+    expect(skillOptions(['cleave'], ['cleave'])).toEqual([{ id: 'cleave', label: 'Cleave' }])
   })
 })

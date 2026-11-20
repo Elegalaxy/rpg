@@ -5,11 +5,12 @@ import {
   kindsFor,
   newCondition,
   operatorLabel,
-  skillName,
   type ConditionDraft,
   type ConditionType,
 } from '../../persist/loadout.ts'
 import type { HeroClass } from '../../sim/constants.ts'
+
+import { skillOptions } from './chainModel.ts'
 
 /**
  * The condition editor shared by a rule row and a stack trigger. `label` prefixes every control's
@@ -20,6 +21,7 @@ export function ConditionList({
   onChange,
   classId,
   skillIds,
+  waiting = [],
   label,
   removeLabel,
 }: {
@@ -27,6 +29,8 @@ export function ConditionList({
   onChange: (next: ConditionDraft[]) => void
   classId: HeroClass
   skillIds: readonly string[]
+  /** Skills kept rules wait for, listed as not relearned. */
+  waiting?: readonly string[]
   label: string
   removeLabel: (conditionNumber: number) => string
 }) {
@@ -74,9 +78,9 @@ export function ConditionList({
                   onChange={(event) => patch(conditionIndex, { skillId: event.target.value })}
                 >
                   <option value="">Pick a skill</option>
-                  {skillIds.map((id) => (
-                    <option key={id} value={id}>
-                      {skillName(id)}
+                  {skillOptions(skillIds, waiting).map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
                     </option>
                   ))}
                 </select>

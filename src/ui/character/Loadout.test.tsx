@@ -29,3 +29,15 @@ describe('Loadout slot count', () => {
     expect(withIt).toContain('Fifth slot')
   })
 })
+
+describe('Loadout from your last life (Step 13.37)', () => {
+  it('names the old skills that return when they are learned again', () => {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    commitSave({ ...made.save, heroes: made.save.heroes.map((hero) => ({ ...hero, pastLoadout: ['driving-blow', 'cleave'] })) }, 'test', false)
+    const html = renderToStaticMarkup(<Loadout />)
+    expect(html).toContain('data-testid="loadout-past"')
+    expect(html).toContain('From your last life: Cleave returns to the loadout when you learn it again.')
+    expect(show(false)).not.toContain('loadout-past')
+  })
+})

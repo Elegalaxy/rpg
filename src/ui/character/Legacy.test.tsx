@@ -177,3 +177,12 @@ describe('Legacy screen', () => {
     expect(carrySummary(carry)).toBe('Keeps 2,000 of 10,000 gold and 20% of each material and supply. The rest is lost.')
   })
 })
+
+describe('Legacy screen combat setup (Step 13.37)', () => {
+  it('says the combat setup is kept, with counts', () => {
+    const html = show({ bossLoss: true })
+    expect(html).toContain('data-testid="carry-setup"')
+    expect(html).toMatch(/Kept: \d+ rules, 0 stacks, preparation/)
+    expect(html).toContain('Rules, stacks and preparation are kept.')
+  })
+})

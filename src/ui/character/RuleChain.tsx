@@ -13,6 +13,8 @@ export type RuleChainProps = {
   /** Which chain this is, for the fire counts. */
   stackId: string
   skillIds: readonly string[]
+  /** Skills kept rules wait for (Step 13.37). */
+  waiting?: readonly string[]
   open: number | null
   counts: FireCounts | null
   /** A removed rule the player can still take back. */
@@ -35,6 +37,7 @@ export function RuleChain({
   rows,
   stackId,
   skillIds,
+  waiting = [],
   open,
   counts,
   removed,
@@ -48,7 +51,7 @@ export function RuleChain({
   onUndo,
   onStartTemplate,
 }: RuleChainProps) {
-  const rules = buildRules(hero, rows)
+  const rules = buildRules(hero, rows, waiting)
   const atLimit = rows.length >= MAX_PRIORITY_ROWS
   const [dragging, setDragging] = useState<number | null>(null)
   const [over, setOver] = useState<number | null>(null)
@@ -126,6 +129,7 @@ export function RuleChain({
               used={fireCount(counts, stackId, rule.index)}
               classId={hero.classId}
               skillIds={skillIds}
+              waiting={waiting}
               nodeIds={hero.progress.allocatedNodeIds}
               onToggle={() => onOpen(open === rule.index ? null : rule.index)}
               onPatch={(patch) => onPatch(rule.index, patch)}

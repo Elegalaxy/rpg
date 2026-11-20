@@ -45,6 +45,11 @@ export function RuleRouter({
             <span className="rc-title">{entry.name}</span>
             <span className="rc-sentence">{entry.auto ? `When ${entry.trigger}` : entry.trigger}</span>
           </span>
+          {entry.waitingFor !== null ? (
+            <Tag kind="info" title={`Left out of fights until ${entry.waitingFor} is usable again.`}>
+              Waiting
+            </Tag>
+          ) : null}
           <Tag kind={entry.auto ? 'info' : 'plain'}>{entry.auto ? 'Auto' : 'Manual only'}</Tag>
           <span className="rc-used">{use(entry.id)}</span>
         </button>

@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { RuleRouter } from './RuleRouter.tsx'
 
 const entries = [
-  { id: 'stack-1', name: 'Group', trigger: 'Enemies alive is at least 2', auto: true },
-  { id: 'stack-2', name: 'Hand', trigger: 'Picked by hand only', auto: false },
+  { id: 'stack-1', name: 'Group', trigger: 'Enemies alive is at least 2', auto: true, waitingFor: null },
+  { id: 'stack-2', name: 'Hand', trigger: 'Picked by hand only', auto: false, waitingFor: null },
 ]
 const noop = () => undefined
 
@@ -36,5 +36,14 @@ describe('stack router', () => {
     expect(html).toContain('Used 5×')
     expect(html).toContain('Used 1×')
     expect(html).toContain('Used 0×')
+  })
+})
+
+describe('waiting stacks (Step 13.37)', () => {
+  it('shows a Waiting tag on a stack that is left out of fights', () => {
+    const html = renderToStaticMarkup(
+      <RuleRouter entries={[{ ...entries[0]!, waitingFor: 'Cleave' }, entries[1]!]} selected="default" counts={null} onSelect={noop} />,
+    )
+    expect(html.match(/>Waiting</g)).toHaveLength(1)
   })
 })

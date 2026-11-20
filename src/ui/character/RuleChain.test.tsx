@@ -100,3 +100,19 @@ describe('rule chain', () => {
     expect(chain([blow])).not.toContain('Rule removed.')
   })
 })
+
+describe('waiting rules (Step 13.37)', () => {
+  it('tags a waiting rule with the skill it waits for and styles it as waiting', () => {
+    const html = chain([{ skillId: 'cleave', conditions: [], targetPriority: '' }, blow], { waiting: ['cleave'] })
+    expect(html).toContain('Waiting for')
+    expect(html).toContain('Cleave')
+    expect(html).toContain('rc-node--waiting')
+    expect(html.match(/rc-node--waiting/g)).toHaveLength(1)
+    expect(chain([blow])).not.toContain('Waiting for')
+  })
+
+  it('offers a waiting skill in the skill menu as not relearned', () => {
+    const html = chain([{ skillId: 'cleave', conditions: [], targetPriority: '' }], { waiting: ['cleave'], open: 0 })
+    expect(html).toContain('Cleave (not relearned)')
+  })
+})

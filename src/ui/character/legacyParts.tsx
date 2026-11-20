@@ -23,6 +23,7 @@ import {
   type NextLife,
   type PurchaseKind,
 } from '../../persist/reincarnation.ts'
+import type { SetupStats } from '../../persist/pastSetup.ts'
 import type { HeroPurchases, SavedHero } from '../../persist/save.ts'
 import { LOADOUT_SLOT_COUNT, MAX_LOADOUT_SLOTS } from '../../sim/progression.ts'
 import type { ItemInstance } from '../../sim/economy.ts'
@@ -322,12 +323,15 @@ export function CarryFacts({
   tokensNext,
   pieces,
   resets,
+  setup,
 }: {
   carry: CarryOver
   tokensNow: number
   tokensNext: number
   pieces: number
   resets?: string
+  /** What the combat setup keeps (Step 13.37). */
+  setup?: SetupStats
 }) {
   return (
     <>
@@ -357,6 +361,20 @@ export function CarryFacts({
           <dt>Earlier-life gear</dt>
           <dd data-testid="carry-sell">{`Sells at ${carry.percent}%`}</dd>
         </div>
+        {setup === undefined ? null : (
+          <div>
+            <dt>Combat setup</dt>
+            <dd data-testid="carry-setup">
+              {`Kept: ${setup.rules} ${setup.rules === 1 ? 'rule' : 'rules'}, ${setup.stacks} ${setup.stacks === 1 ? 'stack' : 'stacks'}, preparation`}
+              {setup.waitingRules > 0 ? (
+                <>
+                  {' '}
+                  <small>{`(${setup.waitingRules} ${setup.waitingRules === 1 ? 'waits' : 'wait'} until ${setup.waitingRules === 1 ? 'its skill is' : 'their skills are'} relearned)`}</small>
+                </>
+              ) : null}
+            </dd>
+          </div>
+        )}
         {resets === undefined ? null : (
           <div>
             <dt>Resets</dt>

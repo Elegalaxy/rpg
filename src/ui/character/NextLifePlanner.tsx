@@ -172,7 +172,7 @@ export function NextLifePlanner({
       ) : null}
 
       <h3>3. What you keep</h3>
-      <CarryFacts carry={next.carry} tokensNow={hero.freeUpgrades ?? 0} tokensNext={next.tokens} pieces={pieces} resets={RESETS} />
+      <CarryFacts carry={next.carry} tokensNow={hero.freeUpgrades ?? 0} tokensNext={next.tokens} pieces={pieces} resets={RESETS} setup={next.setup} />
       <NextLifeFacts next={next} />
 
       <h3>4. Heirlooms</h3>
@@ -195,6 +195,10 @@ export function NextLifePlanner({
               Spends {staged.spent} Legacy, {planned.legacy} left.
             </p>
             <p data-testid="confirm-carry">{carrySummary(next.carry)}</p>
+            <p data-testid="confirm-setup">
+              Rules, stacks and preparation are kept.
+              {next.setup.waitingRules > 0 ? ` ${next.setup.waitingRules} ${next.setup.waitingRules === 1 ? 'rule waits' : 'rules wait'} until you relearn the skill.` : ''}
+            </p>
             <p>Heirlooms: {chosenNames.length === 0 ? 'none' : chosenNames.join(', ')}</p>
             <div className="legacy-plan-actions">
               <button type="button" className="btn-primary" onClick={begin}>

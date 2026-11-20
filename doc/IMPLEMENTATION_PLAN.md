@@ -1225,7 +1225,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.31, 13.34, 13.36
 - Goal: reincarnation keeps the Default rules, rule stacks, prepared spells and run preparation; rules for skills not relearned yet wait, and last life's skills return to the loadout as they are relearned (GAME_DESIGN §10, "Combat setup across lives"). Acceptance: sim, content and harness untouched; a hero with no waiting skills gets an identical blueprint.
 - Parts: (1) docs. (2) persist: `pastSetup.ts`, `waitingSkillIds`, `pastLoadout`, `reincarnate`, `takeNode`, blueprint, tests. (3) UI: waiting rules in the editor, Loadout line, notices, carry facts, tests, CHANGELOG. (4) Guide, plan status, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `todo`. 4 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `todo`.
 - Progress:
   - 2026-11-20: Part 1 done. Rules recorded in GAME_DESIGN §10.
 

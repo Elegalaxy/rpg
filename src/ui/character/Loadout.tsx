@@ -54,6 +54,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
   const equippedIds = hero.progress.learnedSkillIds.filter((id) => hero.progress.loadout.includes(id))
   const spareIds = hero.progress.learnedSkillIds.filter((id) => !hero.progress.loadout.includes(id))
   const unequipped = spareIds.length
+  const pastWaiting = (hero.pastLoadout ?? []).filter((id) => !hero.progress.learnedSkillIds.includes(id))
   return (
     <section aria-label="Loadout">
       <h2>Loadout — {hero.name}</h2>
@@ -66,6 +67,11 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
             : `Choose 1 to ${slots} skills. The Legacy purchase Fifth Skill Slot adds one more.`}
         </Help>
       </p>
+      {pastWaiting.length > 0 ? (
+        <p data-testid="loadout-past">
+          From your last life: {pastWaiting.map(skillName).join(', ')} {pastWaiting.length === 1 ? 'returns' : 'return'} to the loadout when you learn {pastWaiting.length === 1 ? 'it' : 'them'} again.
+        </p>
+      ) : null}
       {unequipped > 0 ? (
         <p role="status" data-testid="loadout-unequipped">
           <strong>{unequipped} learned, not equipped.</strong> Learned skills are only used in fights once they are in your loadout.

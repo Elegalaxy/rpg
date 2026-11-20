@@ -107,7 +107,7 @@ export function Legacy({ initialPlanning = false }: { initialPlanning?: boolean 
 
       <h3>Next life</h3>
       <NextLifeFacts next={next} />
-      <CarryFacts carry={next.carry} tokensNow={hero.freeUpgrades ?? 0} tokensNext={next.tokens} pieces={pieces} />
+      <CarryFacts carry={next.carry} tokensNow={hero.freeUpgrades ?? 0} tokensNext={next.tokens} pieces={pieces} setup={next.setup} />
 
       {freeSlots > 0 && claimable.length > 0 ? (
         <div className="legacy-claim" data-testid="heirloom-claim">
@@ -146,7 +146,7 @@ export function Legacy({ initialPlanning = false }: { initialPlanning?: boolean 
       <h3>
         Reincarnate
         <Help label="What reincarnating resets">
-          Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and this hero's contracts. Only a share of
+          Reincarnating resets level, XP, attributes, the skill web, this hero's world progress and Echo ranks, and this hero's contracts. Rules, stacks and preparation are kept. Only a share of
           this hero's gold, materials and supplies carries over (Stockpile raises it); the rest is lost. Mastery, purchases, Legacy, discoveries, recipes,
           crafting, free upgrade tokens and all gear stay, and your worn gear goes to the archive. Gear from an earlier life sells for only the carried share.
           The elites you beat are remembered, so the zones they guard stay open.

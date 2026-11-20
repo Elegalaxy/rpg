@@ -123,6 +123,12 @@
   border-style: dashed;
 }
 
+/* Kept from a last life, left out of fights until the skill is usable again (Step 13.37). Text keeps full contrast. */
+.rc-node--waiting {
+  border-style: dashed;
+  border-color: var(--muted);
+}
+
 .rc-node-btn {
   display: flex;
   align-items: flex-start;

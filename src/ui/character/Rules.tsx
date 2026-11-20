@@ -13,9 +13,11 @@ import {
   summarizeTrigger,
   validateRules,
   validateStacks,
+  waitingSkillIds,
   type RowDraft,
   type StackDraft,
 } from '../../persist/loadout.ts'
+import { activeRowIndexes } from '../../persist/pastSetup.ts'
 import { applyTemplate, templatesFor } from '../../persist/ruleTemplates.ts'
 import type { SaveData, SavedHero } from '../../persist/save.ts'
 import type { RuleTemplate } from '../../content/ruleTemplates.ts'
@@ -24,7 +26,7 @@ import { GuideLink } from '../guide/GuideLink.tsx'
 import { saveRulesFromUi, useSaveStatus } from '../store.ts'
 
 import { ConditionList } from './ConditionList.tsx'
-import { buildRouter } from './chainModel.ts'
+import { buildRouter, draftWaitingFor, remapFireCounts } from './chainModel.ts'
 import { useFireCounts } from './useFireCounts.ts'
 import { RuleChain } from './RuleChain.tsx'
 import { DEFAULT_TAB, RuleRouter } from './RuleRouter.tsx'
@@ -64,11 +66,15 @@ export function RulesForm({
   const status = useSaveStatus()
   const known = saveProp ?? status.save
   const options = templatesFor(hero, { ...known, heroes: [...known.heroes.filter((entry) => entry.id !== hero.id), hero] })
-  const counts = useFireCounts(hero.id)
+  const waiting = waitingSkillIds(hero)
+  // The sim numbers the rows of a fight without the waiting ones; put the counts back on the editor's rows.
+  const fired = useFireCounts(hero.id)
+  const counts = waiting.length === 0 ? fired : remapFireCounts(fired, activeRowIndexes(hero))
 
   const stack = stacks.find((entry) => entry.id === tab)
   const stackIndex = stack === undefined ? -1 : stacks.indexOf(stack)
   const activeRows = stack === undefined ? rows : stack.rows
+  const waitingRules = activeRows.filter((row) => draftWaitingFor(row, waiting) !== null).length
   const atStackLimit = stacks.length >= MAX_RULE_STACKS
   const limitText = `A hero can have at most ${MAX_RULE_STACKS + 1} stacks.`
 
@@ -163,7 +169,7 @@ export function RulesForm({
     <section aria-label="Priority rules">
       <h2>Priority rules — {hero.name}</h2>
       <div className="stack-bar">
-        {stacks.length > 0 ? <RuleRouter entries={buildRouter(hero, stacks)} selected={tab} counts={counts} onSelect={selectTab} /> : null}
+        {stacks.length > 0 ? <RuleRouter entries={buildRouter(hero, stacks, waiting)} selected={tab} counts={counts} onSelect={selectTab} /> : null}
         <button type="button" className="stack-new" aria-expanded={pickerOpen} onClick={() => setPickerOpen(!pickerOpen)}>
           Templates
         </button>
@@ -266,6 +272,7 @@ export function RulesForm({
               onChange={(next) => updateStacks(patchStack(stacks, stack.id, { when: next }))}
               classId={hero.classId}
               skillIds={skillIds}
+              waiting={waiting}
               label="Stack trigger"
               removeLabel={(n) => `Remove trigger condition ${n}`}
             />
@@ -275,7 +282,13 @@ export function RulesForm({
           </div>
         ) : null}
         <p>
-          {stack === undefined ? 'Rules' : `Rules in ${stack.name}`}: {activeRows.length} of {MAX_PRIORITY_ROWS}.
+          {stack === undefined ? 'Rules' : `Rules in ${stack.name}`}: {activeRows.length} of {MAX_PRIORITY_ROWS}
+          {waitingRules > 0 ? ` · ${waitingRules} waiting` : ''}.
+          {waitingRules > 0 ? (
+            <Help label="What a waiting rule is">
+              Rules from your last life that use a skill you have not relearned. They work again when you learn it.
+            </Help>
+          ) : null}
           <Help label="How rules work">
             The hero tries rule 1 first, then the next, and uses the first skill whose conditions pass. {RESOURCE_NAMES[hero.classId]} is this class resource.
           </Help>
@@ -286,6 +299,7 @@ export function RulesForm({
           rows={activeRows}
           stackId={stack === undefined ? DEFAULT_TAB : stack.id}
           skillIds={skillIds}
+          waiting={waiting}
           open={openRule}
           counts={counts}
           removed={removedRule !== null && removedRule.tab === tab}
@@ -392,5 +406,5 @@ export function Rules() {
       </section>
     )
   }
-  return <RulesForm key={`${hero.id}:${hero.progress.loadout.join(',')}:${hero.ruleStacks.length}`} hero={hero} />
+  return <RulesForm key={`${hero.id}:${hero.progress.loadout.join(',')}:${hero.ruleStacks.length}:${waitingSkillIds(hero).length}`} hero={hero} />
 }

@@ -95,3 +95,13 @@ describe('NextLifePlanner', () => {
     expect(html).not.toContain('Applies now')
   })
 })
+
+describe('NextLifePlanner combat setup (Step 13.37)', () => {
+  it('shows what the combat setup keeps, and says so in the confirm', () => {
+    const html = show({}, { initialConfirming: true })
+    expect(html).toContain('data-testid="carry-setup"')
+    expect(html).toMatch(/Kept: \d+ rules, 0 stacks, preparation/)
+    expect(html).toContain('data-testid="confirm-setup"')
+    expect(html).toContain('Rules, stacks and preparation are kept.')
+  })
+})
