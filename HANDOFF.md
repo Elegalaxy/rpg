@@ -12,5 +12,5 @@
   - "Life n" text in the planner counts `lives + 2` (lives is completed lives, so the first reincarnation starts life 2).
   - `src/sim`, content numbers and the harness are untouched. Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
 - **Risks:** the planner is one long page; its purchase tables repeat the Legacy tab tables.
-- **Not verified:** layout in a browser, especially at 375 px (tests are static markup only).
+- **Not verified:** the planner was clicked through once at 375 px in the dev preview (fresh profile, Stockpile I planned, begin and confirm worked, no sideways scroll); desktop width, the heirloom pickers, other purchase kinds and the "Back" path were not exercised in a browser.
 - **Exact Next Step:** (1) User playtest: Legacy tab, "Plan your next life...", stage Stockpile and a Head Start, check the carried share and start level change, begin the new life and confirm the Legacy left. (2) Decide whether the planner needs trimming. (3) Close 13.36 into a `## 0.x.0` changelog heading.
