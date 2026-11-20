@@ -46,7 +46,7 @@ function fakeStorage(options?: { failWrites?: boolean }): StorageLike & { data: 
 
 function withHero(): SaveData {
   const save = newSave()
-  save.account = { recipes: ['patch'], discoveries: ['splintered-road'], slots: 3, milestones: ['first-return'] }
+  save.account = { recipes: ['patch'], discoveries: ['splintered-road'], slots: 3, milestones: ['first-return'], tutorial: 'done' }
   save.heroes.push({
     id: 'hero-1',
     name: 'Ash',

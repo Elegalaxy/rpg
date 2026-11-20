@@ -134,6 +134,11 @@ export type ActiveContract = {
   progress: number
 }
 
+/** First-run coach. Older saves omit it and are treated as finished. A new game starts at `name`. */
+export const TUTORIAL_STEPS = ['name', 'race', 'class', 'create', 'start', 'bank', 'home', 'again', 'push', 'fall', 'fee', 'pouch', 'back', 'done'] as const
+
+export type TutorialStep = (typeof TUTORIAL_STEPS)[number]
+
 /**
  * What the whole account shares: knowledge and character slots. Wealth is not shared, decided
  * 2026-11-03, so a grown hero cannot fund a new one (see `Purse`).
@@ -146,6 +151,8 @@ export type AccountData = {
   slots: number
   /** One-time account milestones reached so far. Each one opens a character slot. */
   milestones: string[]
+  /** First-run coach. Absent on a save from before the coach means finished. */
+  tutorial?: TutorialStep
 }
 
 /** One hero's wealth and town business. Nothing in it moves between heroes. */
@@ -371,6 +378,7 @@ export function newSave(): SaveData {
       discoveries: [...STARTING_DISCOVERIES],
       slots: STARTING_SLOTS,
       milestones: [],
+      tutorial: 'name',
     },
     heroes: [],
     selectedHeroId: null,
@@ -475,6 +483,9 @@ function assertAccount(value: unknown): asserts value is AccountData {
   stringList(value.discoveries, 'discoveries')
   stringList(value.milestones, 'milestones')
   check(value.milestones.length <= MAX_SLOTS - STARTING_SLOTS, 'too many milestones')
+  if (value.tutorial !== undefined) {
+    check(typeof value.tutorial === 'string' && (TUTORIAL_STEPS as readonly string[]).includes(value.tutorial), `tutorial step is unknown, received ${describeValue(value.tutorial)}`)
+  }
 }
 
 function assertPurse(value: unknown, label: string, heroId: string): asserts value is Purse {
@@ -703,6 +714,7 @@ function fillWorldFields(parsed: unknown): void {
   if (!isRecord(parsed)) return
   if (parsed.lastSeenAt === undefined) parsed.lastSeenAt = null
   if (isRecord(parsed.account) && parsed.account.milestones === undefined) parsed.account.milestones = []
+  if (isRecord(parsed.account) && parsed.account.tutorial === undefined) parsed.account.tutorial = 'done'
   splitAccountPurse(parsed)
   if (!Array.isArray(parsed.heroes)) return
   for (const hero of parsed.heroes) {

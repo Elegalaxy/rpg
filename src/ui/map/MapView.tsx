@@ -207,6 +207,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
                 className="btn-primary"
                 disabled={!start.ok}
                 aria-describedby={!start.ok ? 'start-blocked' : undefined}
+                data-tutor="start-expedition"
                 onClick={() => setError(startExpeditionFromUi(routeId))}
               >
                 Start expedition

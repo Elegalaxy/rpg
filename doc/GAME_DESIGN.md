@@ -2920,6 +2920,23 @@ An in-game Guide explains the game in one searchable place. It is a main tab aft
 - Gear and Greyhaven (Step 13.25): a Gear section (a Gear topic, one generated entry per modifier with its effect, level, recipe price, kinds it fits, recipe requirement and "Counts at most N times across worn gear" read from `MODIFIER_STACK_CAP`, and one entry per base item with its slot and the classes that prefer it) and a Greyhaven section (a topic on what each place does, with generated sell prices, pack slots and contract limits). The stack cap applies to every modifier; Hauler's bag room counts for at most that many pieces, and only on chest armor or an accessory. Prose has no digits.
 - Search is case-insensitive over title, summary, facts, effect lines and prose. A search with no result shows an empty state with a Clear button.
 
+### First-run coach (2026-11-20)
+
+A new account gets a coach that lights one control at a time. It is not a page of text. The chip beside the control is a few words. The player moves on by using that control. Skip, in the corner the whole time, dismisses the coach for the account. An older save with no coach field is already finished, so existing players are not walked through it.
+
+The coach never sits on screen during a fight or the walk home, and it never pauses a run. The Next line hides while a mark is showing. The Guide stays the reference; its loop entry says the coach can be skipped.
+
+Order, for the first hero:
+
+1. Name, race, class, then Create hero.
+2. Start expedition on the Map.
+3. After fight 1, Return. That banks the loot.
+4. On the outcome, Return to town, then Start expedition again.
+5. After fight 1 of that run, Push on once.
+6. The next fight usually ends in defeat. The coach then lights the rescue fee ("You pay this"), the kept loot ("The pouch kept this"), and Return to town ("Back to town"). The fee and the pouch move on when the chip is pressed. Return to town is the real button.
+
+A defeat before the first Return jumps straight to those three marks and skips the rest. A win on the fight after Push on waits, with no mark, until the first defeat, then shows the same three marks. After Return to town from that defeat, the coach is finished.
+
 ## 13. Technical Direction
 
 - TypeScript and React are the preferred starting stack.

@@ -27,6 +27,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'You do not press attack buttons. Fights play out by themselves from the rules you set, so most of the game is preparation: choosing a race and class, spending attribute and skill points, wearing better gear, setting rules, and packing supplies.',
       'In town you sell loot, buy and brew supplies, craft and repair gear, and take contracts. On the map you pick a route and start an expedition. The hero walks, fights, and collects loot until you call it home, it retreats, or it falls.',
       'Loot is only safe once the hero is back in Greyhaven. Pushing on earns more but risks everything you carry.',
+      'The first time you play, a coach marks the next control. Skip dismisses it for good.',
     ],
   },
   {

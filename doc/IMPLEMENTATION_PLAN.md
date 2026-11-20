@@ -1211,6 +1211,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.38: First-run coach
+- Status: `done`
+- Depends on: 13.23
+- Goal: a skippable coach for a new account. It lights one control at a time through the first Return, a second run, one Push on, and the first defeat (GAME_DESIGN §12, "First-run coach"). Older saves are left finished. The sim, content numbers and the harness are untouched.
+- Parts: (1) docs. (2) persist step machine and save field. (3) UI marks, chip, Skip.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
+- Progress:
+  - 2026-11-20: Done. `account.tutorial` (absent on an old save means finished; a new game starts at `name`). `tutorial.ts` decides the mark. The chip lights Name, race, class, Create hero, Start expedition, Return, Return to town, Start again, Push on, then the rescue fee, the kept loot, and Return to town. Skip sets the step to `done`.
+
 ### Step 13.37: Combat setup carries over
 - Status: `in progress`
 - Depends on: 13.31, 13.34, 13.36

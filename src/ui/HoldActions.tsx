@@ -12,10 +12,10 @@ export function HoldActions({ waiting, whyDisabled, compact = false }: { waiting
   return (
     <div className="hold-actions">
       <div className="button-row">
-        <button type="button" className="btn-primary" disabled={!waiting} title={reason} onClick={pushOnFromUi}>
+        <button type="button" className="btn-primary" disabled={!waiting} title={reason} data-tutor="push" onClick={pushOnFromUi}>
           Push on
         </button>
-        <button type="button" className="btn-good" disabled={!waiting} title={reason} aria-label={compact ? 'Return to town' : undefined} onClick={() => setError(returnFromUi())}>
+        <button type="button" className="btn-good" disabled={!waiting} title={reason} data-tutor="return" aria-label={compact ? 'Return to town' : undefined} onClick={() => setError(returnFromUi())}>
           {compact ? 'Return' : 'Return to town'}
         </button>
       </div>

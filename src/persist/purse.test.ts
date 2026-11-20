@@ -108,7 +108,7 @@ describe('saves from before per-hero purses', () => {
     })
     const parsed = parseSave(JSON.stringify(raw))
     if (!parsed.ok) throw new Error(parsed.reason)
-    expect(Object.keys(parsed.data.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots'])
+    expect(Object.keys(parsed.data.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots', 'tutorial'])
     expect(purseOf(parsed.data, 'hero-2')).toMatchObject({
       gold: 140,
       materials: { hide: 4 },

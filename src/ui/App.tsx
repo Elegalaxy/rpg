@@ -4,6 +4,7 @@ import { xpToNextLevel } from '../sim/stats.ts'
 import { selectedHero } from '../persist/character.ts'
 import { statLines, statsFor } from '../persist/equipment.ts'
 import { nextHint, type Tab } from '../persist/guidance.ts'
+import { tutorialMark } from '../persist/tutorial.ts'
 import { GoldLine } from './GoldLine.tsx'
 import { contractFor, purseOf, type SaveData } from '../persist/save.ts'
 import { isComplete } from '../persist/contracts.ts'
@@ -41,6 +42,7 @@ import { debugLog } from './debug.ts'
 import { LogPanel } from './log/LogPanel.tsx'
 import { ExpeditionPanel } from './map/ExpeditionPanel.tsx'
 import { MapView } from './map/MapView.tsx'
+import { Coach } from './tutorial/Coach.tsx'
 import { OutcomeCard } from './log/OutcomeCard.tsx'
 import {
   MASTERED_SPEED,
@@ -198,6 +200,7 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
   const [open, setOpen] = useState(false)
   const hero = selectedHero(save)
   const hint = nextHint(save)
+  const coaching = tutorialMark(save) !== null
   const stats = hero === null ? null : statsFor(hero)
   const need = hero === null ? 1 : xpToNextLevel(hero.progress.level)
   const run = save.expedition !== null && save.expedition.outcome === 'ongoing' ? save.expedition : null
@@ -256,14 +259,16 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
             ))}
         </ul>
       ) : null}
-      <div className="callout" data-testid="next-hint">
-        <span>
-          <strong>Next:</strong> {hint.text}
-        </span>
-        <button type="button" className="btn-primary" onClick={() => onGo(hint.tab)}>
-          Go
-        </button>
-      </div>
+      {coaching ? null : (
+        <div className="callout" data-testid="next-hint">
+          <span>
+            <strong>Next:</strong> {hint.text}
+          </span>
+          <button type="button" className="btn-primary" onClick={() => onGo(hint.tab)}>
+            Go
+          </button>
+        </div>
+      )}
       </div>
     </header>
   )
@@ -421,6 +426,7 @@ function App() {
 
   return (
     <>
+      <Coach onShowMap={() => setTab('map')} />
       <div className="topbar">
         <h1>RPG</h1>
         {narrow ? null : <ThemeSwitch />}

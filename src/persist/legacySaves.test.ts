@@ -43,6 +43,7 @@ function oldestSave(): string {
   const raw = JSON.parse(serializeSave(made.save)) as { heroes: Record<string, unknown>[]; account: Record<string, unknown> } & Record<string, unknown>
   delete raw.lastSeenAt
   delete raw.account.milestones
+  delete raw.account.tutorial
   for (const hero of raw.heroes) for (const field of LATER_HERO_FIELDS) delete hero[field]
   Object.assign(raw.account, {
     gold: 140,
@@ -64,7 +65,8 @@ describe('a save from the first version of the game', () => {
     expect(() => assertSaveData(save)).not.toThrow()
     expect(save.lastSeenAt).toBeNull()
     expect(save.account.milestones).toEqual([])
-    expect(Object.keys(save.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots'])
+    expect(save.account.tutorial).toBe('done')
+    expect(Object.keys(save.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots', 'tutorial'])
 
     const hero = save.heroes[0]!
     expect(hero).toMatchObject({
@@ -123,6 +125,6 @@ describe('a save from the first version of the game', () => {
     expect(save.account.recipes).not.toContain('siphoning')
     const rows = recipesForSale(save)
     expect(rows.filter((row) => row.locked !== null).map((row) => row.modifierId)).toEqual(['hallowed', 'rending', 'siphoning', 'stalwart', 'devout', 'bloodbound', 'emberward', 'tempered', 'kindled'])
-    expect(Object.keys(save.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots'])
+    expect(Object.keys(save.account).sort()).toEqual(['discoveries', 'milestones', 'recipes', 'slots', 'tutorial'])
   })
 })

@@ -853,7 +853,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
         <Kpi label="XP earned" value={stats.xp} tone={stats.xp > 0 ? 'good' : undefined} note={stats.recall > 0 ? `Recall +${stats.recall}` : undefined} />
         {defeated ? (
           <>
-            <Kpi label="Rescue fee" value={`${stats.rescueFee} g`} tone="bad" note={`${stats.carriedGold} g left · debt ${stats.debt}`} />
+            <Kpi label="Rescue fee" tutor="rescue-fee" value={`${stats.rescueFee} g`} tone="bad" note={`${stats.carriedGold} g left · debt ${stats.debt}`} />
             <Kpi label="Recovery" value={`${stats.recoveryMinutes} min`} tone="warn" />
           </>
         ) : (
@@ -864,7 +864,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
         )}
       </KpiRow>
       <div className="pill-lines">
-        <div className="pill-line">
+        <div className="pill-line" data-tutor={defeated ? 'kept-loot' : undefined}>
           <small className="pill-label">{defeated ? 'Kept' : 'Secured'}</small>
           <span className="pill-row">
             {lootPills(stats.secured, 'nothing')}
@@ -914,7 +914,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
         </p>
       ))}
       <div className="button-row">
-        <button type="button" className="btn-primary" onClick={settleExpeditionFromUi}>
+        <button type="button" className="btn-primary" data-tutor="settle" onClick={settleExpeditionFromUi}>
           Return to town
         </button>
         <button type="button" onClick={() => setError(settleAndRepeatFromUi())}>

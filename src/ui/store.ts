@@ -32,7 +32,9 @@ import {
   writeSave,
   type SaveData,
   type StorageLike,
+  type TutorialStep,
 } from '../persist/save.ts'
+import { syncTutorial, tutorialStep } from '../persist/tutorial.ts'
 import { createCombat, stepCombat } from '../sim/combat.ts'
 import type { CombatState } from '../sim/types.ts'
 
@@ -148,7 +150,11 @@ export function useSaveStatus(): SaveStatus {
  * The combat loop passes `notify` false because it notifies once per frame itself.
  */
 export function commitSave(saved: SaveData, reason: string, notify = true): void {
-  const next: SaveData = { ...saved, lastSeenAt: Date.now() }
+  const synced = syncTutorial(saved)
+  if (synced.account.tutorial !== saved.account.tutorial) {
+    debugLog('[ui]', 'tutorial step', { from: saved.account.tutorial ?? 'done', to: synced.account.tutorial })
+  }
+  const next: SaveData = { ...synced, lastSeenAt: Date.now() }
   const storage = browserStorage()
   if (storage === null) {
     saveStatus = { ...saveStatus, save: next }
@@ -161,6 +167,14 @@ export function commitSave(saved: SaveData, reason: string, notify = true): void
     ? { ...saveStatus, save: next, writeError: null, bytes: result.bytes }
     : { ...saveStatus, save: next, writeError: result.reason }
   if (notify) emit()
+}
+
+/** Move the first-run coach to a step the player just did. A finished coach stays finished. */
+export function advanceTutorial(step: TutorialStep): void {
+  const current = tutorialStep(saveStatus.save)
+  if (current === 'done' || current === step) return
+  debugLog('[ui]', 'tutorial', { step })
+  commitSave({ ...saveStatus.save, account: { ...saveStatus.save.account, tutorial: step } }, 'tutorial')
 }
 
 /** Create a hero and save. Returns the message to show when it is refused, or null. */

@@ -47,6 +47,7 @@ export function Kpi({
   note,
   tone,
   testId,
+  tutor,
   compact,
 }: {
   label: string
@@ -54,11 +55,13 @@ export function Kpi({
   note?: ReactNode
   tone?: 'good' | 'bad' | 'warn' | 'gold'
   testId?: string
+  /** `data-tutor` id for the first-run coach. */
+  tutor?: string
   /** A smaller card for rows of many numbers, such as the purse. */
   compact?: boolean
 }) {
   return (
-    <div className={`kpi${tone === undefined ? '' : ` kpi-${tone}`}${compact === true ? ' kpi-compact' : ''}`} data-testid={testId}>
+    <div className={`kpi${tone === undefined ? '' : ` kpi-${tone}`}${compact === true ? ' kpi-compact' : ''}`} data-testid={testId} data-tutor={tutor}>
       <strong className="kpi-value">{value}</strong>
       <span className="kpi-label">{label}</span>
       {note === undefined ? null : <small className="kpi-note">{note}</small>}
