@@ -244,6 +244,7 @@ Each class has:
 - Execute consumes all Advantage. Its damage scales with stacks and the target's missing health.
 - All Advantage and fractional Advantage progress are lost when an encounter ends.
 - The initial web focuses on daggers and light melee weapons, stealth, Poison, Mark, and execution.
+- Envenomed strikes (Step 13.39, planned; off until the content switch): every direct-damage action (a basic attack or a damaging skill) tries one Poison application on each enemy it damaged, using the normal contact rule (the attack hit and dealt HP damage greater than 0), at most once per target per action. Poison ticks and Toxic Sovereign's spread never trigger it. It replaces the Venom Edge skill; see "Venom passive (Step 13.39)" in section 10.
 - Only one enemy can have Mark for Death. Reapplying it moves the Mark.
 - Mark for Death lasts 8 seconds and has a 6-second base cooldown.
 - Assassin attacks refresh Mark to at least 8 seconds remaining. Extensions from nodes or effects cannot raise it above 12 seconds remaining.
@@ -400,9 +401,9 @@ The MVP Assassin web has fifteen nodes: five per cluster. Connections follow the
 
 #### Venom cluster
 
-1. Venom Edge: unlock the Poison-applying active skill. Its Poison tick deals 15% of snapshotted Physical Power instead of 12%.
+1. Venom Edge: raise the tick of Envenomed strikes (the Assassin's innate Poison on direct damage) from T0% to T1% of snapshotted Physical Power. The node keeps its name so its id `assassin-venom-edge` stays; T0 and T1 are TBD after the 13.39 measurement. Until the content switch it still unlocks the Venom Edge skill, whose Poison tick is 15% instead of 12%.
 2. Potent Toxins: increase Poison's stack cap from 5 to 7, shared duration from 8 to 10 seconds, and Poison application Potency by 10.
-3. Fan of Knives: unlock the multi-target active skill.
+3. Fan of Knives: unlock the multi-target active skill. With Envenomed strikes it spreads Poison to every enemy it hits.
 4. Toxic Opportunity: applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage.
 5. Toxic Sovereign, major keystone: Poison on the Marked target no longer loses duration. When that target dies, apply half its Poison stacks, rounded down, to every surviving enemy, subject to each target's cap.
 
@@ -1976,7 +1977,7 @@ These are a first broad roster for mechanical review. Names and effects are not 
 
 1. Mark for Death: no damage or resource cost; apply Mark for 8 seconds; 6-second cooldown; 0.5× action time.
 2. Shadow Cut: 110% Physical Power; gain one Advantage when the target is Marked, subject to the one-trigger-per-action cap; 3-second cooldown; 0.8× action time.
-3. Venom Edge: 90% Physical Power; apply one Poison stack whose tick deals 12% of snapshotted Physical Power; 4-second cooldown; 0.9× action time.
+3. Venom Edge: 90% Physical Power; apply one Poison stack whose tick deals 12% of snapshotted Physical Power; 4-second cooldown; 0.9× action time. Retired in 13.39 (kept hidden for old saves) once the Envenomed strikes passive goes live.
 4. Smoke Step: gain +30 Evasion until the next Assassin action; successful Evasion uses the normal Advantage trigger; 8-second cooldown; 0.5× action time.
 5. Fan of Knives: 70% Physical Power to every enemy; 6-second cooldown; 1.1× action time. Venom-web nodes may add Poison interactions.
 6. Execute: consume all Advantage; deal `100% + (40% × consumed stacks)` Physical Power, then multiply by `1 + (0.5 × target missing-health fraction)`; 8-second cooldown; 1.1× action time. A critical Execute may generate one new Advantage through the normal critical trigger.
@@ -2130,7 +2131,7 @@ Modifiers (new, one modifier per item stays for now; replaced by the second-sock
 Starting-skill node bonuses (each node keeps its unlock and gains one small bonus):
 
 - Warrior: Sundering Blow cooldown 6 to 5 s. Shield Brace Fury on hit 5 to 10. Second Wind cooldown 15 to 12 s.
-- Assassin: Venom Edge poison tick 12% to 15%. Mark for Death grants 1 Advantage when applied. Execute base damage 100% to 120%.
+- Assassin: Venom Edge poison tick 12% to 15% (13.39: the node raises the Envenomed strikes tick T0 to T1 instead). Mark for Death grants 1 Advantage when applied. Execute base damage 100% to 120%.
 - Ranger: Piercing Arrow cost 20 to 15. Snare Trap cooldown 8 to 6 s.
 - Mage: Fireball cost 30 to 25. Frost Lance damage 110% to 130%. Mana Ward barrier 65% to 85% (Step 13.5; was 100% to 125%).
 - Cleric: Ward duration 8 to 10 s. Judgment damage 250% to 280% (Step 13.5, was 200% to 230%).
@@ -2796,6 +2797,20 @@ Results (seeds 1 to 3 x 100, Ranger, four elites; prepared four mean 61.1, prepa
 - `swap` (candidate replaces Snare Trap, four skills) is identical to five skills for both HM-R and HM-XR (+7.3 and +7.1 with the same per-seed values): Snare Trap has no row in the reference rules, so it never fires and the slot it holds is free. The Ranger's gain does not need the fifth slot at all.
 - Side check (nine-point Ranger, four skills with the variant swapped in for Snare Trap, seeds 1 to 3 x 100): HM-R last Rootmaw Stalker 94.0 to 89.7, Echo Knight 38.3 to 35.3, Warden 0 to 0; HM-XR last Rootmaw 94.0 to 98.3, Echo Knight 38.3 to 45.7, Warden 0 to 0. Nothing gains more than 10 points, so no flag.
 - Verdict (rule read strictly: at least +4 in every seed): HM-X fails (negative), HM-XR fails on seed 2 (+3.2; its mean +7.1 passes), HM-R last QUALIFIES (+7.3 mean, +6.2 to +8.8 per seed, 0 of 4 cells crossing, median win time +2.6%, i.e. not cut). If the rule is read as the mean only, HM-XR last also qualifies but HM-R is the better-behaved variant, and by the preference order HM-XR would come first. Recommendation to the user: this is a content change (Hunter's Mark would grant Readiness), so it needs a decision; the measurement shows a Ranger fifth skill worth about +7 only because Hunter's Mark becomes a Readiness battery, and that same +7 is available with four skills (swap), so the slot itself is not what pays. The alternative is the stopgap label (the slot has no Ranger skill that helps). Nothing in the game changed in this step.
+
+### Venom passive (Step 13.39)
+
+Planned 2026-11-20. The Assassin's Venom Edge stops being an equipped skill and becomes the passive "Envenomed strikes" (trait text in section 4, "Assassin: Advantage"). Parts 1 and 2 change nothing the player sees: the hook is `GameDefs.envenom` (`baseChance`, `coefficient`, `nodeCoefficient`, optional `basicOnly`), absent in `gameDefs()`, so every guard stays byte-identical. Only the harness sets it, on patched copies of the definitions.
+
+Rules: after a direct-damage action resolves, each enemy it damaged (hit, HP lost greater than 0, still alive) gets one Poison application (`baseChance`, tick `coefficient`, or `nodeCoefficient` with the Venom Edge node; physical Power; Potent Toxins' potency applies as for any Poison). Once per action per target, in first-strike order, before Toxic Opportunity's check, so Toxic Opportunity sees the new stacks. A killing blow applies nothing.
+
+Steady-state math (Poison ticks every 2 s, so the figures are Physical Power per second): today at the cap, 5 stacks x 0.15 / 2 = 0.375 per second, and 7 x 0.15 / 2 = 0.525 with Potent Toxins. A passive tick of 0.10 gives 0.25 and 0.35. The passive reaches the cap in about 5 actions instead of 16 to 20 s of Venom Edge casts, and it spreads to every enemy a skill damages, so a lower tick loses at the cap in long boss fights and wins in multi-target trash.
+
+Decisions awaiting the user (recommendations, see IMPLEMENTATION_PLAN Step 13.39): Q1 innate at T0, the Venom Edge node raises it to T1; Q2 Venom Edge kept as a retired hidden skill plus a `HERO_UPDATES` migration; Q3 `startingSkillIds` 3 to 4 so the Assassin has a free slot; Q4 final values decided after the measurement.
+
+Measurement variants (harness only, `src/harness/venom.ts`; Assassin, rules mode, every elite cell plus the Warden arrived/prepared/over/causeway tiers, seeds 1 to 3 x 100): `current` (no envenom, today's loadout); `passive-06/-08/-10/-12/-15` (tick = node tick, Venom Edge removed from skills and rows) each with the freed slot `-empty`, `-smoke` (Smoke Step) or `-fan` (Fan of Knives on `enemyCount >= 2`); `proc50` (tick 0.10, base chance 0.5); `basic-10` (basic attacks only); `fan-only-10` (Poison only from Fan of Knives); and the `+to` / `+ts` modifiers (Toxic Opportunity, then Toxic Sovereign allocated) on the best two ticks and on `current`.
+
+GO/NO-GO rule: a variant is GO if, against `current` at the same tier, the Assassin mean elite win rate changes by no more than 8 points either way per tier; no more than half the cells cross from below 95 to 95 or more; the median win time does not fall by more than 20%; the Warden prepared tier stays within 8 points; and the `+to` / `+ts` variants do not exceed +12 points over the same nodes on `current`. The pick is the lowest tick that is GO with the `-empty` slot (the passive must not need the freed slot to break even). If none is GO, report the nearest variant and the alternatives.
 
 ### Later lives (Step 13.18)
 

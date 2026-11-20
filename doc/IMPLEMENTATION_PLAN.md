@@ -1211,6 +1211,20 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.39: Venom passive (Envenomed strikes)
+- Status: `planned`
+- Depends on: 13.34, 13.37
+- Goal: the Assassin's Venom Edge stops being an equipped skill and becomes a passive: every direct-damage action tries to apply 1 Poison stack to each enemy it damaged, once per action per target (GAME_DESIGN §4 "Envenomed strikes", §10 "Venom passive (Step 13.39)"). It frees a loadout slot and makes Toxic Opportunity, Toxic Sovereign, Potent Toxins and Fan of Knives work with any loadout. Parts 1 and 2 change nothing the player sees (the hook is off by default).
+- Parts: (1) docs only. (2) `GameDefs.envenom` hook in `sim/classes/assassin.ts` (absent = off), unit tests, `harness/venom.ts` measurement, guards byte-identical, then STOP for the user's call. (3) Content switch: `gameDefs()` sets `envenom`, Venom Edge becomes a retired hidden skill, reference loadouts and rows change, deliberate re-baseline of snapshots and guards. (4) Save migration (`HERO_UPDATES` strips Venom Edge from loadouts, rows, stacks and `skillReady`, keeps the node allocated) and `startingSkillIds` relaxed to 3..4. (5) UI, Guide, CHANGELOG, handoff.
+- Part status: 1 `done`. 2 `in progress`. 3 `waiting for the user`. 4 `waiting`. 5 `waiting`.
+- Decided (recommendations, awaiting the user):
+  - Q1: the passive is innate (no node needed), ticking at T0; the existing "Venom Edge" node (id `assassin-venom-edge`, name kept) raises the tick to T1. It is not node-gated, so a floor build is not locked out of its own class identity.
+  - Q2: the `venomEdge` skill definition stays as a retired hidden skill listed in `HIDDEN_SKILL_IDS`, so old saves, away runs and saved rules still parse. A post-validation `HERO_UPDATES` migration (like `ranger-fade-back`) strips it from loadouts, rows, rule stacks and `skillReady`, and keeps the node allocated.
+  - Q3: `startingSkillIds` relaxes from exactly 4 to 3..4 (`readonly string[]`, `assertIdList(..., 3, 4)` in `progression.ts` and `define.ts`), so the Assassin has 3 starting skills and a truly free slot; the other classes keep 4.
+  - Q4 (open): the final tick values, any proc chance, and whether Smoke Step fills the freed slot in the default loadout are decided after the Part 2 measurement.
+- Progress:
+  - 2026-11-20: Part 1 done. Trait, GO/NO-GO rule and steady-state math recorded in GAME_DESIGN §4 and §10.
+
 ### Step 13.38: First-run coach
 - Status: `done`
 - Depends on: 13.23
