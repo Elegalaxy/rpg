@@ -287,11 +287,21 @@ export function nextLifePreview(hero: SavedHero, discoveries: readonly string[])
  * A single id, or null, still keeps older heirlooms in any slot that pick leaves free.
  * A list is the player's full choice: only those items stay heirlooms.
  */
-export function reincarnate(save: SaveData, heroId: string, heirloomItemId: string | null | readonly string[]): RosterResult {
-  const hero = save.heroes.find((entry) => entry.id === heroId)
-  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
-  const block = reincarnationBlock(save, hero)
+export function reincarnate(
+  save: SaveData,
+  heroId: string,
+  heirloomItemId: string | null | readonly string[],
+  plan: readonly PlannedPurchase[] = [],
+): RosterResult {
+  const current = save.heroes.find((entry) => entry.id === heroId)
+  if (current === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  const block = reincarnationBlock(save, current)
   if (block !== null) return { ok: false, reason: block }
+  // Step 13.36: this life's Legacy is banked and the plan is bought first; the rest reads the staged hero.
+  const staged = stageNextLife(current, plan)
+  if (!staged.ok) return { ok: false, reason: staged.reason }
+  const hero = staged.hero
+  const preview = staged.gained
 
   const owned = allItems(hero)
   const explicit = Array.isArray(heirloomItemId)
@@ -313,7 +323,6 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     if (item.heirloom !== undefined && item.heirloom.heroId !== heroId) return { ok: false, reason: 'That is another hero\'s heirloom.' }
   }
 
-  const preview = legacyPreview(hero)
   const lives = hero.lives + 1
   const progress = startingProgress(hero)
   const loadout = referenceLoadoutFor(hero.classId)
@@ -353,7 +362,7 @@ export function reincarnate(save: SaveData, heroId: string, heirloomItemId: stri
     fightRank: 0,
     bossLossThisLife: false,
     drillsThisLevel: 0,
-    legacy: hero.legacy + preview.total,
+    legacy: hero.legacy,
     lives,
     peakLevel: Math.max(hero.peakLevel ?? 0, hero.progress.level),
     claimedBonuses: [...hero.claimedBonuses, ...preview.bonuses.map((bonus) => bonus.id)],
@@ -389,16 +398,10 @@ export function attributeSeedTotal(purchases: HeroPurchases): number {
   return seeds.strength + seeds.vitality + seeds.agility + seeds.intellect + seeds.spirit
 }
 
-/** Spend Legacy on a purchase. It is bound to the hero and survives every later life. */
-export function buyPurchase(
-  save: SaveData,
-  heroId: string,
-  kind: PurchaseKind,
-  attribute?: keyof HeroPurchases['attributeSeeds'],
-): RosterResult {
-  const hero = save.heroes.find((entry) => entry.id === heroId)
-  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
-  if (save.expedition !== null) return { ok: false, reason: 'Finish the expedition first.' }
+export type PurchasePrice = { ok: true; cost: number; purchases: HeroPurchases } | { ok: false; reason: string }
+
+/** The price and the purchases a buy would leave, or why it is refused. Reads only the hero's Legacy and purchases. */
+function pricePurchase(hero: SavedHero, kind: PurchaseKind, attribute?: keyof HeroPurchases['attributeSeeds']): PurchasePrice {
   let cost: number
   let purchases: HeroPurchases = hero.purchases
   if (kind === 'attribute') {
@@ -449,6 +452,50 @@ export function buyPurchase(
     return { ok: false, reason: 'You already have every heirloom slot.' }
   }
   if (hero.legacy < cost) return { ok: false, reason: `That costs ${cost} Legacy. ${hero.name} has ${hero.legacy}.` }
+  return { ok: true, cost, purchases }
+}
+
+/** One purchase staged in the next life planner (Step 13.36). */
+export type PlannedPurchase = { kind: PurchaseKind; attribute?: keyof HeroPurchases['attributeSeeds'] }
+
+export type StagedLife = { ok: true; hero: SavedHero; gained: LegacyPreview; spent: number } | { ok: false; reason: string }
+
+/**
+ * Step 13.36: the hero as the new life will see them. This life's Legacy is banked and every planned purchase is
+ * bought in order, each affordable at its point. The current life is not touched: no seed or Head Start is applied
+ * to `progress`, and Artisan's Favor hands over its one token as if bought just before reincarnating.
+ */
+export function stageNextLife(hero: SavedHero, plan: readonly PlannedPurchase[]): StagedLife {
+  const gained = legacyPreview(hero)
+  let staged: SavedHero = { ...hero, legacy: hero.legacy + gained.total }
+  let spent = 0
+  for (const item of plan) {
+    const price = pricePurchase(staged, item.kind, item.attribute)
+    if (!price.ok) return { ok: false, reason: price.reason }
+    staged = {
+      ...staged,
+      legacy: staged.legacy - price.cost,
+      purchases: price.purchases,
+      ...(item.kind === 'artisan' ? { freeUpgrades: (staged.freeUpgrades ?? 0) + 1 } : {}),
+    }
+    spent += price.cost
+  }
+  return { ok: true, hero: staged, gained, spent }
+}
+
+/** Spend Legacy on a purchase. It is bound to the hero and survives every later life. */
+export function buyPurchase(
+  save: SaveData,
+  heroId: string,
+  kind: PurchaseKind,
+  attribute?: keyof HeroPurchases['attributeSeeds'],
+): RosterResult {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
+  if (save.expedition !== null) return { ok: false, reason: 'Finish the expedition first.' }
+  const price = pricePurchase(hero, kind, attribute)
+  if (!price.ok) return { ok: false, reason: price.reason }
+  const { cost, purchases } = price
   const progress = applyToCurrentLife(hero.progress, kind, attribute, purchases)
   // Artisan's Favor also hands over one token now (Step 13.31); later lives add the tier total at reincarnation.
   const freeUpgrades = (hero.freeUpgrades ?? 0) + (kind === 'artisan' ? 1 : 0)

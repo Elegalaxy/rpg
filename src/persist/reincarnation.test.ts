@@ -40,6 +40,8 @@ import {
   reincarnate,
   reincarnationBlock,
   scaleHeirlooms,
+  stageNextLife,
+  type PlannedPurchase,
 } from './reincarnation.ts'
 import { assertSaveData, newSave, parseSave, serializeSave, type SaveData, type SavedHero, purseOf, updatePurse } from './save.ts'
 import { outcomeStats, outcomeSummary, settleExpedition } from './world.ts'
@@ -865,5 +867,154 @@ describe('claiming an heirloom now (Step 13.32)', () => {
   it('leaves the earlier-life list alone, so the carried share still guards selling', () => {
     const lived = { ...withSlots(false), heroes: withSlots(false).heroes.map((h) => ({ ...h, pastLifeItemIds: ['a'] })) }
     expect(hero(ok(claimHeirloom(lived, 'hero-1', 'a'))).pastLifeItemIds).toEqual(['a'])
+  })
+})
+
+describe('planned next life (Step 13.36)', () => {
+  function rich(legacy = 500, patch: Partial<SavedHero> = {}): SaveData {
+    const base = veteran()
+    return {
+      ...base,
+      heroes: base.heroes.map((h) => ({
+        ...h,
+        legacy,
+        ...patch,
+        purse: { ...h.purse, gold: 10000, debt: 0, materials: { shard: 100, scrap: 7 }, supplies: {} },
+      })),
+    }
+  }
+  const stockpile: PlannedPurchase = { kind: 'stockpile' }
+
+  it('an empty plan gives exactly the same result as no plan', () => {
+    const save = rich()
+    expect(reincarnate(save, 'hero-1', null, [])).toEqual(reincarnate(save, 'hero-1', null))
+    expect(reincarnate(save, 'hero-1', 'spare', [])).toEqual(reincarnate(save, 'hero-1', 'spare'))
+  })
+
+  it('stages this life Legacy on top of the bank, leaves the life alone and adds up what is spent', () => {
+    const base = hero(rich(10))
+    const gained = legacyPreview(base).total
+    const none = stageNextLife(base, [])
+    if (!none.ok) throw new Error(none.reason)
+    expect(none.hero.legacy).toBe(10 + gained)
+    expect(none.hero.progress).toBe(base.progress)
+    expect(none.spent).toBe(0)
+    const plan: PlannedPurchase[] = [{ kind: 'attribute', attribute: 'strength' }, stockpile]
+    const staged = stageNextLife(base, plan)
+    if (!staged.ok) throw new Error(staged.reason)
+    expect(staged.spent).toBe(ATTRIBUTE_SEED_COST + 20)
+    expect(staged.hero.legacy).toBe(10 + gained - staged.spent)
+    expect(staged.hero.progress).toBe(base.progress)
+    expect(staged.hero.purchases.stockpile).toBe(1)
+    expect(staged.gained.total).toBe(gained)
+  })
+
+  it('refuses a plan over budget with the usual text and changes nothing', () => {
+    const save = rich(0)
+    const total = legacyPreview(hero(save)).total
+    const result = reincarnate(save, 'hero-1', null, [{ kind: 'fifthSlot' }])
+    expect(result).toEqual({ ok: false, reason: `That costs ${FIFTH_SLOT_COST} Legacy. Ash has ${total}.` })
+    expect(save.heroes[0]!.legacy).toBe(0)
+    expect(hero(save).lives).toBe(0)
+  })
+
+  it('keeps the tier order: Head Start I then II passes, II alone is refused', () => {
+    const save = rich(500)
+    const both = hero(ok(reincarnate(save, 'hero-1', null, [{ kind: 'headStart' }, { kind: 'headStart' }])))
+    expect(both.purchases.headStart).toBe(2)
+    expect(both.progress.level).toBe(HEAD_START_LEVELS[1])
+    const done = stageNextLife({ ...hero(save), purchases: { ...hero(save).purchases, headStart: 3 } }, [{ kind: 'headStart' }])
+    expect(done).toEqual({ ok: false, reason: 'You already have every Head Start.' })
+  })
+
+  it('refuses a fourth skill point seed', () => {
+    const save = rich(500)
+    const result = reincarnate(save, 'hero-1', null, [{ kind: 'skill' }, { kind: 'skill' }, { kind: 'skill' }, { kind: 'skill' }])
+    expect(result).toEqual({ ok: false, reason: 'You already have all 3 skill point seeds.' })
+  })
+
+  it('Stockpile I in the plan keeps 30% and flags the archive as earlier-life', () => {
+    const next = ok(reincarnate(rich(), 'hero-1', null, [stockpile]))
+    expect(purseOf(next).gold).toBe(3000)
+    expect(hero(next).purchases.stockpile).toBe(1)
+    expect(hero(next).pastLifeItemIds).toEqual(purseOf(next).archive.map((item) => item.id))
+  })
+
+  it('Second Heirloom in the plan lets two heirlooms be kept; without it two ids are refused', () => {
+    const save = rich()
+    const equipped = Object.values(hero(save).equipment).flatMap((item) => (item === null ? [] : [item.id]))
+    const ids = ['spare', equipped[0]!]
+    expect(reincarnate(save, 'hero-1', ids)).toEqual({ ok: false, reason: 'You can keep 1 heirloom.' })
+    const next = ok(reincarnate(save, 'hero-1', ids, [{ kind: 'heirloom' }]))
+    const kept = purseOf(next).archive.filter((item) => item.heirloom !== undefined).map((item) => item.id)
+    expect(kept.sort()).toEqual([...ids].sort())
+  })
+
+  it('Head Start I gives the new life level 5 and leaves the peak at the old level', () => {
+    const save = rich(500)
+    const oldLevel = hero(save).progress.level
+    const gained = legacyPreview(hero(save)).total
+    const next = hero(ok(reincarnate(save, 'hero-1', null, [{ kind: 'headStart' }])))
+    expect(next.progress.level).toBe(HEAD_START_LEVELS[0])
+    expect(next.peakLevel).toBe(oldLevel)
+    expect(next.legacy).toBe(500 + gained - HEAD_START_COSTS[0]!)
+  })
+
+  it('an attribute seed adds one once over the racial base, and a skill seed becomes a skill point', () => {
+    const save = rich()
+    const next = hero(ok(reincarnate(save, 'hero-1', null, [{ kind: 'attribute', attribute: 'strength' }, { kind: 'skill' }])))
+    expect(next.progress.attributes.strength).toBe(racialStartingAttributes[next.progress.race].strength + 1)
+    expect(next.progress.legacySkillPoints).toBe(1)
+  })
+
+  it("Artisan's Favor gives the old tokens, one for the buy and the tier tokens", () => {
+    const save = rich(500, { freeUpgrades: 2 })
+    const next = hero(ok(reincarnate(save, 'hero-1', null, [{ kind: 'artisan' }])))
+    expect(next.freeUpgrades).toBe(2 + 1 + 1)
+  })
+
+  it('the Legacy left is the bank plus this life minus what was spent', () => {
+    const save = rich(100)
+    const preview = legacyPreview(hero(save))
+    const next = hero(ok(reincarnate(save, 'hero-1', null, [stockpile, { kind: 'pockets' }])))
+    expect(next.legacy).toBe(100 + preview.total - 20 - DEEP_POCKETS_COST)
+    expect(next.claimedBonuses).toEqual(expect.arrayContaining(preview.bonuses.map((bonus) => bonus.id)))
+  })
+
+  it('buying now and reincarnating equals reincarnating with the purchase planned', () => {
+    const kinds: PlannedPurchase[] = [
+      stockpile,
+      { kind: 'attribute', attribute: 'agility' },
+      { kind: 'skill' },
+      { kind: 'fifthSlot' },
+      { kind: 'pockets' },
+      { kind: 'memory' },
+      { kind: 'heirloom' },
+      { kind: 'artisan' },
+    ]
+    for (const item of kinds) {
+      const save = rich(500)
+      const viaBuy = hero(ok(reincarnate(ok(buyPurchase(save, 'hero-1', item.kind, item.attribute)), 'hero-1', null, [])))
+      const viaPlan = hero(ok(reincarnate(save, 'hero-1', null, [item])))
+      expect(viaPlan, item.kind).toEqual(viaBuy)
+    }
+  })
+
+  it('Head Start differs from buying now only in the ending life: the new life is the same', () => {
+    const save = rich(500)
+    const viaBuy = hero(ok(reincarnate(ok(buyPurchase(save, 'hero-1', 'headStart')), 'hero-1', null, [])))
+    const viaPlan = hero(ok(reincarnate(save, 'hero-1', null, [{ kind: 'headStart' }])))
+    expect(viaPlan.progress).toEqual(viaBuy.progress)
+    expect(viaPlan.purse).toEqual(viaBuy.purse)
+    expect(viaPlan.purchases).toEqual(viaBuy.purchases)
+    expect(viaPlan.legacy).toBeGreaterThanOrEqual(viaBuy.legacy)
+  })
+
+  it('still refuses while the craft queue is not empty, plan or not', () => {
+    const save = rich()
+    const queued = { ...save, heroes: save.heroes.map((h) => ({ ...h, purse: { ...h.purse, craftQueue: [{ id: 'job' } as never] } })) }
+    const result = reincarnate(queued, 'hero-1', null, [stockpile])
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toContain('Wait for the crafters')
   })
 })
