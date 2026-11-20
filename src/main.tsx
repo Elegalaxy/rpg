@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './ui/App.tsx'
+import { debugLog } from './ui/debug.ts'
 import { applyPalette, applyTheme, storedPalette, storedTheme } from './ui/theme.ts'
 import './ui/theme.css'
 import './ui/kit.css'
@@ -8,6 +9,7 @@ import './ui/runDock.css'
 
 applyTheme(storedTheme())
 applyPalette(storedPalette())
+debugLog('[ui]', 'launch', { installed: window.matchMedia('(display-mode: standalone)').matches })
 
 const rootElement = document.getElementById('root')
 

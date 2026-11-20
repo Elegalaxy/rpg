@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: the game can be added to a phone's home screen as an app, with its own cracked-sword icon. It opens without the browser bar and keeps clear of the notch; it still needs the internet.
 - Improved: on a phone, the run bar fits on two rows with short Push on, Return, Auto and Escape buttons, the contracts fold to one line, a "?" hint opens with a tap as a panel above the tabs, and text fields no longer make the page zoom in.
 - Tech: the harness can now try a redesigned Hunter's Mark or Flame Arrow as the Ranger's fifth skill, and finds a Readiness-granting Hunter's Mark would be worth about 7 points of win rate (harness only, nothing changes in the game). [13.35]
 - Tech: the fifth-skill measurement now has conditional "tuned" rows for every candidate (harness only) and finds the slot worth up to about 8 points of win rate at the elites, so the 90 Legacy price stays. [13.34]

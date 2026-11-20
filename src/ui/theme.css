@@ -379,8 +379,10 @@ nav[aria-label='Main'] button {
 /* Phones: one pinned status line that opens the full status, and a tab bar along the bottom. */
 
 @media (max-width: 899px) {
+  /* --status-h is the whole pinned header, including the notch inset when installed full screen. */
   :root {
-    --status-h: 52px;
+    --status-line-h: 52px;
+    --status-h: calc(var(--status-line-h) + env(safe-area-inset-top, 0px));
     --tabs-h: 56px;
   }
 
@@ -399,7 +401,7 @@ nav[aria-label='Main'] button {
     z-index: 5;
     gap: 0;
     margin: 0 calc(-1 * var(--s4));
-    padding: 0 var(--s4);
+    padding: env(safe-area-inset-top, 0px) var(--s4) 0;
   }
 
   .status-compact {
@@ -407,7 +409,7 @@ nav[aria-label='Main'] button {
     align-items: center;
     gap: var(--s3);
     width: 100%;
-    min-height: var(--status-h);
+    min-height: var(--status-line-h);
     padding: 0;
     border: 0;
     background: none;
