@@ -1221,12 +1221,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-20: Done. `account.tutorial` (absent on an old save means finished; a new game starts at `name`). `tutorial.ts` decides the mark. The chip lights Name, race, class, Create hero, Start expedition, Return, Return to town, Start again, Push on, then the rescue fee, the kept loot, and Return to town. Skip sets the step to `done`.
 
 ### Step 13.37: Combat setup carries over
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.31, 13.34, 13.36
 - Goal: reincarnation keeps the Default rules, rule stacks, prepared spells and run preparation; rules for skills not relearned yet wait, and last life's skills return to the loadout as they are relearned (GAME_DESIGN §10, "Combat setup across lives"). Acceptance: sim, content and harness untouched; a hero with no waiting skills gets an identical blueprint.
 - Parts: (1) docs. (2) persist: `pastSetup.ts`, `waitingSkillIds`, `pastLoadout`, `reincarnate`, `takeNode`, blueprint, tests. (3) UI: waiting rules in the editor, Loadout line, notices, carry facts, tests, CHANGELOG. (4) Guide, plan status, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done`.
 - Progress:
+  - 2026-11-20: Part 4 done. Guide reincarnation paragraph and a Rules-topic sentence on waiting rules (no digits); HANDOFF rewritten. Clicked through at 375 px in the dev preview on a test hero (plan, begin, waiting tags, relearn Cleave: notice and rules woke, no sideways scroll); desktop width not checked.
+  - 2026-11-20: Part 3 done. `chainModel.ts` (`waitingFor`, `skillOptions`, `remapFireCounts`), `RuleNode`/`RuleChain`/`RuleRouter`/`Rules` show waiting rules, Loadout "From your last life" line, SkillWeb notice, `CarryFacts` combat setup row (planner and Legacy), tests. CHANGELOG line was added in Part 2.
+  - 2026-11-20: Part 2 done. `persist/pastSetup.ts` (`carriedSetup`, `combatRules`, `activeRowIndexes`, `returnToLoadout`, `restoreNotice`), `waitingSkillIds`/`pastLoadout` on the save, `pruneRows`/waiting-aware `validateRules`/`saveLoadout` in `loadout.ts`, `reincarnate`, `takeNode`, `blueprintForHero`, store; tests in `pastSetup.test.ts` and others.
   - 2026-11-20: Part 1 done. Rules recorded in GAME_DESIGN §10.
 
 ### Step 13.36: Plan the next life

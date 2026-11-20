@@ -37,6 +37,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
     body: [
       'Rules live in Combat setup. The hero tries the first rule, then the next, and uses the first skill whose conditions pass. Put the situations you care about most at the top and a cheap fallback at the bottom.',
       'A rule names a skill and optional conditions, such as the hero or enemy health, the class resource, a status on a target, or whether the enemy has telegraphed an attack. Supplies work the same way: a rule can drink a draught when health is low.',
+      'A rule kept from an earlier life whose skill you have not relearned shows as waiting. It is left out of fights, and works again once you can use that skill.',
       'Rule templates give you a working starting point for each class. The list shows how often each rule fires, so you can see which rules do the work and which never trigger.',
     ],
   },
@@ -77,6 +78,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'Reincarnating opens a planner first. The Legacy this life earns is counted at once, so you can spend it on purchases, see how Stockpile, heirloom slots or a head start change what you keep, and pick your heirlooms. Nothing changes until you begin the new life, and going back spends nothing.',
       'Reincarnating resets level, experience, attributes, the skill web, the hero’s world progress, and its contracts. Only a share of the hero’s gold, materials, and supplies carries over, and Stockpile raises that share. The rest is lost, so spend it on gear, upgrades, and potions before you go. Mastery, purchases, Legacy, discoveries, recipes, crafting, free upgrade tokens, and all gear stay. Worn gear goes to the archive, and heirlooms are chosen in the planner. Gear from an earlier life sells for only the carried share, so selling it does not get around the loss. Reincarnating waits until the crafters have finished their jobs.',
       'The elites you beat are remembered, so the zones they guard stay open in the next life.',
+      'Rules, rule stacks and preparation stay; rules for skills you have not relearned wait, and your old skills return to the loadout as you learn them.',
       'Clearing the three farthest zones for the first time, and returning safely, also gives a one-time Legacy bonus, claimed at the next reincarnation.',
     ],
   },
