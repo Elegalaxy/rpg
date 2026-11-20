@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: pop-up notices. A card names a level up, a Warden win, a first clear, a finished contract or a new place, with a button to go straight there; under Auto run they come as short toasts with a summary of each run, and Auto run says why it stopped.
 - New: reincarnating keeps the hero's rules, rule stacks and preparation; rules for skills not relearned yet wait, and last life's skills return to the loadout as you learn them again. [13.37]
 - New: a new game gets a coach that lights the next control, from naming a hero through the first return, one push onward, and the first defeat. Skip dismisses it. [13.38]
 - Improved: reincarnating opens a "Between lives" planner: this life's Legacy is counted first, so you can spend it on Stockpile, heirloom slots or a Head Start and see what you keep before the new life begins. [13.36]

@@ -1706,3 +1706,100 @@ dl.upgrade-facts dd {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ---- Pop-up notices: the big-moment card and the toasts (doc/POPUP_NOTICES.md) ---- */
+
+.notice-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 45%);
+}
+
+.notice-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 41;
+  width: min(26rem, calc(100vw - 2 * var(--s4)));
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+  padding: var(--s4);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-top: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 45%);
+  transform: translate(-50%, -50%);
+}
+
+.notice-card h2 {
+  margin: 0 0 var(--s3);
+}
+
+ul.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin: 0 0 var(--s4);
+  padding: 0;
+  list-style: none;
+}
+
+.notice-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s1);
+}
+
+.toasts {
+  position: fixed;
+  top: var(--s4);
+  right: var(--s4);
+  z-index: 42;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  width: min(22rem, calc(100vw - 2 * var(--s4)));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+  font-size: 0.9rem;
+  pointer-events: auto;
+}
+
+.toast span {
+  flex: 1 1 auto;
+}
+
+.toast button {
+  flex: none;
+  min-height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+}
+
+/* Phones: toasts sit under the pinned status line, clear of the Start bar and the tabs at the bottom. */
+@media (max-width: 899px) {
+  .toasts {
+    top: calc(var(--status-h) + var(--s2));
+    right: var(--s4);
+    left: var(--s4);
+    width: auto;
+  }
+}

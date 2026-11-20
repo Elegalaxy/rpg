@@ -36,6 +36,7 @@ import { MASTERY_HELP } from './masteryHelp.ts'
 import { newRecipeIds, useSeenRecipes } from './town/enchanterSeen.ts'
 import { PLACES, Town, type PlaceId } from './town/Town.tsx'
 import { PlacePicker } from './town/PlacePicker.tsx'
+import { Notices } from './Notices.tsx'
 import { CombatPanel } from './combat/CombatPanel.tsx'
 import { PALETTES, applyPalette, applyTheme, storedPalette, storedTheme, type PaletteChoice, type ThemeChoice } from './theme.ts'
 import { debugLog } from './debug.ts'
@@ -547,6 +548,13 @@ function App() {
               <PhoneNav main={PHONE_TABS} more={PHONE_MORE} current={tab} onPick={setTab} badge={tabBadge} moreBadge={tabBadge('whatsnew')} extra={<ThemeSwitch />} />
             ) : null}
           </div>
+          <Notices
+            onGo={(to) => {
+              if (to.tab === 'heroes') setHeroPart(to.heroPart)
+              if (to.tab === 'town') setTownPart(to.place)
+              setTab(to.tab)
+            }}
+          />
         </>
       )}
     </>

@@ -1,6 +1,6 @@
 # Pop-up notices plan
 
-Status: `planned`. Starts after the phone plan (steps 3 to 5: Town, run bar polish, PWA) is pushed.
+Status: `done` (2026-11-20).
 
 ## Goal
 
@@ -38,8 +38,16 @@ Tell the player when something worth noticing finishes, from one shared notice s
 - `role="status"` for toasts, `role="dialog"` with a label for cards.
 - `debugLog('[ui]', 'notice', ...)` each time one is queued and shown.
 
-## Open questions
+## Decisions (user, 2026-11-20)
 
-- Card order when several big moments merge (level up first?).
-- Toast length on screen and the most shown at once.
-- Should a card offer a shortcut button (Spend points, Go to Town to collect)?
+- Card order: level up, then Warden, first clear, contract, new place.
+- Toasts stay 5 seconds, at most 3 at once (the oldest goes first).
+- Each moment on the card has one shortcut: Spend points (Hero, only with points to spend), Open Legacy (Warden), Spend the free upgrade (Weaponsmith), Go to the Contract Board, Open the map.
+
+## How it is built
+
+- `persist/moments.ts`: `momentsBetween(before, after)` compares two saves for the selected hero and returns the moments in card order. Pure, tested in `moments.test.ts`.
+- `ui/notices.ts`: the in-memory queue (`reportMoments`, `pushToast`, `dismissCard`), with the modes `hand`, `away` and `auto`.
+- `ui/store.ts` reports from five places: a settle by hand (level up and contract only), Auto run's own settle and contract hand-in (route summary toast plus every moment as a toast), the away catch-up (card, held until the report closes), finished drills and collected contracts (level up), and places found mid-run.
+- The route summary toast is for live Auto run only. Runs played while away are in the away report.
+- `ui/Notices.tsx`: the card and the toasts, rendered once in `App.tsx`; a shortcut closes the card and switches tab.

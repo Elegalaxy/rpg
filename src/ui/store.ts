@@ -16,7 +16,7 @@ import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { autoContractsStep } from '../persist/autoContracts.ts'
-import { autoRerunRefusal, autoRunDefeatNote, beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
+import { autoRerunRefusal, autoRunDefeatNote, beginExpedition, canStartRoute, newlyDiscovered, outcomeStats, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { restoreNotice, combatRules } from '../persist/pastSetup.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
@@ -40,6 +40,9 @@ import { createCombat, stepCombat } from '../sim/combat.ts'
 import type { CombatState } from '../sim/types.ts'
 
 import { debugLog } from './debug.ts'
+import { pushToast, reportMoments, type NoticeMode } from './notices.ts'
+import { momentsBetween, type MomentKind } from '../persist/moments.ts'
+import { routes } from '../content/world.ts'
 import { createGameLoop } from './loop.ts'
 
 export const PLAYBACK_SPEEDS = [1, 2, 4, 8] as const
@@ -426,6 +429,11 @@ export function expeditionWaiting(): boolean {
   return expedition !== null && shouldHold(expedition, pushedAt)
 }
 
+/** How a moment found now is shown: as a toast while Auto run is on, else on the card. */
+function liveMode(): NoticeMode {
+  return selectedHero(saveStatus.save)?.autoRun === true ? 'auto' : 'hand'
+}
+
 /** Fights fought since Auto run was switched on, across repeated runs. In memory only: switching it on or off, or a reload, starts at 0. */
 let autoFights = 0
 
@@ -468,6 +476,7 @@ function afterAutoRun(expedition: ExpeditionState): void {
     const wardenLost = expedition.outcome === 'defeat' ? autoRunDefeatNote(hero, expedition) : null
     autoNotice = expedition.outcome === 'defeat' ? (wardenLost === null ? 'Auto run stopped: the hero was defeated.' : `Auto run stopped: ${wardenLost}`) : 'Auto run stopped: the total fight limit was reached.'
     debugLog('[ui]', 'auto run stopped', { outcome: expedition.outcome, route: expedition.id, wardenLost })
+    pushToast(autoNotice)
     autoFights = 0
     saveStatus = { ...saveStatus, save: setHeroAutoRun(saveStatus.save, false) }
     commitSave(saveStatus.save, 'auto run ended')
@@ -477,17 +486,24 @@ function afterAutoRun(expedition: ExpeditionState): void {
   // Rerun the same route on any route the hero can start: the normal start checks decide, and a refusal stops Auto run.
   const routeId = expedition.id
   const rankBefore = hero.fightRank
-  settleExpeditionFromUi()
+  const beforeSettle = saveStatus.save
+  const stats = outcomeStats(expedition, hero)
+  const loot = expedition.secured.reduce((sum, stack) => sum + stack.quantity, 0)
+  commitSave(settleExpedition(beforeSettle, Date.now()), 'expedition settled')
   if (hero.autoRunMode === 'echo') debugLog('[ui]', 'echo climb', { route: routeId, before: rankBefore, after: selectedHero(saveStatus.save)?.fightRank ?? null })
   if (expedition.outcome === 'returned') {
     const contracts = autoContractsStep(saveStatus.save, routeId)
     if (contracts.save !== saveStatus.save) commitSave(contracts.save, 'auto run contracts')
   }
+  // The outcome card is skipped under Auto run, so its summary and moments come as toasts.
+  pushToast(`${routes[routeId]?.name ?? routeId}: ${stats.fightsWon} ${stats.fightsWon === 1 ? 'fight' : 'fights'} won, +${stats.carriedGold} g, ${loot} loot.`)
+  reportMoments(momentsBetween(beforeSettle, saveStatus.save), 'auto')
   const refusal = autoRerunRefusal(saveStatus.save, routeId, Date.now())
   const reason = refusal !== null ? refusal.reason : startExpeditionFromUi(routeId)
   if (reason === null) return
   autoFights = 0
   autoNotice = `Auto run stopped: ${reason}`
+  pushToast(autoNotice)
   saveStatus = { ...saveStatus, save: setHeroAutoRun(saveStatus.save, false) }
   commitSave(saveStatus.save, 'auto run ended')
 }
@@ -572,6 +588,10 @@ export function advanceExpedition(count: number): void {
   if (found.length > 0) {
     discoveryNotices = [...discoveryNotices, ...found]
     unseenDiscoveries += found.length
+    reportMoments(
+      found.map((text) => ({ kind: 'discovery', text })),
+      liveMode(),
+    )
   }
   if (expedition.history.length !== fights || expedition.outcome !== 'ongoing') {
     commitSave(saveStatus.save, expedition.outcome === 'ongoing' ? 'encounter end' : 'expedition end', false)
@@ -856,13 +876,15 @@ export function clearUnseenCrafts(place: PlaceDef): void {
  */
 export function advanceCraftingBy(elapsedMs: number): void {
   if ((!anyCrafting(saveStatus.save) && !anyTraining(saveStatus.save)) || !(elapsedMs > 0)) return
-  const result = advanceCrafting(saveStatus.save, elapsedMs)
+  const before = saveStatus.save
+  const result = advanceCrafting(before, elapsedMs)
   const drilled = advanceTraining(result.save, elapsedMs)
   saveStatus = { ...saveStatus, save: drilled.save }
   if (result.finished.length > 0 || drilled.finished.length > 0) {
     craftNotices = [...craftNotices, ...result.finished.map((notice) => notice.text), ...drilled.finished.map((notice) => notice.text)].slice(-5)
     unseenCrafts = [...unseenCrafts, ...result.finished.map((notice) => notice.baseId)]
     commitSave(saveStatus.save, 'craft finished', false)
+    if (drilled.finished.length > 0) reportMoments(momentsBetween(before, saveStatus.save), liveMode())
   }
 }
 
@@ -939,8 +961,10 @@ function finishCatchUp(): void {
       away.stopped === 'defeat' ? 'Auto run stopped: the hero was defeated.' :
       `Auto run stopped: ${away.note ?? 'the next run could not start.'}`
   }
+  const before = saveStatus.save
   saveStatus = { ...saveStatus, save }
   commitSave(save, 'offline catch-up', false)
+  reportMoments(momentsBetween(before, save), 'away')
   if (summary.discovered.length > 0) {
     discoveryNotices = [...discoveryNotices, ...summary.discovered]
     unseenDiscoveries += summary.discovered.length
@@ -1146,7 +1170,10 @@ export function abandonContractFromUi(contractId: string): string | null {
 export function collectContractFromUi(contractId: string): string | null {
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero to collect the experience.'
-  return applyTown(collectContract(saveStatus.save, hero.id, contractId), 'contract collected')
+  const before = saveStatus.save
+  const refusal = applyTown(collectContract(before, hero.id, contractId), 'contract collected')
+  if (refusal === null) reportMoments(momentsBetween(before, saveStatus.save), 'hand')
+  return refusal
 }
 
 /** Reincarnate the selected hero, keeping each chosen item as an heirloom. Returns the refusal, or null. */
@@ -1182,11 +1209,16 @@ export function devLegacyTools(kind: 'bossLoss' | 'legacy'): void {
   commitSave({ ...saveStatus.save, heroes }, `dev ${kind}`)
 }
 
+/** What a settle by hand still pops up: the outcome card already lists first clears, the Warden and places found. */
+const HAND_SETTLE_KINDS: readonly MomentKind[] = ['level', 'contract']
+
 /** Close a finished expedition: loot to the account, the first return opens a slot. */
 export function settleExpeditionFromUi(): void {
-  const settled = settleExpedition(saveStatus.save, Date.now())
-  if (settled === saveStatus.save) return
+  const before = saveStatus.save
+  const settled = settleExpedition(before, Date.now())
+  if (settled === before) return
   commitSave(settled, 'expedition settled')
+  reportMoments(momentsBetween(before, settled).filter((moment) => HAND_SETTLE_KINDS.includes(moment.kind)), 'hand')
 }
 
 /** The route of the last run the player started. Not saved: a reload goes back to the first route. */
