@@ -400,3 +400,130 @@ describe('assassin advantage', () => {
     expect(state.hero.resourceFraction).toBe(before)
   })
 })
+
+describe('envenomed strikes (Step 13.39)', () => {
+  const ENVENOM = { baseChance: 1, coefficient: 0.1, nodeCoefficient: 0.15 } as const
+  const fan = skill({ id: 'fan-of-knives', target: 'all', effects: [{ kind: 'damage', school: 'physical', coefficient: 0.7 }] })
+  const shadowCut = skill({ id: 'shadow-cut', tags: ['physical', 'attack', MARK_EXPLOIT_TAG], effects: [{ kind: 'damage', school: 'physical', coefficient: 1.1 }] })
+
+  function setup(on: boolean, enemyCount = 1, nodes: readonly string[] = [], seed = 7) {
+    const base = defsFor([fan, shadowCut])
+    const defs: GameDefs = on ? { ...base, envenom: ENVENOM } : base
+    const built = assassinSetup({ enemies: Array.from({ length: enemyCount }, (_, slot) => ({ defId: 'dummy', slot })) })
+    const state = createCombat({ ...built, hero: { ...built.hero, allocatedNodeIds: [...nodes] } }, defs, seed)
+    return { defs, state }
+  }
+  const stacksOn = (state: CombatState, index: number) => state.enemies[index]?.statuses.poison?.stacks.length ?? 0
+
+  it('a basic hit applies one stack; a miss or a hit for no HP applies none', () => {
+    const { defs, state } = setup(true)
+    const id = state.enemies[0]!.id
+    resolvedHook()(state, { kind: 'basicAttack', hit: false, targetId: id, hpLost: 0 }, 1000, defs)
+    resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: id, hpLost: 0 }, 1100, defs)
+    expect(stacksOn(state, 0)).toBe(0)
+    resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: id, hpLost: 50 }, 1200, defs)
+    expect(stacksOn(state, 0)).toBe(1)
+  })
+
+  it('Fan of Knives poisons each living enemy it hit once, and not a dead one', () => {
+    const { defs, state } = setup(true, 3)
+    state.enemies[2]!.alive = false
+    const strikes = state.enemies.map((enemy) => ({ targetId: enemy.id, hit: true, crit: false, hpLost: 40 }))
+    resolvedHook()(state, { kind: 'skill', skill: fan, targetId: state.enemies[0]!.id, strikes }, 1000, defs)
+    expect([stacksOn(state, 0), stacksOn(state, 1), stacksOn(state, 2)]).toEqual([1, 1, 0])
+  })
+
+  it('a multi-strike skill applies once per target, summing the HP lost', () => {
+    const { defs, state } = setup(true)
+    const id = state.enemies[0]!.id
+    const strikes = [
+      { targetId: id, hit: true, crit: false, hpLost: 0 },
+      { targetId: id, hit: true, crit: false, hpLost: 30 },
+      { targetId: id, hit: false, crit: false, hpLost: 0 },
+    ]
+    resolvedHook()(state, { kind: 'skill', skill: fan, targetId: id, strikes }, 1000, defs)
+    expect(stacksOn(state, 0)).toBe(1)
+  })
+
+  it('a fully absorbed hit and a killing blow apply nothing', () => {
+    const { defs, state } = setup(true)
+    const enemy = state.enemies[0]!
+    resolvedHook()(state, { kind: 'skill', skill: fan, targetId: enemy.id, strikes: [{ targetId: enemy.id, hit: true, crit: false, hpLost: 0 }] }, 1000, defs)
+    expect(stacksOn(state, 0)).toBe(0)
+    enemy.alive = false
+    resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: enemy.id, hpLost: 99 }, 1100, defs)
+    expect(stacksOn(state, 0)).toBe(0)
+  })
+
+  it('does nothing for a skill without damage, with basicOnly on a skill, or with envenom off', () => {
+    const mark = skill({ id: 'mark-for-death', effects: [{ kind: 'applyStatus', statusId: 'mark', baseChance: 1 }] })
+    const { defs, state } = setup(true)
+    const id = state.enemies[0]!.id
+    resolvedHook()(state, { kind: 'skill', skill: mark, targetId: id, strikes: [] }, 1000, defs)
+    expect(stacksOn(state, 0)).toBe(0)
+    const basicOnly: GameDefs = { ...defs, envenom: { ...ENVENOM, basicOnly: true } }
+    resolvedHook()(state, { kind: 'skill', skill: fan, targetId: id, strikes: [{ targetId: id, hit: true, crit: false, hpLost: 10 }] }, 1100, basicOnly)
+    expect(stacksOn(state, 0)).toBe(0)
+    resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: id, hpLost: 10 }, 1200, basicOnly)
+    expect(stacksOn(state, 0)).toBe(1)
+    const off = setup(false)
+    resolvedHook()(off.state, { kind: 'basicAttack', hit: true, targetId: off.state.enemies[0]!.id, hpLost: 10 }, 1000, off.defs)
+    expect(stacksOn(off.state, 0)).toBe(0)
+  })
+
+  it('uses the node tick with the Venom Edge node', () => {
+    const plain = setup(true)
+    const noded = setup(true, 1, ['assassin-venom-edge'])
+    for (const { defs, state } of [plain, noded]) {
+      resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: state.enemies[0]!.id, hpLost: 10 }, 1000, defs)
+    }
+    const tick = (state: CombatState) => JSON.stringify(state.enemies[0]!.statuses.poison?.stacks[0])
+    expect(tick(plain.state)).toContain('0.1')
+    expect(tick(noded.state)).toContain('0.15')
+  })
+
+  it('Poison ticks and the fight add no applications beyond one per damaging action', () => {
+    const { defs, state } = setup(true)
+    runCombat(state, defs, 8_000)
+    const hits = state.log.filter((event) => event.type === 'damage' && event.actorId === state.hero.id).length
+    const attempts = state.log.filter((event) => event.type === 'statusAttempt' && event.statusId === 'poison').length
+    expect(attempts).toBeGreaterThan(0)
+    expect(attempts).toBeLessThanOrEqual(hits)
+  })
+
+  it('Toxic Opportunity grants Advantage when the passive poisons the Marked target, and not at the cap', () => {
+    // The application roll is capped below 100%, so take the first seed whose first roll lands.
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const { defs, state } = setup(true, 1, ['assassin-toxic-opportunity'], seed)
+      const enemy = state.enemies[0]!
+      enemy.statuses.mark = { name: 'Mark', expiresMs: 600_000, sourceId: state.hero.id, sourceName: state.hero.name }
+      // A basic attack, so the Mark exploit trigger (which has priority as the reason) does not hide the Poison trigger.
+      assassinClass.actionChosen?.(state, { kind: 'basicAttack', hit: true, targetId: enemy.id }, 1000)
+      resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: enemy.id, hpLost: 30 }, 1000, defs)
+      if (stacksOn(state, 0) === 0) continue
+      expect(resources(state, 'poison')).toHaveLength(1)
+      let time = 2000
+      while (stacksOn(state, 0) < 5 && time < 60_000) {
+        assassinClass.actionChosen?.(state, { kind: 'basicAttack', hit: true, targetId: enemy.id }, time)
+        resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: enemy.id, hpLost: 10 }, time, defs)
+        time += 100
+      }
+      expect(stacksOn(state, 0)).toBe(5)
+      const before = resources(state, 'poison').length
+      assassinClass.actionChosen?.(state, { kind: 'basicAttack', hit: true, targetId: enemy.id }, time)
+      resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: enemy.id, hpLost: 10 }, time, defs)
+      expect(resources(state, 'poison')).toHaveLength(before)
+      return
+    }
+    throw new Error('no seed landed the first application')
+  })
+
+  it('without envenom the fight log is identical to a copy of the definitions', () => {
+    const base = setup(false)
+    const copy: GameDefs = { ...base.defs }
+    const a = runCombat(createCombat(assassinSetup(), base.defs, 11), base.defs, 20_000)
+    const b = runCombat(createCombat(assassinSetup(), copy, 11), copy, 20_000)
+    expect(b.log).toEqual(a.log)
+    expect(a.log.length).toBeGreaterThan(0)
+  })
+})

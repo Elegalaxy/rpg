@@ -1216,13 +1216,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.34, 13.37
 - Goal: the Assassin's Venom Edge stops being an equipped skill and becomes a passive: every direct-damage action tries to apply 1 Poison stack to each enemy it damaged, once per action per target (GAME_DESIGN §4 "Envenomed strikes", §10 "Venom passive (Step 13.39)"). It frees a loadout slot and makes Toxic Opportunity, Toxic Sovereign, Potent Toxins and Fan of Knives work with any loadout. Parts 1 and 2 change nothing the player sees (the hook is off by default).
 - Parts: (1) docs only. (2) `GameDefs.envenom` hook in `sim/classes/assassin.ts` (absent = off), unit tests, `harness/venom.ts` measurement, guards byte-identical, then STOP for the user's call. (3) Content switch: `gameDefs()` sets `envenom`, Venom Edge becomes a retired hidden skill, reference loadouts and rows change, deliberate re-baseline of snapshots and guards. (4) Save migration (`HERO_UPDATES` strips Venom Edge from loadouts, rows, stacks and `skillReady`, keeps the node allocated) and `startingSkillIds` relaxed to 3..4. (5) UI, Guide, CHANGELOG, handoff.
-- Part status: 1 `done`. 2 `in progress`. 3 `waiting for the user`. 4 `waiting`. 5 `waiting`.
+- Part status: 1 `done`. 2 `done`. 3 `waiting for the user`. 4 `waiting`. 5 `waiting`.
 - Decided (recommendations, awaiting the user):
   - Q1: the passive is innate (no node needed), ticking at T0; the existing "Venom Edge" node (id `assassin-venom-edge`, name kept) raises the tick to T1. It is not node-gated, so a floor build is not locked out of its own class identity.
   - Q2: the `venomEdge` skill definition stays as a retired hidden skill listed in `HIDDEN_SKILL_IDS`, so old saves, away runs and saved rules still parse. A post-validation `HERO_UPDATES` migration (like `ranger-fade-back`) strips it from loadouts, rows, rule stacks and `skillReady`, and keeps the node allocated.
   - Q3: `startingSkillIds` relaxes from exactly 4 to 3..4 (`readonly string[]`, `assertIdList(..., 3, 4)` in `progression.ts` and `define.ts`), so the Assassin has 3 starting skills and a truly free slot; the other classes keep 4.
   - Q4 (open): the final tick values, any proc chance, and whether Smoke Step fills the freed slot in the default loadout are decided after the Part 2 measurement.
 - Progress:
+  - 2026-11-20: Part 2 done. `GameDefs.envenom` and `applyEnvenom` in `sim/classes/assassin.ts` (off in `gameDefs()`), unit tests, `harness/venom.ts` (+ test). Measured 16 cells x seeds 1 to 3 x 100: no `-empty` variant is GO; Warden prepared (boss) is the NO-GO point (passive-10-empty: prepared tier +8.7, Warden prepared -7.3; passive-08-empty: Warden prepared -8.7; passive-06-fan is GO but needs the slot). Table and proposed choice in GAME_DESIGN §10. Guards byte-identical. Stopped for the user's decision on Q1 to Q4.
   - 2026-11-20: Part 1 done. Trait, GO/NO-GO rule and steady-state math recorded in GAME_DESIGN §4 and §10.
 
 ### Step 13.38: First-run coach
@@ -1244,6 +1245,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-20: Part 4 done. Guide reincarnation paragraph and a Rules-topic sentence on waiting rules (no digits); HANDOFF rewritten. Clicked through at 375 px in the dev preview on a test hero (plan, begin, waiting tags, relearn Cleave: notice and rules woke, no sideways scroll); desktop width not checked.
   - 2026-11-20: Part 3 done. `chainModel.ts` (`waitingFor`, `skillOptions`, `remapFireCounts`), `RuleNode`/`RuleChain`/`RuleRouter`/`Rules` show waiting rules, Loadout "From your last life" line, SkillWeb notice, `CarryFacts` combat setup row (planner and Legacy), tests. CHANGELOG line was added in Part 2.
   - 2026-11-20: Part 2 done. `persist/pastSetup.ts` (`carriedSetup`, `combatRules`, `activeRowIndexes`, `returnToLoadout`, `restoreNotice`), `waitingSkillIds`/`pastLoadout` on the save, `pruneRows`/waiting-aware `validateRules`/`saveLoadout` in `loadout.ts`, `reincarnate`, `takeNode`, `blueprintForHero`, store; tests in `pastSetup.test.ts` and others.
+  - 2026-11-20: Part 2 done. `GameDefs.envenom` and `applyEnvenom` in `sim/classes/assassin.ts` (off in `gameDefs()`), unit tests, `harness/venom.ts` (+ test). Measured 16 cells x seeds 1 to 3 x 100: no `-empty` variant is GO; Warden prepared (boss) is the NO-GO point (passive-10-empty: prepared tier +8.7, Warden prepared -7.3; passive-08-empty: Warden prepared -8.7; passive-06-fan is GO but needs the slot). Table and proposed choice in GAME_DESIGN §10. Guards byte-identical. Stopped for the user's decision on Q1 to Q4.
   - 2026-11-20: Part 1 done. Rules recorded in GAME_DESIGN §10.
 
 ### Step 13.36: Plan the next life
@@ -1256,6 +1258,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-20: Part 4 done. Guide reincarnation topic describes the planner (no digits); HANDOFF rewritten. Clicked through once at 375 px in the dev preview (Stockpile I plan, confirm, begin); desktop width and the heirloom pickers not checked in a browser.
   - 2026-11-20: Part 3 done. `ui/character/legacyParts.tsx` (shared purchase tables, carry and heirloom parts), `NextLifePlanner.tsx` (Between lives planner), Legacy screen opens it from "Plan your next life...", `reincarnateFromUi(ids, plan)`; tests. CHANGELOG line added here. Not checked in a browser or at 375 px.
   - 2026-11-20: Part 2 done. `pricePurchase` (shared by `buyPurchase`), `PlannedPurchase`, `stageNextLife`, `reincarnate(..., plan)` in `persist/reincarnation.ts`; tests in `reincarnation.test.ts`.
+  - 2026-11-20: Part 2 done. `GameDefs.envenom` and `applyEnvenom` in `sim/classes/assassin.ts` (off in `gameDefs()`), unit tests, `harness/venom.ts` (+ test). Measured 16 cells x seeds 1 to 3 x 100: no `-empty` variant is GO; Warden prepared (boss) is the NO-GO point (passive-10-empty: prepared tier +8.7, Warden prepared -7.3; passive-08-empty: Warden prepared -8.7; passive-06-fan is GO but needs the slot). Table and proposed choice in GAME_DESIGN §10. Guards byte-identical. Stopped for the user's decision on Q1 to Q4.
   - 2026-11-20: Part 1 done. Rules recorded in GAME_DESIGN §10.
 
 ### Step 13.35: Ranger fifth skill
@@ -1266,6 +1269,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Part status: 1 `done`. 2 `done`. 3 `done`.
 - Progress:
   - 2026-11-20: Parts 2 and 3 done. `slots.ts` gains `SlotOptions` (rows, placement), `placeRows`, `measureSlot`, the `swap` variant and `defs`/`rows` filters; `slotsRanger.ts` (shard runner, merge, verdict) and tests. Result: HM-R last (Hunter's Mark: reveal plus 20 Readiness, cooldown 8, row Readiness at most 60) qualifies at +7.3; HM-XR last +7.1 (seed 2 +3.2); HM-X and FA-0 lose; probes inert. Swap for Snare Trap equals five (Snare Trap never fires). Side check no flag. Awaiting the user's call on a content change. Recorded in GAME_DESIGN section 10.
+  - 2026-11-20: Part 2 done. `GameDefs.envenom` and `applyEnvenom` in `sim/classes/assassin.ts` (off in `gameDefs()`), unit tests, `harness/venom.ts` (+ test). Measured 16 cells x seeds 1 to 3 x 100: no `-empty` variant is GO; Warden prepared (boss) is the NO-GO point (passive-10-empty: prepared tier +8.7, Warden prepared -7.3; passive-08-empty: Warden prepared -8.7; passive-06-fan is GO but needs the slot). Table and proposed choice in GAME_DESIGN §10. Guards byte-identical. Stopped for the user's decision on Q1 to Q4.
   - 2026-11-20: Part 1 done. Variants, probes and verdict rule recorded in GAME_DESIGN §10.
 
 ### Step 13.34: Fifth skill slot

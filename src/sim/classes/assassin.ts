@@ -5,6 +5,7 @@ import {
   POISON_MAX_STACKS,
   POISON_TICK_SECONDS,
 } from '../constants.ts'
+import { tryApplyStatus } from '../statuses.ts'
 import type {
   ClassAction,
   ClassModule,
@@ -13,6 +14,7 @@ import type {
   CombatState,
   DamageNotice,
   DamageResult,
+  GameDefs,
   OutgoingModifierQuery,
   SkillDef,
   StatusSnapshot,
@@ -23,6 +25,7 @@ import {
   MARK_FOR_DEATH_NODE_ADVANTAGE,
   NODE_EXECUTE,
   NODE_MARK_FOR_DEATH,
+  NODE_VENOM_EDGE,
 } from './starterNodes.ts'
 
 export const ADVANTAGE_RESOURCE_ID = 'advantage'
@@ -662,7 +665,61 @@ function actionChosen(state: CombatState, action: ClassAction, timeMs: number): 
   else setState(hero, STATE_FINAL_DAMAGE, null)
 }
 
-function actionResolved(state: CombatState, action: ClassAction, timeMs: number): void {
+/** The stand-in skill for Poison applied by a basic attack (Step 13.39). */
+const ENVENOM_SKILL: SkillDef = {
+  id: 'envenomed-strikes',
+  name: 'Envenomed strikes',
+  cost: 0,
+  cooldownSeconds: 0,
+  actionTimeCoefficient: 1,
+  tags: ['physical'],
+  target: 'single',
+  effects: [],
+}
+
+/**
+ * Envenomed strikes (Step 13.39): each enemy a direct-damage action damaged gets one Poison application, once per
+ * action per target in first-strike order. Off unless `defs.envenom` is set. Ticks and spreads never come through here.
+ */
+function applyEnvenom(state: CombatState, action: ClassAction, timeMs: number, defs: GameDefs | undefined): void {
+  const envenom = defs?.envenom
+  if (defs === undefined || envenom === undefined) return
+  if (state.hero.classId !== 'assassin') return
+  if (action.kind === 'basicAttack') {
+    if (!action.hit || action.targetId === undefined) return
+  } else if (envenom.basicOnly === true || !dealsDirectDamage(action)) {
+    return
+  }
+  const targets: { targetId: string; hpLost: number }[] = []
+  if (action.kind === 'basicAttack') {
+    targets.push({ targetId: action.targetId!, hpLost: action.hpLost ?? 0 })
+  } else {
+    for (const strike of action.strikes ?? []) {
+      if (!strike.hit) continue
+      const found = targets.find((entry) => entry.targetId === strike.targetId)
+      if (found === undefined) targets.push({ targetId: strike.targetId, hpLost: strike.hpLost ?? 0 })
+      else found.hpLost += strike.hpLost ?? 0
+    }
+  }
+  const coefficient = hasNode(state.hero, NODE_VENOM_EDGE) ? envenom.nodeCoefficient : envenom.coefficient
+  for (const entry of targets) {
+    const target = actorById(state, entry.targetId)
+    if (target === null) continue
+    tryApplyStatus({
+      state,
+      defs,
+      source: state.hero,
+      target,
+      skill: action.kind === 'skill' ? action.skill : ENVENOM_SKILL,
+      effect: { kind: 'applyStatus', statusId: 'poison', baseChance: envenom.baseChance, coefficient, power: 'physical' },
+      timeMs,
+      applyingHit: true,
+      hpDamageDealt: entry.hpLost,
+    })
+  }
+}
+
+function actionResolved(state: CombatState, action: ClassAction, timeMs: number, defs?: GameDefs): void {
   let crit = false
   let exploited = false
   const refreshTargets: CombatActor[] = []
@@ -686,6 +743,7 @@ function actionResolved(state: CombatState, action: ClassAction, timeMs: number)
   }
   for (const target of refreshTargets) refreshMarkedTarget(state, target, timeMs)
   markForDeathBonus(state, action, timeMs)
+  applyEnvenom(state, action, timeMs, defs)
   const poisoned = poisonAppliedToMarked(state)
   if (crit || exploited || poisoned) {
     const reason = crit && exploited ? 'criticalAndMark' : crit ? 'critical' : exploited ? 'mark' : 'poison'

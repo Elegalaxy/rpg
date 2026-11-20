@@ -2812,6 +2812,24 @@ Measurement variants (harness only, `src/harness/venom.ts`; Assassin, rules mode
 
 GO/NO-GO rule: a variant is GO if, against `current` at the same tier, the Assassin mean elite win rate changes by no more than 8 points either way per tier; no more than half the cells cross from below 95 to 95 or more; the median win time does not fall by more than 20%; the Warden prepared tier stays within 8 points; and the `+to` / `+ts` variants do not exceed +12 points over the same nodes on `current`. The pick is the lowest tick that is GO with the `-empty` slot (the passive must not need the freed slot to break even). If none is GO, report the nearest variant and the alternatives.
 
+Measurement (2026-11-20, `src/harness/venom.ts`, Assassin rules mode, 16 cells, seeds 1 to 3 x 100, CSV `reports/2026-11-venom.csv`). Baseline `current` mean 68.3 (Warden prepared 31.3, prepared tier 60.7). The elite builds already carry Smoke Step, so `-smoke` is the same loadout as `-empty` and was not run separately; `-empty` is four skills (Mark, Shadow Cut, Execute, Smoke Step). Every variant had the Venom Edge node, so the tick measured is always the node tick (T0 alone was not measured).
+
+| Variant | All cells | Prepared tier | Warden prepared | Verdict |
+| --- | --- | --- | --- | --- |
+| passive-06-empty | -- | -- | -17.3 | NO-GO |
+| passive-06-fan | +2.2 | +4.3 | -7.7 | GO |
+| passive-08-empty | +2.0 | +4.2 | -8.7 | NO-GO (Warden prepared) |
+| passive-09-empty (extra) | +3.2 | +5.9 | -10.7 | NO-GO (Warden prepared) |
+| passive-10-empty | +4.7 | +8.7 | -7.3 | NO-GO (prepared tier by 0.7) |
+| passive-12-empty | -- | +16.0 | +10.7 | NO-GO |
+| passive-15-empty | -- | +23.0 | +26.3 | NO-GO |
+| passive-08-fan / -10-fan / -12-fan / -15-fan | -- | +10.5 / +16.8 / +23.0 / +28.7 | -- / +13.7 / +31.0 / +46.3 | NO-GO |
+| proc50, basic-10, fan-only-10 | -- | -- | -15.7 / -19.0 / -23.0 | NO-GO |
+
+Modifiers (delta against `current` with the same nodes): `+to` 08 / 09 / 10 empty: Warden prepared -26.0 / -19.3 / -14.7, all cells -0.3 / +1.7 / +3.0; `+ts`: Warden prepared -36.0 / -30.0 / -23.0, all cells -2.6 / -0.6 / +0.7. Nothing exceeds +12 anywhere. Poison uptime is 96% for every passive against 93% for `current`; peak stacks 6.1 to 6.4 against 4.6 (cap 7 with Potent Toxins).
+
+Reading: the only cell the passive breaks is the Warden at the prepared tier (a boss, Poison cap 3 to 4): each Venom Edge cast is replaced by nothing, so the boss fight loses direct damage and the passive's stacks cap early; Toxic Opportunity and Toxic Sovereign make it worse because `current` gains more from them there. Elsewhere the passive is a small gain at 0.08 to 0.10 and runs away above 0.12. No `-empty` variant is GO. Nearest: passive-10-empty (fails the prepared tier by 0.7 points, Warden prepared within the band) and passive-08-empty (Warden prepared 0.7 over). Proposed choice for the user: tick 0.10 with the slot empty, accepting the 0.7 miss, plus a boss-side fix (for example the Warden prepared fight is where Venom Edge's own 90% hit mattered) before Part 3; alternative: passive-06-fan is the only GO but needs the freed slot for Fan of Knives.
+
 ### Later lives (Step 13.18)
 
 Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.

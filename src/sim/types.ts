@@ -1781,6 +1781,16 @@ export type GameDefs = {
   enemies: { [id: string]: EnemyDef }
   skills: { [id: string]: SkillDef }
   statuses: { [id: string]: StatusDef }
+  /** Assassin passive Poison on direct damage (Step 13.39). Absent means off. */
+  readonly envenom?: {
+    readonly baseChance: number
+    /** Poison tick as a share of snapshotted Physical Power. */
+    readonly coefficient: number
+    /** The tick once the Venom Edge node is allocated. */
+    readonly nodeCoefficient: number
+    /** Only basic attacks apply Poison. */
+    readonly basicOnly?: boolean
+  }
 }
 
 /**
