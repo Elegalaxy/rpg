@@ -139,13 +139,13 @@ const baseScenarios: { [id: string]: ScenarioDef } = {
       { skillId: 'frost-lance' },
     ],
   },
-  // Poison stacks are whole numbers, so at most 4 is fewer than 5. Execute's OR is two rows.
+  // Envenomed strikes poisons on every direct hit (Step 13.39), so there is no Venom Edge row. Execute's OR is two rows.
   [ASSASSIN_VS_STANDARD_ID]: {
     id: ASSASSIN_VS_STANDARD_ID,
     heroId: referenceHeroes.assassin.id,
     heroName: 'Assassin',
     enemies: [{ defId: standardDummy.id, slot: 0 }],
-    equippedSkillIds: ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'],
+    equippedSkillIds: ['mark-for-death', 'shadow-cut', 'execute'],
     priorityRows: [
       {
         skillId: 'mark-for-death',
@@ -158,12 +158,6 @@ const baseScenarios: { [id: string]: ScenarioDef } = {
       {
         skillId: 'execute',
         conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }],
-      },
-      {
-        skillId: 'venom-edge',
-        conditions: [
-          { kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 4 },
-        ],
       },
       { skillId: 'shadow-cut' },
     ],
@@ -311,7 +305,7 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
   },
   assassin: {
     heroName: 'Assassin',
-    equippedSkillIds: ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'],
+    equippedSkillIds: ['mark-for-death', 'shadow-cut', 'execute'],
     priorityRows: [
       {
         skillId: 'mark-for-death',
@@ -326,13 +320,6 @@ const referenceLoadouts: { [classId in HeroClass]: ReferenceLoadout } = {
       {
         skillId: 'execute',
         conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }],
-        targetPriority: 'lowestArmor',
-      },
-      {
-        skillId: 'venom-edge',
-        conditions: [
-          { kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 4 },
-        ],
         targetPriority: 'lowestArmor',
       },
       { skillId: 'shadow-cut', targetPriority: 'lowestArmor' },
@@ -506,8 +493,14 @@ export function referenceScenarioIds(): string[] {
     .sort()
 }
 
+/**
+ * The Assassin's Envenomed strikes (Step 13.39, GAME_DESIGN section 10 "Venom passive"): Poison on every direct-damage
+ * action, a 8% tick that the Venom Edge node raises to 10%, and a basic attack coefficient 10% higher.
+ */
+export const ENVENOM: NonNullable<GameDefs['envenom']> = { baseChance: 1, coefficient: 0.08, nodeCoefficient: 0.1, basicBonus: 0.1 }
+
 export function gameDefs(): GameDefs {
-  return { enemies: { ...enemies }, skills: { ...skills }, statuses: { ...statuses } }
+  return { enemies: { ...enemies }, skills: { ...skills }, statuses: { ...statuses }, envenom: ENVENOM }
 }
 
 function heroSetup(hero: ReferenceHero, scenario: ScenarioDef): CombatHeroSetup {

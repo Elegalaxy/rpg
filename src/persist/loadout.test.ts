@@ -179,7 +179,7 @@ describe('loadout', () => {
   it('refuses none, five, duplicates, and skills the hero has not learned', () => {
     const save = heroSave()
     expect(saveLoadout(save, 'hero-1', []).ok).toBe(false)
-    expect(saveLoadout(save, 'hero-1', ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute', 'smite']).ok).toBe(false)
+    expect(saveLoadout(save, 'hero-1', ['mark-for-death', 'shadow-cut', 'fan-of-knives', 'execute', 'smite']).ok).toBe(false)
     expect(saveLoadout(save, 'hero-1', ['execute', 'execute']).ok).toBe(false)
     expect(saveLoadout(save, 'hero-1', ['smite'])).toEqual({ ok: false, reason: expect.stringMatching(/unlearned/) })
     expect(saveLoadout(save, 'nobody', ['execute']).ok).toBe(false)
@@ -207,7 +207,7 @@ describe('rules reach the fight', () => {
 
   it('uses an Execute row at Advantage 3 or more', () => {
     const defs = gameDefs()
-    const state = createCombat(setupForScenario('assassin-vs-standard'), defs, 5)
+    const state = createCombat(setupForScenario('assassin-vs-standard'), defs, 3)
     const checked = validateRules(hero(heroSave()), [
       draft('execute', { conditions: [{ ...newCondition('resource'), operator: 'atLeast', value: '3' }] }),
       draft('shadow-cut'),
@@ -369,9 +369,11 @@ describe('fifth skill slot', () => {
   function fiveSkills(bought: boolean) {
     const save = heroSave()
     const base = hero(save)
+    // The Assassin starts with three skills, so a fourth skill fills the plain slots and `smite` is the fifth.
+    const fourth = 'cleave'
     const fifth = 'smite'
-    const learned = [...new Set([...base.progress.learnedSkillIds, fifth])]
-    const ids = [...base.progress.loadout, fifth]
+    const learned = [...new Set([...base.progress.learnedSkillIds, fourth, fifth])]
+    const ids = [...base.progress.loadout, fourth, fifth]
     const heroes = save.heroes.map((entry) => ({
       ...entry,
       progress: { ...entry.progress, learnedSkillIds: learned },
@@ -391,7 +393,7 @@ describe('fifth skill slot', () => {
     if (!result.ok) throw new Error(result.reason)
     expect(hero(result.save).progress.loadout).toEqual(withIt.ids)
     expect(() => assertSaveData(result.save)).not.toThrow()
-    expect(saveLoadout(withIt.save, 'hero-1', [...withIt.ids, 'cleave']).ok).toBe(false)
+    expect(saveLoadout(withIt.save, 'hero-1', [...withIt.ids, 'fade-back']).ok).toBe(false)
     expect(FIFTH_SLOT_COST).toBe(90)
   })
 

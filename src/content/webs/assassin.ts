@@ -11,7 +11,7 @@ export const assassinWeb = defineWeb(
     {
       name: 'Venom',
       nodes: ['Venom Edge', 'Potent Toxins', 'Fan of Knives', 'Toxic Opportunity', 'Toxic Sovereign'],
-      unlocks: { 'Venom Edge': 'venom-edge', 'Fan of Knives': 'fan-of-knives' },
+      unlocks: { 'Fan of Knives': 'fan-of-knives' },
     },
     {
       name: 'Execution',
@@ -19,5 +19,5 @@ export const assassinWeb = defineWeb(
       unlocks: { 'Mark for Death': 'mark-for-death', Execute: 'execute' },
     },
   ],
-  ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'],
+  ['mark-for-death', 'shadow-cut', 'execute'],
 )

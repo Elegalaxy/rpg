@@ -353,11 +353,11 @@ describe('assassin nodes', () => {
     expect(fight.state.hero.timedEvasion).toBe(0)
   })
 
-  it('unlocks Venom Edge without changing Poison numbers', () => {
+  it('Venom Edge teaches no skill now; the retired skill keeps its numbers', () => {
     const fresh = createProgress('human', HUMAN)
     expect(fresh.learnedSkillIds).not.toContain('venom-edge')
     const progress = learned(['Venom Edge'])
-    expect(progress.learnedSkillIds).toEqual(['venom-edge'])
+    expect(progress.learnedSkillIds).toEqual([])
     expect(authored('venom-edge').effects[0]).toMatchObject({ coefficient: 0.9 })
     expect(authored('venom-edge').effects[1]).toMatchObject({ statusId: 'poison', coefficient: 0.12 })
 

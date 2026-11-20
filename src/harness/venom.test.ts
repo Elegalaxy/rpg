@@ -7,11 +7,12 @@ import { VENOM_CELLS, baselineOf, measureVenom, parseVariant, venomDefs, venomSe
 const cell = VENOM_CELLS.find((entry) => entry.elite === 'warden' && entry.tier === 'prepared')!
 
 describe('venom passive harness (Step 13.39)', () => {
-  it('never switches the passive on in the real definitions', () => {
-    expect(gameDefs().envenom).toBeUndefined()
+  it('patches only copies of the definitions, and `current` has no passive', () => {
+    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.08, nodeCoefficient: 0.1, basicBonus: 0.1 })
+    expect(venomDefs(parseVariant('current')).envenom).toBeUndefined()
     const patched = venomDefs(parseVariant('passive-10-empty'))
     expect(patched.envenom).toMatchObject({ baseChance: 1, coefficient: 0.1, nodeCoefficient: 0.1 })
-    expect(gameDefs().envenom).toBeUndefined()
+    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.08 })
   })
 
   it('current keeps Venom Edge; a passive variant drops it and the fan variant adds a row', () => {

@@ -50,9 +50,9 @@ const names: { [id in HeroClass]: readonly (readonly [string, string, string, st
   ],
 }
 
-const starting: { [id in HeroClass]: readonly [string, string, string, string] } = {
+const starting: { [id in HeroClass]: readonly string[] } = {
   warrior: ['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'],
-  assassin: ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'],
+  assassin: ['mark-for-death', 'shadow-cut', 'execute'],
   ranger: ['aimed-shot', 'piercing-arrow', 'fade-back', 'snare-trap'],
   mage: ['fireball', 'frost-lance', 'mana-ward', 'arcane-recovery'],
   cleric: ['smite', 'mend', 'ward', 'judgment'],
@@ -65,7 +65,6 @@ const unlocks: { [id: string]: string } = {
   'warrior-shield-brace': 'shield-brace',
   'warrior-second-wind': 'second-wind',
   'assassin-smoke-step': 'smoke-step',
-  'assassin-venom-edge': 'venom-edge',
   'assassin-fan-of-knives': 'fan-of-knives',
   'assassin-mark-for-death': 'mark-for-death',
   'assassin-execute': 'execute',

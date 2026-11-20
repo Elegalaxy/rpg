@@ -229,7 +229,7 @@ describe('venom-edge', () => {
     })
     expect(applied.length).toBeGreaterThan(0)
     expect(state.outcome).toBe('victory')
-    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 12_346 })
+    expect(end).toMatchObject({ type: 'encounterEnd', outcome: 'victory', timeMs: 8_306 })
   })
 })
 
@@ -326,7 +326,7 @@ describe('class reference fights', () => {
     const defs = gameDefs()
     const limit = 600_000
     const durationMs: { [id: string]: { [seed: number]: number } } = {
-      [ASSASSIN_VS_STANDARD_ID]: { 1: 7_961, 42: 7_153 },
+      [ASSASSIN_VS_STANDARD_ID]: { 1: 7_384, 42: 8_653 },
       [RANGER_VS_STANDARD_ID]: { 1: 8_939, 42: 8_939 },
     }
     for (const id of [ASSASSIN_VS_STANDARD_ID, RANGER_VS_STANDARD_ID]) {
@@ -349,12 +349,11 @@ describe('class reference fights', () => {
     }
     const assassin = scenarios[ASSASSIN_VS_STANDARD_ID]
     const ranger = scenarios[RANGER_VS_STANDARD_ID]
-    expect(assassin?.equippedSkillIds).toEqual(['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'])
+    expect(assassin?.equippedSkillIds).toEqual(['mark-for-death', 'shadow-cut', 'execute'])
     expect(assassin?.priorityRows?.map((row) => row.skillId)).toEqual([
       'mark-for-death',
       'execute',
       'execute',
-      'venom-edge',
       'shadow-cut',
     ])
     expect(ranger?.equippedSkillIds).toEqual(['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'])
@@ -774,13 +773,6 @@ const referenceRows: { [classId in HeroClass]: readonly PriorityRow[] } = {
     { skillId: 'mark-for-death', conditions: [{ kind: 'mark', operator: 'absent' }], targetPriority: 'lowestArmor' },
     { skillId: 'execute', conditions: [{ kind: 'classResource', operator: 'atLeast', value: 4 }], targetPriority: 'lowestArmor' },
     { skillId: 'execute', conditions: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }], targetPriority: 'lowestArmor' },
-    {
-      skillId: 'venom-edge',
-      conditions: [
-        { kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 4 },
-      ],
-      targetPriority: 'lowestArmor',
-    },
     { skillId: 'shadow-cut', targetPriority: 'lowestArmor' },
   ],
   ranger: [
@@ -805,7 +797,7 @@ const referenceRows: { [classId in HeroClass]: readonly PriorityRow[] } = {
 
 const referenceSkills: { [classId in HeroClass]: readonly string[] } = {
   warrior: ['driving-blow', 'sundering-blow', 'shield-brace', 'second-wind'],
-  assassin: ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute'],
+  assassin: ['mark-for-death', 'shadow-cut', 'execute'],
   ranger: ['aimed-shot', 'piercing-arrow', 'fade-back', 'snare-trap'],
   mage: ['fireball', 'frost-lance', 'mana-ward', 'arcane-recovery'],
   cleric: ['smite', 'mend', 'ward', 'judgment'],

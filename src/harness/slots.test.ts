@@ -30,8 +30,8 @@ describe('slots matrix', () => {
           const five = slotSetup(classId, cell('colossus', 'prepared'), skillId, variant)
           if (five === null) continue
           const equipped = five.hero.equippedSkillIds ?? []
-          expect(equipped).toHaveLength(5)
-          expect(new Set(equipped).size).toBe(5)
+          expect(equipped).toHaveLength((four.hero.equippedSkillIds ?? []).length + 1)
+          expect(new Set(equipped).size).toBe(equipped.length)
           expect(equipped).toContain(skillId)
           expect(five.hero.allocatedNodeIds).toEqual(four.hero.allocatedNodeIds)
         }
@@ -88,8 +88,8 @@ describe('slots matrix', () => {
             const five = slotSetup(classId, cell('colossus', tier), skillId, variant)
             if (five === null) continue
             const equipped = five.hero.equippedSkillIds ?? []
-            expect(equipped).toHaveLength(5)
-            expect(new Set(equipped).size).toBe(5)
+            expect(equipped).toHaveLength((four.hero.equippedSkillIds ?? []).length + 1)
+            expect(new Set(equipped).size).toBe(equipped.length)
             expect(equipped).toContain(skillId)
             expect(five.hero.allocatedNodeIds).toEqual(four.hero.allocatedNodeIds)
             expect(() => createCombat(five, defs, 1)).not.toThrow()

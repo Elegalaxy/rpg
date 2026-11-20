@@ -78,9 +78,9 @@ describe('cinder matrix', () => {
       }
       expect(burnRows(wardenSetup(classId, WARDEN_TIERS[1]!).hero.priorityRows)).toBe(0)
     }
-    // The Assassin gives up the Chill Tonic row (no Chill in the zone) to make room.
+    // The Assassin used to give up the Chill Tonic row to make room; with no Venom Edge row (13.39) both rows fit.
     const assassin = cinderSetup('assassin', CINDER_TIERS[1]!, CINDER_FIGHTS[0]!).hero.priorityRows ?? []
-    expect(assassin.filter((row) => row.skillId === 'warming-tonic')).toHaveLength(1)
+    expect(assassin.filter((row) => row.skillId === 'warming-tonic')).toHaveLength(2)
   })
 
   it('runs every class, tier and fight', () => {

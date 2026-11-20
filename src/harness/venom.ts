@@ -38,6 +38,8 @@ export type VenomVariant = {
   id: string
   /** Passive settings; absent means no `envenom` (the `current` family). */
   envenom?: { baseChance: number; tick: number; basicOnly?: boolean; basicBonus?: number; shadowCutBonus?: number; bossCoefficient?: number }
+  /** The shipped game as it is after 13.39: real definitions and the reference loadout, nothing patched. */
+  live?: boolean
   /** Venom Edge is dropped from the equipped skills and rows. */
   dropVenomEdge: boolean
   /** Fan of Knives is equipped on a `enemyCount >= 2` row. */
@@ -53,6 +55,7 @@ export function parseVariant(id: string): VenomVariant {
   if (suffix !== undefined && suffix !== 'to' && suffix !== 'ts') throw new Error(`unknown modifier '+${suffix}'`)
   const modifier = (suffix ?? null) as VenomVariant['modifier']
   if (head === 'current') return { id, dropVenomEdge: false, fan: false, modifier }
+  if (head === 'live') return { id, live: true, dropVenomEdge: false, fan: false, modifier }
   if (head === 'proc50') return { id, envenom: { baseChance: 0.5, tick: 0.1 }, dropVenomEdge: true, fan: false, modifier }
   if (head === 'basic-10') return { id, envenom: { baseChance: 1, tick: 0.1, basicOnly: true }, dropVenomEdge: true, fan: false, modifier }
   if (head === 'fan-only-10') return { id, dropVenomEdge: true, fan: true, fanPoisons: 0.1, modifier }
@@ -82,11 +85,19 @@ function chainTo(nodeId: string): string[] {
   return chain
 }
 
+/** The reference Venom Edge row before 13.39. */
+const VENOM_EDGE_ROW: PriorityRow = {
+  skillId: 'venom-edge',
+  conditions: [{ kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 4 }],
+  targetPriority: 'lowestArmor',
+}
+
 const FAN_ROW: PriorityRow = { skillId: 'fan-of-knives', conditions: [{ kind: 'enemyCount', operator: 'atLeast', value: 2 }] }
 
 /** Patched copy of the definitions for a variant. The real `gameDefs()` is never mutated. */
 export function venomDefs(variant: VenomVariant, base: GameDefs = gameDefs()): GameDefs {
-  let defs = base
+  // `gameDefs()` carries the live passive since 13.39; the measurement variants decide on their own.
+  let defs: GameDefs = variant.live === true ? base : { ...base, envenom: undefined }
   if (variant.envenom !== undefined) {
     defs = { ...defs, envenom: { baseChance: variant.envenom.baseChance, coefficient: variant.envenom.tick, nodeCoefficient: variant.envenom.tick, basicOnly: variant.envenom.basicOnly, basicBonus: variant.envenom.basicBonus, shadowCutBonus: variant.envenom.shadowCutBonus, bossCoefficient: variant.envenom.bossCoefficient } }
   }
@@ -108,6 +119,11 @@ export function venomSetup(variant: VenomVariant, cell: EliteCell): CombatSetup 
   if (variant.dropVenomEdge) {
     equipped = equipped.filter((id) => id !== 'venom-edge')
     rows = rows.filter((row) => row.skillId !== 'venom-edge')
+  } else if (variant.live !== true && !equipped.includes('venom-edge')) {
+    // The reference loadout no longer carries Venom Edge (13.39): `current` puts back the pre-13.39 skill and row.
+    equipped = [...equipped.slice(0, 3), 'venom-edge', ...equipped.slice(3)]
+    const at = rows.findIndex((row) => row.skillId === 'shadow-cut')
+    rows = [...rows.slice(0, at), VENOM_EDGE_ROW, ...rows.slice(at)]
   }
   const addNodes = (target: string) => {
     for (const id of chainTo(target)) if (!nodes.includes(id)) nodes.push(id)

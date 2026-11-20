@@ -23,7 +23,7 @@ function kebab(name: string): string {
 export function defineWeb(
   classId: HeroClass,
   clusters: readonly [ClusterSpec, ClusterSpec, ClusterSpec],
-  startingSkillIds: readonly [string, string, string, string],
+  startingSkillIds: readonly string[],
 ): SkillWeb {
   const nodes: SkillNode[] = []
   const clusterNames: { [name: string]: boolean } = {}

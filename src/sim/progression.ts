@@ -70,7 +70,7 @@ export type RacialWeb = {
 export type SkillWeb = {
   classId: HeroClass
   nodes: readonly SkillNode[]
-  startingSkillIds: readonly [string, string, string, string]
+  startingSkillIds: readonly string[]
 }
 
 export type CreateProgressOptions = {
@@ -426,7 +426,7 @@ function assertWeb(web: unknown): asserts web is SkillWeb {
       throw new Error(`node ${entry.id} requires unknown node ${entry.requires}`)
     }
   }
-  assertIdList(record.startingSkillIds, 'starting skill', 4, 4)
+  assertIdList(record.startingSkillIds, 'starting skill', 3, 4)
 }
 
 function readStartingSkills(options: CreateProgressOptions | undefined): string[] {
@@ -435,7 +435,7 @@ function readStartingSkills(options: CreateProgressOptions | undefined): string[
     throw new Error(`progress options must be an object, received ${describeValue(options)}`)
   }
   if (options.startingSkillIds === undefined) return []
-  assertIdList(options.startingSkillIds, 'starting skill', 4, 4)
+  assertIdList(options.startingSkillIds, 'starting skill', 3, 4)
   return [...options.startingSkillIds]
 }
 

@@ -227,5 +227,5 @@ export const EXTRA_CLASS_SKILLS: Record<string, { classId: HeroClass; unlockedBy
   supercell: { classId: 'mage', unlockedBy: 'Elemental Convergence keystone' },
 }
 
-/** Internal follow-up skills that exist only for a few seconds after Consecration ends. They get no Guide entry. */
-export const HIDDEN_SKILL_IDS: readonly string[] = ['sanctuary-release-heal', 'sanctuary-release-strike']
+/** Internal follow-up skills that exist only for a few seconds after Consecration ends, and Venom Edge, retired in 13.39 (the Assassin's Envenomed strikes passive replaced it; old saves still parse it). They get no Guide entry. */
+export const HIDDEN_SKILL_IDS: readonly string[] = ['sanctuary-release-heal', 'sanctuary-release-strike', 'venom-edge']
