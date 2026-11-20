@@ -1865,6 +1865,7 @@ When the hero is ready to act:
 5. The same skill may appear in multiple rows with different condition sets, providing simple OR behavior without a logic-expression editor.
 6. If no row passes, use the class fallback: a weapon basic attack, or Arcane Bolt for Mage when affordable.
 7. A Mage unable to afford Arcane Bolt waits until Mana regeneration or another configured rule makes an action eligible.
+8. A rule kept from an earlier life whose skill the hero has not relearned is "waiting" (Step 13.37): it is left out of every fight, so it never shadows a later rule.
 
 Supported hero conditions:
 
@@ -1932,7 +1933,7 @@ Decided 2026-11-15 (Step 13.8). A stack is an extra named set of priority rows o
 - Switching is free: no action time, cooldown or resource. It happens only at an action evaluation and never changes the action being resolved. A queued manual skill still goes first; the class fallback is unchanged.
 - Manual override: a hand pick takes effect at the next action evaluation and lasts until Auto is chosen or the fight ends (each fight starts with no manual pick). Clearing it applies the automatic pick at once with no hold.
 - Editing stacks in a fight (`setRuleStacks`) is logged like a rules change. If the active stack was deleted the hero falls back to Default; a deleted manual stack clears the manual pick; a stack list that fails to parse is rejected and the old stacks stay.
-- A combat saved before stacks existed has none and loads as before. Saving, the editor, the fight controls and reincarnation (which clears stacks) come in later parts.
+- A combat saved before stacks existed has none and loads as before. Saving, the editor, the fight controls come in later parts; reincarnation keeps stacks (Step 13.37).
 
 #### Rule chain view and templates
 
@@ -2613,6 +2614,7 @@ Reincarnation preserves:
 - Recipes and crafting proficiency
 - A share of the hero's gold, materials, supplies and debt (Step 13.31; see "Carry-over and Stockpile" below). The rest is lost
 - The hero's archived equipment (all gear, whole)
+- The combat setup (Step 13.37): the Default rules, every rule stack, prepared spells and run preparation
 
 ### Equipment across lives
 
@@ -2670,6 +2672,18 @@ Decided 2026-11-20 (user approved, option B: a planner that commits in one atomi
 - Planned purchases are not applied to the ending life: no seed lands on the old progress, and Head Start does not raise the old level, so it adds no Legacy and does not change the peak. Artisan's Favor still gives its +1 token, as if bought just before reincarnating.
 - "Back to this life" discards the plan. The plan is not saved: a reload drops it and nothing is spent. The Legacy tab keeps the normal purchase table (purchases apply now) and the heirloom claim for mid-life.
 
+### Combat setup across lives (Step 13.37)
+
+Decided 2026-11-20 (user: go with my picks). Persist and UI only; `src/sim`, content numbers and the harness stay as they are, and a hero with no waiting rules gets an identical combat blueprint.
+
+- Why: reincarnation reset the Default rules to the class starter and cleared every stack, so a player rebuilt a tuned setup every life.
+- Kept at reincarnation: the Default rules, every rule stack with its trigger, prepared spells, and run preparation (packed supplies, carried gold, retreat threshold, vow, curse, special arrows, standing orders). Supplies still follow the carried share: a packed supply the stash cannot cover leaves its slot empty, and a supply rule with none packed is skipped as before. Special arrows are cut to the new quiver limit.
+- Waiting rules: a rule whose skill (or "skill is ready" condition) names a skill the new life cannot use yet is kept but waiting. The hero lists them in an optional `waitingSkillIds`. A waiting rule is left out of every fight. A stack whose trigger names a waiting skill, or whose rules all wait, is left out too (a stack with no rules at all is kept). The rule editor shows "Waiting for <skill>"; waiting rules can be edited, moved and removed. When the skill becomes usable (learned and back in the loadout, or its Convergence or Release node taken) it leaves the list and its rules work again. A loadout change never deletes a waiting rule.
+- Loadout return: the new life starts with the four starting skills and the fifth slot empty. `pastLoadout` remembers the old loadout. When a skill web node teaches a skill that was in it, that skill returns to the loadout: into a free slot, else in place of a starting skill that was not in the old loadout, else in place of another skill not in the old loadout (this replaces a skill the player added this life when no placeholder is left; the notice names it, and it can be reversed by hand). Rules for the replaced skill are removed as a loadout change does today. A skill the player later unequips by hand is not put back.
+- Stand-in rules: for each starting skill the new life equips that was not in the old loadout, the class's reference rows for it (only rows whose skill is that starting skill and whose "skill is ready" skills are all available) are appended to the Default rules while there is room (12). They are pruned when that skill is replaced.
+- The Legacy screen and the planner show "Combat setup: kept" with counts.
+- Saves: `pastLoadout` and `waitingSkillIds` are optional (absent means none); no version bump. Waiting is derived, not stored on a row, because the sim's `PriorityRow` has no such field.
+
 ### Fifth skill slot (Step 13.34)
 
 Decided 2026-11-19 (user approved). A Legacy purchase that lets the hero equip a fifth active skill. Persist and UI only; `src/sim` combat, content and the default harness stay as they are, so every guard stays identical. The only sim change is a pair of exported loadout constants and a `slotCount` argument on `setLoadout` (Part 2).
@@ -2680,7 +2694,7 @@ Decided 2026-11-19 (user approved). A Legacy purchase that lets the hero equip a
 
 - Rule: the loadout holds 1 to 5 skills with the purchase, otherwise 1 to 4. The slot count is read from the hero's purchases when the loadout is set.
 - Applies now: the slot is usable on the current life at once. Nothing is auto-equipped; the player picks the fifth skill in Loadout. Priority rows may name it like any equipped skill.
-- Reincarnation keeps the purchase. A new life starts with the four starting skills and the fifth slot empty (the old loadout is not carried).
+- Reincarnation keeps the purchase. A new life starts with the four starting skills and the fifth slot empty (the old loadout comes back as its skills are relearned, Step 13.37).
 - Sim, content and the default harness are untouched, so the golden duel, the reference CSV and every matrix stay byte-identical.
 - Mage note: the Mage has only five loadout skills, so the fifth slot means equipping everything.
 - Assassin harness note: the harness `builtSetup` already equips Smoke Step as a fifth skill; it is left alone.

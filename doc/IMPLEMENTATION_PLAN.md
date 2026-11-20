@@ -1211,6 +1211,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.37: Combat setup carries over
+- Status: `in progress`
+- Depends on: 13.31, 13.34, 13.36
+- Goal: reincarnation keeps the Default rules, rule stacks, prepared spells and run preparation; rules for skills not relearned yet wait, and last life's skills return to the loadout as they are relearned (GAME_DESIGN §10, "Combat setup across lives"). Acceptance: sim, content and harness untouched; a hero with no waiting skills gets an identical blueprint.
+- Parts: (1) docs. (2) persist: `pastSetup.ts`, `waitingSkillIds`, `pastLoadout`, `reincarnate`, `takeNode`, blueprint, tests. (3) UI: waiting rules in the editor, Loadout line, notices, carry facts, tests, CHANGELOG. (4) Guide, plan status, HANDOFF.
+- Part status: 1 `done`. 2 `todo`. 3 `todo`. 4 `todo`.
+- Progress:
+  - 2026-11-20: Part 1 done. Rules recorded in GAME_DESIGN §10.
+
 ### Step 13.36: Plan the next life
 - Status: `done`
 - Depends on: 13.30, 13.31, 13.32, 13.34
