@@ -158,9 +158,12 @@ describe('what reincarnation resets', () => {
     expect(next.progress.unspentSkillPoints).toBe(0)
     expect(next.progress.learnedSkillIds).toEqual([...classWebs.warrior.startingSkillIds])
     expect(next.progress.loadout).toEqual([...classWebs.warrior.startingSkillIds])
-    expect(next.priorityRows.length).toBeGreaterThan(1)
-    expect(next.priorityRows).not.toEqual([{ skillId: 'cleave' }])
-    expect(next.ruleStacks).toEqual([])
+    // Step 13.37: the combat setup is kept, not reset.
+    expect(next.priorityRows).toEqual([{ skillId: 'cleave' }])
+    expect(next.ruleStacks).toEqual([{ id: 'stack-1', name: 'Pack', when: [], rows: [{ skillId: 'cleave' }] }])
+    expect(next.pastLoadout).toEqual([...classWebs.warrior.startingSkillIds])
+    // Cleave is not a starting skill, so the kept rules that use it wait.
+    expect(next.waitingSkillIds).toEqual(['cleave'])
   })
 
   it('resets personal world gates, Echo ranks, the boss loss flag, and the account contracts', () => {

@@ -12,6 +12,7 @@ import {
   type SkillNode,
 } from '../sim/progression.ts'
 
+import { returnToLoadout } from './pastSetup.ts'
 import type { RosterResult } from './roster.ts'
 import type { SaveData, SavedHero } from './save.ts'
 
@@ -85,8 +86,18 @@ export function confirmationText(view: NodeView, hero: SavedHero): string {
   return parts.join(' ')
 }
 
-/** Spend one skill point on a class or racial node. The sim's own checks refuse an illegal take. */
-export function takeNode(save: SaveData, heroId: string, nodeId: string): RosterResult {
+/** What taking a node brought back from the last life's setup (Step 13.37). */
+export type RestoredSetup = {
+  returned: string[]
+  replaced: { out: string; in: string }[]
+  woke: number
+}
+
+/**
+ * Spend one skill point on a class or racial node. The sim's own checks refuse an illegal take. A skill the node teaches that
+ * was in the last life's loadout goes back into the loadout, and rules that waited for it work again.
+ */
+export function takeNode(save: SaveData, heroId: string, nodeId: string): RosterResult & { restored?: RestoredSetup } {
   const hero = findHero(save, heroId)
   if (hero === null) return { ok: false, reason: 'That hero is not on the roster.' }
   try {
@@ -95,7 +106,16 @@ export function takeNode(save: SaveData, heroId: string, nodeId: string): Roster
     const progress = classWeb.nodes.some((node) => node.id === nodeId)
       ? allocateNode(hero.progress, classWeb, nodeId)
       : allocateRacialNode(hero.progress, racial, nodeId)
-    return { ok: true, save: withProgress(save, heroId, progress) }
+    const taken: SavedHero = { ...hero, progress }
+    const learned = progress.learnedSkillIds.filter((id) => !hero.progress.learnedSkillIds.includes(id))
+    const back = returnToLoadout(taken, learned)
+    if (back.hero === taken && back.returned.length === 0) return { ok: true, save: withProgress(save, heroId, progress) }
+    const restored: RestoredSetup = { returned: back.returned, replaced: back.replaced, woke: back.woke }
+    return {
+      ok: true,
+      save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? back.hero : entry)) },
+      restored,
+    }
   } catch (error) {
     return { ok: false, reason: describe(error) }
   }

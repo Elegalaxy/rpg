@@ -1,8 +1,6 @@
 import { racialStartingAttributes } from '../content/heroes.ts'
 import { starterEquipment } from '../content/items.ts'
 import { nodes } from '../content/world.ts'
-import { referenceLoadoutFor } from '../content/scenarios.ts'
-import { startingRules } from '../content/supplies.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
 import { awardXp, createProgress, legacyFromProgress, type HeroProgress } from '../sim/progression.ts'
@@ -10,6 +8,8 @@ import { cumulativeXpToReachLevel, type Attributes } from '../sim/stats.ts'
 
 import { DEEP_POCKETS_COST } from './bag.ts'
 import { STOCKPILE_COSTS, carriedPurse, carryOver, type CarryOver } from './carryOver.ts'
+import { carriedSetup, type SetupStats } from './pastSetup.ts'
+import { quiverLimit } from './preparation.ts'
 import { unionElites } from './remembered.ts'
 import { reachMilestone, type HeroPurchases, type SaveData, type SavedHero } from './save.ts'
 import type { RosterResult } from './roster.ts'
@@ -256,6 +256,8 @@ export type NextLife = {
   startLevel: number
   attributePoints: number
   skillPoints: number
+  /** What the combat setup keeps (Step 13.37): rules (Default and stacks), stacks, and rules waiting for a skill. */
+  setup: SetupStats
 }
 
 /** What the next life will start with, as the Legacy screen shows it. */
@@ -276,6 +278,7 @@ export function nextLifePreview(hero: SavedHero, discoveries: readonly string[])
     startLevel: start.level,
     attributePoints: start.unspentAttributePoints,
     skillPoints: start.unspentSkillPoints,
+    setup: carriedSetup(hero, start).stats,
   }
 }
 
@@ -325,7 +328,7 @@ export function reincarnate(
 
   const lives = hero.lives + 1
   const progress = startingProgress(hero)
-  const loadout = referenceLoadoutFor(hero.classId)
+  const setup = carriedSetup(hero, progress)
 
   // Every worn item goes to the archive. Heirlooms already kept stay flagged up to the allowance.
   const archive: ItemInstance[] = [...hero.purse.archive]
@@ -352,9 +355,11 @@ export function reincarnate(
   const renewed: SavedHero = {
     ...hero,
     progress,
-    priorityRows: startingRules(loadout.priorityRows),
-    ruleStacks: [],
-    preparedSpells: [],
+    // Step 13.37: the combat setup carries; rules for skills not relearned yet wait.
+    priorityRows: setup.priorityRows,
+    ruleStacks: setup.ruleStacks,
+    pastLoadout: setup.pastLoadout,
+    specialAmmo: hero.classId === 'ranger' ? Math.min(hero.specialAmmo, quiverLimit({ ...hero, progress })) : hero.specialAmmo,
     defeatedEnemyIds: [],
     rememberedEnemyIds: unionElites(hero.rememberedEnemyIds, hero.defeatedEnemyIds),
     clearedNodeIds: [],
@@ -372,6 +377,8 @@ export function reincarnate(
     pastLifeItemIds: nextArchive.map((item) => item.id),
     freeUpgrades: (hero.freeUpgrades ?? 0) + artisanTokens(hero.purchases),
   }
+  if (setup.waitingSkillIds.length > 0) renewed.waitingSkillIds = setup.waitingSkillIds
+  else delete renewed.waitingSkillIds
   const account = reachMilestone(save.account, 'first-reincarnation')
   const next: SaveData = { ...save, account, heroes: save.heroes.map((entry) => (entry.id === heroId ? renewed : entry)) }
   return { ok: true, save: scaleHeirlooms(next, heroId), hero: renewed }

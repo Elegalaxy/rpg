@@ -16,6 +16,7 @@ import { renaissanceActive } from '../sim/progression.ts'
 
 import { bagCapacity } from './bag.ts'
 import { packSlots } from './pack.ts'
+import { combatRules } from './pastSetup.ts'
 import { masteryRank } from './reincarnation.ts'
 import type { SavedHero } from './save.ts'
 
@@ -56,6 +57,7 @@ export function blueprintForHero(
   const last = nodes[route.nodeIds[route.nodeIds.length - 1] ?? '']
   const drawIds = last?.drawEncounterIds ?? last?.encounterIds ?? []
   const nodeIds = hero.progress.allocatedNodeIds
+  const rules = combatRules(hero)
   return {
     id: routeId as ExpeditionBlueprint['id'],
     opening: routeOpeningPlan(route).map((step) => withBossRank(find(step.encounterId, step.drops), hero.fightRank)),
@@ -77,8 +79,8 @@ export function blueprintForHero(
       attributes: hero.progress.attributes,
       gear: gearFromEquipment(hero.equipment, itemBase),
       equippedSkillIds: [...hero.progress.loadout],
-      priorityRows: hero.priorityRows.map((row) => ({ ...row })),
-      ...(hero.ruleStacks.length > 0 ? { ruleStacks: structuredClone(hero.ruleStacks) } : {}),
+      priorityRows: rules.priorityRows.map((row) => ({ ...row })),
+      ...(rules.ruleStacks.length > 0 ? { ruleStacks: structuredClone(rules.ruleStacks) } : {}),
       allocatedNodeIds: [...nodeIds],
       renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
       statBonuses: statBonusesFor(hero.equipment),

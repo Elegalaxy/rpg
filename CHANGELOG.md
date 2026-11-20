@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: reincarnating keeps the hero's rules, rule stacks and preparation; rules for skills not relearned yet wait, and last life's skills return to the loadout as you learn them again. [13.37]
 - New: a new game gets a coach that lights the next control, from naming a hero through the first return, one push onward, and the first defeat. Skip dismisses it. [13.38]
 - Improved: reincarnating opens a "Between lives" planner: this life's Legacy is counted first, so you can spend it on Stockpile, heirloom slots or a Head Start and see what you keep before the new life begins. [13.36]
 - New: the game can be added to a phone's home screen as an app, with its own cracked-sword icon. It opens without the browser bar and keeps clear of the notch; it still needs the internet.

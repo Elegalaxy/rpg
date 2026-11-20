@@ -321,3 +321,29 @@ describe('fifth slot in a save (Step 13.34)', () => {
     expect(parseSave(JSON.stringify(data)).ok).toBe(false)
   })
 })
+
+describe('combat setup fields in a save (Step 13.37)', () => {
+  function raw() {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    return JSON.parse(serializeSave(made.save))
+  }
+
+  it('loads a save without the fields and with valid ones', () => {
+    const data = raw()
+    expect(data.heroes[0].pastLoadout).toBeUndefined()
+    expect(parseSave(JSON.stringify(data)).ok).toBe(true)
+    data.heroes[0].pastLoadout = ['cleave']
+    data.heroes[0].waitingSkillIds = ['cleave']
+    expect(parseSave(JSON.stringify(data)).ok).toBe(true)
+  })
+
+  it('refuses malformed fields', () => {
+    const bad = [{ pastLoadout: 'cleave' }, { pastLoadout: [1] }, { pastLoadout: ['a', 'b', 'c', 'd', 'e', 'f'] }, { waitingSkillIds: [''] }, { waitingSkillIds: {} }]
+    for (const patch of bad) {
+      const data = raw()
+      Object.assign(data.heroes[0], patch)
+      expect(parseSave(JSON.stringify(data)).ok, JSON.stringify(patch)).toBe(false)
+    }
+  })
+})

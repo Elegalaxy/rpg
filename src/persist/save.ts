@@ -8,7 +8,7 @@ import { supplyTable } from '../content/supplies.ts'
 import { applyHeroUpdates } from './heroUpdates.ts'
 import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_TEMPER_MAX, rankable, STARTING_MODIFIER_RECIPES, type Equipment, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { SUPPLY_STACK_LIMIT, assertExpedition, type ExpeditionState } from '../sim/expedition.ts'
-import { assertProgress, type HeroProgress } from '../sim/progression.ts'
+import { MAX_LOADOUT_SLOTS, assertProgress, type HeroProgress } from '../sim/progression.ts'
 import { isPackId, overStacked, packSlots, type PackId } from './pack.ts'
 import { elitesFromClaimed } from './remembered.ts'
 import { loadoutSlots } from './skillSlots.ts'
@@ -267,6 +267,10 @@ export type SavedHero = {
   freeUpgrades?: number
   /** Ids of the archive items kept from earlier lives. They sell at the carried share only (Step 13.31). Absent means none. */
   pastLifeItemIds?: string[]
+  /** The loadout the hero had when the last life ended. Its skills return to the loadout as they are relearned (Step 13.37). Absent means none. */
+  pastLoadout?: string[]
+  /** Skills named by kept rules that this life cannot use yet. Those rules wait. Absent means none (Step 13.37). */
+  waitingSkillIds?: string[]
   /** Retreat when HP falls to this fraction of maximum. Null never retreats. */
   retreatAtMost: number | null
   /** Special arrows a Ranger packs for an expedition. 0 for other classes. */
@@ -636,6 +640,11 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check(value.purchases.fifthSlot === undefined || typeof value.purchases.fifthSlot === 'boolean', `${label} fifth slot must be true or false`)
   const slots = loadoutSlots({ purchases: value.purchases as HeroPurchases })
   check(value.progress.loadout.length <= slots, `${label} equips more than ${slots} skills`)
+  if (value.pastLoadout !== undefined) {
+    stringList(value.pastLoadout, `${label} past loadout`)
+    check(value.pastLoadout.length <= MAX_LOADOUT_SLOTS, `${label} past loadout holds at most ${MAX_LOADOUT_SLOTS} skills`)
+  }
+  if (value.waitingSkillIds !== undefined) stringList(value.waitingSkillIds, `${label} waiting skills`)
   check(value.pastLifeItemIds === undefined || (Array.isArray(value.pastLifeItemIds) && value.pastLifeItemIds.every((id: unknown) => typeof id === 'string')), `${label} earlier-life items must be a list of text`)
   whole(value.echoRank, `${label} Echo rank`)
   whole(value.fightRank, `${label} fight rank`)

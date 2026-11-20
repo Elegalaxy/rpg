@@ -50,6 +50,7 @@ export function SkillWeb() {
   const [chosenId, setChosenId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   if (hero === null) {
     return (
@@ -69,13 +70,15 @@ export function SkillWeb() {
     setChosenId(id)
     setConfirming(false)
     setError(null)
+    setNotice(null)
   }
 
   function take(): void {
     if (chosen === null) return
-    const problem = takeNodeFromUi(chosen.node.id)
-    setError(problem)
-    if (problem === null) setConfirming(false)
+    const result = takeNodeFromUi(chosen.node.id)
+    setError(result.error)
+    setNotice(result.notice)
+    if (result.error === null) setConfirming(false)
   }
 
   return (
@@ -225,6 +228,7 @@ export function SkillWeb() {
           </>
         )}
         {error !== null ? <p role="alert">{error}</p> : null}
+        {notice !== null ? <p role="status">{notice}</p> : null}
       </div>
       </div>
     </section>

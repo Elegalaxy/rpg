@@ -18,6 +18,7 @@ import { savePreparation, type PreparationDraft } from '../persist/preparation.t
 import { autoContractsStep } from '../persist/autoContracts.ts'
 import { autoRerunRefusal, autoRunDefeatNote, beginExpedition, canStartRoute, newlyDiscovered, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
+import { restoreNotice, combatRules } from '../persist/pastSetup.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
 import { OFFLINE_MIN_MS, OFFLINE_SUMMARY_MIN_MS, advanceBackground, advanceOffline, createOffline, finishOffline, offlineDone, OFFLINE_CAP_MS, type AwayReport, type Lane, type OfflineState } from '../persist/offline.ts'
 import { setPriorityRules } from '../sim/automation.ts'
@@ -223,14 +224,14 @@ export function spendAttributesFromUi(plan: AttributePlan): string | null {
   return null
 }
 
-/** Spend one skill point on a node for the selected hero. Returns the refusal message, or null. */
-export function takeNodeFromUi(nodeId: string): string | null {
+/** Spend one skill point on a node for the selected hero. Returns the refusal, or the notice about skills and rules that came back. */
+export function takeNodeFromUi(nodeId: string): { error: string | null; notice: string | null } {
   const hero = selectedHero(saveStatus.save)
-  if (hero === null) return 'Select a hero first.'
+  if (hero === null) return { error: 'Select a hero first.', notice: null }
   const result = takeNode(saveStatus.save, hero.id, nodeId)
-  if (!result.ok) return result.reason
+  if (!result.ok) return { error: result.reason, notice: null }
   commitSave(result.save, 'node allocated')
-  return null
+  return { error: null, notice: result.restored === undefined ? null : restoreNotice(result.restored) }
 }
 
 /** Save a loadout for the selected hero. Returns the message to show and any refusal. */
@@ -267,8 +268,9 @@ export function saveRulesFromUi(drafts: readonly RowDraft[], stackDrafts?: reado
   const saved = selectedHero(next)
   const combat = snapshot.combat
   if (saved !== null && combat.outcome === 'ongoing' && combat.hero.classId === saved.classId) {
-    setPriorityRules(combat, { rows: saved.priorityRows }, defs)
-    if (stackDrafts !== undefined) setRuleStacks(combat, saved.ruleStacks, defs)
+    const rules = combatRules(saved)
+    setPriorityRules(combat, { rows: rules.priorityRows }, defs)
+    if (stackDrafts !== undefined) setRuleStacks(combat, rules.ruleStacks, defs)
     debugLog('[ui]', 'rules applied to the running fight', { rows: saved.priorityRows.length, stacks: saved.ruleStacks.length })
   }
   snapshot = { ...snapshot }

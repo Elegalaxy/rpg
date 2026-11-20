@@ -400,6 +400,34 @@ export function ruleSkillIds(hero: SavedHero): string[] {
   return ids
 }
 
+/**
+ * Skills named by rules kept from an earlier life that this hero cannot use yet (Step 13.37). Derived from the saved list,
+ * so an id that has become usable drops out without anyone clearing it.
+ */
+export function waitingSkillIds(hero: SavedHero): string[] {
+  const available = ruleSkillIds(hero)
+  return (hero.waitingSkillIds ?? []).filter((id) => !available.includes(id))
+}
+
+/** Every skill id that "skill is ready" conditions in a list name. */
+export function conditionSkillIds(conditions: readonly AutomationCondition[] | undefined): string[] {
+  const ids: string[] = []
+  for (const condition of conditions ?? []) if (condition.kind === 'skillReady') ids.push(condition.skillId)
+  return ids
+}
+
+/** Whether a row names a waiting skill, as its skill or in a "skill is ready" condition. */
+export function rowWaits(row: PriorityRow, waiting: readonly string[]): boolean {
+  if (waiting.length === 0) return false
+  return waiting.includes(row.skillId) || conditionSkillIds(row.conditions).some((id) => waiting.includes(id))
+}
+
+/** The skill a waiting row is waiting for: its own skill first, else the first condition skill. Null when it is not waiting. */
+export function rowWaitingFor(row: PriorityRow, waiting: readonly string[]): string | null {
+  if (waiting.includes(row.skillId)) return row.skillId
+  return conditionSkillIds(row.conditions).find((id) => waiting.includes(id)) ?? null
+}
+
 export function hasSacredBalance(hero: SavedHero): boolean {
   return hero.classId === 'cleric' && hero.progress.allocatedNodeIds.includes(NODE_SACRED_BALANCE)
 }
@@ -416,7 +444,7 @@ function rulesDefs(): GameDefs {
  */
 export function validateRules(hero: SavedHero, drafts: readonly RowDraft[]): RulesResult {
   const errors: string[] = []
-  const available = ruleSkillIds(hero)
+  const available = [...ruleSkillIds(hero), ...waitingSkillIds(hero)]
   if (drafts.length > MAX_PRIORITY_ROWS) {
     errors.push(`A hero can have at most ${MAX_PRIORITY_ROWS} rules, and there are ${drafts.length}.`)
   }
@@ -521,7 +549,7 @@ export function validateStacks(hero: SavedHero, drafts: readonly StackDraft[]): 
   if (drafts.length > MAX_RULE_STACKS) {
     errors.push(`A hero can have at most ${MAX_RULE_STACKS} extra stacks, and there are ${drafts.length}.`)
   }
-  const available = ruleSkillIds(hero)
+  const available = [...ruleSkillIds(hero), ...waitingSkillIds(hero)]
   const stacks: RuleStack[] = []
   drafts.forEach((draft, index) => {
     const label = `Stack ${draft.name.trim().length > 0 ? `"${draft.name.trim()}"` : index + 1}`
@@ -576,23 +604,34 @@ export function saveLoadout(
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.message : String(error) }
   }
-  const updated: SavedHero = { ...hero, progress }
-  const allowed = ruleSkillIds(updated)
-  const kept = hero.priorityRows.filter((row) => allowed.includes(row.skillId))
+  const pruned = pruneRows({ ...hero, progress })
+  return {
+    ok: true,
+    removedRules: pruned.removedRules,
+    save: { ...save, heroes: save.heroes.map((entry) => (entry.id === heroId ? pruned.hero : entry)) },
+  }
+}
+
+/**
+ * Remove the rules that name a skill the hero can no longer use. A rule for a skill still waiting (Step 13.37) is kept and
+ * not counted. The waiting list then shrinks to the skills that are still not usable (the field goes when it is empty).
+ */
+export function pruneRows(hero: SavedHero): { hero: SavedHero; removedRules: number } {
+  const allowed = ruleSkillIds(hero)
+  const waiting = hero.waitingSkillIds ?? []
+  const keep = (row: PriorityRow): boolean => allowed.includes(row.skillId) || waiting.includes(row.skillId)
+  const kept = hero.priorityRows.filter(keep)
   let removedRules = hero.priorityRows.length - kept.length
   const stacks = hero.ruleStacks.map((stack) => {
-    const rows = stack.rows.filter((row) => allowed.includes(row.skillId))
+    const rows = stack.rows.filter(keep)
     removedRules += stack.rows.length - rows.length
     return rows.length === stack.rows.length ? stack : { ...stack, rows }
   })
-  return {
-    ok: true,
-    removedRules,
-    save: {
-      ...save,
-      heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...updated, priorityRows: kept, ruleStacks: stacks } : entry)),
-    },
-  }
+  const next: SavedHero = { ...hero, priorityRows: kept, ruleStacks: stacks }
+  const still = waiting.filter((id) => !allowed.includes(id))
+  if (still.length > 0) next.waitingSkillIds = still
+  else delete next.waitingSkillIds
+  return { hero: next, removedRules }
 }
 
 export function skillName(skillId: string): string {
