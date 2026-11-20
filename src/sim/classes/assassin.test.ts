@@ -518,6 +518,23 @@ describe('envenomed strikes (Step 13.39)', () => {
     throw new Error('no seed landed the first application')
   })
 
+  it('measurement options: basic bonus, Shadow Cut bonus and a boss tick', () => {
+    const base = setup(true)
+    const withBonus: GameDefs = { ...base.defs, envenom: { ...ENVENOM, basicBonus: 0.2, shadowCutBonus: 0.3, bossCoefficient: 0.2 } }
+    const state = createCombat(assassinSetup(), withBonus, 3)
+    expect(state.hero.fillerCoefficient).toBeCloseTo(1.2)
+    const enemy = state.enemies[0]!
+    assassinClass.actionChosen?.(state, { kind: 'skill', skill: shadowCut, targetId: enemy.id }, 1000)
+    expect(state.hero.pendingCoefficient).toBeCloseTo(1.1 * 1.3)
+    const off = createCombat(assassinSetup(), base.defs, 3)
+    expect(off.hero.fillerCoefficient).toBe(1)
+    enemy.boss = true
+    for (let step = 0; step < 20 && stacksOn(state, 0) === 0; step += 1) {
+      resolvedHook()(state, { kind: 'basicAttack', hit: true, targetId: enemy.id, hpLost: 10 }, 2000 + step * 100, withBonus)
+    }
+    expect(JSON.stringify(enemy.statuses.poison?.stacks[0])).toContain('0.2')
+  })
+
   it('without envenom the fight log is identical to a copy of the definitions', () => {
     const base = setup(false)
     const copy: GameDefs = { ...base.defs }

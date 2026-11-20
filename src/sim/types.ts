@@ -1790,6 +1790,12 @@ export type GameDefs = {
     readonly nodeCoefficient: number
     /** Only basic attacks apply Poison. */
     readonly basicOnly?: boolean
+    /** Measurement only (13.39): extra share of the Assassin's basic attack coefficient (0.2 is +20%). */
+    readonly basicBonus?: number
+    /** Measurement only (13.39): extra share of Shadow Cut's coefficient, Marked or not. */
+    readonly shadowCutBonus?: number
+    /** Measurement only (13.39): the Poison tick against bosses, replacing both ticks. */
+    readonly bossCoefficient?: number
   }
 }
 

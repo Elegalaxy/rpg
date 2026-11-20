@@ -2832,6 +2832,21 @@ Reading: the only cell the passive breaks is the Warden at the prepared tier (a 
 
 Boss compensation round (2026-11-20, user decision: Venom Edge becomes a true passive at a 10% tick). The Warden prepared cell loses the Venom Edge hit, so three compensations are measured with the freed slot empty and no Toxic Opportunity or Sovereign: A) basic attack coefficient +10, +20, +30%; B) Shadow Cut coefficient +10, +20, +30% (the Marked 135% and the unmarked 110% alike); C) only if A and B both fail, a boss-only tick of 12%. Same GO/NO-GO rule and seeds (results follow below once measured).
 
+Results of the boss compensation round (tick 0.10, slot empty, seeds 1 to 3 x 100, deltas in points vs `current`, "cross" is cells moving from below 95 to 95+ out of 16, median is the mean per-cell change in median win time):
+
+| Variant | arrived | prepared | over | prepared-crafted | Warden prepared | all | cross | median | Verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| passive-10-empty (reference) | +6.8 | +8.7 | +1.5 | +3.6 | -7.3 | +4.7 | 2 | -7.1% | NO-GO (prepared by 0.7) |
+| A basic +10% | +8.6 | +1.2 | +0.9 | +1.6 | -7.3 | +2.5 | 0 | -6.4% | NO-GO (arrived by 0.6) |
+| A basic +20% | +11.7 | +9.8 | +1.4 | +4.3 | +0.7 | +6.1 | 2 | -7.2% | NO-GO (arrived, prepared) |
+| A basic +30% | +13.7 | +7.0 | +1.7 | +1.3 | -8.0 | +5.1 | 2 | -6.6% | NO-GO (arrived; Warden prepared at the edge) |
+| B Shadow Cut +10% | +11.1 | +15.8 | +1.8 | +5.2 | +8.3 | +7.8 | 3 | -9.5% | NO-GO |
+| B Shadow Cut +20% | +14.8 | +20.5 | +2.3 | +6.9 | +21.7 | +10.2 | 4 | -11.5% | NO-GO |
+| B Shadow Cut +30% | +20.1 | +24.2 | +2.3 | +8.0 | +28.3 | +12.4 | 5 | -13.4% | NO-GO |
+| C boss tick 0.12 | +6.8 | +11.3 | +1.5 | +4.9 | +3.3 | +5.7 | 2 | -7.8% | NO-GO (prepared) |
+
+Reading: Shadow Cut is far too strong a lever (Marked 135% hits are most of the damage) and basic attacks are weak but noisy. The Warden prepared cell is one cell with a seed spread of about 10 to 20 points (basic +30% reads -8.0 yet +20% reads +0.7), so it cannot rank the basic variants. A basic +10% is the nearest to GO: only the arrived tier fails, by 0.6 points, and that tier starts at 2% (2.0 to 10.6), so the failure is a weak-hero fight becoming winnable sometimes rather than an elite breaking. No variant is strictly GO. The hook options (`basicBonus`, `shadowCutBonus`, `bossCoefficient`) are measurement-only and absent from `gameDefs()`.
+
 ### Later lives (Step 13.18)
 
 Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.

@@ -78,6 +78,9 @@ export const EXECUTE_FATAL_CAP = 0.2
 export const EXECUTE_BOSS_FINAL_PER_STACK = 0.1
 
 const STATE_SMOKE = 'smokeStep'
+/** Measurement only (13.39): the envenom bonuses applied at encounter start. */
+const STATE_BASIC_BONUS = 'envenomBasicBonus'
+const STATE_SHADOW_BONUS = 'envenomShadowBonus'
 const STATE_AMBUSH_ARMED = 'ambushArmed'
 const STATE_AMBUSH_ACTIVE = 'ambushActive'
 const STATE_VEIL_EXPIRES = 'veilExpiresMs'
@@ -411,10 +414,20 @@ function finishAction(state: CombatState, action: ClassAction, timeMs: number): 
 
 function applyShadowCut(state: CombatState, action: ClassAction): void {
   if (action.kind !== 'skill' || action.skill.id !== SHADOW_CUT_ID) return
-  if (!hasNode(state.hero, NODE_SHADOW_CUT) || action.targetId === undefined) return
-  const target = actorById(state, action.targetId)
-  if (target === null || target.statuses.mark === null) return
-  state.hero.pendingCoefficient = SHADOW_CUT_MARKED_COEFFICIENT
+  const bonus = stateNumber(state.hero, STATE_SHADOW_BONUS)
+  const target = action.targetId === undefined ? null : actorById(state, action.targetId)
+  const marked = hasNode(state.hero, NODE_SHADOW_CUT) && target !== null && target.statuses.mark !== null
+  if (bonus === null) {
+    if (marked) state.hero.pendingCoefficient = SHADOW_CUT_MARKED_COEFFICIENT
+    return
+  }
+  let base = SHADOW_CUT_MARKED_COEFFICIENT
+  if (!marked) {
+    const damage = action.skill.effects.find((effect) => effect.kind === 'damage')
+    if (damage === undefined || damage.kind !== 'damage') return
+    base = damage.coefficient
+  }
+  state.hero.pendingCoefficient = base * (1 + bonus)
 }
 
 function clearExecuteAdjust(hero: CombatHero): void {
@@ -599,9 +612,15 @@ export function holdMarkedPoison(state: CombatState, actor: CombatActor, stepSta
   poison.expiresMs += elapsed
 }
 
-function encounterStart(state: CombatState, timeMs: number): void {
+function encounterStart(state: CombatState, timeMs: number, defs?: GameDefs): void {
   state.hero.resourceFraction = 0
   state.hero.pendingCoefficient = null
+  const envenom = defs?.envenom
+  if (envenom?.basicBonus !== undefined && stateNumber(state.hero, STATE_BASIC_BONUS) === null) {
+    state.hero.fillerCoefficient *= 1 + envenom.basicBonus
+    setState(state.hero, STATE_BASIC_BONUS, envenom.basicBonus)
+  }
+  if (envenom?.shadowCutBonus !== undefined) setState(state.hero, STATE_SHADOW_BONUS, envenom.shadowCutBonus)
   defineClassResource(state, timeMs, {
     id: ADVANTAGE_RESOURCE_ID,
     maximum: ADVANTAGE_MAXIMUM,
@@ -701,10 +720,11 @@ function applyEnvenom(state: CombatState, action: ClassAction, timeMs: number, d
       else found.hpLost += strike.hpLost ?? 0
     }
   }
-  const coefficient = hasNode(state.hero, NODE_VENOM_EDGE) ? envenom.nodeCoefficient : envenom.coefficient
+  const nodeTick = hasNode(state.hero, NODE_VENOM_EDGE) ? envenom.nodeCoefficient : envenom.coefficient
   for (const entry of targets) {
     const target = actorById(state, entry.targetId)
     if (target === null) continue
+    const coefficient = target.boss && envenom.bossCoefficient !== undefined ? envenom.bossCoefficient : nodeTick
     tryApplyStatus({
       state,
       defs,

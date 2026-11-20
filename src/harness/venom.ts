@@ -37,7 +37,7 @@ export const cellKey = (cell: EliteCell): string => `${cell.elite}:${cell.tier}`
 export type VenomVariant = {
   id: string
   /** Passive settings; absent means no `envenom` (the `current` family). */
-  envenom?: { baseChance: number; tick: number; basicOnly?: boolean }
+  envenom?: { baseChance: number; tick: number; basicOnly?: boolean; basicBonus?: number; shadowCutBonus?: number; bossCoefficient?: number }
   /** Venom Edge is dropped from the equipped skills and rows. */
   dropVenomEdge: boolean
   /** Fan of Knives is equipped on a `enemyCount >= 2` row. */
@@ -56,6 +56,12 @@ export function parseVariant(id: string): VenomVariant {
   if (head === 'proc50') return { id, envenom: { baseChance: 0.5, tick: 0.1 }, dropVenomEdge: true, fan: false, modifier }
   if (head === 'basic-10') return { id, envenom: { baseChance: 1, tick: 0.1, basicOnly: true }, dropVenomEdge: true, fan: false, modifier }
   if (head === 'fan-only-10') return { id, dropVenomEdge: true, fan: true, fanPoisons: 0.1, modifier }
+  const comp = /^passive-10-(basic|shadow|boss)(\d\d)$/.exec(head)
+  if (comp !== null) {
+    const amount = Number(comp[2]) / 100
+    const envenom = { baseChance: 1, tick: 0.1, ...(comp[1] === 'basic' ? { basicBonus: amount } : comp[1] === 'shadow' ? { shadowCutBonus: amount } : { bossCoefficient: amount }) }
+    return { id, envenom, dropVenomEdge: true, fan: false, modifier }
+  }
   const match = /^passive-(\d\d)-(empty|smoke|fan)$/.exec(head)
   if (match === null) throw new Error(`unknown variant '${id}'`)
   const tick = Number(match[1]) / 100
@@ -82,7 +88,7 @@ const FAN_ROW: PriorityRow = { skillId: 'fan-of-knives', conditions: [{ kind: 'e
 export function venomDefs(variant: VenomVariant, base: GameDefs = gameDefs()): GameDefs {
   let defs = base
   if (variant.envenom !== undefined) {
-    defs = { ...defs, envenom: { baseChance: variant.envenom.baseChance, coefficient: variant.envenom.tick, nodeCoefficient: variant.envenom.tick, basicOnly: variant.envenom.basicOnly } }
+    defs = { ...defs, envenom: { baseChance: variant.envenom.baseChance, coefficient: variant.envenom.tick, nodeCoefficient: variant.envenom.tick, basicOnly: variant.envenom.basicOnly, basicBonus: variant.envenom.basicBonus, shadowCutBonus: variant.envenom.shadowCutBonus, bossCoefficient: variant.envenom.bossCoefficient } }
   }
   if (variant.fanPoisons !== undefined) {
     const fan = defs.skills['fan-of-knives']
