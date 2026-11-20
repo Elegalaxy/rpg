@@ -81,6 +81,9 @@ const STATE_SMOKE = 'smokeStep'
 /** Measurement only (13.39): the envenom bonuses applied at encounter start. */
 const STATE_BASIC_BONUS = 'envenomBasicBonus'
 const STATE_SHADOW_BONUS = 'envenomShadowBonus'
+const STATE_TOXIC_COUNT = 'toxicHitCount'
+const STATE_BOSS_CAP = 'envenomBossCap'
+const STATE_TOXIC_LAST = 'toxicLastMs'
 const STATE_AMBUSH_ARMED = 'ambushArmed'
 const STATE_AMBUSH_ACTIVE = 'ambushActive'
 const STATE_VEIL_EXPIRES = 'veilExpiresMs'
@@ -438,7 +441,8 @@ function clearExecuteAdjust(hero: CombatHero): void {
 function poisonCap(hero: CombatHero, boss: boolean): number {
   const normal = hasNode(hero, NODE_POTENT_TOXINS) ? POTENT_POISON_CAP : POISON_MAX_STACKS
   if (!boss) return normal
-  const scaled = Math.round(normal * BOSS_STACK_CAP_FACTOR)
+  const factor = hasNode(hero, NODE_TOXIC_OPPORTUNITY) ? (stateNumber(hero, STATE_BOSS_CAP) ?? BOSS_STACK_CAP_FACTOR) : BOSS_STACK_CAP_FACTOR
+  const scaled = Math.round(normal * factor)
   return scaled < 1 ? 1 : scaled
 }
 
@@ -584,10 +588,12 @@ export function applyFatalExecute(
 /** Null keeps the status definition. Potent Toxins replaces cap, duration, and application Potency. */
 export function poisonApplicationAdjust(
   source: CombatActor,
-): { maxStacks: number; durationSeconds: number; potencyBonus: number } | null {
+): { maxStacks: number; durationSeconds: number; potencyBonus: number; bossCapFactor?: number } | null {
   const hero = assassinHero(source)
   if (hero === null || !hasNode(hero, NODE_POTENT_TOXINS)) return null
+  const bossCap = hasNode(hero, NODE_TOXIC_OPPORTUNITY) ? stateNumber(hero, STATE_BOSS_CAP) : null
   return {
+    ...(bossCap === null ? {} : { bossCapFactor: bossCap }),
     maxStacks: POTENT_POISON_CAP,
     durationSeconds: POTENT_POISON_SECONDS,
     potencyBonus: POTENT_POISON_POTENCY,
@@ -620,6 +626,7 @@ function encounterStart(state: CombatState, timeMs: number, defs?: GameDefs): vo
     state.hero.fillerCoefficient *= 1 + envenom.basicBonus
     setState(state.hero, STATE_BASIC_BONUS, envenom.basicBonus)
   }
+  if (envenom?.toxicBossCapFactor !== undefined) setState(state.hero, STATE_BOSS_CAP, envenom.toxicBossCapFactor)
   if (envenom?.shadowCutBonus !== undefined) setState(state.hero, STATE_SHADOW_BONUS, envenom.shadowCutBonus)
   defineClassResource(state, timeMs, {
     id: ADVANTAGE_RESOURCE_ID,
@@ -682,6 +689,37 @@ function actionChosen(state: CombatState, action: ClassAction, timeMs: number): 
   setState(hero, STATE_EXECUTE_STACKS, stacks)
   if (target.boss) setState(hero, STATE_FINAL_DAMAGE, 1 + EXECUTE_BOSS_FINAL_PER_STACK * stacks)
   else setState(hero, STATE_FINAL_DAMAGE, null)
+}
+
+/**
+ * Measurement only (13.39): Toxic Opportunity on any direct-damage action that hits the Marked target while the passive
+ * is on, optionally damped (every nth action, or a cooldown). Off unless `defs.envenom.toxicAnyHit`.
+ */
+function toxicAnyHit(state: CombatState, action: ClassAction, timeMs: number, defs: GameDefs | undefined): boolean {
+  const envenom = defs?.envenom
+  if (envenom?.toxicAnyHit !== true || !hasNode(state.hero, NODE_TOXIC_OPPORTUNITY) || !dealsDirectDamage(action)) return false
+  let hitMarked = false
+  if (action.kind === 'basicAttack') {
+    const target = action.hit && action.targetId !== undefined ? actorById(state, action.targetId) : null
+    hitMarked = target !== null && target.statuses.mark !== null
+  } else {
+    for (const strike of action.strikes ?? []) {
+      const target = strike.hit ? actorById(state, strike.targetId) : null
+      if (target !== null && target.statuses.mark !== null) hitMarked = true
+    }
+  }
+  if (!hitMarked) return false
+  if (envenom.toxicEvery !== undefined) {
+    const count = (stateNumber(state.hero, STATE_TOXIC_COUNT) ?? 0) + 1
+    setState(state.hero, STATE_TOXIC_COUNT, count)
+    if (count % envenom.toxicEvery !== 0) return false
+  }
+  if (envenom.toxicCooldownMs !== undefined) {
+    const last = stateNumber(state.hero, STATE_TOXIC_LAST)
+    if (last !== null && timeMs - last < envenom.toxicCooldownMs) return false
+    setState(state.hero, STATE_TOXIC_LAST, timeMs)
+  }
+  return true
 }
 
 /** The stand-in skill for Poison applied by a basic attack (Step 13.39). */
@@ -764,7 +802,8 @@ function actionResolved(state: CombatState, action: ClassAction, timeMs: number,
   for (const target of refreshTargets) refreshMarkedTarget(state, target, timeMs)
   markForDeathBonus(state, action, timeMs)
   applyEnvenom(state, action, timeMs, defs)
-  const poisoned = poisonAppliedToMarked(state)
+  const fresh = poisonAppliedToMarked(state)
+  const poisoned = toxicAnyHit(state, action, timeMs, defs) || fresh
   if (crit || exploited || poisoned) {
     const reason = crit && exploited ? 'criticalAndMark' : crit ? 'critical' : exploited ? 'mark' : 'poison'
     const progress = exploited && hasNode(state.hero, NODE_EXPLOIT_WEAKNESS) ? EXPLOIT_ADVANTAGE : 1

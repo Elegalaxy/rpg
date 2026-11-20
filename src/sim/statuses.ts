@@ -231,10 +231,10 @@ export function applicationChance(baseChance: number, potency: number, resistanc
 }
 
 /** Boss caps follow `round(normal × 0.6)`, and never drop below 1. */
-export function statusStackCap(maxStacks: number, boss: boolean): number {
+export function statusStackCap(maxStacks: number, boss: boolean, bossFactor: number = BOSS_STACK_CAP_FACTOR): number {
   assertPositiveInteger(maxStacks, 'stack cap')
   if (!boss) return maxStacks
-  const scaled = Math.round(maxStacks * BOSS_STACK_CAP_FACTOR)
+  const scaled = Math.round(maxStacks * bossFactor)
   return scaled < 1 ? 1 : scaled
 }
 
@@ -480,7 +480,7 @@ function applyPoison(input: ApplyInput, def: PoisonStatusDef, snapshot: StatusSn
   const adjust = poisonApplicationAdjust(input.source)
   const maxStacks = adjust === null ? def.maxStacks : adjust.maxStacks
   const durationSeconds = adjust === null ? def.durationSeconds : adjust.durationSeconds
-  const cap = statusStackCap(maxStacks, input.target.boss)
+  const cap = statusStackCap(maxStacks, input.target.boss, adjust?.bossCapFactor)
   const expiresMs = input.timeMs + scaledDurationMs(durationSeconds, input.target.boss, `${def.id} duration`)
   const tickMs = roundMs(def.tickSeconds, `${def.id} tick`)
   const current = input.target.statuses.poison

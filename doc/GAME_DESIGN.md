@@ -2853,6 +2853,21 @@ Part 3 switch (2026-11-20): `gameDefs()` now carries `ENVENOM` and the Assassin 
 
 Toxic nodes round (2026-11-20, user approved option 1, measurement only): with the passive on, Toxic Opportunity also triggers on any direct-damage action that hits the Marked target (the normal one-trigger-per-action cap still applies, and a Mark exploit already counts as the trigger), not only on a fresh Poison stack. Toxic Sovereign has no application trigger (its Poison does not lose duration and spreads on death), so it benefits through the Toxic Opportunity node it requires; both rows are measured. Hook fields on `GameDefs.envenom` (absent in `gameDefs()`, harness only): `toxicAnyHit`, and the damped forms `toxicEvery` (only every nth qualifying action) and `toxicCooldownMs` (a short internal cooldown on the trigger). Variants: `live-any`, `live-every2`, `live-cd2` (2 s), each with `+to` and `+ts`, against `current` with the same nodes, seeds 1 to 3 x 100, same cells, arrived tier excluded. Rule: Warden prepared and the prepared tier within +/-8, at most half the cells crossing to 95+, median win time not down more than 20%. If option 1 undershoots (below -8), option 2 (a higher boss Poison cap for the Toxic nodes) is measured next.
 
+Toxic nodes results (seeds 1 to 3 x 100, deltas in points vs `current` with the same nodes; W = Warden prepared, P = prepared tier, all = all 16 cells, cross = cells moving from below 95 to 95+, median = mean change in median win time; arrived excluded, it is +10 to +11 everywhere):
+
+| Variant | W (+to / +ts) | P (+to / +ts) | all | cross (+to / +ts) | median | Verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+| live (shipped, Part 3) | -21.7 / -33.7 | -3.1 / -9.5 | +0.8 / -1.5 | 3 / 1 | -4.3% / -0.5% | NO-GO |
+| live-any (option 1) | -11.3 / -22.7 | +4.2 / -0.7 | +4.0 / +2.0 | 4 / 1 | -6.0% / -2.3% | NO-GO (undershoots) |
+| live-every2 | -16.3 / -22.7 | +2.5 / -1.0 | +3.1 / +1.5 | 4 / 1 | -5.3% / -1.5% | NO-GO |
+| live-cd2 (2 s) | -12.3 / -23.7 | +3.5 / -1.4 | +3.5 / +1.5 | 4 / 1 | -5.4% / -1.7% | NO-GO |
+| live-cap80 (option 2, boss cap 80%) | -5.0 / -7.7 | +1.1 / -3.0 | +2.5 / +0.6 | 3 / 1 | -5.5% / -2.0% | GO (W -7.7 close to the edge) |
+| **live-cap100 (option 2, boss cap 100%)** | **+3.3 / +1.0** | **+3.2 / -0.8** | **+3.1 / +1.2** | **3 / 1** | **-5.8% / -2.6%** | **GO** |
+| live-any-cap80 | +6.3 / +3.0 | +8.6 / +5.7 | +5.6 / +3.9 | 5 / 1 | -6.8% / -3.7% | NO-GO (P +8.6 by 0.6) |
+| live-any-cap100 | +15.0 / +9.3 | +10.8 / +7.3 | +6.2 / +4.3 | 5 / 1 | -7.1% / -4.8% | NO-GO (overshoots) |
+
+Reading: the any-hit trigger alone undershoots (the damped forms are worse, as they trigger less). The gap at the Warden is the boss Poison cap (0.6 of 7 is 4): `current` kept stacks capped with Venom Edge casts that paid the Toxic nodes every time. A boss Poison cap of 100% of the normal cap when Toxic Opportunity is allocated (`toxicBossCapFactor` 1, option 2 alone, no any-hit change) lands every tier within the band (other tiers: over +1.2 / +0.3, prepared-crafted +0.3 / -1.8) and is the recommended winner. Option 2 takes effect in `poisonApplicationAdjust` (an optional `bossCapFactor`, used by `applyPoison` through `statusStackCap`) and in the Toxic Sovereign spread; it is still measurement only and `gameDefs()` does not set it. Guards stay byte-identical.
+
 ### Later lives (Step 13.18)
 
 Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.

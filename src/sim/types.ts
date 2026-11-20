@@ -1796,6 +1796,14 @@ export type GameDefs = {
     readonly shadowCutBonus?: number
     /** Measurement only (13.39): the Poison tick against bosses, replacing both ticks. */
     readonly bossCoefficient?: number
+    /** Measurement only (13.39): Toxic Opportunity also triggers on any direct-damage action that hits the Marked target. */
+    readonly toxicAnyHit?: boolean
+    /** Measurement only: with `toxicAnyHit`, only every nth qualifying action triggers. */
+    readonly toxicEvery?: number
+    /** Measurement only (option 2): the share of the normal Poison cap bosses get when the hero has Toxic Opportunity (default 0.6, the usual boss factor). */
+    readonly toxicBossCapFactor?: number
+    /** Measurement only: with `toxicAnyHit`, a trigger needs this long since the last one. */
+    readonly toxicCooldownMs?: number
   }
 }
 

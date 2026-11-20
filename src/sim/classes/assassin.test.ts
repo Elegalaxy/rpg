@@ -535,6 +535,27 @@ describe('envenomed strikes (Step 13.39)', () => {
     expect(JSON.stringify(enemy.statuses.poison?.stacks[0])).toContain('0.2')
   })
 
+  it('measurement option: Toxic Opportunity on any hit to the Marked target, with every-nth and cooldown damping', () => {
+    const run = (extra: object, times: number[]) => {
+      const base = setup(true, 1, ['assassin-toxic-opportunity'])
+      const defs: GameDefs = { ...base.defs, envenom: { ...ENVENOM, ...extra } }
+      const enemy = base.state.enemies[0]!
+      enemy.statuses.mark = { name: 'Mark', expiresMs: 600_000, sourceId: base.state.hero.id, sourceName: base.state.hero.name }
+      // Fill the cap first so no fresh stack can be the trigger.
+      const poison = (enemy.statuses.poison ??= { stacks: [], expiresMs: 999_999 } as never) as { stacks: unknown[] }
+      while (poison.stacks.length < 5) poison.stacks.push({ coefficient: 0.1, snapshot: 1 } as never)
+      for (const time of times) {
+        assassinClass.actionChosen?.(base.state, { kind: 'basicAttack', hit: true, targetId: enemy.id }, time)
+        resolvedHook()(base.state, { kind: 'basicAttack', hit: true, targetId: enemy.id, hpLost: 10 }, time, defs)
+      }
+      return resources(base.state, 'poison').length
+    }
+    expect(run({}, [1000, 2000])).toBe(0)
+    expect(run({ toxicAnyHit: true }, [1000, 2000, 3000])).toBe(3)
+    expect(run({ toxicAnyHit: true, toxicEvery: 2 }, [1000, 2000, 3000, 4000])).toBe(2)
+    expect(run({ toxicAnyHit: true, toxicCooldownMs: 2000 }, [1000, 1500, 3000, 3500])).toBe(2)
+  })
+
   it('without envenom the fight log is identical to a copy of the definitions', () => {
     const base = setup(false)
     const copy: GameDefs = { ...base.defs }

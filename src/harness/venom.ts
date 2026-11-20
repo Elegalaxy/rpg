@@ -40,6 +40,8 @@ export type VenomVariant = {
   envenom?: { baseChance: number; tick: number; basicOnly?: boolean; basicBonus?: number; shadowCutBonus?: number; bossCoefficient?: number }
   /** The shipped game as it is after 13.39: real definitions and the reference loadout, nothing patched. */
   live?: boolean
+  /** Toxic Opportunity trigger options for `live` variants (13.39 Toxic nodes round). */
+  toxic?: { anyHit: boolean; every?: number; cooldownMs?: number; bossCap?: number }
   /** Venom Edge is dropped from the equipped skills and rows. */
   dropVenomEdge: boolean
   /** Fan of Knives is equipped on a `enemyCount >= 2` row. */
@@ -56,6 +58,13 @@ export function parseVariant(id: string): VenomVariant {
   const modifier = (suffix ?? null) as VenomVariant['modifier']
   if (head === 'current') return { id, dropVenomEdge: false, fan: false, modifier }
   if (head === 'live') return { id, live: true, dropVenomEdge: false, fan: false, modifier }
+  const cap = /^live-(any-)?cap(\d+)$/.exec(head)
+  if (cap !== null) return { id, live: true, toxic: { anyHit: cap[1] !== undefined, bossCap: Number(cap[2]) / 100 }, dropVenomEdge: false, fan: false, modifier }
+  const toxic = /^live-(any|every(\d)|cd(\d))$/.exec(head)
+  if (toxic !== null) {
+    const options = { anyHit: true as const, ...(toxic[2] !== undefined ? { every: Number(toxic[2]) } : {}), ...(toxic[3] !== undefined ? { cooldownMs: Number(toxic[3]) * 1000 } : {}) }
+    return { id, live: true, toxic: options, dropVenomEdge: false, fan: false, modifier }
+  }
   if (head === 'proc50') return { id, envenom: { baseChance: 0.5, tick: 0.1 }, dropVenomEdge: true, fan: false, modifier }
   if (head === 'basic-10') return { id, envenom: { baseChance: 1, tick: 0.1, basicOnly: true }, dropVenomEdge: true, fan: false, modifier }
   if (head === 'fan-only-10') return { id, dropVenomEdge: true, fan: true, fanPoisons: 0.1, modifier }
@@ -98,6 +107,9 @@ const FAN_ROW: PriorityRow = { skillId: 'fan-of-knives', conditions: [{ kind: 'e
 export function venomDefs(variant: VenomVariant, base: GameDefs = gameDefs()): GameDefs {
   // `gameDefs()` carries the live passive since 13.39; the measurement variants decide on their own.
   let defs: GameDefs = variant.live === true ? base : { ...base, envenom: undefined }
+  if (variant.toxic !== undefined && base.envenom !== undefined) {
+    defs = { ...defs, envenom: { ...base.envenom, toxicAnyHit: variant.toxic.anyHit, toxicEvery: variant.toxic.every, toxicCooldownMs: variant.toxic.cooldownMs, toxicBossCapFactor: variant.toxic.bossCap } }
+  }
   if (variant.envenom !== undefined) {
     defs = { ...defs, envenom: { baseChance: variant.envenom.baseChance, coefficient: variant.envenom.tick, nodeCoefficient: variant.envenom.tick, basicOnly: variant.envenom.basicOnly, basicBonus: variant.envenom.basicBonus, shadowCutBonus: variant.envenom.shadowCutBonus, bossCoefficient: variant.envenom.bossCoefficient } }
   }
