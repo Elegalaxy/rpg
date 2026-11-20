@@ -1212,12 +1212,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
 ### Step 13.36: Plan the next life
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.30, 13.31, 13.32, 13.34
 - Goal: reincarnation opens a planner where this life's Legacy is already spendable, so Stockpile, heirloom slots and Head Start can be bought before the reset and their effect is previewed; one atomic `reincarnate(..., plan)` commits (GAME_DESIGN §10, "Planning the next life"). Nothing is saved between screens. `src/sim`, content and the harness are untouched.
 - Parts: (1) docs. (2) persist: `pricePurchase`, `stageNextLife`, `reincarnate` plan argument, tests. (3) UI: `legacyParts.tsx`, `NextLifePlanner.tsx`, Legacy screen, store, tests. (4) Guide, CHANGELOG, HANDOFF.
-- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `todo`.
+- Part status: 1 `done`. 2 `done`. 3 `done`. 4 `done`.
 - Progress:
+  - 2026-11-20: Part 4 done. Guide reincarnation topic describes the planner (no digits); HANDOFF rewritten. Whole step not checked in a browser or at 375 px by the implementer.
   - 2026-11-20: Part 3 done. `ui/character/legacyParts.tsx` (shared purchase tables, carry and heirloom parts), `NextLifePlanner.tsx` (Between lives planner), Legacy screen opens it from "Plan your next life...", `reincarnateFromUi(ids, plan)`; tests. CHANGELOG line added here. Not checked in a browser or at 375 px.
   - 2026-11-20: Part 2 done. `pricePurchase` (shared by `buyPurchase`), `PlannedPurchase`, `stageNextLife`, `reincarnate(..., plan)` in `persist/reincarnation.ts`; tests in `reincarnation.test.ts`.
   - 2026-11-20: Part 1 done. Rules recorded in GAME_DESIGN §10.

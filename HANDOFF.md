@@ -1,14 +1,16 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code implementer (2026-11-19)
-- **Current Goal:** Step 13.34 follow-up: tuned fifth-skill measurement done (harness only). Verdict GO, the 90 Legacy price stays.
+- **Last Updated By:** Claude Code implementer (2026-11-20)
+- **Current Goal:** Step 13.36 "Plan the next life" is done (parts 1 to 4). "Plan your next life..." on the Legacy screen opens a "Between lives" planner: this life's Legacy is spendable first, one atomic `reincarnate(..., plan)` commits. Next is the user's playtest.
 - **Recent Changes & Files Touched:**
-  - `src/harness/slots.ts` (+test): `TUNED_ROWS`, variants `tuned-first` and `tuned-last`, filters `variants` and `skills`. New `src/harness/slotsTuned.ts` shard runner (not in the default CLI).
-  - GAME_DESIGN section 10 "Tuned fifth skill rows": conditions, method, table, verdict. IMPLEMENTATION_PLAN 13.34 Progress. CHANGELOG `Unreleased` Tech line.
-  - Best tuned five per class at prepared: Warrior Cleave +7.6, Assassin Fan of Knives +7.1, Mage Chain Lightning +7.4, Cleric Consecration +5.4 (three elites), Ranger +0.0. 0 of 18 cells cross to 95.
+  - Docs: GAME_DESIGN §10 "Planning the next life (Step 13.36)", plan Step 13.36, CHANGELOG `Unreleased` [13.36].
+  - Persist: `src/persist/reincarnation.ts` (`pricePurchase` shared with `buyPurchase`, `PlannedPurchase`, `stageNextLife`, `reincarnate(save, heroId, heirlooms, plan = [])`), tests in `reincarnation.test.ts` (`planned next life`).
+  - UI: new `src/ui/character/legacyParts.tsx` (purchase rows and tables, `CarryFacts`, `NextLifeFacts`, `HeirloomPickers`, `gainLines`, `StockTable`), new `NextLifePlanner.tsx` (+ test), `Legacy.tsx` slimmed (opens the planner; `initialPlanning` prop for tests), `store.ts` `reincarnateFromUi(ids, plan)`, `character.css` (`.legacy-plan*`), Guide text in `content/guide.ts`.
 - **Active Decisions / Constraints:**
-  - `src/sim`, content numbers and default harness behaviour stay untouched; guards stay byte-identical.
-  - Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
-  - The old slots measurement (naive unconditional fifth row) said GO; Cleric Consecration was +9.2, near the 10-point line.
-- **Not verified:** Legacy screen, Loadout and Town in a browser and at 375 px.
-- **Exact Next Step:** user reads the verdict; no player-visible change was made. Optionally a browser check of the Legacy and Loadout screens.
+  - The plan is never saved: reload drops it, nothing is spent until "Begin new life". Planned purchases are not applied to the ending life (no seed, Head Start adds no Legacy and keeps the peak); Artisan's Favor still gives +1 token.
+  - The Legacy tab keeps the normal buy table (applies now) and the heirloom claim for mid-life.
+  - "Life n" text in the planner counts `lives + 2` (lives is completed lives, so the first reincarnation starts life 2).
+  - `src/sim`, content numbers and the harness are untouched. Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
+- **Risks:** the planner is one long page; its purchase tables repeat the Legacy tab tables.
+- **Not verified:** layout in a browser, especially at 375 px (tests are static markup only).
+- **Exact Next Step:** (1) User playtest: Legacy tab, "Plan your next life...", stage Stockpile and a Head Start, check the carried share and start level change, begin the new life and confirm the Legacy left. (2) Decide whether the planner needs trimming. (3) Close 13.36 into a `## 0.x.0` changelog heading.
