@@ -1181,7 +1181,13 @@ export function reincarnateFromUi(heirloomItemIds: readonly string[], plan: read
   const hero = selectedHero(saveStatus.save)
   if (hero === null) return 'Select a hero first.'
   debugLog('[ui]', 'reincarnate heirlooms', { ids: heirloomItemIds, plan })
-  return applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemIds, plan), 'reincarnated')
+  const refusal = applyTown(reincarnate(saveStatus.save, hero.id, heirloomItemIds, plan), 'reincarnated')
+  if (refusal === null) {
+    const worn = selectedHero(saveStatus.save)
+    const equipped = worn === null ? [] : Object.values(worn.equipment).flatMap((item) => (item?.heirloom?.heroId === worn.id ? [item.id] : []))
+    debugLog('[ui]', 'heirlooms equipped', { ids: equipped })
+  }
+  return refusal
 }
 
 /** Make an item an heirloom of the selected hero now, using a free slot. Returns the refusal, or null. */

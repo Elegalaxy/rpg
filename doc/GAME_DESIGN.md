@@ -2094,7 +2094,7 @@ First-playable defeat, decided 2026-10-24:
 
 Durability carry-through, decided 2026-11-13 (playtest fix):
 
-- A run starts with each piece at the durability the saved item has, not at 100. Settling writes the end value back, so wear accumulates until the player repairs the piece. The harness has no saved items and still starts every piece at 100.
+- A run starts with each piece at the durability the saved item has, not at 100. Settling writes the end value back, so wear accumulates until the player repairs the piece. Reincarnation is the exception: every kept piece is restored to full durability. The harness has no saved items and still starts every piece at 100.
 - A run cannot start while any equipped piece is disabled (durability 0), or while the 30-second recovery after a defeat has not passed. The refusal names the piece or the minutes left. This holds for a live start and for an away start.
 - The recovery wait is stored on the hero as the time it ends, set when the defeated run is settled.
 
@@ -2633,7 +2633,7 @@ First-playable reincarnation numbers, decided 2026-11-01:
 - Legacy buys hero-bound purchases that last across lives. Attribute Seed adds 1 to a starting attribute of the hero's choice and costs 3, up to 10 in total. Skill Point Seed gives 1 unallocated skill point at the start of each life and costs 8, then 12, then 16, up to 3. Second Heirloom lets the hero keep one more heirloom and costs 25, once. Fifth Skill Slot adds a fifth loadout slot and costs 90, once (Step 13.34, below).
 - Purchases apply now (Step 13.30, decided 2026-11-18): a purchase also applies to the hero's current life at once, except Second Heirloom (the heirloom is chosen at reincarnation, so it takes effect then). Attribute Seed adds 1 to that attribute on the current life now; Skill Point Seed adds 1 unspent skill point now; Head Start raises the hero to its level now (see Head Start below); Deep Pockets already applied at once. Each later life still starts from the fresh racial base plus every seed, so nothing is counted twice. Purchases planned at reincarnation (Step 13.36) apply from the new life only. Purchases bought before this change are not applied retroactively: the game cannot tell what the current life already has, so those seeds and Head Starts take effect from the next reincarnation as before.
 - Mastery is the hero's completed lives, up to 10. Each rank adds 2% ordinary XP, up to +20%, and nothing else.
-- The reset and preserve lists above apply. The hero's current contracts are cleared. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear.
+- The reset and preserve lists above apply. The hero's current contracts are cleared. All equipped gear goes to the archive, and the hero starts the new life with fresh starter gear. Every piece that carries over, worn or archived, is restored to full durability. Wear belonged to the life that ended (decided 2026-11-20). Each heirloom of this hero is then equipped into a slot it can use, in place of the starter piece. A piece that was worn keeps that slot when it still fits. A piece that does not fit, or a second heirloom for a slot that already holds one, stays in the archive.
 
 ### Carry-over and Stockpile (Step 13.31)
 

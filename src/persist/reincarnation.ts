@@ -1,12 +1,13 @@
 import { racialStartingAttributes } from '../content/heroes.ts'
-import { starterEquipment } from '../content/items.ts'
+import { itemBase, starterEquipment } from '../content/items.ts'
 import { nodes } from '../content/world.ts'
 import { classWebs } from '../content/webs/index.ts'
-import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, equipItem, slotsFor, type EquipmentSlotId, type ItemInstance } from '../sim/economy.ts'
 import { awardXp, createProgress, legacyFromProgress, type HeroProgress } from '../sim/progression.ts'
 import { cumulativeXpToReachLevel, type Attributes } from '../sim/stats.ts'
 
 import { DEEP_POCKETS_COST } from './bag.ts'
+import { wearerOf } from './equipment.ts'
 import { STOCKPILE_COSTS, carriedPurse, carryOver, type CarryOver } from './carryOver.ts'
 import { carriedSetup, type SetupStats } from './pastSetup.ts'
 import { quiverLimit } from './preparation.ts'
@@ -286,7 +287,8 @@ export function nextLifePreview(hero: SavedHero, discoveries: readonly string[])
  * Reincarnate a hero. Level, XP, attributes, the skill web, personal gates and Echo ranks, and the
  * hero's contracts reset. Mastery, purchases, Legacy, discoveries, recipes, crafting experience,
  * the hero's deposited gold, materials, debt, and archive stay. All worn gear goes to the archive and the hero gets
- * fresh starter gear, and the chosen items become heirlooms.
+ * fresh starter gear, and the chosen items become heirlooms. Each heirloom that fits is worn
+ * in place of the starter piece. One that does not fit stays in the archive.
  * A single id, or null, still keeps older heirlooms in any slot that pick leaves free.
  * A list is the player's full choice: only those items stay heirlooms.
  */
@@ -331,25 +333,29 @@ export function reincarnate(
   const setup = carriedSetup(hero, progress)
 
   // Every worn item goes to the archive. Heirlooms already kept stay flagged up to the allowance.
+  const preferred = new Map<string, EquipmentSlotId>()
   const archive: ItemInstance[] = [...hero.purse.archive]
   for (const slot of EQUIPMENT_SLOT_IDS) {
     const item = hero.equipment[slot]
-    if (item !== null) archive.push(item)
+    if (item === null) continue
+    preferred.set(item.id, slot)
+    archive.push(item)
   }
   const chosen = new Set(requested)
   const previous = archive.filter((item) => item.heirloom?.heroId === heroId && !chosen.has(item.id))
   const room = explicit ? 0 : Math.max(0, allowance - chosen.size)
   const keepPrevious = new Set(previous.slice(0, room).map((item) => item.id))
   const nextArchive = archive.map((item): ItemInstance => {
+    let next = item
     if (chosen.has(item.id) || keepPrevious.has(item.id)) {
       const cap = item.heirloom?.cap ?? item.itemLevel
-      return { ...item, heirloom: { heroId, cap } }
-    }
-    if (item.heirloom?.heroId === heroId) {
+      next = { ...item, heirloom: { heroId, cap } }
+    } else if (item.heirloom?.heroId === heroId) {
       const { heirloom, ...plain } = item
-      return { ...plain, itemLevel: heirloom.cap }
+      next = { ...plain, itemLevel: heirloom.cap }
     }
-    return item
+    // Wear belonged to the life that ended. A new life starts every kept piece at full durability.
+    return next.durability === next.maxDurability ? next : { ...next, durability: next.maxDurability }
   })
 
   const renewed: SavedHero = {
@@ -381,7 +387,45 @@ export function reincarnate(
   else delete renewed.waitingSkillIds
   const account = reachMilestone(save.account, 'first-reincarnation')
   const next: SaveData = { ...save, account, heroes: save.heroes.map((entry) => (entry.id === heroId ? renewed : entry)) }
-  return { ok: true, save: scaleHeirlooms(next, heroId), hero: renewed }
+  const equipped = equipOwnedHeirlooms(scaleHeirlooms(next, heroId), heroId, preferred)
+  const heroNow = equipped.heroes.find((entry) => entry.id === heroId) ?? renewed
+  return { ok: true, save: equipped, hero: heroNow }
+}
+
+/** Wear this hero's heirlooms over the starter set. A slot keeps the first heirloom that lands there. */
+function equipOwnedHeirlooms(save: SaveData, heroId: string, preferred: ReadonlyMap<string, EquipmentSlotId>): SaveData {
+  const hero = save.heroes.find((entry) => entry.id === heroId)
+  if (hero === undefined) return save
+  const wearer = wearerOf(hero)
+  let equipment = hero.equipment
+  let archive = hero.purse.archive
+  const ids = archive.filter((item) => item.heirloom?.heroId === heroId).map((item) => item.id)
+  ids.sort((a, b) => {
+    const left = preferred.get(a)
+    const right = preferred.get(b)
+    const rank = (slot: EquipmentSlotId | undefined) => (slot === undefined ? EQUIPMENT_SLOT_IDS.length : EQUIPMENT_SLOT_IDS.indexOf(slot))
+    return rank(left) - rank(right)
+  })
+  for (const id of ids) {
+    const item = archive.find((entry) => entry.id === id)
+    const base = item === undefined ? undefined : itemBase(item.baseId)
+    if (item === undefined || base === undefined) continue
+    const first = preferred.get(id)
+    const slots = first === undefined ? slotsFor(base) : [first, ...slotsFor(base).filter((slot) => slot !== first)]
+    for (const slot of slots) {
+      if (equipment[slot]?.heirloom?.heroId === heroId) continue
+      const result = equipItem(equipment, archive, id, slot, hero.progress.level, itemBase, wearer)
+      if (!result.ok) continue
+      equipment = result.equipment
+      archive = result.archive
+      break
+    }
+  }
+  if (equipment === hero.equipment) return save
+  return {
+    ...save,
+    heroes: save.heroes.map((entry) => (entry.id === heroId ? { ...entry, equipment, purse: { ...entry.purse, archive } } : entry)),
+  }
 }
 
 export type PurchaseKind = 'attribute' | 'skill' | 'heirloom' | 'pockets' | 'headStart' | 'stockpile' | 'artisan' | 'memory' | 'fifthSlot'
