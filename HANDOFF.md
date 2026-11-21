@@ -1,15 +1,18 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-21)
-- **Current Goal:** Step 13.40 "Hunter's Mark grants Readiness" is done. Hunter's Mark reveals the target and gains 20 Readiness, cooldown 8 (the measured HM-R variant). Next is the user's playtest and the 0.20.0 changelog close.
+- **Current Goal:** QoL batch, Steps 13.41 to 13.45, is done and pushed to `origin/main` (one commit per step, plus a one-line test type fix for 13.43). Next is the user's playtest, then closing 13.36 to 13.45 into a `## 0.x.0` changelog heading.
 - **Recent Changes & Files Touched:**
-  - Docs: GAME_DESIGN §10 "Hunter's Mark grants Readiness (Step 13.40)", skill text in §3 and the Pathfinder node, plan Step 13.40, CHANGELOG `Unreleased` [13.40].
-  - Content: `src/content/skills.ts` Hunter's Mark (cooldown 8, effects reveal + resource 20), `content.test.ts`, `webs/nodeText.ts` regenerated with `tools/gen-node-text.py`.
-  - Skill info text in the UI and Guide is derived from the effects, so it updates by itself; no UI code changed.
+  - 13.41: Ranger template "Top up Readiness" (Hunter's Mark at Readiness at most 60, then a blank slot) in `content/ruleTemplates.ts`, Ranger Guide tip in `content/guide.ts`.
+  - 13.42: `SavedHero.pastLoadouts` (last 3 lives, newest first; cap `MAX_PAST_SETUPS` in `persist/skillSlots.ts`). `pastSetups(hero)` reads an old single `pastLoadout` as slot one; `reincarnate` writes `pastLoadouts` and deletes the old field. `returnToLoadout` uses the newest kept setup that held the skill (`persist/pastSetup.ts`).
+  - 13.43: optional `SavedHero.nextLifePlan` (purchases and picks), `persist/nextLifePlan.ts` (`restorePlan` drops stale entries with reasons, `withSavedPlan`), `saveNextLifePlanFromUi`, planner restores, shows a drop notice, has a Reset plan button; `reincarnate` clears it.
+  - 13.44: `persist/sellSafety.ts` (`sellGroup`, `needsSellConfirm`, `RISKY_QUALITY` 1.05), `ui/town/sellArm.ts` (two-click state machine), `SellButton.tsx`, `SellList.tsx` (extracted from `Town.tsx`), grouped archive in `Equipment.tsx`, Guide sentence.
+  - 13.45: Legacy claim block always shown (`heirloomSlotUse`, `heirloomClaimBlock` in `persist/reincarnation.ts`, `ui/character/Legacy.tsx`).
+  - Docs: GAME_DESIGN (template table, 13.42 bullet, "Saved between-lives plan", "Safe selling", Legacy claim bullet), IMPLEMENTATION_PLAN steps 13.41 to 13.45, CHANGELOG `Unreleased`.
 - **Active Decisions / Constraints:**
-  - Hunter's Mark is learnable (Pathfinder cluster), in no reference loadout, so the reference rows are unchanged and every guard (reference and modded CSV, nine matrices at seed 1 x 5, golden duel) is byte-identical. The "Readiness at most 60" row is the player's to add; it is not shipped.
-  - Re-measured with shipped content (HM-R last, seeds 1 to 3 x 100): prepared +7.3, crafted +2.2, median win time +2.6%.
-  - `src/sim` and the harness are untouched. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot (line endings only): restore it, never commit it.
-- **Risks:** Old saves with a rule using Hunter's Mark start gaining Readiness (intended). A rule without a Readiness gate casts it every 8 s at the cost of a basic attack.
-- **Not verified:** nothing checked in a browser; the skill's description text in the Loadout and Guide was not viewed.
-- **Exact Next Step:** (1) User playtest: learn Hunter's Mark as a Ranger, add a row "Readiness at most 60", watch the Readiness. (2) Close 13.36, 13.37, 13.40 into a `## 0.x.0` changelog heading.
+  - No sim or content-number change; the reference matrix still runs. Never remove `// admin code`. One commit per part, pushed to `origin/main`; every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
+  - Heirlooms are items with `heirloom: {heroId, cap}`; `pastLifeItemIds` lists every archive id at reincarnation (heirlooms included); `sellItem` refuses heirlooms.
+  - No jsdom in the project: UI tests are static markup, plus the pure `sellArm` state machine with fake timers.
+- **Risks:** `nextLifePlan` is saved on every planner change (one `commitSave` each). A blank heirloom pick is stored as an empty string, which `save.ts` allows only for this field.
+- **Not verified:** Stale-plan notice in a real browser (the app's autosave overwrote my injected localStorage); Desktop width of the planner and Legacy block; Equipment tab archive grouping in a browser; Escape and timeout revert were clicked on desktop only.
+- **Exact Next Step:** (1) User playtest: reincarnate twice and relearn a skill, reload mid-planner, sell earlier-life gear (two clicks), open Legacy with no free slot. (2) Close 13.36 to 13.45 into a `## 0.x.0` changelog heading.
