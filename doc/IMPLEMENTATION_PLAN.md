@@ -1212,12 +1212,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
 ### Step 13.49: Auto run repair at home
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.26
 - Goal: opt-in "Repair at home" Auto run setting that repairs worn gear at the normal price at the home point where Auto contracts already run (GAME_DESIGN "Auto run repair (Step 13.49)"). Persist and UI only; the sim, content and harness are untouched.
 - Parts: (1) docs. (2) `persist/autoRepair.ts`, `autoRepair` on the hero, preparation draft, live and away calls, away report line, checkbox, Guide, tests, CHANGELOG. (3) handoff.
 - Progress:
   - 2026-11-22: Part 1 done (design recorded).
+  - 2026-11-22: Part 2 done. `persist/autoRepair.ts` (`autoRepairStep`, `repairLine`), `autoRepair` on the hero, draft and save check, calls in `ui/store.ts` and `persist/offline.ts` (`repairedPieces`, `repairGold`), away line in `AwayPanel.tsx`, checkbox in `ExpeditionPanel.tsx`, Guide sentence; tests in `autoRepair.test.ts`, `autoRun.test.tsx`, `preparation.test.ts`, `AwayPanel.test.tsx`.
 
 ### Step 13.47: Measure the Assassin passive's 8% base tick alone
 - Status: `done`

@@ -17,6 +17,7 @@ import type { EquipmentSlotId, ItemInstance } from '../sim/economy.ts'
 import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { autoContractsStep } from '../persist/autoContracts.ts'
+import { autoRepairStep, repairLine } from '../persist/autoRepair.ts'
 import { autoRerunRefusal, autoRunDefeatNote, beginExpedition, canStartRoute, newlyDiscovered, outcomeStats, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { restoreNotice, combatRules } from '../persist/pastSetup.ts'
@@ -495,6 +496,11 @@ function afterAutoRun(expedition: ExpeditionState): void {
   if (expedition.outcome === 'returned') {
     const contracts = autoContractsStep(saveStatus.save, routeId)
     if (contracts.save !== saveStatus.save) commitSave(contracts.save, 'auto run contracts')
+    const repair = autoRepairStep(saveStatus.save)
+    if (repair.repaired > 0) {
+      commitSave(repair.save, 'auto run repair')
+      pushToast(repairLine(repair.repaired, repair.gold))
+    }
   }
   // The outcome card is skipped under Auto run, so its summary and moments come as toasts.
   pushToast(`${routes[routeId]?.name ?? routeId}: ${stats.fightsWon} ${stats.fightsWon === 1 ? 'fight' : 'fights'} won, +${stats.carriedGold} g, ${loot} loot.`)

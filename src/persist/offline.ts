@@ -12,6 +12,7 @@ import { advanceTraining } from './training.ts'
 import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData } from './save.ts'
 import { autoContractsStep } from './autoContracts.ts'
+import { autoRepairStep } from './autoRepair.ts'
 import { isEndlessAutoRun, autoRerunRefusal, autoRunDefeatNote, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 import { nodes, routes } from '../content/world.ts'
 
@@ -58,6 +59,9 @@ export type HeroAwaySummary = {
   /** Contracts handed in and taken at home by Auto run while away (Step 13.26). Absent counts as 0. */
   contractsHandedIn?: number
   contractsTaken?: number
+  /** Worn pieces and the gold Auto run spent repairing them at home while away (Step 13.49). Absent counts as 0. */
+  repairedPieces?: number
+  repairGold?: number
   /** Endless runs that ended by a retreat while away. Absent counts as 0. */
   endlessRetreats?: number
   /** Auto run was on when the player left, so the run kept going under the standing orders. */
@@ -396,6 +400,12 @@ function rerun(ctx: Ctx, auto: boolean): boolean {
     ctx.save = contracts.save
     if (contracts.handedIn > 0) lane.summary.contractsHandedIn = (lane.summary.contractsHandedIn ?? 0) + contracts.handedIn
     if (contracts.taken > 0) lane.summary.contractsTaken = (lane.summary.contractsTaken ?? 0) + contracts.taken
+    const repair = autoRepairStep(ctx.save)
+    ctx.save = repair.save
+    if (repair.repaired > 0) {
+      lane.summary.repairedPieces = (lane.summary.repairedPieces ?? 0) + repair.repaired
+      lane.summary.repairGold = (lane.summary.repairGold ?? 0) + repair.gold
+    }
   }
   const claimedAfter = selectedHero(ctx.save)?.firstClearIds ?? []
   const newlyPaid = claimedAfter.filter((id) => !claimedBefore.includes(id)).map((id) => nodes[id]?.name ?? id)

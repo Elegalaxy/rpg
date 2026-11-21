@@ -28,6 +28,14 @@ function html(...heroes: HeroAwaySummary[]): string {
   )
 }
 
+describe('the away repair line (Step 13.49)', () => {
+  it('says how many pieces were repaired and what it cost, only when something was', () => {
+    expect(html({ ...hero, repairedPieces: 3, repairGold: 1200 })).toContain('Repaired 3 pieces for 1,200 g.')
+    expect(html({ ...hero, repairedPieces: 1, repairGold: 7 })).toContain('Repaired 1 piece for 7 g.')
+    expect(html(hero)).not.toContain('away-auto-repair')
+  })
+})
+
 describe('the away banner (Step 13.15)', () => {
   it('says Auto run kept going, with fights and runs', () => {
     const out = html({ ...hero, autoRan: true, autoFights: 9 })

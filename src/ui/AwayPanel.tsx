@@ -1,4 +1,5 @@
 import { awayBanner, ordersLine, type AwayReport, type HeroAwaySummary } from '../persist/offline.ts'
+import { repairLine } from '../persist/autoRepair.ts'
 import { routes } from '../content/world.ts'
 import { Tag } from './Kit.tsx'
 import { dismissAway, getAwayView, useSaveStatus } from './store.ts'
@@ -59,6 +60,8 @@ export function AwayReportView({ report }: { report: AwayReport }) {
   const firstClears = [...new Set(report.heroes.flatMap((hero) => hero.firstClears ?? []))]
   const handedIn = report.heroes.reduce((sum, hero) => sum + (hero.contractsHandedIn ?? 0), 0)
   const taken = report.heroes.reduce((sum, hero) => sum + (hero.contractsTaken ?? 0), 0)
+  const repairedPieces = report.heroes.reduce((sum, hero) => sum + (hero.repairedPieces ?? 0), 0)
+  const repairGold = report.heroes.reduce((sum, hero) => sum + (hero.repairGold ?? 0), 0)
   const banners = report.heroes.flatMap((hero) => {
     const line = awayBanner(hero)
     return line === null ? [] : [{ heroId: hero.heroId, line }]
@@ -122,6 +125,7 @@ export function AwayReportView({ report }: { report: AwayReport }) {
             Contracts handed in: {handedIn}, taken: {taken}.
           </li>
         ) : null}
+        {repairedPieces > 0 ? <li data-testid="away-auto-repair">{repairLine(repairedPieces, repairGold)}</li> : null}
         {firstClears.length > 0 ? <li data-testid="away-first-clear">First clear: {firstClears.join(', ')}.</li> : null}
         {contracts > 0 ? <li>Contracts finished: {contracts}. Collect them at the Contract Board.</li> : null}
         {report.discovered.length > 0 ? <li>Discovered: {report.discovered.join(', ')}.</li> : null}

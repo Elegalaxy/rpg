@@ -6,6 +6,7 @@ import { contractFitsRoute } from '../../persist/autoContracts.ts'
 import { routes } from '../../content/world.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { createHero } from '../../persist/roster.ts'
+import { repairAllCost } from '../../persist/town.ts'
 import { runOffline } from '../../persist/offline.ts'
 import { contractFor, newSave, parseSave, serializeSave, type SaveData, type SavedHero } from '../../persist/save.ts'
 import { advanceExpedition, commitSave, expeditionWaiting, getAutoNotice, getSaveStatus, pushOnFromUi, setAutoRunFromUi, startExpeditionFromUi } from '../store.ts'
@@ -325,6 +326,13 @@ describe('the Auto run mode on the preparation screen (Step 13.26)', () => {
     expect(prepare({ autoRun: true, autoContracts: true })).toMatch(/<input[^>]*aria-label="Auto run contracts"[^>]*checked/)
   })
 
+  it('shows the repair checkbox, disabled with a reason while Auto run is off', () => {
+    const off = prepare({ autoRun: false })
+    expect(off).toMatch(/<input[^>]*aria-label="Auto run repair"[^>]*disabled/)
+    expect(off).toContain('Turn on Auto run to repair at home.')
+    expect(prepare({ autoRun: true, autoRepair: true })).toMatch(/<input[^>]*aria-label="Auto run repair"[^>]*checked/)
+  })
+
   it('tags the run dock Auto · endless', async () => {
     const { RunDock } = await import('../RunDock.tsx')
     const html = (patch: Partial<SavedHero>) => {
@@ -372,5 +380,45 @@ describe('Auto run contracts at home (Step 13.26)', () => {
     const first = withBoard(false)
     play(() => getSaveStatus().save.expedition !== first)
     expect(hero()!.purse.contracts).toHaveLength(0)
+  }, 240_000)
+})
+
+describe('Auto run repair at home (Step 13.49)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  const wornGear = (equipment: SavedHero['equipment']): SavedHero['equipment'] =>
+    Object.fromEntries(Object.entries(equipment).map(([slot, item]) => [slot, item === null ? null : { ...item, durability: Math.ceil(item.maxDurability / 2) }])) as SavedHero['equipment']
+
+  // The next run takes the purse gold with it (carried plus deposited).
+  const goldOf = (save: SaveData): number => (save.expedition?.carriedGold ?? 0) + (save.expedition?.depositedGold ?? 0)
+
+  /** One auto run that returns once and starts the next; reports the hero when the rerun has begun. */
+  function runOnce(autoRepair: boolean) {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
+    if (!made.ok) throw new Error(made.reason)
+    const first = startRun({ autoRun: true, autoRepair, equipment: wornGear(made.save.heroes[0]!.equipment), repeatRoute: false, pushOnHpPercent: 1, stopAfterFights: 1, autoRunMaxFights: 2, purse: { ...made.save.heroes[0]!.purse, gold: 5000 } })
+    const before = getSaveStatus().save
+    play(() => getSaveStatus().save.expedition !== first)
+    return { before, after: getSaveStatus().save }
+  }
+
+  it('repairs at home between runs for exactly the normal price, then the rerun starts', () => {
+    const off = runOnce(false)
+    const wornOff = selectedHero(off.after)!
+    const cost = repairAllCost(wornOff)
+    expect(cost).toBeGreaterThan(0)
+    vi.restoreAllMocks()
+    const on = runOnce(true)
+    const healed = selectedHero(on.after)!
+    expect(Object.values(healed.equipment).every((item) => item === null || item.durability === item.maxDurability)).toBe(true)
+    expect(goldOf(off.after) - goldOf(on.after)).toBe(cost)
+    expect(on.after.expedition).not.toBeNull()
   }, 240_000)
 })

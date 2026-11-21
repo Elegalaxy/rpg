@@ -385,6 +385,22 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </Help>
         </div>
         {draft.autoRun === true ? null : <p className="muted">Turn on Auto run to hand in and take contracts at home.</p>}
+        <div className="controls">
+          <label>
+            <input
+              type="checkbox"
+              aria-label="Auto run repair"
+              data-testid="auto-repair"
+              disabled={draft.autoRun !== true}
+              title={draft.autoRun === true ? undefined : 'Turn on Auto run to repair at home.'}
+              checked={draft.autoRepair === true}
+              onChange={(event) => patch({ autoRepair: event.target.checked })}
+            />
+            Repair at home
+          </label>
+          <Help label="About Auto run repair">Repairs worn gear at the normal price when the hero is home between runs.</Help>
+        </div>
+        {draft.autoRun === true ? null : <p className="muted">Turn on Auto run to repair at home.</p>}
         <p className="muted auto-mode-note" data-testid="auto-run-mode-note">
           {draft.autoRun !== true
             ? 'Turn on Auto run to choose what happens when the route ends.'

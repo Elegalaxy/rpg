@@ -38,6 +38,8 @@ export type PreparationDraft = {
   autoRunMode?: AutoRunMode
   /** Auto run hands in and takes contracts at home. Left out keeps the hero's setting. */
   autoContracts?: boolean
+  /** Auto run repairs worn gear at home. Left out keeps the hero's setting. */
+  autoRepair?: boolean
   /** Standing order while away: what to do when the bag is nearly full. */
   bagFullOrder: BagFullOrder
   /** Route to start on its own when the player leaves with no run. An empty string never starts one. */
@@ -70,6 +72,7 @@ export function draftFor(hero: SavedHero): PreparationDraft {
     autoRunMaxFights: hero.autoRunMaxFights == null ? '' : String(hero.autoRunMaxFights),
     autoRunMode: hero.autoRunMode ?? 'repeat',
     autoContracts: hero.autoContracts === true,
+    autoRepair: hero.autoRepair === true,
     bagFullOrder: hero.bagFullOrder,
     awayRouteId: hero.awayRouteId ?? '',
   }
@@ -274,6 +277,7 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
       autoRunMaxFights,
       autoRunMode: draft.autoRunMode ?? hero.autoRunMode,
       autoContracts: draft.autoContracts ?? hero.autoContracts === true,
+      autoRepair: draft.autoRepair ?? hero.autoRepair === true,
       bagFullOrder: draft.bagFullOrder,
       awayRouteId: draft.awayRouteId === '' ? null : draft.awayRouteId,
     },

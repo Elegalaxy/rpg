@@ -300,6 +300,8 @@ export type SavedHero = {
   autoRunMode?: AutoRunMode
   /** Auto run hands in finished contracts and takes board contracts that fit the route when it gets home (Step 13.26). Absent means off. */
   autoContracts?: boolean
+  /** Auto run repairs worn gear at the normal price when it gets home (Step 13.49). Absent means off. */
+  autoRepair?: boolean
   /** Trainer drills bought at the current level (0 to 3). Back to 0 whenever the level rises. */
   drillsThisLevel: number
   /** Drills paid for and not yet finished. `queue[0]` is the running drill with `remainingMs` left; each entry's XP was fixed when it was queued. Absent when none. */
@@ -578,6 +580,7 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   check(value.freeUpgrades === undefined || (typeof value.freeUpgrades === 'number' && Number.isInteger(value.freeUpgrades) && value.freeUpgrades >= 0), `${label} free upgrades must be a whole number, 0 or more`)
   check(value.autoRun === undefined || typeof value.autoRun === 'boolean', `${label} auto run must be true or false`)
   check(value.autoContracts === undefined || typeof value.autoContracts === 'boolean', `${label} auto contracts must be true or false`)
+  check(value.autoRepair === undefined || typeof value.autoRepair === 'boolean', `${label} auto repair must be true or false`)
   check(value.autoRunMode === undefined || value.autoRunMode === 'repeat' || value.autoRunMode === 'endless' || value.autoRunMode === 'echo', `${label} auto run mode must be repeat, endless or echo`)
   check(
     value.autoRunMaxFights === undefined ||
