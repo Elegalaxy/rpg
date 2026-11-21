@@ -1211,6 +1211,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.50: Assassin base tick 10% and a new job for the Venom Edge node
+- Status: `todo`
+- Depends on: 13.47, 13.48
+- Goal: user decision 2026-11-22: the Envenomed strikes base tick becomes 10% (an Assassin without the node passes the Warden rule). Measure four candidate jobs for the Venom Edge node (+1 Poison cap, +1% tick, +5% basic bonus, nothing), pick the weakest that passes, then apply: ENVENOM, node text, Guide, re-baselined Assassin guard lines, Toxic baseline, CHANGELOG (GAME_DESIGN §10 "Venom Edge node after the 10% base"). No save migration expected (the node stays allocated).
+- Progress:
+  - 2026-11-22: Plan and design subsection written, worktree `venom-base`. Measurement next.
+
 ### Step 13.49: Auto run repair at home
 - Status: `done`
 - Depends on: 13.26
