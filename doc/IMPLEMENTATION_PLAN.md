@@ -1211,6 +1211,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.40: Hunter's Mark grants Readiness
+- Status: `in progress`
+- Depends on: 13.35
+- Goal: Hunter's Mark reveals the target and gains 20 Readiness, cooldown 8 (the measured HM-R variant, GAME_DESIGN §10 "Hunter's Mark grants Readiness (Step 13.40)"). Content change; every non-Ranger guard stays byte-identical.
+- Parts: (1) docs. (2) content, tests, snapshot and guard re-baseline, re-measure the Ranger elites. (3) CHANGELOG, node text, HANDOFF.
+- Part status: 1 `in progress`. 2 `pending`. 3 `pending`.
+- Progress:
+  - 2026-11-21: Part 1 started. Decision recorded in GAME_DESIGN §10 and §3 skill text.
+
 ### Step 13.39: Venom passive (Envenomed strikes)
 - Status: `done`
 - Depends on: 13.34, 13.37

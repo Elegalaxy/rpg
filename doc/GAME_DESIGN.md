@@ -440,7 +440,7 @@ The MVP Ranger web has fifteen nodes: five per cluster. Each node costs 1 skill 
 
 #### Pathfinder cluster
 
-1. Hunter's Mark: use a very short action to reveal target defenses and traits for the encounter and expose that information to target-priority rules; it does not duplicate Assassin execution mechanics.
+1. Hunter's Mark: use a very short action to reveal target defenses and traits for the encounter, expose that information to target-priority rules, and gain 20 Readiness; it does not duplicate Assassin execution mechanics.
 2. Trail Sense: increase travel-based Readiness generation by 25% and reveal one additional hidden route trait before departure.
 3. Volley: unlock the Readiness-spending multi-target active skill.
 4. Press the Trail: after each victory, restore 5 Readiness per current expedition-momentum stack and gain +2 percentage points of escape chance per stack.
@@ -1984,7 +1984,7 @@ These are a first broad roster for mechanical review. Names and effects are not 
 
 #### Ranger
 
-1. Hunter's Mark: no Readiness cost; reveal target defenses and traits for the encounter; 5-second cooldown; 0.5× action time.
+1. Hunter's Mark: no Readiness cost; reveal target defenses and traits for the encounter and gain 20 Readiness; 8-second cooldown (5 until Step 13.40); 0.5× action time.
 2. Aimed Shot: costs 40 Readiness; deals 304% Physical Power (180% until 2026-11-03); 5-second cooldown; 1.2× action time.
 3. Volley: costs 30 Readiness; deals 65% Physical Power to every enemy; 6-second cooldown; 1.2× action time.
 4. Snare Trap: costs 25 Readiness; arm one trap that triggers on the target's next action with a 75% base Stun chance; 8-second cooldown; 1.0× action time. Only one Ranger trap can be armed at a time.
@@ -2797,6 +2797,12 @@ Results (seeds 1 to 3 x 100, Ranger, four elites; prepared four mean 61.1, prepa
 - `swap` (candidate replaces Snare Trap, four skills) is identical to five skills for both HM-R and HM-XR (+7.3 and +7.1 with the same per-seed values): Snare Trap has no row in the reference rules, so it never fires and the slot it holds is free. The Ranger's gain does not need the fifth slot at all.
 - Side check (nine-point Ranger, four skills with the variant swapped in for Snare Trap, seeds 1 to 3 x 100): HM-R last Rootmaw Stalker 94.0 to 89.7, Echo Knight 38.3 to 35.3, Warden 0 to 0; HM-XR last Rootmaw 94.0 to 98.3, Echo Knight 38.3 to 45.7, Warden 0 to 0. Nothing gains more than 10 points, so no flag.
 - Verdict (rule read strictly: at least +4 in every seed): HM-X fails (negative), HM-XR fails on seed 2 (+3.2; its mean +7.1 passes), HM-R last QUALIFIES (+7.3 mean, +6.2 to +8.8 per seed, 0 of 4 cells crossing, median win time +2.6%, i.e. not cut). If the rule is read as the mean only, HM-XR last also qualifies but HM-R is the better-behaved variant, and by the preference order HM-XR would come first. Recommendation to the user: this is a content change (Hunter's Mark would grant Readiness), so it needs a decision; the measurement shows a Ranger fifth skill worth about +7 only because Hunter's Mark becomes a Readiness battery, and that same +7 is available with four skills (swap), so the slot itself is not what pays. The alternative is the stopgap label (the slot has no Ranger skill that helps). Nothing in the game changed in this step.
+
+### Hunter's Mark grants Readiness (Step 13.40)
+
+Decision (2026-11-21, user approved the measurement above). Hunter's Mark becomes a real skill for the Ranger: it still reveals the target, and now also gains 20 Readiness, with an 8-second cooldown (was 5). Cost stays 0 Readiness and action time 0.5x. This is exactly the measured HM-R definition (`src/harness/slotsRanger.ts`: `cooldownSeconds` 8, effects reveal and resource 20); no new numbers.
+
+The measured row is "Readiness at most 60", placed last (before the unconditional Piercing Arrow): +7.3 on the Ranger elites (seeds +8.8, +6.2, +7.0), 0 of 4 cells cross to 95, median win time +2.6%. The row is not added to the reference rows: Hunter's Mark is learnable through the skill web (Pathfinder cluster) and is not in the reference loadout, so reference fights and all guards stay unchanged and only a Ranger who learns and equips it, with a row like that, feels the change. Old saves keep the id `hunters-mark`; any rule that uses it starts granting Readiness. The skill count and loadout slots are unchanged.
 
 ### Venom passive (Step 13.39)
 
