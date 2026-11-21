@@ -42,6 +42,10 @@ export type VenomVariant = {
   live?: boolean
   /** Toxic Opportunity trigger options for `live` variants (13.39 Toxic nodes round). */
   toxic?: { anyHit: boolean; every?: number; cooldownMs?: number; bossCap?: number }
+  /** The Venom Edge node is not allocated (Step 13.47: measures the 8% base tick on its own). */
+  noNode?: boolean
+  /** `live` with this base tick (`live-baseNN-nonode`, Step 13.47): what a different base tick would measure without the node. */
+  baseTick?: number
   /** Venom Edge is dropped from the equipped skills and rows. */
   dropVenomEdge: boolean
   /** Fan of Knives is equipped on a `enemyCount >= 2` row. */
@@ -57,7 +61,11 @@ export function parseVariant(id: string): VenomVariant {
   if (suffix !== undefined && suffix !== 'to' && suffix !== 'ts') throw new Error(`unknown modifier '+${suffix}'`)
   const modifier = (suffix ?? null) as VenomVariant['modifier']
   if (head === 'current') return { id, dropVenomEdge: false, fan: false, modifier }
+  if (head === 'current-nonode') return { id, noNode: true, dropVenomEdge: false, fan: false, modifier }
   if (head === 'live') return { id, live: true, dropVenomEdge: false, fan: false, modifier }
+  if (head === 'live-nonode') return { id, live: true, noNode: true, dropVenomEdge: false, fan: false, modifier }
+  const base = /^live-base(\d\d)-nonode$/.exec(head)
+  if (base !== null) return { id, live: true, noNode: true, baseTick: Number(base[1]) / 100, dropVenomEdge: false, fan: false, modifier }
   const cap = /^live-(any-)?cap(\d+)$/.exec(head)
   if (cap !== null) return { id, live: true, toxic: { anyHit: cap[1] !== undefined, bossCap: Number(cap[2]) / 100 }, dropVenomEdge: false, fan: false, modifier }
   const toxic = /^live-(any|every(\d)|cd(\d))$/.exec(head)
@@ -107,6 +115,7 @@ const FAN_ROW: PriorityRow = { skillId: 'fan-of-knives', conditions: [{ kind: 'e
 export function venomDefs(variant: VenomVariant, base: GameDefs = gameDefs()): GameDefs {
   // `gameDefs()` carries the live passive since 13.39; the measurement variants decide on their own.
   let defs: GameDefs = variant.live === true ? base : { ...base, envenom: undefined }
+  if (variant.baseTick !== undefined && base.envenom !== undefined) defs = { ...defs, envenom: { ...base.envenom, coefficient: variant.baseTick } }
   if (variant.toxic !== undefined && base.envenom !== undefined) {
     defs = { ...defs, envenom: { ...base.envenom, toxicAnyHit: variant.toxic.anyHit, toxicEvery: variant.toxic.every, toxicCooldownMs: variant.toxic.cooldownMs, toxicBossCapFactor: variant.toxic.bossCap } }
   }
@@ -134,6 +143,12 @@ export function venomSetup(variant: VenomVariant, cell: EliteCell): CombatSetup 
   } else if (variant.live !== true && !equipped.includes('venom-edge')) {
     // The reference loadout no longer carries Venom Edge (13.39): `current` puts back the pre-13.39 skill and row.
     equipped = [...equipped.slice(0, 3), 'venom-edge', ...equipped.slice(3)]
+    if (rows.length >= MAX_PRIORITY_ROWS) {
+      // The Tyrant builds carry 12 rows (the extra Warming Tonic row for Burn). The restored row would be the 13th, which the sim refuses, so
+      // `current` drops that Burn Tonic row there (Step 13.47). Tyrant cells are then not a like-for-like comparison with `live`; the report can leave them out (VENOM_EXCLUDE=tyrant).
+      const burn = rows.map((row) => row.skillId).lastIndexOf('warming-tonic')
+      if (burn >= 0) rows.splice(burn, 1)
+    }
     const at = rows.findIndex((row) => row.skillId === 'shadow-cut')
     rows = [...rows.slice(0, at), VENOM_EDGE_ROW, ...rows.slice(at)]
   }
@@ -149,6 +164,7 @@ export function venomSetup(variant: VenomVariant, cell: EliteCell): CombatSetup 
   }
   if (variant.modifier === 'to') addNodes('assassin-toxic-opportunity')
   if (variant.modifier === 'ts') addNodes('assassin-toxic-sovereign')
+  if (variant.noNode === true) nodes = nodes.filter((id) => id !== 'assassin-venom-edge')
   if (rows.length > MAX_PRIORITY_ROWS) throw new Error(`${variant.id} passes the row cap at ${cellKey(cell)}`)
   return { ...base, hero: { ...base.hero, equippedSkillIds: equipped, priorityRows: rows, allocatedNodeIds: nodes } }
 }
@@ -241,6 +257,7 @@ export type TierSummary = {
 
 /** `current` with the same modifier is the baseline of a variant (`+to` compares with `current+to`). */
 export const baselineOf = (variantId: string): string => {
+  // `current-nonode` is a reference row only (Step 13.47); everything is judged against `current`.
   const suffix = variantId.includes('+') ? `+${variantId.split('+')[1]}` : ''
   return `current${suffix}`
 }
@@ -313,10 +330,12 @@ export function verdictFor(shards: readonly VenomShard[], variant: string): Veno
   return { go: reasons.length === 0, reasons }
 }
 
-export function loadShards(dir: string): VenomShard[] {
+/** Every shard in `dir`. `exclude` (the `VENOM_EXCLUDE` env var in the CLI, a comma list of elite ids) leaves those elites' cells out of the merge. */
+export function loadShards(dir: string, exclude: readonly string[] = []): VenomShard[] {
   return readdirSync(dir)
     .filter((name) => name.endsWith('.json'))
     .map((name) => JSON.parse(readFileSync(join(dir, name), 'utf8')) as VenomShard)
+    .map((shard) => ({ ...shard, rows: shard.rows.filter((row) => !exclude.includes(row.elite)) }))
 }
 
 const signs = (values: readonly number[]) => values.map((value) => (value > 0.05 ? '+' : value < -0.05 ? '-' : '0')).join('')
@@ -357,7 +376,7 @@ export function formatVenomReport(shards: readonly VenomShard[]): { text: string
 function main(args: readonly string[]): void {
   const [mode, ...rest] = args
   if (mode === 'report' && rest[0] !== undefined) {
-    const report = formatVenomReport(loadShards(rest[0]))
+    const report = formatVenomReport(loadShards(rest[0], (process.env.VENOM_EXCLUDE ?? '').split(',').filter((id) => id !== '')))
     process.stdout.write(report.text)
     if (rest[1] !== undefined) {
       mkdirSync(dirname(rest[1]), { recursive: true })

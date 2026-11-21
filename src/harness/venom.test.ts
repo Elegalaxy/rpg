@@ -28,6 +28,24 @@ describe('venom passive harness (Step 13.39)', () => {
     expect(sovereign.hero.allocatedNodeIds).toEqual(expect.arrayContaining(['assassin-toxic-opportunity', 'assassin-toxic-sovereign']))
   })
 
+  it('the no-node variants leave the Venom Edge node out, and `live-baseNN-nonode` changes only the base tick (Step 13.47)', () => {
+    expect(venomSetup(parseVariant('live'), cell).hero.allocatedNodeIds).toContain('assassin-venom-edge')
+    expect(venomSetup(parseVariant('live-nonode'), cell).hero.allocatedNodeIds).not.toContain('assassin-venom-edge')
+    expect(venomSetup(parseVariant('current-nonode'), cell).hero.allocatedNodeIds).not.toContain('assassin-venom-edge')
+    expect(venomDefs(parseVariant('live-base10-nonode')).envenom).toMatchObject({ coefficient: 0.1, nodeCoefficient: 0.1 })
+    expect(venomDefs(parseVariant('live-nonode')).envenom).toMatchObject({ coefficient: 0.08 })
+    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.08 })
+    expect(baselineOf('live-nonode')).toBe('current')
+  })
+
+  it('`current` stays within the 12-row cap on every cell, dropping the Burn Tonic row on the Tyrant builds (Step 13.47)', () => {
+    for (const entry of VENOM_CELLS) {
+      const rows = venomSetup(parseVariant('current'), entry).hero.priorityRows ?? []
+      expect(rows.length).toBeLessThanOrEqual(12)
+      expect(rows.some((row) => row.skillId === 'venom-edge')).toBe(true)
+    }
+  })
+
   it('the fan-only probe patches the Fan of Knives definition only on a copy', () => {
     const patched = venomDefs(parseVariant('fan-only-10'))
     expect(patched.skills['fan-of-knives']!.effects.some((effect) => effect.kind === 'applyStatus')).toBe(true)

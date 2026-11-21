@@ -1219,6 +1219,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-22: Part 1 done (design recorded).
 
+### Step 13.47: Measure the Assassin passive's 8% base tick alone
+- Status: `done`
+- Depends on: 13.39
+- Goal: every 13.39 measurement had the Venom Edge node allocated (a 10% tick); measure the 8% base tick without it against `current` and `live`, same cells, seeds 1 to 3 x 100, same rule. Measurement only, no content change (GAME_DESIGN §10 "Venom passive", "Base tick on its own").
+- Progress:
+  - 2026-11-22: Done. Result: 8% fails (Warden prepared -16.0, limit 8; prepared tier -12.3 on the 12 cells without the Tyrant). A 10% base passes, 9% does not. Not applied; the user decides. Harness only: variants `live-nonode`, `current-nonode`, `live-baseNN-nonode` and `VENOM_EXCLUDE` in `harness/venom.ts`; `current` drops the Burn Tonic row on Tyrant cells (13-row cap); 12 sharded processes ran in about 6 minutes. CSVs `reports/2026-11-venom-nonode.csv` and `-no-tyrant.csv` (reports is gitignored).
+
 ### Step 13.46: Legacy claim list only when usable
 - Status: `done`
 - Depends on: 13.45
