@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { useCount } from './useCount.ts'
+
 import { xpToNextLevel } from '../sim/stats.ts'
 import { selectedHero } from '../persist/character.ts'
 import { statLines, statsFor } from '../persist/equipment.ts'
@@ -204,6 +206,7 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
   const coaching = tutorialMark(save) !== null
   const stats = hero === null ? null : statsFor(hero)
   const need = hero === null ? 1 : xpToNextLevel(hero.progress.level)
+  const xp = useCount(hero?.progress.xp ?? 0)
   const run = save.expedition !== null && save.expedition.outcome === 'ongoing' ? save.expedition : null
   const runHp = run === null ? null : (run.combat?.hero ?? run.hero)
   return (
@@ -218,7 +221,7 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
               HP {Math.round(runHp.hp)}/{Math.round(runHp.maxHp)}
             </span>
           ) : null}
-          <progress className="status-compact-xp" max={need} value={hero.progress.xp} aria-label={`XP ${hero.progress.xp} of ${need}`} />
+          <progress className="status-compact-xp" max={need} value={xp} aria-label={`XP ${hero.progress.xp} of ${need}`} />
           <span aria-hidden="true">{open ? '▴' : '▾'}</span>
         </button>
       ) : null}
@@ -242,9 +245,9 @@ function Header({ save, onGo }: { save: SaveData; onGo: (tab: Tab) => void }) {
       {hero !== null ? (
         <div className="xp-row" title={`${hero.progress.xp} / ${need} XP to level ${hero.progress.level + 1}`}>
           <span>Lv {hero.progress.level}</span>
-          <progress max={need} value={hero.progress.xp} aria-label="XP to the next level" />
+          <progress max={need} value={xp} aria-label="XP to the next level" />
           <span>
-            {hero.progress.xp} / {need} XP
+            {xp} / {need} XP
           </span>
         </div>
       ) : null}

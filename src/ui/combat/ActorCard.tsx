@@ -20,6 +20,7 @@ import type {
 
 import { Tag } from '../Kit.tsx'
 import { debugLog } from '../debug.ts'
+import { useCount } from '../useCount.ts'
 import { noteHeroQueue } from '../store.ts'
 import { interruptText, isHeavy, telegraphSkill } from './telegraphInfo.ts'
 
@@ -226,12 +227,13 @@ function Meter({
   max: number
   kind: 'hp' | 'barrier' | 'resource'
 }) {
+  const shownCurrent = useCount(Math.round(current), 180)
   return (
     <div className={`meter meter-${kind}`}>
       <div className="meter-row">
         <span className="meter-label">{label}</span>
         <span className="meter-value">
-          {shown(current)} / {shown(max)}
+          {shown(shownCurrent)} / {shown(max)}
         </span>
       </div>
       <div

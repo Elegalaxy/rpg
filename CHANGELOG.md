@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: gold and XP count up to their new totals, and a fight's HP and resource numbers do the same.
 - Improved: in a fight, life bars ease, a hit flashes, and the damage number floats up.
 - Improved: the notice card fades out when it closes.
 - Improved: the notice card fades and scales in, and toasts slide in and fade out.
