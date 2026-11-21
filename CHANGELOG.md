@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: in a fight, life bars ease, a hit flashes, and the damage number floats up.
 - Improved: the notice card fades out when it closes.
 - Improved: the notice card fades and scales in, and toasts slide in and fade out.
 - Balance: the Assassin's Envenomed strikes now tick for 10% of Physical Power from the start, so an Assassin without the Venom Edge node poisons harder; the Venom Edge node no longer changes the tick and stays as the way into the Venom branch. [13.50]

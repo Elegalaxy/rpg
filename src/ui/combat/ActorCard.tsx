@@ -12,6 +12,7 @@ import type {
   CombatActor,
   CombatState,
   ExposeStatus,
+  DamageEvent,
   LogEvent,
   MarkStatus,
   PoisonStatus,
@@ -23,6 +24,9 @@ import { noteHeroQueue } from '../store.ts'
 import { interruptText, isHeavy, telegraphSkill } from './telegraphInfo.ts'
 
 const missingSprites = new Set<string>()
+let nextFloater = 1
+
+type Floater = { id: number; text: string; crit: boolean }
 
 const STATUS_KEYS = ['bleed', 'poison', 'burn', 'chill', 'mark', 'expose'] as const
 
@@ -378,6 +382,8 @@ function useDisplayedChange(actorId: string, kind: 'telegraph' | 'boss phase', v
 export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, classResource, manualQueue }: ActorCardProps) {
   const cardRef = useRef<HTMLElement>(null)
   const seenAct = useRef<string | null | undefined>(undefined)
+  const seenLog = useRef<number | null>(null)
+  const [floaters, setFloaters] = useState<Floater[]>([])
   const actSignature = latestActSignature(log, actor.id)
   const telegraphTag = actor.telegraph === null ? null : actor.telegraph.tag
   const bossPhase = actor.boss ? actor.bossPhase : null
@@ -409,6 +415,30 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
     card.classList.add('is-acting')
     debugLog('[ui]', 'act', { actorId: actor.id, signature: actSignature })
   }, [actSignature, actor.id])
+
+  useLayoutEffect(() => {
+    if (seenLog.current === null || seenLog.current > log.length) {
+      seenLog.current = log.length
+      return
+    }
+    const fresh = log.slice(seenLog.current)
+    seenLog.current = log.length
+    const hits = fresh.filter((event): event is DamageEvent => event.type === 'damage' && event.targetId === actor.id)
+    const card = cardRef.current
+    if (hits.length === 0 || card === null) return
+    const added = hits.map((event) => ({
+      id: nextFloater++,
+      text: event.hit ? `−${shown(event.hpDamage)}` : 'Miss',
+      crit: event.hit && event.crit,
+    }))
+    debugLog('[ui]', 'hit', { actorId: actor.id, text: added.map((item) => item.text) })
+    setFloaters((current) => [...current, ...added].slice(-4))
+    card.classList.remove('is-hit')
+    void card.offsetWidth
+    card.classList.add('is-hit')
+    const ids = new Set(added.map((item) => item.id))
+    setTimeout(() => setFloaters((current) => current.filter((item) => !ids.has(item.id))), 700)
+  }, [log, actor.id])
 
   return (
     <article
@@ -456,6 +486,11 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
         <TimingBar label="Reaction" kind="reaction" telegraph={actor.reaction} timeMs={timeMs} defId={actor.defId} maxHp={actor.maxHp} />
       ) : null}
       <StatusList statuses={actor.statuses} timeMs={timeMs} />
+      {floaters.map((floater, index) => (
+        <span key={floater.id} className={floater.crit ? 'hit-float is-crit' : 'hit-float'} style={{ top: `${index * 1.1}rem` }}>
+          {floater.text}
+        </span>
+      ))}
     </article>
   )
 }

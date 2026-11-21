@@ -7,6 +7,7 @@
 }
 
 .actor-card {
+  position: relative;
   box-sizing: border-box;
   width: 260px;
   padding: var(--s3);
@@ -100,6 +101,10 @@
 .meter-fill,
 .timing-fill {
   height: 100%;
+}
+
+.meter-fill {
+  transition: width 180ms ease-out;
 }
 
 .meter-fill-hp {
@@ -202,6 +207,50 @@
 
 .actor-card.is-acting {
   animation: act-bump 180ms ease-out;
+}
+
+.actor-card.is-hit .actor-sprite,
+.actor-card.is-hit .actor-fallback {
+  animation: hit-flash 180ms ease-out;
+}
+
+@keyframes hit-flash {
+  0% {
+    filter: brightness(2.2);
+  }
+}
+
+.hit-float {
+  position: absolute;
+  right: var(--s3);
+  z-index: 1;
+  color: var(--danger);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  animation: hit-float 700ms ease-out forwards;
+}
+
+.hit-float.is-crit {
+  color: var(--warn);
+}
+
+@keyframes hit-float {
+  to {
+    opacity: 0;
+    transform: translateY(-1.25rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter-fill,
+  .actor-card.is-acting,
+  .actor-card.is-hit .actor-sprite,
+  .actor-card.is-hit .actor-fallback,
+  .hit-float {
+    animation: none;
+    transition: none;
+  }
 }
 
 /* ---- Fight view: result header, hero versus enemies, log beside or below ---- */
