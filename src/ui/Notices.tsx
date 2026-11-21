@@ -48,7 +48,7 @@ export function Notices({ onGo }: { onGo: (to: NoticeTarget) => void }) {
     <>
       <div className="toasts" role="status" aria-live="polite" data-testid="toasts">
         {toasts.map((toast) => (
-          <p key={toast.id} className="toast">
+          <p key={toast.id} className={toast.leaving ? 'toast is-leaving' : 'toast'}>
             <span>{toast.text}</span>
             <button type="button" aria-label="Dismiss" onClick={() => dismissToast(toast.id)}>
               ×

@@ -11,11 +11,13 @@ import { debugLog } from './debug.ts'
  */
 export type NoticeMode = 'hand' | 'away' | 'auto'
 
-export type Toast = { id: number; text: string }
+export type Toast = { id: number; text: string; leaving: boolean }
 
 export type Notices = { card: readonly Moment[]; toasts: readonly Toast[] }
 
 export const TOAST_MS = 5000
+/** How long a toast stays on screen while it fades out, matching the CSS. */
+export const TOAST_LEAVE_MS = 180
 export const MAX_TOASTS = 3
 
 let notices: Notices = { card: [], toasts: [] }
@@ -42,17 +44,24 @@ export function useNotices(): Notices {
   )
 }
 
-/** Show a short line that fades by itself. The oldest goes when more than three are up. */
+/** Show a short line that slides in, then fades out. The oldest goes when more than three are up. */
 export function pushToast(text: string): void {
-  const toast = { id: nextToastId++, text }
+  const toast: Toast = { id: nextToastId++, text, leaving: false }
   debugLog('[ui]', 'notice toast', toast)
   set({ ...notices, toasts: [...notices.toasts, toast].slice(-MAX_TOASTS) })
   setTimeout(() => dismissToast(toast.id), TOAST_MS)
 }
 
+/** Start the fade-out. A second call while it is already leaving does nothing. */
 export function dismissToast(id: number): void {
-  if (!notices.toasts.some((toast) => toast.id === id)) return
-  set({ ...notices, toasts: notices.toasts.filter((toast) => toast.id !== id) })
+  const toast = notices.toasts.find((item) => item.id === id)
+  if (!toast || toast.leaving) return
+  debugLog('[ui]', 'notice toast leaving', { id })
+  set({ ...notices, toasts: notices.toasts.map((item) => (item.id === id ? { ...item, leaving: true } : item)) })
+  setTimeout(() => {
+    if (!notices.toasts.some((item) => item.id === id)) return
+    set({ ...notices, toasts: notices.toasts.filter((item) => item.id !== id) })
+  }, TOAST_LEAVE_MS)
 }
 
 /** Report moments the way the mode asks: on the card, or as toasts under Auto run. */

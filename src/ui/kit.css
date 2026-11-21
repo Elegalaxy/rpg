@@ -1714,6 +1714,13 @@ dl.upgrade-facts dd {
   inset: 0;
   z-index: 40;
   background: rgb(0 0 0 / 45%);
+  animation: notice-fade-in 180ms ease-out;
+}
+
+@keyframes notice-fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .notice-card {
@@ -1731,6 +1738,14 @@ dl.upgrade-facts dd {
   background: var(--panel);
   box-shadow: 0 8px 30px rgb(0 0 0 / 45%);
   transform: translate(-50%, -50%);
+  animation: notice-card-in 180ms ease-out;
+}
+
+@keyframes notice-card-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.96);
+  }
 }
 
 .notice-card h2 {
@@ -1778,6 +1793,25 @@ ul.notice-list {
   box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
   font-size: 0.9rem;
   pointer-events: auto;
+  animation: toast-in 180ms ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+.toast.is-leaving {
+  animation: toast-out 180ms ease-in forwards;
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
 }
 
 .toast span {
@@ -1801,5 +1835,17 @@ ul.notice-list {
     right: var(--s4);
     left: var(--s4);
     width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice-backdrop,
+  .notice-card,
+  .toast {
+    animation: none;
+  }
+
+  .toast.is-leaving {
+    opacity: 0;
   }
 }

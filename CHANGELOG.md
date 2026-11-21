@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: the notice card fades and scales in, and toasts slide in and fade out.
 - Balance: the Assassin's Envenomed strikes now tick for 10% of Physical Power from the start, so an Assassin without the Venom Edge node poisons harder; the Venom Edge node no longer changes the tick and stays as the way into the Venom branch. [13.50]
 - Tech: a new balance check (`--matrix toxic`) runs the Assassin with the Toxic nodes against every elite, so the boss Poison cap fix is guarded; no game change. [13.48]
 - Tech: measured the Assassin's Envenomed strikes at its 8% base tick without the Venom Edge node; it falls 16 points short against the Warden, a 10% base would pass, nothing changed in the game. [13.47]
