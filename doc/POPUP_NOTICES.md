@@ -33,7 +33,7 @@ Tell the player when something worth noticing finishes, from one shared notice s
 
 - One in-memory queue. Moments from the same return merge into one card, not stacked dialogs.
 - Not saved: a reload does not replay notices, the same as the current notices.
-- Toasts slide in, stay 5 seconds, then fade out. They never need a click. Cards fade and scale in, and close with a button or Escape.
+- Toasts slide in, stay 5 seconds, then fade out. They never need a click. Cards fade and scale in, and fade out on a button or Escape.
 - On phones, clear of the sticky header, the pinned Start bar and the bottom tabs.
 - `role="status"` for toasts, `role="dialog"` with a label for cards.
 - `debugLog('[ui]', 'notice', ...)` each time one is queued and shown.

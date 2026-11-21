@@ -1748,6 +1748,27 @@ dl.upgrade-facts dd {
   }
 }
 
+.notice-backdrop.is-leaving {
+  animation: notice-fade-out 180ms ease-in forwards;
+}
+
+@keyframes notice-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.notice-card.is-leaving {
+  animation: notice-card-out 180ms ease-in forwards;
+}
+
+@keyframes notice-card-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.96);
+  }
+}
+
 .notice-card h2 {
   margin: 0 0 var(--s3);
 }
@@ -1845,7 +1866,9 @@ ul.notice-list {
     animation: none;
   }
 
-  .toast.is-leaving {
+  .toast.is-leaving,
+  .notice-backdrop.is-leaving,
+  .notice-card.is-leaving {
     opacity: 0;
   }
 }

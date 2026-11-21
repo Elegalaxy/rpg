@@ -33,8 +33,8 @@ function shortcut(moment: Moment): { label: string; to: NoticeTarget } | null {
 /** The big-moment card and the toasts. The card waits while the away report is up. */
 export function Notices({ onGo }: { onGo: (to: NoticeTarget) => void }) {
   useSaveStatus()
-  const { card, toasts } = useNotices()
-  const shown = card.length > 0 && getAwayView().phase === 'idle'
+  const { card, cardLeaving, toasts } = useNotices()
+  const shown = card.length > 0 && (cardLeaving || getAwayView().phase === 'idle')
   useEffect(() => {
     if (!shown) return
     debugLog('[ui]', 'notice card shown', { kinds: card.map((moment) => moment.kind) })
@@ -58,8 +58,8 @@ export function Notices({ onGo }: { onGo: (to: NoticeTarget) => void }) {
       </div>
       {shown ? (
         <>
-          <div className="notice-backdrop" onClick={dismissCard} />
-          <section className="notice-card" role="dialog" aria-labelledby="notice-title" data-testid="notice-card">
+          <div className={cardLeaving ? 'notice-backdrop is-leaving' : 'notice-backdrop'} onClick={dismissCard} />
+          <section className={cardLeaving ? 'notice-card is-leaving' : 'notice-card'} role="dialog" aria-labelledby="notice-title" data-testid="notice-card">
             <h2 id="notice-title">{card.length === 1 ? TITLES[card[0]!.kind] : 'News from the road'}</h2>
             <ul className="notice-list">
               {card.map((moment, index) => {

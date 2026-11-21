@@ -6,7 +6,7 @@ import { startExpedition } from '../persist/expeditionSetup.ts'
 import { createHero } from '../persist/roster.ts'
 import { newSave, type SaveData, type SavedHero } from '../persist/save.ts'
 import { Notices } from './Notices.tsx'
-import { MAX_TOASTS, TOAST_LEAVE_MS, TOAST_MS, dismissCard, getNotices, reportMoments, resetNotices } from './notices.ts'
+import { CARD_LEAVE_MS, MAX_TOASTS, TOAST_LEAVE_MS, TOAST_MS, dismissCard, getNotices, reportMoments, resetNotices } from './notices.ts'
 import { commitSave, settleExpeditionFromUi } from './store.ts'
 
 function heroSave(patch: (hero: SavedHero) => Partial<SavedHero> = () => ({})): SaveData {
@@ -41,6 +41,9 @@ describe('pop-up notices', () => {
     expect(html).toContain('Spend points')
     expect(html).toContain('Open the map')
     dismissCard()
+    expect(getNotices().cardLeaving).toBe(true)
+    expect(getNotices().card).toHaveLength(2)
+    vi.advanceTimersByTime(CARD_LEAVE_MS)
     expect(getNotices().card).toEqual([])
   })
 

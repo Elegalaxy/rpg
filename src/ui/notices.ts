@@ -13,16 +13,23 @@ export type NoticeMode = 'hand' | 'away' | 'auto'
 
 export type Toast = { id: number; text: string; leaving: boolean }
 
-export type Notices = { card: readonly Moment[]; toasts: readonly Toast[] }
+export type Notices = { card: readonly Moment[]; cardLeaving: boolean; toasts: readonly Toast[] }
 
 export const TOAST_MS = 5000
-/** How long a toast stays on screen while it fades out, matching the CSS. */
+/** How long a toast or the card stays on screen while it fades out, matching the CSS. */
 export const TOAST_LEAVE_MS = 180
+export const CARD_LEAVE_MS = 180
 export const MAX_TOASTS = 3
 
-let notices: Notices = { card: [], toasts: [] }
+let notices: Notices = { card: [], cardLeaving: false, toasts: [] }
 let nextToastId = 1
+let cardLeaveTimer: ReturnType<typeof setTimeout> | null = null
 const listeners = new Set<() => void>()
+
+function motionMs(ms: number): number {
+  if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return 0
+  return ms
+}
 
 function set(next: Notices): void {
   notices = next
@@ -61,7 +68,7 @@ export function dismissToast(id: number): void {
   setTimeout(() => {
     if (!notices.toasts.some((item) => item.id === id)) return
     set({ ...notices, toasts: notices.toasts.filter((item) => item.id !== id) })
-  }, TOAST_LEAVE_MS)
+  }, motionMs(TOAST_LEAVE_MS))
 }
 
 /** Report moments the way the mode asks: on the card, or as toasts under Auto run. */
@@ -72,16 +79,29 @@ export function reportMoments(moments: readonly Moment[], mode: NoticeMode): voi
     for (const moment of moments) pushToast(momentLine(moment))
     return
   }
-  set({ ...notices, card: sortMoments([...notices.card, ...moments]) })
+  if (cardLeaveTimer !== null) {
+    clearTimeout(cardLeaveTimer)
+    cardLeaveTimer = null
+  }
+  set({ ...notices, card: sortMoments([...notices.card, ...moments]), cardLeaving: false })
 }
 
+/** Fade the card out, then drop it. A second call while it is already leaving does nothing. */
 export function dismissCard(): void {
-  if (notices.card.length === 0) return
-  debugLog('[ui]', 'notice card closed', { count: notices.card.length })
-  set({ ...notices, card: [] })
+  if (notices.card.length === 0 || notices.cardLeaving) return
+  debugLog('[ui]', 'notice card leaving', { count: notices.card.length })
+  set({ ...notices, cardLeaving: true })
+  cardLeaveTimer = setTimeout(() => {
+    cardLeaveTimer = null
+    if (!notices.cardLeaving) return
+    debugLog('[ui]', 'notice card closed', { count: notices.card.length })
+    set({ ...notices, card: [], cardLeaving: false })
+  }, motionMs(CARD_LEAVE_MS))
 }
 
 /** Tests only: start from nothing. */
 export function resetNotices(): void {
-  notices = { card: [], toasts: [] }
+  if (cardLeaveTimer !== null) clearTimeout(cardLeaveTimer)
+  cardLeaveTimer = null
+  notices = { card: [], cardLeaving: false, toasts: [] }
 }
