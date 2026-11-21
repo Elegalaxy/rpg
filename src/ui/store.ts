@@ -4,6 +4,7 @@ import { dealsIn, type PlaceDef } from '../content/places.ts'
 import { DUEL_BASIC_ID, gameDefs, scenarios, setupForScenario } from '../content/scenarios.ts'
 import { grantPoints, selectedHero, spendAttributes, takeNode, type AttributePlan } from '../persist/character.ts'
 import { addDevelopmentItems, equipFromArchive, unequipToArchive } from '../persist/equipment.ts'
+import { withSavedPlan } from '../persist/nextLifePlan.ts'
 import { buyPurchase, claimHeirloom, reincarnate, type PlannedPurchase, type PurchaseKind } from '../persist/reincarnation.ts'
 import type { HeroPurchases } from '../persist/save.ts'
 import { abandonContract, acceptContract, collectContract } from '../persist/contracts.ts'
@@ -1188,6 +1189,14 @@ export function reincarnateFromUi(heirloomItemIds: readonly string[], plan: read
     debugLog('[ui]', 'heirlooms equipped', { ids: equipped })
   }
   return refusal
+}
+
+/** Save the between-lives planner's plan on the selected hero (Step 13.43); a plan equal to the starting state removes it. */
+export function saveNextLifePlanFromUi(plan: readonly PlannedPurchase[], picks: readonly string[]): void {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null) return
+  const next = withSavedPlan(hero, plan, picks)
+  commitSave({ ...saveStatus.save, heroes: saveStatus.save.heroes.map((entry) => (entry.id === hero.id ? next : entry)) }, 'next life plan')
 }
 
 /** Make an item an heirloom of the selected hero now, using a free slot. Returns the refusal, or null. */

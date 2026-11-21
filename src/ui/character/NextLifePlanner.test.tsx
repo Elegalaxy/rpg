@@ -105,3 +105,33 @@ describe('NextLifePlanner combat setup (Step 13.37)', () => {
     expect(html).toContain('Rules, stacks and preparation are kept.')
   })
 })
+
+describe('NextLifePlanner saved plan (Step 13.43)', () => {
+  function showWith(plan: NonNullable<SavedHero['nextLifePlan']>, patch: Patch = { legacy: 100 }): string {
+    const { save, hero } = build(patch)
+    return renderToStaticMarkup(<NextLifePlanner save={save} hero={{ ...hero, nextLifePlan: plan }} onBack={() => undefined} onDone={() => undefined} />)
+  }
+
+  it('restores the saved purchases when the planner opens', () => {
+    const html = showWith({ purchases: [{ kind: 'stockpile' }], picks: [] })
+    expect(html).toMatch(/data-testid="plan-list"[^]*Stockpile I/)
+    expect(html).not.toContain('data-testid="plan-dropped"')
+    expect(html).toContain('Reset plan')
+  })
+
+  it('says so when a saved purchase can no longer be afforded, and does not apply it', () => {
+    const html = showWith({ purchases: [{ kind: 'fifthSlot' }], picks: [] }, { legacy: 0 })
+    expect(html).toContain('data-testid="plan-dropped"')
+    expect(html).toContain('was dropped from your plan')
+    expect(html).not.toContain('data-testid="plan-list"')
+  })
+
+  it('says so when a saved heirloom pick is no longer owned', () => {
+    const html = showWith({ purchases: [], picks: ['gone-item'] })
+    expect(html).toContain('An item you picked as an heirloom is no longer owned.')
+  })
+
+  it('disables Reset plan when there is nothing to reset', () => {
+    expect(show({})).toMatch(/<button[^>]*disabled=""[^>]*>Reset plan/)
+  })
+})

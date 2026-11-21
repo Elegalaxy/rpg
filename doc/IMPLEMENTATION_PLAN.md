@@ -1224,10 +1224,11 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
 
 ### Step 13.43: Keep the between-lives plan
-- Status: `todo`
+- Status: `done`
 - Depends on: 13.36
 - Goal: the staged purchases and heirloom picks of the Between lives planner are saved on the hero and survive a reload; stale entries are dropped with a notice (GAME_DESIGN §10 "Saved between-lives plan (Step 13.43)").
 - Progress:
+  - 2026-11-21: Done. `persist/nextLifePlan.ts` (`restorePlan`, `withSavedPlan`, `heirloomCandidates`), optional `nextLifePlan` in `save.ts` (a blank pick is allowed), cleared in `reincarnate`, `saveNextLifePlanFromUi` in `store.ts`, planner restores, drop notice and Reset plan; tests in `persist/nextLifePlan.test.ts` and `NextLifePlanner.test.tsx`.
 
 ### Step 13.42: Keep three past loadouts
 - Status: `done`

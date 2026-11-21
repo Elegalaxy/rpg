@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { carryOver, carrySummary } from '../../persist/carryOver.ts'
+import { defaultPicks, heirloomCandidates, restorePlan, type PlanDrop } from '../../persist/nextLifePlan.ts'
 import {
   MASTERY_MAX,
   heirloomAllowance,
@@ -15,7 +16,7 @@ import type { SaveData, SavedHero } from '../../persist/save.ts'
 
 import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../../sim/economy.ts'
 import { Kpi, KpiRow } from '../Kit.tsx'
-import { reincarnateFromUi } from '../store.ts'
+import { reincarnateFromUi, saveNextLifePlanFromUi } from '../store.ts'
 
 import { CarryFacts, HeirloomPickers, NextLifeFacts, PurchaseTables, gainLines, purchaseRows, type AttributeKey } from './legacyParts.tsx'
 
@@ -37,7 +38,7 @@ export function NextLifePlanner({
   hero,
   onBack,
   onDone,
-  initialPlan = [],
+  initialPlan,
   initialPicks,
   initialConfirming = false,
 }: {
@@ -45,18 +46,23 @@ export function NextLifePlanner({
   hero: SavedHero
   onBack: () => void
   onDone: (message: string) => void
+  /** Overrides the saved plan (tests). */
   initialPlan?: readonly PlannedPurchase[]
   initialPicks?: string[]
   initialConfirming?: boolean
 }) {
-  const candidates: ItemInstance[] = [
-    ...EQUIPMENT_SLOT_IDS.flatMap((slot) => (hero.equipment[slot] === null ? [] : [hero.equipment[slot]!])),
-    ...hero.purse.archive.filter((item) => item.heirloom === undefined || item.heirloom.heroId === hero.id),
-  ]
-  const [plan, setPlan] = useState<readonly PlannedPurchase[]>(initialPlan)
-  const [picks, setPicks] = useState<string[]>(
-    () => initialPicks ?? candidates.filter((item) => item.heirloom?.heroId === hero.id).map((item) => item.id),
-  )
+  const candidates: ItemInstance[] = heirloomCandidates(hero)
+  // Step 13.43: the plan saved on the hero comes back, checked against the hero as they are now.
+  const [restored] = useState(() => (initialPlan !== undefined || initialPicks !== undefined ? null : restorePlan(hero)))
+  const [plan, setPlan] = useState<readonly PlannedPurchase[]>(initialPlan ?? restored?.plan ?? [])
+  const [picks, setPicks] = useState<string[]>(() => initialPicks ?? restored?.picks ?? defaultPicks(hero))
+  const [drops] = useState<readonly PlanDrop[]>(restored?.dropped ?? [])
+  const [dropNotice, setDropNotice] = useState(drops.length > 0)
+  useEffect(() => {
+    // Stale entries are removed from the save too, so the notice shows once.
+    if (restored !== null && restored.dropped.length > 0) saveNextLifePlanFromUi(restored.plan, restored.picks)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [confirming, setConfirming] = useState(initialConfirming)
   const [error, setError] = useState<string | null>(null)
 
@@ -80,6 +86,19 @@ export function NextLifePlanner({
   })
   const lifeNumber = hero.lives + 2
 
+  function update(nextPlan: readonly PlannedPurchase[], nextPicks: string[]): void {
+    setPlan(nextPlan)
+    setPicks(nextPicks)
+    setDropNotice(false)
+    saveNextLifePlanFromUi(nextPlan, nextPicks)
+  }
+
+  function dropText(drop: PlanDrop): string {
+    if (drop.kind === 'heirloom') return drop.reason
+    const name = purchaseRows(hero, carryOver(hero).percent).find((row) => row.kind === drop.item.kind)?.name ?? drop.item.kind
+    return `${drop.item.attribute === undefined ? name : `${name} (+1 ${drop.item.attribute})`} was dropped from your plan. ${drop.reason}`
+  }
+
   function add(kind: PlannedPurchase['kind'], attribute?: AttributeKey): void {
     const item: PlannedPurchase = attribute === undefined ? { kind } : { kind, attribute }
     const tried = stageNextLife(hero, [...activePlan, item])
@@ -88,7 +107,7 @@ export function NextLifePlanner({
       return
     }
     setError(null)
-    setPlan([...activePlan, item])
+    update([...activePlan, item], shownPicks)
   }
 
   function begin(): void {
@@ -153,7 +172,7 @@ export function NextLifePlanner({
               type="button"
               onClick={() => {
                 setError(null)
-                setPlan(activePlan.slice(0, -1))
+                update(activePlan.slice(0, -1), shownPicks)
               }}
             >
               Undo last
@@ -162,7 +181,7 @@ export function NextLifePlanner({
               type="button"
               onClick={() => {
                 setError(null)
-                setPlan([])
+                update([], shownPicks)
               }}
             >
               Clear
@@ -176,7 +195,7 @@ export function NextLifePlanner({
       <NextLifeFacts next={next} />
 
       <h3>4. Heirlooms</h3>
-      <HeirloomPickers allowance={allowance} candidates={candidates} picks={shownPicks} onChange={setPicks} />
+      <HeirloomPickers allowance={allowance} candidates={candidates} picks={shownPicks} onChange={(next) => update(activePlan, next)} />
 
       <div className="legacy-plan-actions">
         {block !== null ? (
@@ -214,10 +233,28 @@ export function NextLifePlanner({
             Begin new life…
           </button>
         )}
+        <button
+          type="button"
+          disabled={activePlan.length === 0 && shownPicks.filter((id) => id !== '').join() === defaultPicks(hero).join()}
+          title="Clear the planned purchases and go back to your current heirlooms"
+          onClick={() => {
+            setError(null)
+            update([], defaultPicks(hero))
+          }}
+        >
+          Reset plan
+        </button>
         <button type="button" onClick={onBack}>
           Back to this life
         </button>
       </div>
+      {dropNotice && drops.length > 0 ? (
+        <div role="status" data-testid="plan-dropped">
+          {drops.map((drop, index) => (
+            <p key={index}>{dropText(drop)}</p>
+          ))}
+        </div>
+      ) : null}
       {planReason !== null ? <p role="alert">{planReason}</p> : null}
       {error !== null ? <p role="alert">{error}</p> : null}
     </section>

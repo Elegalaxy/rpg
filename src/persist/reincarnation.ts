@@ -384,6 +384,8 @@ export function reincarnate(
     freeUpgrades: (hero.freeUpgrades ?? 0) + artisanTokens(hero.purchases),
   }
   delete renewed.pastLoadout
+  // Step 13.43: the planner's saved plan was spent by this reincarnation.
+  delete renewed.nextLifePlan
   if (setup.waitingSkillIds.length > 0) renewed.waitingSkillIds = setup.waitingSkillIds
   else delete renewed.waitingSkillIds
   const account = reachMilestone(save.account, 'first-reincarnation')

@@ -14,6 +14,7 @@ import { elitesFromClaimed } from './remembered.ts'
 import { MAX_PAST_SETUPS, loadoutSlots } from './skillSlots.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
 import type { PriorityRow, RuleStack } from '../sim/types.ts'
+import type { PlannedPurchase } from './reincarnation.ts'
 
 export const SAVE_VERSION = 1
 export const SAVE_KEY = 'rpg.save.v1'
@@ -271,6 +272,8 @@ export type SavedHero = {
   pastLoadout?: string[]
   /** The loadouts of the last three lives, newest first (Step 13.42). Replaces `pastLoadout`, which an old save may still hold. */
   pastLoadouts?: string[][]
+  /** The between-lives planner's staged purchases and heirloom picks, kept across a reload (Step 13.43). Absent means no plan. Cleared at reincarnation. */
+  nextLifePlan?: { purchases: PlannedPurchase[]; picks: string[] }
   /** Skills named by kept rules that this life cannot use yet. Those rules wait. Absent means none (Step 13.37). */
   waitingSkillIds?: string[]
   /** Retreat when HP falls to this fraction of maximum. Null never retreats. */
@@ -645,6 +648,15 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   if (value.pastLoadout !== undefined) {
     stringList(value.pastLoadout, `${label} past loadout`)
     check(value.pastLoadout.length <= MAX_LOADOUT_SLOTS, `${label} past loadout holds at most ${MAX_LOADOUT_SLOTS} skills`)
+  }
+  if (value.nextLifePlan !== undefined) {
+    const plan = value.nextLifePlan as unknown as { purchases: unknown[]; picks: string[] }
+    check(typeof plan === 'object' && plan !== null && Array.isArray(plan.purchases) && Array.isArray(plan.picks), `${label} next life plan must have purchases and picks`)
+    check(plan.purchases.length <= 40, `${label} next life plan holds too many purchases`)
+    check(plan.purchases.every((entry) => typeof entry === 'object' && entry !== null && typeof (entry as { kind?: unknown }).kind === 'string' && ((entry as { attribute?: unknown }).attribute === undefined || typeof (entry as { attribute?: unknown }).attribute === 'string')), `${label} next life plan purchases must name a kind`)
+    // A blank pick is an empty heirloom slot, so empty text is allowed here.
+    check(plan.picks.every((id) => typeof id === 'string'), `${label} next life plan picks must be text`)
+    check(plan.picks.length <= 3, `${label} next life plan holds at most 3 heirloom picks`)
   }
   if (value.pastLoadouts !== undefined) {
     check(Array.isArray(value.pastLoadouts) && value.pastLoadouts.length <= MAX_PAST_SETUPS, `${label} past loadouts hold at most ${MAX_PAST_SETUPS} lives`)
