@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.19.0 · 2026-11-21 · Between lives and the Assassin passive
 
 - Fixed: reincarnating restores every piece of gear to full durability, so a new life does not start on the last life's wear.
 - Improved: a new life wears each heirloom that fits, in place of the starter piece.
