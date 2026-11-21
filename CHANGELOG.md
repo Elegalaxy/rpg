@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Tech: a new balance check (`--matrix toxic`) runs the Assassin with the Toxic nodes against every elite, so the boss Poison cap fix is guarded; no game change. [13.48]
 - Tech: measured the Assassin's Envenomed strikes at its 8% base tick without the Venom Edge node; it falls 16 points short against the Warden, a 10% base would pass, nothing changed in the game. [13.47]
 - Improved: Auto run can repair worn gear at home between runs at the normal price (new Repair at home option next to the contracts one); anything it cannot afford stays worn, and the away report says what was repaired. [13.49]
 - Improved: Make heirloom now shows its item list only when a slot is free; the list puts your best pieces first and marks worn ones, and otherwise the screen just gives the reason. [13.46]

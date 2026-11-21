@@ -1220,6 +1220,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-22: Part 1 done (design recorded).
   - 2026-11-22: Part 2 done. `persist/autoRepair.ts` (`autoRepairStep`, `repairLine`), `autoRepair` on the hero, draft and save check, calls in `ui/store.ts` and `persist/offline.ts` (`repairedPieces`, `repairGold`), away line in `AwayPanel.tsx`, checkbox in `ExpeditionPanel.tsx`, Guide sentence; tests in `autoRepair.test.ts`, `autoRun.test.tsx`, `preparation.test.ts`, `AwayPanel.test.tsx`.
 
+### Step 13.48: Guard matrix for the Toxic nodes
+- Status: `done`
+- Depends on: 13.39
+- Goal: a new harness matrix `toxic` runs the Assassin with Toxic Opportunity and with Toxic Sovereign at the Warden and every elite, so the boss Poison cap fix has a guard (GAME_DESIGN §10 "Toxic guard matrix"). Baseline output recorded there. The nine existing matrices stay byte-identical.
+- Progress:
+  - 2026-11-22: Done. `src/harness/toxic.ts` (`runToxicMatrix`, `formatToxicTable`), `--matrix toxic` in `cli.ts`, tests in `toxic.test.ts` (nodes per build, one line per row, determinism, Toxic Opportunity peak Poison stacks above plain at the Warden). Reference, telegraph, built, modded, cinder, hollows, warden, causeway and elites at `--seed 1 --runs 5` are byte-identical before and after, and so are the reference and modded CSVs.
+
 ### Step 13.47: Measure the Assassin passive's 8% base tick alone
 - Status: `done`
 - Depends on: 13.39

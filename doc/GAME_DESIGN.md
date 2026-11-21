@@ -2913,6 +2913,57 @@ Per seed, Warden prepared: `live-nonode` -9, -16, -23; `live-base09-nonode` -5, 
 
 Verdict: the 8% base tick fails the rule. Warden prepared is 16.0 points below `current` (limit 8, so 8.0 over), and on the clean 12 cells the prepared tier is 12.3 below (4.3 over); the other tiers, the crossings (1 of 16) and the median win time (-2.7%) pass. It is the boss cell again, the same cause as before (a passive stacks Poison without the old Venom Edge's direct hit, and the 8% tick is too weak to make that up at the Poison boss cap), not a runaway. A passing base tick is 10% (Warden prepared -7.3, prepared tier -4.1 on the 12 cells, every other check inside the band); 9% still fails (Warden prepared -9.7, prepared tier -8.2 on the 12 cells). Nothing is applied: with a 10% base the Venom Edge node would have no tick left to raise, so shipping it needs a decision on what that node does instead, or on keeping 8% and a different compensation (the node is the only thing that makes the shipped Assassin pass at the Warden). Decision on this is the user's.
 
+Toxic guard matrix (Step 13.48, 2026-11-22): `npm run sim -- --matrix toxic --seed 1 --runs 5` (`src/harness/toxic.ts`). No other guard carries Toxic Opportunity or Toxic Sovereign, so the boss Poison cap fix (`ENVENOM.toxicBossCapFactor`) had none. The matrix runs the shipped Assassin (rules mode, real `gameDefs()`) against every elite cell in three builds: `plain` (reference build), `toxic-opportunity` and `toxic-sovereign` (Toxic Opportunity then Toxic Sovereign allocated through the node chain). One line per row: wins, median win time, Poison uptime, mean peak Poison stacks. Deterministic, no CSV, existing matrices unchanged (all nine at `--seed 1 --runs 5` are byte-identical before and after). The signature to watch is the Warden: `plain` peaks at 4 stacks (the boss cap is 60% of 7, rounded) and both Toxic builds reach 7; if a change drops the Toxic peak at the Warden to 4, the cap fix broke. Baseline (seed 1, 5 runs, 2026-11-22; diff future output against it):
+
+```
+[sim] matrix toxic seed 1 runs 5
+assassin warden prepared plain: wins 20% | median 64.0s | poison uptime 97% | peak stacks 4.0
+assassin warden prepared toxic-opportunity: wins 60% | median 59.4s | poison uptime 96% | peak stacks 7.0
+assassin warden prepared toxic-sovereign: wins 60% | median 56.2s | poison uptime 96% | peak stacks 7.0
+assassin warden over plain: wins 100% | median 45.7s | poison uptime 96% | peak stacks 4.0
+assassin warden over toxic-opportunity: wins 100% | median 47.6s | poison uptime 96% | peak stacks 7.0
+assassin warden over toxic-sovereign: wins 100% | median 46.3s | poison uptime 96% | peak stacks 7.0
+assassin warden causeway plain: wins 100% | median 49.7s | poison uptime 96% | peak stacks 4.0
+assassin warden causeway toxic-opportunity: wins 100% | median 48.8s | poison uptime 96% | peak stacks 7.0
+assassin warden causeway toxic-sovereign: wins 100% | median 45.8s | poison uptime 96% | peak stacks 7.0
+assassin warden prepared-crafted plain: wins 100% | median 67.0s | poison uptime 97% | peak stacks 4.0
+assassin warden prepared-crafted toxic-opportunity: wins 80% | median 60.4s | poison uptime 96% | peak stacks 7.0
+assassin warden prepared-crafted toxic-sovereign: wins 80% | median 57.9s | poison uptime 96% | peak stacks 7.0
+assassin colossus arrived plain: wins 0% | median n/a | poison uptime 96% | peak stacks 7.0
+assassin colossus arrived toxic-opportunity: wins 0% | median n/a | poison uptime 96% | peak stacks 7.0
+assassin colossus arrived toxic-sovereign: wins 0% | median n/a | poison uptime 96% | peak stacks 7.0
+assassin colossus prepared plain: wins 20% | median 63.7s | poison uptime 97% | peak stacks 7.0
+assassin colossus prepared toxic-opportunity: wins 60% | median 62.8s | poison uptime 97% | peak stacks 7.0
+assassin colossus prepared toxic-sovereign: wins 60% | median 62.8s | poison uptime 97% | peak stacks 7.0
+assassin colossus over plain: wins 100% | median 47.7s | poison uptime 96% | peak stacks 7.0
+assassin colossus over toxic-opportunity: wins 100% | median 48.2s | poison uptime 96% | peak stacks 7.0
+assassin colossus over toxic-sovereign: wins 100% | median 48.2s | poison uptime 96% | peak stacks 7.0
+assassin colossus prepared-crafted plain: wins 80% | median 66.3s | poison uptime 97% | peak stacks 7.0
+assassin colossus prepared-crafted toxic-opportunity: wins 80% | median 62.8s | poison uptime 97% | peak stacks 7.0
+assassin colossus prepared-crafted toxic-sovereign: wins 80% | median 62.8s | poison uptime 97% | peak stacks 7.0
+assassin reaver prepared plain: wins 80% | median 36.9s | poison uptime 95% | peak stacks 7.0
+assassin reaver prepared toxic-opportunity: wins 100% | median 35.6s | poison uptime 95% | peak stacks 7.0
+assassin reaver prepared toxic-sovereign: wins 100% | median 35.6s | poison uptime 95% | peak stacks 7.0
+assassin reaver over plain: wins 100% | median 32.2s | poison uptime 95% | peak stacks 7.0
+assassin reaver over toxic-opportunity: wins 100% | median 31.9s | poison uptime 95% | peak stacks 7.0
+assassin reaver over toxic-sovereign: wins 100% | median 31.9s | poison uptime 95% | peak stacks 7.0
+assassin reaver prepared-crafted plain: wins 80% | median 36.3s | poison uptime 95% | peak stacks 7.0
+assassin reaver prepared-crafted toxic-opportunity: wins 80% | median 36.9s | poison uptime 95% | peak stacks 7.0
+assassin reaver prepared-crafted toxic-sovereign: wins 80% | median 36.9s | poison uptime 95% | peak stacks 7.0
+assassin tyrant arrived plain: wins 40% | median 47.7s | poison uptime 96% | peak stacks 7.0
+assassin tyrant arrived toxic-opportunity: wins 40% | median 49.1s | poison uptime 96% | peak stacks 7.0
+assassin tyrant arrived toxic-sovereign: wins 40% | median 48.3s | poison uptime 96% | peak stacks 7.0
+assassin tyrant prepared plain: wins 80% | median 42.3s | poison uptime 96% | peak stacks 7.0
+assassin tyrant prepared toxic-opportunity: wins 100% | median 40.0s | poison uptime 96% | peak stacks 7.0
+assassin tyrant prepared toxic-sovereign: wins 100% | median 40.0s | poison uptime 96% | peak stacks 7.0
+assassin tyrant over plain: wins 100% | median 37.6s | poison uptime 96% | peak stacks 7.0
+assassin tyrant over toxic-opportunity: wins 100% | median 38.5s | poison uptime 95% | peak stacks 7.0
+assassin tyrant over toxic-sovereign: wins 100% | median 38.5s | poison uptime 95% | peak stacks 7.0
+assassin tyrant prepared-crafted plain: wins 100% | median 42.3s | poison uptime 96% | peak stacks 7.0
+assassin tyrant prepared-crafted toxic-opportunity: wins 100% | median 40.0s | poison uptime 96% | peak stacks 7.0
+assassin tyrant prepared-crafted toxic-sovereign: wins 100% | median 40.0s | poison uptime 96% | peak stacks 7.0
+```
+
 Saves (Step 13.39 part 4): the one-time hero update `assassin-venom-passive` runs after validation for every Assassin that does not have it. It removes Venom Edge from the loadout and the learned list, drops every rule naming it, removes "skill is ready" conditions that name it (a rule stack whose only trigger was such a condition is dropped), and removes it from the kept setup of earlier lives (`pastLoadout`, `waitingSkillIds`). The Venom Edge node stays allocated and now raises the passive tick. A loadout that shrinks keeps its free slot. No save version change; new heroes start with the update recorded.
 
 ### Later lives (Step 13.18)
