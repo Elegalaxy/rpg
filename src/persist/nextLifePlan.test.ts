@@ -106,7 +106,7 @@ describe('saved next life plan (Step 13.43)', () => {
     expect(planned.heroes[0]!.nextLifePlan).toBeDefined()
     const result = reincarnate(planned, hero.id, [], [{ kind: 'stockpile' }])
     expect(result.ok).toBe(true)
-    if (result.ok) expect(result.hero.nextLifePlan).toBeUndefined()
+    if (result.ok) expect(result.save.heroes[0]!.nextLifePlan).toBeUndefined()
   })
 
   it('does not change the ending life, the prices or the reincarnation result', () => {
