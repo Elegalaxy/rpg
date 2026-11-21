@@ -36,7 +36,7 @@ import {
   ZEAL_BASE,
   type ClericVow,
 } from '../../sim/classes/cleric.ts'
-import { CRAFT_MS, SOCKET_MIN_HERO_LEVEL, recipePrice } from '../../persist/crafting.ts'
+import { CRAFT_MS, SOCKET_MIN_HERO_LEVEL, UPGRADE_MS, recipePrice } from '../../persist/crafting.ts'
 import { PACKS } from '../../persist/pack.ts'
 import { CLASS_PREFERENCE, HERO_CLASSES, type HeroClass } from '../../sim/constants.ts'
 import {
@@ -386,7 +386,8 @@ function gearFacts(): GuideFact[] {
     { label: 'Sockets unlock at hero level', value: String(SOCKET_MIN_HERO_LEVEL) },
     { label: 'Top modifier rank', value: rankName(MODIFIER_RANK_MAX) },
     { label: 'Top temper', value: String(MODIFIER_TEMPER_MAX) },
-    { label: 'Crafting job time', value: `${CRAFT_MS / 1000} s` },
+    { label: 'Craft, socket, infuse, rank and pack', value: `${CRAFT_MS / 1000} s` },
+    { label: 'Upgrade', value: `${UPGRADE_MS / 1000} s` },
   ]
 }
 

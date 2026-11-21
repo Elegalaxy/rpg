@@ -21,6 +21,8 @@ export function upgradeMaterialCost(materialId: string): number {
   return UPGRADE_MATERIAL_COST_BY_MATERIAL[materialId] ?? UPGRADE_MATERIAL_COST
 }
 export const CRAFT_MS = 30_000
+/** One upgrade, in milliseconds. Shorter than a craft because a set is many jobs (decided 2026-11-21). */
+export const UPGRADE_MS = 10_000
 /** The hero level that unlocks sockets (GAME_DESIGN section 9, "Gold sinks"). */
 export const SOCKET_MIN_HERO_LEVEL = 10
 /** Gold per item level to open a socket. */
@@ -350,7 +352,7 @@ export function queueUpgrade(save: SaveData, heroId: string, itemId: string, mat
     item,
     ...(slot === null ? {} : { slot }),
     materialId,
-    remainingMs: CRAFT_MS,
+    remainingMs: UPGRADE_MS,
     seedIndex: hero.purse.craftCounter,
     rank: proficiencyRank(hero.craftXp),
   }
@@ -754,7 +756,7 @@ export function packCheck(save: SaveData, hero: SavedHero, packId: PackId, mater
   return spend(hero.purse, materialId, def.units, def.gold)
 }
 
-/** Pay for a pack and queue it (30 s, like every job). The slots change when the job ends. */
+/** Pay for a pack and queue it (30 s, the same as a craft). The slots change when the job ends. */
 export function queuePack(save: SaveData, heroId: string, packId: PackId, materialId: string): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }

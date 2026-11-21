@@ -9,6 +9,7 @@ import { selectedHero } from '../../persist/character.ts'
 import {
   CRAFT_MATERIAL_COST,
   CRAFT_MS,
+  UPGRADE_MS,
   MATERIAL_QUALITY,
   UPGRADE_QUALITY_POINTS,
   planUpgradeAll,
@@ -313,7 +314,7 @@ export function Craft({ accepts = () => true, part }: { accepts?: (baseId: strin
                     {percent(item.quality)} → {percent(upgradedQuality(item.quality, material))}
                   </dd>
                   <dt>Time</dt>
-                  <dd>{CRAFT_MS / 1000} s</dd>
+                  <dd>{UPGRADE_MS / 1000} s</dd>
                 </dl>
               }
               note={block ?? undefined}

@@ -8,6 +8,7 @@ import { ITEM_MODIFIERS, STARTING_MODIFIER_RECIPES } from '../sim/economy.ts'
 import { selectedHero } from './character.ts'
 import {
   CRAFT_MS,
+  UPGRADE_MS,
   advanceCrafting,
   buyRecipe,
   recipePrice,
@@ -214,8 +215,9 @@ describe('upgrades', () => {
       expect(purseOf(queued).archive).toEqual([])
       expect(purseOf(queued).materials.scrap).toBe(27)
       expect(purseOf(queued).gold).toBe(300 - 6)
-      expect(purseOf(queued).craftQueue[0]).toMatchObject({ kind: 'upgrade', materialId: 'scrap' })
-      const done = advanceCrafting(queued, CRAFT_MS)
+      expect(purseOf(queued).craftQueue[0]).toMatchObject({ kind: 'upgrade', materialId: 'scrap', remainingMs: UPGRADE_MS })
+      expect(advanceCrafting(queued, UPGRADE_MS - 1).finished).toEqual([])
+      const done = advanceCrafting(queued, UPGRADE_MS)
       const item = purseOf(done.save).archive[0]!
       expect(item).toEqual(newItem('old', 'weapon-bow', 3, 1.05))
       expect(done.finished[0]?.text).toMatch(/upgraded to item level 3/)
@@ -260,10 +262,10 @@ describe('chained upgrades and Queue all', () => {
     expect(() => assertSaveData(chained)).not.toThrow()
     expect(parseSave(serializeSave(chained)).ok).toBe(true)
 
-    const first = advanceCrafting(chained, CRAFT_MS)
+    const first = advanceCrafting(chained, UPGRADE_MS)
     expect(purseOf(first.save).archive).toEqual([])
     expect(hero(first.save).craftXp).toBe(1)
-    const both = advanceCrafting(first.save, CRAFT_MS)
+    const both = advanceCrafting(first.save, UPGRADE_MS)
     const sequential = finish(ok(queueUpgrade(finish(ok(queueUpgrade(chainSave(), 'hero-1', 'old', 'hide'))), 'hero-1', 'old', 'shard')))
     expect(purseOf(both.save).archive).toEqual(purseOf(sequential).archive)
     expect(purseOf(both.save).archive[0]).toMatchObject({ itemLevel: 4 })
@@ -285,7 +287,7 @@ describe('chained upgrades and Queue all', () => {
     let save = ok(queueUpgrade(base, 'hero-1', 'hero-1-mainHand', 'scrap'))
     save = ok(queueUpgrade(save, 'hero-1', 'hero-1-mainHand', 'scrap'))
     expect(purseOf(save).craftQueue.map((job) => job.kind === 'upgrade' && job.slot)).toEqual(['mainHand', 'mainHand'])
-    const middle = advanceCrafting(save, CRAFT_MS).save
+    const middle = advanceCrafting(save, UPGRADE_MS).save
     expect(hero(middle).equipment.mainHand).toBeNull()
     const end = finish(save)
     expect(hero(end).equipment.mainHand?.itemLevel).toBe(hero(base).equipment.mainHand!.itemLevel + 2)
