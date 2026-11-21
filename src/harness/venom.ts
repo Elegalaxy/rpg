@@ -34,6 +34,9 @@ export const VENOM_CELLS: readonly EliteCell[] = [
 
 export const cellKey = (cell: EliteCell): string => `${cell.elite}:${cell.tier}`
 
+/** Candidate jobs for the Venom Edge node after the base tick becomes 10% (Step 13.50): +1 Poison cap, a 11% tick, a 15% basic bonus, or nothing. */
+export type NodeJob = 'cap' | 'tick11' | 'basic15' | 'none'
+
 export type VenomVariant = {
   id: string
   /** Passive settings; absent means no `envenom` (the `current` family). */
@@ -44,6 +47,8 @@ export type VenomVariant = {
   toxic?: { anyHit: boolean; every?: number; cooldownMs?: number; bossCap?: number }
   /** The Venom Edge node is not allocated (Step 13.47: measures the 8% base tick on its own). */
   noNode?: boolean
+  /** Step 13.50: the 10% base tick with the Venom Edge node allocated and this job on the node. */
+  nodeJob?: NodeJob
   /** `live` with this base tick (`live-baseNN-nonode`, Step 13.47): what a different base tick would measure without the node. */
   baseTick?: number
   /** Venom Edge is dropped from the equipped skills and rows. */
@@ -64,6 +69,8 @@ export function parseVariant(id: string): VenomVariant {
   if (head === 'current-nonode') return { id, noNode: true, dropVenomEdge: false, fan: false, modifier }
   if (head === 'live') return { id, live: true, dropVenomEdge: false, fan: false, modifier }
   if (head === 'live-nonode') return { id, live: true, noNode: true, dropVenomEdge: false, fan: false, modifier }
+  const node = /^n10-(cap|tick11|basic15|none)$/.exec(head)
+  if (node !== null) return { id, live: true, nodeJob: node[1] as NodeJob, dropVenomEdge: false, fan: false, modifier }
   const base = /^live-base(\d\d)-nonode$/.exec(head)
   if (base !== null) return { id, live: true, noNode: true, baseTick: Number(base[1]) / 100, dropVenomEdge: false, fan: false, modifier }
   const cap = /^live-(any-)?cap(\d+)$/.exec(head)
@@ -116,6 +123,19 @@ export function venomDefs(variant: VenomVariant, base: GameDefs = gameDefs()): G
   // `gameDefs()` carries the live passive since 13.39; the measurement variants decide on their own.
   let defs: GameDefs = variant.live === true ? base : { ...base, envenom: undefined }
   if (variant.baseTick !== undefined && base.envenom !== undefined) defs = { ...defs, envenom: { ...base.envenom, coefficient: variant.baseTick } }
+  if (variant.nodeJob !== undefined && base.envenom !== undefined) {
+    const job = variant.nodeJob
+    defs = {
+      ...defs,
+      envenom: {
+        ...base.envenom,
+        coefficient: 0.1,
+        nodeCoefficient: job === 'tick11' ? 0.11 : 0.1,
+        ...(job === 'basic15' ? { nodeBasicBonus: 0.15 } : {}),
+        ...(job === 'cap' ? { nodeCapBonus: 1 } : {}),
+      },
+    }
+  }
   if (variant.toxic !== undefined && base.envenom !== undefined) {
     defs = { ...defs, envenom: { ...base.envenom, toxicAnyHit: variant.toxic.anyHit, toxicEvery: variant.toxic.every, toxicCooldownMs: variant.toxic.cooldownMs, toxicBossCapFactor: variant.toxic.bossCap } }
   }
@@ -256,10 +276,15 @@ export type TierSummary = {
 }
 
 /** `current` with the same modifier is the baseline of a variant (`+to` compares with `current+to`). */
+let baselineName = 'current'
+/** Step 13.50 runaway check: `report` with `VENOM_BASELINE=live` judges variants against the shipped `live` build instead of `current`. */
+export const setBaseline = (name: string): void => {
+  baselineName = name
+}
 export const baselineOf = (variantId: string): string => {
-  // `current-nonode` is a reference row only (Step 13.47); everything is judged against `current`.
+  // `current-nonode` is a reference row only (Step 13.47); everything is judged against `current` (or `live`, see `setBaseline`).
   const suffix = variantId.includes('+') ? `+${variantId.split('+')[1]}` : ''
-  return `current${suffix}`
+  return `${baselineName}${suffix}`
 }
 
 const rowsFor = (shards: readonly VenomShard[], variant: string, seed: number) => shards.find((shard) => shard.variant === variant && shard.seed === seed)?.rows ?? []
@@ -376,6 +401,7 @@ export function formatVenomReport(shards: readonly VenomShard[]): { text: string
 function main(args: readonly string[]): void {
   const [mode, ...rest] = args
   if (mode === 'report' && rest[0] !== undefined) {
+    if (process.env.VENOM_BASELINE === 'live') setBaseline('live')
     const report = formatVenomReport(loadShards(rest[0], (process.env.VENOM_EXCLUDE ?? '').split(',').filter((id) => id !== '')))
     process.stdout.write(report.text)
     if (rest[1] !== undefined) {

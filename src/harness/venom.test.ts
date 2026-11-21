@@ -38,6 +38,18 @@ describe('venom passive harness (Step 13.39)', () => {
     expect(baselineOf('live-nonode')).toBe('current')
   })
 
+  it('the n10 variants keep the node and put a job on it with the 10% base (Step 13.50)', () => {
+    for (const id of ['n10-cap', 'n10-tick11', 'n10-basic15', 'n10-none']) {
+      expect(venomSetup(parseVariant(id), cell).hero.allocatedNodeIds).toContain('assassin-venom-edge')
+      expect(venomDefs(parseVariant(id)).envenom).toMatchObject({ coefficient: 0.1 })
+    }
+    expect(venomDefs(parseVariant('n10-none')).envenom).toMatchObject({ nodeCoefficient: 0.1 })
+    expect(venomDefs(parseVariant('n10-tick11')).envenom).toMatchObject({ nodeCoefficient: 0.11 })
+    expect(venomDefs(parseVariant('n10-basic15')).envenom).toMatchObject({ nodeBasicBonus: 0.15 })
+    expect(venomDefs(parseVariant('n10-cap')).envenom).toMatchObject({ nodeCapBonus: 1 })
+    expect(baselineOf('n10-cap+to')).toBe('current+to')
+  })
+
   it('`current` stays within the 12-row cap on every cell, dropping the Burn Tonic row on the Tyrant builds (Step 13.47)', () => {
     for (const entry of VENOM_CELLS) {
       const rows = venomSetup(parseVariant('current'), entry).hero.priorityRows ?? []

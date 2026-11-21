@@ -83,6 +83,8 @@ const STATE_BASIC_BONUS = 'envenomBasicBonus'
 const STATE_SHADOW_BONUS = 'envenomShadowBonus'
 const STATE_TOXIC_COUNT = 'toxicHitCount'
 const STATE_BOSS_CAP = 'envenomBossCap'
+/** Measurement only (Step 13.50): extra Poison stacks the Venom Edge node grants. */
+const STATE_NODE_CAP = 'envenomNodeCap'
 const STATE_TOXIC_LAST = 'toxicLastMs'
 const STATE_AMBUSH_ARMED = 'ambushArmed'
 const STATE_AMBUSH_ACTIVE = 'ambushActive'
@@ -439,11 +441,15 @@ function clearExecuteAdjust(hero: CombatHero): void {
 }
 
 function poisonCap(hero: CombatHero, boss: boolean): number {
-  const normal = hasNode(hero, NODE_POTENT_TOXINS) ? POTENT_POISON_CAP : POISON_MAX_STACKS
+  const normal = (hasNode(hero, NODE_POTENT_TOXINS) ? POTENT_POISON_CAP : POISON_MAX_STACKS) + nodeCapBonus(hero)
   if (!boss) return normal
   const factor = hasNode(hero, NODE_TOXIC_OPPORTUNITY) ? (stateNumber(hero, STATE_BOSS_CAP) ?? BOSS_STACK_CAP_FACTOR) : BOSS_STACK_CAP_FACTOR
   const scaled = Math.round(normal * factor)
   return scaled < 1 ? 1 : scaled
+}
+
+function nodeCapBonus(hero: CombatHero): number {
+  return hasNode(hero, NODE_VENOM_EDGE) ? (stateNumber(hero, STATE_NODE_CAP) ?? 0) : 0
 }
 
 function poisonDurationMs(hero: CombatHero, boss: boolean): number {
@@ -590,13 +596,16 @@ export function poisonApplicationAdjust(
   source: CombatActor,
 ): { maxStacks: number; durationSeconds: number; potencyBonus: number; bossCapFactor?: number } | null {
   const hero = assassinHero(source)
-  if (hero === null || !hasNode(hero, NODE_POTENT_TOXINS)) return null
-  const bossCap = hasNode(hero, NODE_TOXIC_OPPORTUNITY) ? stateNumber(hero, STATE_BOSS_CAP) : null
+  if (hero === null) return null
+  const potent = hasNode(hero, NODE_POTENT_TOXINS)
+  const capBonus = nodeCapBonus(hero)
+  if (!potent && capBonus === 0) return null
+  const bossCap = potent && hasNode(hero, NODE_TOXIC_OPPORTUNITY) ? stateNumber(hero, STATE_BOSS_CAP) : null
   return {
     ...(bossCap === null ? {} : { bossCapFactor: bossCap }),
-    maxStacks: POTENT_POISON_CAP,
-    durationSeconds: POTENT_POISON_SECONDS,
-    potencyBonus: POTENT_POISON_POTENCY,
+    maxStacks: (potent ? POTENT_POISON_CAP : POISON_MAX_STACKS) + capBonus,
+    durationSeconds: potent ? POTENT_POISON_SECONDS : POISON_DURATION_SECONDS,
+    potencyBonus: potent ? POTENT_POISON_POTENCY : 0,
   }
 }
 
@@ -622,10 +631,12 @@ function encounterStart(state: CombatState, timeMs: number, defs?: GameDefs): vo
   state.hero.resourceFraction = 0
   state.hero.pendingCoefficient = null
   const envenom = defs?.envenom
-  if (envenom?.basicBonus !== undefined && stateNumber(state.hero, STATE_BASIC_BONUS) === null) {
-    state.hero.fillerCoefficient *= 1 + envenom.basicBonus
-    setState(state.hero, STATE_BASIC_BONUS, envenom.basicBonus)
+  const basicBonus = hasNode(state.hero, NODE_VENOM_EDGE) ? (envenom?.nodeBasicBonus ?? envenom?.basicBonus) : envenom?.basicBonus
+  if (basicBonus !== undefined && stateNumber(state.hero, STATE_BASIC_BONUS) === null) {
+    state.hero.fillerCoefficient *= 1 + basicBonus
+    setState(state.hero, STATE_BASIC_BONUS, basicBonus)
   }
+  if (envenom?.nodeCapBonus !== undefined) setState(state.hero, STATE_NODE_CAP, envenom.nodeCapBonus)
   if (envenom?.toxicBossCapFactor !== undefined) setState(state.hero, STATE_BOSS_CAP, envenom.toxicBossCapFactor)
   if (envenom?.shadowCutBonus !== undefined) setState(state.hero, STATE_SHADOW_BONUS, envenom.shadowCutBonus)
   defineClassResource(state, timeMs, {

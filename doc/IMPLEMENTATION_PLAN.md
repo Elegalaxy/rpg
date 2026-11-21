@@ -1216,7 +1216,8 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Depends on: 13.47, 13.48
 - Goal: user decision 2026-11-22: the Envenomed strikes base tick becomes 10% (an Assassin without the node passes the Warden rule). Measure four candidate jobs for the Venom Edge node (+1 Poison cap, +1% tick, +5% basic bonus, nothing), pick the weakest that passes, then apply: ENVENOM, node text, Guide, re-baselined Assassin guard lines, Toxic baseline, CHANGELOG (GAME_DESIGN §10 "Venom Edge node after the 10% base"). No save migration expected (the node stays allocated).
 - Progress:
-  - 2026-11-22: Plan and design subsection written, worktree `venom-base`. Measurement next.
+  - 2026-11-22: Plan and design subsection written, worktree `venom-base`.
+  - 2026-11-22: Measured (harness only: variants `n10-cap|tick11|basic15|none`, sim hooks `nodeBasicBonus`/`nodeCapBonus`, `VENOM_BASELINE=live`). Only (d) no numbers passes; (a), (b), (c) break the Warden prepared +/-8 with the Toxic nodes, (c) also the runaway limit. (d) equals the shipped node-allocated build exactly. Content next.
 
 ### Step 13.49: Auto run repair at home
 - Status: `done`
