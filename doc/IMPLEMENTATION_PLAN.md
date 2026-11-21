@@ -1211,6 +1211,37 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.45: Legacy "Make heirloom now" always visible
+- Status: `todo`
+- Depends on: 13.36
+- Goal: the Legacy block for making an heirloom is always shown for a hero; when it cannot be used it says why (no free slot with slots owned and used, nothing claimable, or an expedition running).
+- Progress:
+
+### Step 13.44: Gear mix-up and safe selling
+- Status: `todo`
+- Depends on: 13.37
+- Goal: the shop's Sell list and the archive are grouped (Worn; Heirlooms and kept gear; Earlier lives; Current life) with badges; risky gear needs a two-step sell (GAME_DESIGN §9 "Safe selling (Step 13.44)"). No undo. Heirlooms stay unsellable, shown disabled with the reason.
+- Progress:
+
+### Step 13.43: Keep the between-lives plan
+- Status: `todo`
+- Depends on: 13.36
+- Goal: the staged purchases and heirloom picks of the Between lives planner are saved on the hero and survive a reload; stale entries are dropped with a notice (GAME_DESIGN §10 "Saved between-lives plan (Step 13.43)").
+- Progress:
+
+### Step 13.42: Keep three past loadouts
+- Status: `todo`
+- Depends on: 13.37
+- Goal: the hero keeps the setups of the last three lives (newest first) instead of one, so reincarnating twice quickly no longer forgets the older one (GAME_DESIGN §10 "Combat setup across lives (Step 13.37)", Step 13.42 addendum).
+- Progress:
+
+### Step 13.41: Hunter's Mark rule template
+- Status: `done`
+- Depends on: 13.40
+- Goal: a Ranger rule template "Top up Readiness": Hunter's Mark when Readiness is at most 60, then a blank slot (GAME_DESIGN §7 templates table). Plus a Guide tip. Content data and UI text only; no sim change, guards identical.
+- Progress:
+  - 2026-11-21: Done (1582 tests pass). Template in `content/ruleTemplates.ts`, Ranger Guide tip in `content/guide.ts`, tests in `persist/ruleTemplates.test.ts`.
+
 ### Step 13.40: Hunter's Mark grants Readiness
 - Status: `done`
 - Depends on: 13.35

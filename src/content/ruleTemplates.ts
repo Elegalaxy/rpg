@@ -137,6 +137,21 @@ export const ruleTemplates: readonly RuleTemplate[] = [
     unlockHint: UNLOCK_HINTS.open,
   },
   {
+    id: 'ranger-top-up-readiness',
+    name: 'Top up Readiness',
+    classId: 'ranger',
+    kind: 'rows',
+    situation: 'damage',
+    summary: 'Refill Readiness with a quick reveal when it runs low, so the shots keep coming.',
+    tradeOff: 'Only refills Readiness: the damage rows are yours to add.',
+    rows: [
+      { skillId: 'hunters-mark', hint: SLOT_HINT, condition: { type: 'resource', operator: 'atMost', value: '60' } },
+      { skillId: null, hint: 'Choose what to do when Readiness is high.' },
+    ],
+    unlock: 'open',
+    unlockHint: UNLOCK_HINTS.open,
+  },
+  {
     id: 'ranger-dont-get-hit',
     name: "Don't get hit",
     classId: 'ranger',

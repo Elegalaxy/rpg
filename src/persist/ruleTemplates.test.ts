@@ -153,3 +153,33 @@ describe('supply templates', () => {
     }
   })
 })
+
+describe('Top up Readiness template (Step 13.41)', () => {
+  const template = ruleTemplates.find((entry) => entry.id === 'ranger-top-up-readiness')!
+
+  it('is offered only to a Ranger and is open from the start', () => {
+    for (const classId of HERO_CLASSES) {
+      const { save, hero } = heroOf(classId)
+      const option = templatesFor(hero, save).find((entry) => entry.template.id === template.id)
+      if (classId === 'ranger') expect(option?.unlocked).toBe(true)
+      else expect(option).toBeUndefined()
+    }
+  })
+
+  it('uses Hunter\'s Mark at Readiness at most 60 when the hero has it, with a blank second slot', () => {
+    const { hero } = heroOf('ranger')
+    const equipped: SavedHero = { ...hero, progress: { ...hero.progress, loadout: [...hero.progress.loadout, 'hunters-mark'] } }
+    const applied = applyTemplate(equipped, template, [])
+    expect(applied.rows[0]!.skillId).toBe('hunters-mark')
+    expect(applied.rows[0]!.conditions[0]).toMatchObject({ type: 'resource', operator: 'atMost', value: '60' })
+    expect(applied.rows[1]!.skillId).toBe('')
+    expect(validateRules(equipped, applied.rows).ok).toBe(false)
+  })
+
+  it('leaves a blank slot with the generic hint when Hunter\'s Mark is not equipped', () => {
+    const { hero } = heroOf('ranger')
+    const applied = applyTemplate({ ...hero, progress: { ...hero.progress, loadout: hero.progress.loadout.filter((id) => id !== 'hunters-mark') } }, template, [])
+    expect(applied.rows[0]!.skillId).toBe('')
+    expect(applied.notes[0]).toContain('Pick one of your equipped skills here.')
+  })
+})

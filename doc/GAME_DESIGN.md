@@ -1945,7 +1945,7 @@ Decided 2026-11-16 (Step 13.13, user approved the planner's defaults). Presentat
 - **Stack router.** When extra stacks exist, one row per stack in priority order shows its trigger sentence, an Auto or Manual only tag and the fire count, ending in "Otherwise: Default". Each row selects that chain. The stack card (name, Switch-when editor, Move, Duplicate, Delete with confirm) stays above the selected chain.
 - **Fire counts.** "Used N×" counts `priority` events with decision `use` for that row in the fight currently running, attributing rows to a stack by walking `stackChanged` events. Without a log it reads "—". Nothing is saved.
 - **Templates are scaffolds, never solutions.** Every template has at least one blank (an empty threshold that validation refuses to save, or an empty skill slot with a hint) and a one-line trade-off on its card. A template uses only the hero's own skills (`ruleSkillIds`); a row naming a skill the hero lacks becomes a blank slot with a generic hint that names no other skill. At most 4 rows and at most one condition per row. Applying a template writes into the draft only (a new stack for a stack template; the selected chain's rows for a rows template, with a confirm when those rows are not empty); nothing is saved until Save rules, and the result keeps no link to the template.
-- **Unlocks** come from existing save fields only: the hero's `defeatedEnemyIds` and the account's defeat records read through the enemy definitions, never a new save field. Each class has 1 to 2 templates open from the start. Locked cards are disabled and show the unlock hint.
+- **Unlocks** come from existing save fields only: the hero's `defeatedEnemyIds` and the account's defeat records read through the enemy definitions, never a new save field. Each class has 1 to 2 templates open from the start. "Top up Readiness" (Step 13.41) is the Ranger's second open template: row 1 uses Hunter's Mark when Readiness is at most 60 (the measured HM-R row, §10 "Hunter's Mark grants Readiness (Step 13.40)"), row 2 is a blank slot. A Ranger who has not learned Hunter's Mark gets a blank slot with the generic hint, like every other template. Locked cards are disabled and show the unlock hint.
 
 | Template | Class | Kind | Blank | Trade-off | Unlock |
 | --- | --- | --- | --- | --- | --- |
@@ -1954,6 +1954,7 @@ Decided 2026-11-16 (Step 13.13, user approved the planner's defaults). Presentat
 | Mark then cut | Assassin | rows | payoff skill slot | Steady damage with no finisher. | open |
 | Many blades | Assassin | stack | enemy count | Wastes Mark and has no finisher. | defeat a swarm enemy (group fight) |
 | Open strong | Ranger | rows | Readiness threshold, skill slot for when it runs dry | Strong opener, then nothing planned. | open |
+| Top up Readiness | Ranger | rows | skill slot for when Readiness is high | Only refills Readiness: the damage rows are yours to add. | open |
 | Don't get hit | Ranger | stack | telegraph time | Only dodges and traps, no damage. | defeat an enemy that telegraphs |
 | Mana budget | Mage | rows | Mana thresholds | No area damage and no ward. | open |
 | Crowd burn | Mage | stack | enemy count | Burns Mana with no recovery row. | defeat a swarm enemy |

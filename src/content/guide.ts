@@ -136,6 +136,7 @@ export const classGuide: Record<HeroClass, TipEntry> = {
   ranger: {
     tips: [
       'Readiness fills while the hero travels, so a Ranger starts each fight ready to open with aimed shots and traps.',
+      "Hunter's Mark is a cheap reveal that also gives Readiness. A rule that uses it when Readiness is low keeps the shots coming; the Top up Readiness template sets that rule up.",
       'Special arrows sit in a quiver and are spent by certain skills. Keep an eye on how many are left.',
       'Longer runs favour the Ranger: momentum from consecutive wins can become damage and Readiness.',
     ],
