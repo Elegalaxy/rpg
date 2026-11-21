@@ -186,6 +186,18 @@ export function claimableItems(hero: SavedHero): ItemInstance[] {
   return allItems(hero).filter((item) => item.heirloom === undefined)
 }
 
+/** Step 13.46: the claimable items for the picker, best first (item level, then quality), with whether each is worn. */
+export function claimOptions(hero: SavedHero): { item: ItemInstance; worn: boolean }[] {
+  const wornIds = new Set<string>()
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const worn = hero.equipment[slot]
+    if (worn !== null) wornIds.add(worn.id)
+  }
+  return claimableItems(hero)
+    .map((item) => ({ item, worn: wornIds.has(item.id) }))
+    .sort((a, b) => b.item.itemLevel - a.item.itemLevel || b.item.quality - a.item.quality || a.item.id.localeCompare(b.item.id))
+}
+
 /**
  * Step 13.32: use a free heirloom slot on an item right now, without reincarnating. The item keeps its level
  * as the cap and is scaled to the hero's level at once. No gold or materials. Earlier-life gear stays in

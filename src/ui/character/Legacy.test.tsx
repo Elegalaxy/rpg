@@ -145,8 +145,9 @@ describe('Legacy screen', () => {
       expect(full).toContain('data-testid="heirloom-claim"')
       expect(full).toContain('Make an heirloom now')
       expect(full).toContain('No heirloom slot is free: you own 1 slot and 1 is used.')
-      expect(full).toMatch(/<button[^>]*disabled=""[^>]*>Make heirloom now/)
       expect(full).toContain('data-testid="heirloom-free">0<')
+      expect(full).not.toContain('<select')
+      expect(full).not.toContain('Make heirloom now</button>')
     })
 
     it('counts several slots', () => {
@@ -165,13 +166,33 @@ describe('Legacy screen', () => {
         }),
       })
       expect(none).toContain('You own nothing that could become an heirloom yet.')
-      expect(none).toMatch(/<button[^>]*disabled=""[^>]*>Make heirloom now/)
+      expect(none).not.toContain('<select')
     })
 
     it('says to finish the expedition while one is running', () => {
       const html = show({ running: true })
       expect(html).toContain('data-testid="heirloom-claim-block">Finish the expedition first.')
-      expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Make heirloom now/)
+      expect(html).not.toContain('<select')
+      expect(html).not.toContain('Make heirloom now</button>')
+    })
+
+    it('lists the best pieces first and marks worn ones (Step 13.46)', () => {
+      const html = show({
+        hero: (hero) => {
+          const main = hero.equipment.mainHand!
+          const archived = [
+            { ...main, id: 'arch-low', itemLevel: 2, quality: 1 },
+            { ...main, id: 'arch-high', itemLevel: 40, quality: 1.2 },
+            { ...main, id: 'arch-highq', itemLevel: 40, quality: 1.5 },
+          ]
+          return { ...hero, purse: { ...hero.purse, archive: archived } }
+        },
+      })
+      const values = [...html.matchAll(/<option value="([^"]*)"/g)].map((match) => match[1])
+      expect(values.slice(0, 4)).toEqual(['', 'arch-highq', 'arch-high', expect.any(String)])
+      expect(values.indexOf('arch-low')).toBeGreaterThan(values.indexOf('arch-high'))
+      expect(html).toContain('(worn)')
+      expect(html).not.toContain('Nothing to choose')
     })
   })
 

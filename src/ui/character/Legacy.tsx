@@ -4,7 +4,7 @@ import { itemBase, itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
 import {
   MASTERY_MAX,
-  claimableItems,
+  claimOptions,
   freeHeirloomSlots,
   heirloomClaimBlock,
   heirloomSlotUse,
@@ -66,7 +66,7 @@ export function Legacy({ initialPlanning = false }: { initialPlanning?: boolean 
 
   const freeSlots = freeHeirloomSlots(hero)
   const slotUse = heirloomSlotUse(hero)
-  const claimable = claimableItems(hero)
+  const options = claimOptions(hero)
   const claimBlock = heirloomClaimBlock(hero, running)
   const canClaim = claimBlock === null
 
@@ -129,31 +129,32 @@ export function Legacy({ initialPlanning = false }: { initialPlanning?: boolean 
             {claimBlock}
           </p>
         ) : null}
-        <div className="legacy-act">
-          <label>
-            Item
-            <select aria-label="Item to make an heirloom" value={claim} disabled={claimBlock !== null} onChange={(event) => setClaim(event.target.value)}>
-              <option value="">{claimable.length === 0 ? 'Nothing to choose' : 'Choose an item'}</option>
-              {claimable.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {itemName(item)} ({slotLabel(item)}, item level {item.itemLevel})
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={claim === '' || claimBlock !== null}
-            title={claimBlock ?? undefined}
-            onClick={() => {
-              run(claimHeirloomFromUi(claim), 'The item is now an heirloom.')
-              setClaim('')
-            }}
-          >
-            Make heirloom now
-          </button>
-        </div>
+        {canClaim ? (
+          <div className="legacy-act">
+            <label>
+              Item
+              <select aria-label="Item to make an heirloom" value={claim} onChange={(event) => setClaim(event.target.value)}>
+                <option value="">Choose an item</option>
+                {options.map(({ item, worn }) => (
+                  <option key={item.id} value={item.id}>
+                    {itemName(item)} ({slotLabel(item)}, item level {item.itemLevel}){worn ? ' (worn)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={claim === ''}
+              onClick={() => {
+                run(claimHeirloomFromUi(claim), 'The item is now an heirloom.')
+                setClaim('')
+              }}
+            >
+              Make heirloom now
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <h3>

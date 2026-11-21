@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: Make heirloom now shows its item list only when a slot is free; the list puts your best pieces first and marks worn ones, and otherwise the screen just gives the reason. [13.46]
 - Balance: an upgrade takes 10 seconds. A craft, a socket, an infuse, a rank-up, and a pack still take 30 seconds.
 
 ## 0.20.0 · 2026-11-22 · Safer selling and kept plans
