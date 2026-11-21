@@ -9,6 +9,10 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Balance: the Ranger's Hunter's Mark now also gives 20 Readiness, with a longer cooldown (8 seconds instead of 5); it was reveal-only and did nothing, so a rule like "Readiness at most 60" now keeps the Ranger shooting. [13.40]
+
 ## 0.19.0 · 2026-11-21 · Between lives and the Assassin passive
 
 - Fixed: reincarnating restores every piece of gear to full durability, so a new life does not start on the last life's wear.

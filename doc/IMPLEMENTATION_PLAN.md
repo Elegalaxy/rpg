@@ -1212,12 +1212,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
 ### Step 13.40: Hunter's Mark grants Readiness
-- Status: `in progress`
+- Status: `done`
 - Depends on: 13.35
 - Goal: Hunter's Mark reveals the target and gains 20 Readiness, cooldown 8 (the measured HM-R variant, GAME_DESIGN §10 "Hunter's Mark grants Readiness (Step 13.40)"). Content change; every non-Ranger guard stays byte-identical.
 - Parts: (1) docs. (2) content, tests, snapshot and guard re-baseline, re-measure the Ranger elites. (3) CHANGELOG, node text, HANDOFF.
-- Part status: 1 `in progress`. 2 `pending`. 3 `pending`.
+- Part status: 1 `done`. 2 `done`. 3 `done`.
+- Acceptance: reference CSV, modded CSV and matrices reference, telegraph, built, modded, cinder, hollows, warden, causeway, elites at seed 1 x 5 identical to origin/main (Hunter's Mark is in no reference loadout), golden duel unchanged.
 - Progress:
+  - 2026-11-21: Parts 2 and 3 done. `content/skills.ts` Hunter's Mark: cooldown 8, effects reveal and 20 Readiness; `content.test.ts`, `nodeText.ts` regenerated, CHANGELOG [13.40]. Every guard byte-identical. Re-measured with the shipped content (HM-R last, seeds 1 to 3 x 100): prepared four 61.1 to five 68.4, +7.3 (per seed 8.8, 6.2, 7.0), median win time +2.6%; crafted +2.2 (92.6 to 94.8, 1 of 4 cells at 95 or more). Matches the Step 13.35 report.
   - 2026-11-21: Part 1 started. Decision recorded in GAME_DESIGN §10 and §3 skill text.
 
 ### Step 13.39: Venom passive (Envenomed strikes)

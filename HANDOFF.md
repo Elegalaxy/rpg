@@ -1,17 +1,15 @@
 # Project Handoff State
 
 - **Last Updated By:** Claude Code implementer (2026-11-21)
-- **Current Goal:** Step 13.39 "Venom passive (Envenomed strikes)" is done (parts 1 to 5). The Assassin's Venom Edge is now an innate passive: every direct-damage action poisons each enemy it damaged. Next is the user's playtest.
+- **Current Goal:** Step 13.40 "Hunter's Mark grants Readiness" is done. Hunter's Mark reveals the target and gains 20 Readiness, cooldown 8 (the measured HM-R variant). Next is the user's playtest and the 0.20.0 changelog close.
 - **Recent Changes & Files Touched:**
-  - Docs: GAME_DESIGN §4 (trait, Venom cluster, retired skill) and §10 "Venom passive (Step 13.39)" with every measurement table, plan Step 13.39, CHANGELOG `Unreleased` [13.39].
-  - Sim: `GameDefs.envenom` and `applyEnvenom` in `sim/classes/assassin.ts`, boss cap via `poisonApplicationAdjust` / `statusStackCap`. Content: `ENVENOM` in `content/scenarios.ts` (`gameDefs()`), Assassin web and reference loadout have three skills, `venom-edge` in `HIDDEN_SKILL_IDS`, `startingSkillIds` 3 to 4, regenerated `nodeText.ts`.
-  - Persist: hero update `assassin-venom-passive` in `persist/heroUpdates.ts` (strips Venom Edge from loadout, learned, rules, stacks, `pastLoadout`, `waitingSkillIds`; node kept).
-  - UI: Loadout "Passive" line for Assassins, Guide Assassin tip. Harness: `src/harness/venom.ts` (shard and report CLI, variants `live`, `current`, `passive-*`, Toxic and boss-cap probes).
+  - Docs: GAME_DESIGN §10 "Hunter's Mark grants Readiness (Step 13.40)", skill text in §3 and the Pathfinder node, plan Step 13.40, CHANGELOG `Unreleased` [13.40].
+  - Content: `src/content/skills.ts` Hunter's Mark (cooldown 8, effects reveal + resource 20), `content.test.ts`, `webs/nodeText.ts` regenerated with `tools/gen-node-text.py`.
+  - Skill info text in the UI and Guide is derived from the effects, so it updates by itself; no UI code changed.
 - **Active Decisions / Constraints:**
-  - Shipped numbers: tick 8% (10% with the Venom Edge node), 100% base chance, basic attack +10%, bosses keep the full Poison cap while Toxic Opportunity is allocated. Arrived tier is excluded from the GO rule (base about 2%).
-  - Measurement-only hook fields stay dormant: `shadowCutBonus`, `bossCoefficient`, `toxicAnyHit`, `toxicEvery`, `toxicCooldownMs`; `gameDefs()` does not set them.
-  - A "skill is ready" condition naming Venom Edge is dropped from its rule by the migration, not the rule.
-  - `src/sim` stays pure. Record design numbers in `doc/GAME_DESIGN.md` before code. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it.
-- **Risks:** the Warden prepared cell is one noisy cell (seed spread 10 to 20 points); compare means over 3 x 100 only. The 8% floor tick was never measured on its own (every measured cell had the node).
-- **Not verified:** nothing was clicked through in a browser (Loadout passive line, an old save with Venom Edge rules loading in the app).
-- **Exact Next Step:** (1) User playtest: load an old Assassin save, check Venom Edge left the loadout and rules, the Loadout tab shows the Passive line, the Venom Edge node still raises the tick. (2) Close 13.36 to 13.39 into a `## 0.x.0` changelog heading.
+  - Hunter's Mark is learnable (Pathfinder cluster), in no reference loadout, so the reference rows are unchanged and every guard (reference and modded CSV, nine matrices at seed 1 x 5, golden duel) is byte-identical. The "Readiness at most 60" row is the player's to add; it is not shipped.
+  - Re-measured with shipped content (HM-R last, seeds 1 to 3 x 100): prepared +7.3, crafted +2.2, median win time +2.6%.
+  - `src/sim` and the harness are untouched. Never remove `// admin code`. One commit per part, pushed to `origin/main`, every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot (line endings only): restore it, never commit it.
+- **Risks:** Old saves with a rule using Hunter's Mark start gaining Readiness (intended). A rule without a Readiness gate casts it every 8 s at the cost of a basic attack.
+- **Not verified:** nothing checked in a browser; the skill's description text in the Loadout and Guide was not viewed.
+- **Exact Next Step:** (1) User playtest: learn Hunter's Mark as a Ranger, add a row "Readiness at most 60", watch the Readiness. (2) Close 13.36, 13.37, 13.40 into a `## 0.x.0` changelog heading.
