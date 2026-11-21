@@ -19,6 +19,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - Improved: reincarnating opens a "Between lives" planner: this life's Legacy is counted first, so you can spend it on Stockpile, heirloom slots or a Head Start and see what you keep before the new life begins. [13.36]
 - New: the game can be added to a phone's home screen as an app, with its own cracked-sword icon. It opens without the browser bar and keeps clear of the notch; it still needs the internet.
 - Improved: on a phone, the run bar fits on two rows with short Push on, Return, Auto and Escape buttons, the contracts fold to one line, a "?" hint opens with a tap as a panel above the tabs, and text fields no longer make the page zoom in.
+- New: the Loadout tab names the Assassin's passive, and the Guide's Assassin tips explain it. Saved Assassins are updated once: Venom Edge leaves the loadout and rules, and its node stays and raises the passive. [13.39]
 - Balance: with Toxic Opportunity, bosses now take the Assassin's full Poison stack cap instead of 60% of it. [13.39]
 - Balance: the Assassin's Venom Edge is now a passive, Envenomed strikes: every hit poisons the enemy it damages (the Venom Edge node raises its tick from 8% to 10%), basic attacks hit 10% harder, and the Assassin starts with three skills so a slot is free. [13.39]
 - Tech: the combat sim has an off-by-default hook for an Assassin passive that poisons on every direct hit, and the harness measures it against today's Venom Edge (nothing changes in the game yet). [13.39]

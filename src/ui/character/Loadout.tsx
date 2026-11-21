@@ -67,6 +67,11 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
             : `Choose 1 to ${slots} skills. The Legacy purchase Fifth Skill Slot adds one more.`}
         </Help>
       </p>
+      {hero.classId === 'assassin' ? (
+        <p data-testid="loadout-passive">
+          <Tag kind="info">Passive</Tag> Envenomed strikes: every hit poisons the enemy it damages, with no skill slot needed. The Venom Edge node makes it stronger.
+        </p>
+      ) : null}
       {pastWaiting.length > 0 ? (
         <p data-testid="loadout-past">
           From your last life: {pastWaiting.map(skillName).join(', ')} {pastWaiting.length === 1 ? 'returns' : 'return'} to the loadout when you learn {pastWaiting.length === 1 ? 'it' : 'them'} again.

@@ -129,7 +129,7 @@ export const classGuide: Record<HeroClass, TipEntry> = {
   assassin: {
     tips: [
       'Mark your target first, then build Advantage with crits and evasion, and let Execute spend it on the finish.',
-      'Poison stacks over time, so it shines against tough enemies that live a long time.',
+      'Every hit you land poisons the enemy it damages, with no skill to equip. Poison stacks over time, so it shines against tough enemies that live a long time.',
       'High evasion is your defence. Skills that raise it protect you better than armor does.',
     ],
   },

@@ -30,6 +30,18 @@ describe('Loadout slot count', () => {
   })
 })
 
+describe('Loadout passive line (Step 13.39)', () => {
+  it('names the Assassin passive, and only for an Assassin', () => {
+    const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'assassin' })
+    if (!made.ok) throw new Error(made.reason)
+    commitSave(made.save, 'test', false)
+    const html = renderToStaticMarkup(<Loadout />)
+    expect(html).toContain('data-testid="loadout-passive"')
+    expect(html).toContain('Envenomed strikes')
+    expect(show(false)).not.toContain('loadout-passive')
+  })
+})
+
 describe('Loadout from your last life (Step 13.37)', () => {
   it('names the old skills that return when they are learned again', () => {
     const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
