@@ -39,7 +39,7 @@ export const nodeText: { readonly [nodeId: string]: string } = {
   "assassin-venom-edge": "raise the tick of Envenomed strikes (the Assassin's innate Poison on direct damage) from 8% to 10% of snapshotted Physical Power. The node keeps its name so its id `assassin-venom-edge` stays. It no longer unlocks a skill (the Venom Edge skill is retired).",
   "assassin-potent-toxins": "increase Poison's stack cap from 5 to 7, shared duration from 8 to 10 seconds, and Poison application Potency by 10.",
   "assassin-fan-of-knives": "unlock the multi-target active skill. With Envenomed strikes it spreads Poison to every enemy it hits.",
-  "assassin-toxic-opportunity": "applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage.",
+  "assassin-toxic-opportunity": "applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage. Bosses keep the full Poison stack cap (no 60% reduction) while this node is allocated.",
   "assassin-toxic-sovereign": "Poison on the Marked target no longer loses duration. When that target dies, apply half its Poison stacks, rounded down, to every surviving enemy, subject to each target's cap.",
   "assassin-mark-for-death": "unlock the single-target Mark active skill. Applying the Mark grants 1 Advantage.",
   "assassin-exploit-weakness": "direct damage against the Marked target gains +15%, and Mark exploitation stores 25% additional fractional Advantage progress.",

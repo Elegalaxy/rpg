@@ -495,9 +495,9 @@ export function referenceScenarioIds(): string[] {
 
 /**
  * The Assassin's Envenomed strikes (Step 13.39, GAME_DESIGN section 10 "Venom passive"): Poison on every direct-damage
- * action, a 8% tick that the Venom Edge node raises to 10%, and a basic attack coefficient 10% higher.
+ * action, a 8% tick that the Venom Edge node raises to 10%, and a basic attack coefficient 10% higher, and bosses keep the full Poison cap while Toxic Opportunity is allocated.
  */
-export const ENVENOM: NonNullable<GameDefs['envenom']> = { baseChance: 1, coefficient: 0.08, nodeCoefficient: 0.1, basicBonus: 0.1 }
+export const ENVENOM: NonNullable<GameDefs['envenom']> = { baseChance: 1, coefficient: 0.08, nodeCoefficient: 0.1, basicBonus: 0.1, toxicBossCapFactor: 1 }
 
 export function gameDefs(): GameDefs {
   return { enemies: { ...enemies }, skills: { ...skills }, statuses: { ...statuses }, envenom: ENVENOM }

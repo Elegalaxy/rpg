@@ -404,7 +404,7 @@ The MVP Assassin web has fifteen nodes: five per cluster. Connections follow the
 1. Venom Edge: raise the tick of Envenomed strikes (the Assassin's innate Poison on direct damage) from 8% to 10% of snapshotted Physical Power. The node keeps its name so its id `assassin-venom-edge` stays. It no longer unlocks a skill (the Venom Edge skill is retired).
 2. Potent Toxins: increase Poison's stack cap from 5 to 7, shared duration from 8 to 10 seconds, and Poison application Potency by 10.
 3. Fan of Knives: unlock the multi-target active skill. With Envenomed strikes it spreads Poison to every enemy it hits.
-4. Toxic Opportunity: applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage.
+4. Toxic Opportunity: applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage. Bosses keep the full Poison stack cap (no 60% reduction) while this node is allocated.
 5. Toxic Sovereign, major keystone: Poison on the Marked target no longer loses duration. When that target dies, apply half its Poison stacks, rounded down, to every surviving enemy, subject to each target's cap.
 
 #### Execution cluster
@@ -2867,6 +2867,8 @@ Toxic nodes results (seeds 1 to 3 x 100, deltas in points vs `current` with the 
 | live-any-cap100 | +15.0 / +9.3 | +10.8 / +7.3 | +6.2 / +4.3 | 5 / 1 | -7.1% / -4.8% | NO-GO (overshoots) |
 
 Reading: the any-hit trigger alone undershoots (the damped forms are worse, as they trigger less). The gap at the Warden is the boss Poison cap (0.6 of 7 is 4): `current` kept stacks capped with Venom Edge casts that paid the Toxic nodes every time. A boss Poison cap of 100% of the normal cap when Toxic Opportunity is allocated (`toxicBossCapFactor` 1, option 2 alone, no any-hit change) lands every tier within the band (other tiers: over +1.2 / +0.3, prepared-crafted +0.3 / -1.8) and is the recommended winner. Option 2 takes effect in `poisonApplicationAdjust` (an optional `bossCapFactor`, used by `applyPoison` through `statusStackCap`) and in the Toxic Sovereign spread; it is still measurement only and `gameDefs()` does not set it. Guards stay byte-identical.
+
+Decision (2026-11-21, user approved the Toxic nodes result): the boss Poison cap fix ships. `ENVENOM.toxicBossCapFactor` is 1, so a boss takes the hero's full Poison cap while Toxic Opportunity is allocated (without the node it stays 60%). Measured as `live-cap100`: Warden prepared +3.3 with Toxic Opportunity and +1.0 with Toxic Sovereign vs `current` with the same nodes, prepared tier +3.2 / -0.8, crossings 3 / 1, median win time -5.8% / -2.6%. The any-hit trigger, `toxicEvery` and `toxicCooldownMs` stay measurement-only and dormant.
 
 ### Later lives (Step 13.18)
 
