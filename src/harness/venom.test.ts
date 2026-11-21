@@ -8,11 +8,11 @@ const cell = VENOM_CELLS.find((entry) => entry.elite === 'warden' && entry.tier 
 
 describe('venom passive harness (Step 13.39)', () => {
   it('patches only copies of the definitions, and `current` has no passive', () => {
-    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.08, nodeCoefficient: 0.1, basicBonus: 0.1 })
+    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.1, nodeCoefficient: 0.1, basicBonus: 0.1 })
     expect(venomDefs(parseVariant('current')).envenom).toBeUndefined()
     const patched = venomDefs(parseVariant('passive-10-empty'))
     expect(patched.envenom).toMatchObject({ baseChance: 1, coefficient: 0.1, nodeCoefficient: 0.1 })
-    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.08 })
+    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.1 })
   })
 
   it('current keeps Venom Edge; a passive variant drops it and the fan variant adds a row', () => {
@@ -33,8 +33,9 @@ describe('venom passive harness (Step 13.39)', () => {
     expect(venomSetup(parseVariant('live-nonode'), cell).hero.allocatedNodeIds).not.toContain('assassin-venom-edge')
     expect(venomSetup(parseVariant('current-nonode'), cell).hero.allocatedNodeIds).not.toContain('assassin-venom-edge')
     expect(venomDefs(parseVariant('live-base10-nonode')).envenom).toMatchObject({ coefficient: 0.1, nodeCoefficient: 0.1 })
-    expect(venomDefs(parseVariant('live-nonode')).envenom).toMatchObject({ coefficient: 0.08 })
-    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.08 })
+    expect(venomDefs(parseVariant('live-nonode')).envenom).toMatchObject({ coefficient: 0.1 })
+    // Step 13.50: the base tick is 10% and the node adds no number, so the node-less tick equals the node tick.
+    expect(gameDefs().envenom).toMatchObject({ coefficient: 0.1, nodeCoefficient: 0.1 })
     expect(baselineOf('live-nonode')).toBe('current')
   })
 

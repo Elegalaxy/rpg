@@ -326,7 +326,7 @@ describe('class reference fights', () => {
     const defs = gameDefs()
     const limit = 600_000
     const durationMs: { [id: string]: { [seed: number]: number } } = {
-      [ASSASSIN_VS_STANDARD_ID]: { 1: 7_384, 42: 8_653 },
+      [ASSASSIN_VS_STANDARD_ID]: { 1: 7_384, 42: 7_731 },
       [RANGER_VS_STANDARD_ID]: { 1: 8_939, 42: 8_939 },
     }
     for (const id of [ASSASSIN_VS_STANDARD_ID, RANGER_VS_STANDARD_ID]) {

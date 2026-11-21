@@ -244,7 +244,7 @@ Each class has:
 - Execute consumes all Advantage. Its damage scales with stacks and the target's missing health.
 - All Advantage and fractional Advantage progress are lost when an encounter ends.
 - The initial web focuses on daggers and light melee weapons, stealth, Poison, Mark, and execution.
-- Envenomed strikes (Step 13.39, live): every direct-damage action (a basic attack or a damaging skill) tries one Poison application on each enemy it damaged, using the normal contact rule (the attack hit and dealt HP damage greater than 0), at most once per target per action. Poison ticks and Toxic Sovereign's spread never trigger it. It replaces the Venom Edge skill; see "Venom passive (Step 13.39)" in section 10.
+- Envenomed strikes (Step 13.39, live): every direct-damage action (a basic attack or a damaging skill) tries one Poison application on each enemy it damaged, using the normal contact rule (the attack hit and dealt HP damage greater than 0), at most once per target per action, ticking for 10% of snapshotted Physical Power (Step 13.50; it was 8% without the Venom Edge node before). Poison ticks and Toxic Sovereign's spread never trigger it. It replaces the Venom Edge skill; see "Venom passive (Step 13.39)" in section 10.
 - Only one enemy can have Mark for Death. Reapplying it moves the Mark.
 - Mark for Death lasts 8 seconds and has a 6-second base cooldown.
 - Assassin attacks refresh Mark to at least 8 seconds remaining. Extensions from nodes or effects cannot raise it above 12 seconds remaining.
@@ -401,7 +401,7 @@ The MVP Assassin web has fifteen nodes: five per cluster. Connections follow the
 
 #### Venom cluster
 
-1. Venom Edge: raise the tick of Envenomed strikes (the Assassin's innate Poison on direct damage) from 8% to 10% of snapshotted Physical Power. The node keeps its name so its id `assassin-venom-edge` stays. It no longer unlocks a skill (the Venom Edge skill is retired).
+1. Venom Edge: no effect of its own (Step 13.50). Envenomed strikes (the Assassin's innate Poison on direct damage) ticks for 10% of snapshotted Physical Power with or without the node; the node stays as the entry of the Venom branch and the prerequisite of Potent Toxins. The node keeps its name so its id `assassin-venom-edge` stays. It no longer unlocks a skill (the Venom Edge skill is retired).
 2. Potent Toxins: increase Poison's stack cap from 5 to 7, shared duration from 8 to 10 seconds, and Poison application Potency by 10.
 3. Fan of Knives: unlock the multi-target active skill. With Envenomed strikes it spreads Poison to every enemy it hits.
 4. Toxic Opportunity: applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage. Bosses keep the full Poison stack cap (no 60% reduction) while this node is allocated.
@@ -2964,7 +2964,7 @@ assassin tyrant prepared-crafted toxic-opportunity: wins 100% | median 40.0s | p
 assassin tyrant prepared-crafted toxic-sovereign: wins 100% | median 40.0s | poison uptime 96% | peak stacks 7.0
 ```
 
-Saves (Step 13.39 part 4): the one-time hero update `assassin-venom-passive` runs after validation for every Assassin that does not have it. It removes Venom Edge from the loadout and the learned list, drops every rule naming it, removes "skill is ready" conditions that name it (a rule stack whose only trigger was such a condition is dropped), and removes it from the kept setup of earlier lives (`pastLoadout`, `waitingSkillIds`). The Venom Edge node stays allocated and now raises the passive tick. A loadout that shrinks keeps its free slot. No save version change; new heroes start with the update recorded.
+Saves (Step 13.39 part 4): the one-time hero update `assassin-venom-passive` runs after validation for every Assassin that does not have it. It removes Venom Edge from the loadout and the learned list, drops every rule naming it, removes "skill is ready" conditions that name it (a rule stack whose only trigger was such a condition is dropped), and removes it from the kept setup of earlier lives (`pastLoadout`, `waitingSkillIds`). The Venom Edge node stays allocated (it raised the passive tick until Step 13.50, which made the tick 10% for everyone). A loadout that shrinks keeps its free slot. No save version change; new heroes start with the update recorded.
 
 ### Venom Edge node after the 10% base (Step 13.50)
 
@@ -2991,6 +2991,8 @@ Toxic builds, Warden prepared vs `current` with the same nodes (limit +/-8), cro
 | (d) no numbers | +3.3 | +1.0 | 4 / 1 | -5.7% / -2.5% | 0.0 everywhere | GO |
 
 Reading: (d) is numerically identical to the shipped `live` build for any hero that has the node (the shipped node tick of 10% is the new base), so every cell, tier, crossing and median is the same as the Step 13.39 Part 3 and Toxic results; the only change anywhere is for an Assassin without the node, which rises from an 8% to a 10% tick. Every candidate that adds strength to the node-allocated build pushes the Warden prepared cell above +8 once a Toxic node is allocated (the boss Poison cap fix already lands those builds at +3.3 / +1.0), so the node has no numeric headroom at the boss. Winner: (d), the weakest candidate and the only one that passes. The Venom Edge node becomes a pure connector: it has no effect of its own and stays as the prerequisite of Potent Toxins and the rest of the Venom branch (the Assassin's Poison on every hit already ticks for 10% without it).
+
+Applied (2026-11-22, Step 13.50): `ENVENOM = { baseChance: 1, coefficient: 0.1, nodeCoefficient: 0.1, basicBonus: 0.1, toxicBossCapFactor: 1 }` (`nodeCoefficient` stays in the hook, equal to the base). The Venom Edge node has no effect of its own; its id and place in the web are unchanged, so no save migration is needed (a saved Assassin keeps the node and fights exactly as before; one without it gains the 10% tick). Guard re-baseline, `--seed 1 --runs 5`: only Assassin rows without the node changed. Reference (also `reports/2026-10-23-reference.csv`; mean time to win, mean share of HP lost): bastion-mixed 18.4 s to 18.9 s, lost 38.3% to 37.7%; echo-knight 0 wins to 20% of runs (mean 53.9 s); grove-mixed lost 37.3% to 39.9%; oathbound-echo median 6.3 s to 5.8 s; road-mixed 14.3 s to 13.4 s; rootmaw 23.4 s to 21.9 s, lost 73.8% to 70.0%; sentry lost 9.2% to 7.5%; shardling median 4.3 s to 3.9 s; thornbeast 10.8 s to 10.2 s; wolf 6.2 s to 6.1 s. Telegraph, Assassin rules and blind: road-mixed 16 s to 15 s, thornbeast 13 s to 12 s, sentry lost 9% to 8%, grove-mixed lost 37% to 40%. Built: Assassin 0 nodes echo-knight 0% (left 18%) to 20% (left 15%, 54 s), rootmaw 24 s to 23 s. The modded, cinder, hollows, warden, causeway, elites and toxic matrices (and the modded CSV) are byte-identical, so the Toxic baseline above does not move. No non-Assassin line changed.
 
 ### Later lives (Step 13.18)
 

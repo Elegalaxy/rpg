@@ -70,7 +70,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
       </p>
       {hero.classId === 'assassin' ? (
         <p data-testid="loadout-passive">
-          <Tag kind="info">Passive</Tag> Envenomed strikes: every hit poisons the enemy it damages, with no skill slot needed. The Venom Edge node makes it stronger.
+          <Tag kind="info">Passive</Tag> Envenomed strikes: every hit poisons the enemy it damages, with no skill slot needed.
         </p>
       ) : null}
       {pastWaiting.length > 0 ? (

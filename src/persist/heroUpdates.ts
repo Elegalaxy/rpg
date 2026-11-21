@@ -145,7 +145,7 @@ function withoutVenomEdgeRows(rows: readonly PriorityRow[]): PriorityRow[] {
  * Venom Edge became the Assassin's Envenomed strikes passive on 2026-11-21 (Step 13.39). The skill leaves the
  * loadout, the learned list, every rule and rule stack (a "skill is ready" condition that names it is dropped; a
  * stack whose trigger was only that condition is dropped with it), and the kept setup of an earlier life. The Venom
- * Edge node stays allocated and now raises the passive. A loadout that shrinks keeps the free slot.
+ * Edge node stays allocated (it raised the passive tick until Step 13.50, which made the tick 10% for everyone). A loadout that shrinks keeps the free slot.
  */
 function removeVenomEdge(hero: SavedHero): SavedHero {
   if (hero.classId !== 'assassin') return hero
