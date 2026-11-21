@@ -6,6 +6,8 @@ import {
   MASTERY_MAX,
   claimableItems,
   freeHeirloomSlots,
+  heirloomClaimBlock,
+  heirloomSlotUse,
   legacyPreview,
   masteryRank,
   nextLifePreview,
@@ -63,7 +65,10 @@ export function Legacy({ initialPlanning = false }: { initialPlanning?: boolean 
   const rank = masteryRank(hero)
 
   const freeSlots = freeHeirloomSlots(hero)
+  const slotUse = heirloomSlotUse(hero)
   const claimable = claimableItems(hero)
+  const claimBlock = heirloomClaimBlock(hero, running)
+  const canClaim = claimBlock === null
 
   function run(problem: string | null, done: string): void {
     setError(problem)
@@ -109,39 +114,47 @@ export function Legacy({ initialPlanning = false }: { initialPlanning?: boolean 
       <NextLifeFacts next={next} />
       <CarryFacts carry={next.carry} tokensNow={hero.freeUpgrades ?? 0} tokensNext={next.tokens} pieces={pieces} setup={next.setup} />
 
-      {freeSlots > 0 && claimable.length > 0 ? (
-        <div className="legacy-claim" data-testid="heirloom-claim">
-          <h3>Heirloom slot free</h3>
-          <p className="legacy-hint">
-            {freeSlots} free. Make an item you own an heirloom now: it works at your level at once and is kept when you reincarnate.
+      <div className="legacy-claim" data-testid="heirloom-claim">
+        <h3>{canClaim ? 'Heirloom slot free' : 'Make an heirloom now'}</h3>
+        <KpiRow label="Heirloom slots">
+          <Kpi label="Slots owned" value={<span data-testid="heirloom-owned">{slotUse.owned}</span>} />
+          <Kpi label="In use" value={<span data-testid="heirloom-used">{slotUse.used}</span>} />
+          <Kpi label="Free" value={<span data-testid="heirloom-free">{freeSlots}</span>} tone={freeSlots > 0 ? 'good' : undefined} />
+        </KpiRow>
+        <p className="legacy-hint">
+          Make an item you own an heirloom now: it works at your level at once and is kept when you reincarnate.
+        </p>
+        {claimBlock !== null ? (
+          <p className="legacy-hint" data-testid="heirloom-claim-block">
+            {claimBlock}
           </p>
-          <div className="legacy-act">
-            <label>
-              Item
-              <select aria-label="Item to make an heirloom" value={claim} onChange={(event) => setClaim(event.target.value)}>
-                <option value="">Choose an item</option>
-                {claimable.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {itemName(item)} ({slotLabel(item)}, item level {item.itemLevel})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="btn-primary"
-              disabled={claim === '' || running}
-              onClick={() => {
-                run(claimHeirloomFromUi(claim), 'The item is now an heirloom.')
-                setClaim('')
-              }}
-            >
-              Make heirloom now
-            </button>
-            {running ? <small className="legacy-hint">Finish the expedition first.</small> : null}
-          </div>
+        ) : null}
+        <div className="legacy-act">
+          <label>
+            Item
+            <select aria-label="Item to make an heirloom" value={claim} disabled={claimBlock !== null} onChange={(event) => setClaim(event.target.value)}>
+              <option value="">{claimable.length === 0 ? 'Nothing to choose' : 'Choose an item'}</option>
+              {claimable.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {itemName(item)} ({slotLabel(item)}, item level {item.itemLevel})
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={claim === '' || claimBlock !== null}
+            title={claimBlock ?? undefined}
+            onClick={() => {
+              run(claimHeirloomFromUi(claim), 'The item is now an heirloom.')
+              setClaim('')
+            }}
+          >
+            Make heirloom now
+          </button>
         </div>
-      ) : null}
+      </div>
 
       <h3>
         Reincarnate

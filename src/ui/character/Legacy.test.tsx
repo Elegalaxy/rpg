@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import { carrySummary } from '../../persist/carryOver.ts'
 import { createHero } from '../../persist/roster.ts'
-import { newSave, type SaveData } from '../../persist/save.ts'
+import { startExpedition } from '../../persist/expeditionSetup.ts'
+import { newSave, type SaveData, type SavedHero } from '../../persist/save.ts'
 import { commitSave } from '../store.ts'
 
 import { Legacy } from './Legacy.tsx'
@@ -24,6 +25,9 @@ type Patch = {
   artisan?: number
   fifthSlot?: boolean
   heirlooms?: number
+  /** Change the hero before rendering. */
+  hero?: (hero: SavedHero) => SavedHero
+  running?: boolean
 }
 
 function show(patch: Patch, planning = false): string {
@@ -32,7 +36,7 @@ function show(patch: Patch, planning = false): string {
   const save: SaveData = {
     ...made.save,
     account: { ...made.save.account, discoveries: [...made.save.account.discoveries, 'node:drowned-causeway'] },
-    heroes: made.save.heroes.map((hero) => ({
+    heroes: made.save.heroes.map((base) => (patch.hero === undefined ? base : patch.hero(base))).map((hero) => ({
       ...hero,
       legacy: patch.legacy ?? 0,
       lives: patch.lives ?? 0,
@@ -59,7 +63,8 @@ function show(patch: Patch, planning = false): string {
       },
     })),
   }
-  commitSave(save, 'test', false)
+  const running = patch.running === true ? { ...save, expedition: startExpedition(save.heroes[0]!, 'splintered-road', 1) } : save
+  commitSave(running, 'test', false)
   return renderToStaticMarkup(<Legacy initialPlanning={planning} />)
 }
 
@@ -122,6 +127,52 @@ describe('Legacy screen', () => {
     expect(html).toContain('data-testid="heirloom-claim"')
     expect(html).toContain('Heirloom slot free')
     expect(html).toContain('Make heirloom now')
+  })
+
+  describe('Make heirloom now is always shown (Step 13.45)', () => {
+    it('is usable when a slot is free and something is claimable', () => {
+      const html = show({})
+      expect(html).toContain('Heirloom slot free')
+      expect(html).toContain('data-testid="heirloom-owned">1<')
+      expect(html).toContain('data-testid="heirloom-used">0<')
+      expect(html).toContain('data-testid="heirloom-free">1<')
+      expect(html).not.toContain('data-testid="heirloom-claim-block"')
+      expect(html).toMatch(/<select[^>]*aria-label="Item to make an heirloom"(?![^>]*disabled)/)
+    })
+
+    it('says how many slots the hero owns and uses when none is free', () => {
+      const full = show({ hero: (hero) => ({ ...hero, equipment: { ...hero.equipment, mainHand: { ...hero.equipment.mainHand!, heirloom: { heroId: hero.id, cap: 1 } } } }) })
+      expect(full).toContain('data-testid="heirloom-claim"')
+      expect(full).toContain('Make an heirloom now')
+      expect(full).toContain('No heirloom slot is free: you own 1 slot and 1 is used.')
+      expect(full).toMatch(/<button[^>]*disabled=""[^>]*>Make heirloom now/)
+      expect(full).toContain('data-testid="heirloom-free">0<')
+    })
+
+    it('counts several slots', () => {
+      const html = show({ heirlooms: 3, hero: (hero) => ({ ...hero, equipment: { ...hero.equipment, mainHand: { ...hero.equipment.mainHand!, heirloom: { heroId: hero.id, cap: 1 } } } }) })
+      expect(html).toContain('data-testid="heirloom-owned">3<')
+      expect(html).toContain('data-testid="heirloom-used">1<')
+      expect(html).toContain('data-testid="heirloom-free">2<')
+    })
+
+    it('says so when there is nothing to claim', () => {
+      const none = show({
+        hero: (hero) => ({
+          ...hero,
+          equipment: { ...hero.equipment, mainHand: null, offHand: null, head: null, chest: null, hands: null, feet: null, accessory0: null, accessory1: null },
+          purse: { ...hero.purse, archive: [] },
+        }),
+      })
+      expect(none).toContain('You own nothing that could become an heirloom yet.')
+      expect(none).toMatch(/<button[^>]*disabled=""[^>]*>Make heirloom now/)
+    })
+
+    it('says to finish the expedition while one is running', () => {
+      const html = show({ running: true })
+      expect(html).toContain('data-testid="heirloom-claim-block">Finish the expedition first.')
+      expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Make heirloom now/)
+    })
   })
 
   it('names Head Start II once the first tier is bought and starts the next life at its level', () => {

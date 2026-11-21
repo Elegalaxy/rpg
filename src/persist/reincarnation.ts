@@ -160,6 +160,27 @@ export function freeHeirloomSlots(hero: SavedHero): number {
   return Math.max(0, heirloomAllowance(hero) - used)
 }
 
+/** Heirloom slots the hero owns, how many hold an item and how many are free (Step 13.45). */
+export function heirloomSlotUse(hero: SavedHero): { owned: number; used: number; free: number } {
+  const owned = heirloomAllowance(hero)
+  const used = allItems(hero).filter((item) => item.heirloom?.heroId === hero.id).length
+  return { owned, used, free: Math.max(0, owned - used) }
+}
+
+/**
+ * Why "Make heirloom now" cannot be used right now, or null when it can: an expedition is running, every slot holds an item,
+ * or the hero owns nothing that could become one. Checked in that order, so the reason is the first thing to fix.
+ */
+export function heirloomClaimBlock(hero: SavedHero, running: boolean): string | null {
+  if (running) return 'Finish the expedition first.'
+  const { owned, used, free } = heirloomSlotUse(hero)
+  if (free <= 0) {
+    return `No heirloom slot is free: you own ${owned} ${owned === 1 ? 'slot' : 'slots'} and ${used} ${used === 1 ? 'is' : 'are'} used. Buy another slot, or choose at reincarnation.`
+  }
+  if (claimableItems(hero).length === 0) return 'You own nothing that could become an heirloom yet.'
+  return null
+}
+
 /** Worn and archived items this hero could make an heirloom now: not already an heirloom of anyone. */
 export function claimableItems(hero: SavedHero): ItemInstance[] {
   return allItems(hero).filter((item) => item.heirloom === undefined)
