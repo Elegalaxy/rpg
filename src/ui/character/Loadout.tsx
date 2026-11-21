@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { skillName } from '../../persist/loadout.ts'
 import { selectedHero } from '../../persist/character.ts'
 import type { SavedHero } from '../../persist/save.ts'
+import { pastSetups } from '../../persist/pastSetup.ts'
 import { loadoutSlots } from '../../persist/skillSlots.ts'
 import { LOADOUT_SLOT_COUNT } from '../../sim/progression.ts'
 import { saveLoadoutFromUi, useSaveStatus } from '../store.ts'
@@ -54,7 +55,7 @@ function LoadoutForm({ hero }: { hero: SavedHero }) {
   const equippedIds = hero.progress.learnedSkillIds.filter((id) => hero.progress.loadout.includes(id))
   const spareIds = hero.progress.learnedSkillIds.filter((id) => !hero.progress.loadout.includes(id))
   const unequipped = spareIds.length
-  const pastWaiting = (hero.pastLoadout ?? []).filter((id) => !hero.progress.learnedSkillIds.includes(id))
+  const pastWaiting = [...new Set(pastSetups(hero).flat())].filter((id) => !hero.progress.learnedSkillIds.includes(id))
   return (
     <section aria-label="Loadout">
       <h2>Loadout — {hero.name}</h2>

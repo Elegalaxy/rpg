@@ -336,10 +336,12 @@ describe('combat setup fields in a save (Step 13.37)', () => {
     data.heroes[0].pastLoadout = ['cleave']
     data.heroes[0].waitingSkillIds = ['cleave']
     expect(parseSave(JSON.stringify(data)).ok).toBe(true)
+    data.heroes[0].pastLoadouts = [['cleave'], ['driving-blow']]
+    expect(parseSave(JSON.stringify(data)).ok).toBe(true)
   })
 
   it('refuses malformed fields', () => {
-    const bad = [{ pastLoadout: 'cleave' }, { pastLoadout: [1] }, { pastLoadout: ['a', 'b', 'c', 'd', 'e', 'f'] }, { waitingSkillIds: [''] }, { waitingSkillIds: {} }]
+    const bad = [{ pastLoadout: 'cleave' }, { pastLoadout: [1] }, { pastLoadout: ['a', 'b', 'c', 'd', 'e', 'f'] }, { pastLoadouts: 'cleave' }, { pastLoadouts: [['a'], ['a'], ['a'], ['a']] }, { pastLoadouts: [[1]] }, { waitingSkillIds: [''] }, { waitingSkillIds: {} }]
     for (const patch of bad) {
       const data = raw()
       Object.assign(data.heroes[0], patch)

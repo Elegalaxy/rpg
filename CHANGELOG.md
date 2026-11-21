@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: reincarnating remembers the loadouts of your last three lives, not just one, so a skill from an older life still returns to the loadout when you learn it again. [13.42]
 - New: a Ranger rule template, Top up Readiness: Hunter's Mark when Readiness is at most 60, with a blank slot for your damage rule; the Guide's Ranger tips mention it. [13.41]
 - Balance: the Ranger's Hunter's Mark now also gives 20 Readiness, with a longer cooldown (8 seconds instead of 5); it was reveal-only and did nothing, so a rule like "Readiness at most 60" now keeps the Ranger shooting. [13.40]
 

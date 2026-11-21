@@ -11,7 +11,7 @@ import { SUPPLY_STACK_LIMIT, assertExpedition, type ExpeditionState } from '../s
 import { MAX_LOADOUT_SLOTS, assertProgress, type HeroProgress } from '../sim/progression.ts'
 import { isPackId, overStacked, packSlots, type PackId } from './pack.ts'
 import { elitesFromClaimed } from './remembered.ts'
-import { loadoutSlots } from './skillSlots.ts'
+import { MAX_PAST_SETUPS, loadoutSlots } from './skillSlots.ts'
 import { parseRuleStacks } from '../sim/automation.ts'
 import type { PriorityRow, RuleStack } from '../sim/types.ts'
 
@@ -269,6 +269,8 @@ export type SavedHero = {
   pastLifeItemIds?: string[]
   /** The loadout the hero had when the last life ended. Its skills return to the loadout as they are relearned (Step 13.37). Absent means none. */
   pastLoadout?: string[]
+  /** The loadouts of the last three lives, newest first (Step 13.42). Replaces `pastLoadout`, which an old save may still hold. */
+  pastLoadouts?: string[][]
   /** Skills named by kept rules that this life cannot use yet. Those rules wait. Absent means none (Step 13.37). */
   waitingSkillIds?: string[]
   /** Retreat when HP falls to this fraction of maximum. Null never retreats. */
@@ -643,6 +645,13 @@ function assertHero(value: unknown, index: number): asserts value is SavedHero {
   if (value.pastLoadout !== undefined) {
     stringList(value.pastLoadout, `${label} past loadout`)
     check(value.pastLoadout.length <= MAX_LOADOUT_SLOTS, `${label} past loadout holds at most ${MAX_LOADOUT_SLOTS} skills`)
+  }
+  if (value.pastLoadouts !== undefined) {
+    check(Array.isArray(value.pastLoadouts) && value.pastLoadouts.length <= MAX_PAST_SETUPS, `${label} past loadouts hold at most ${MAX_PAST_SETUPS} lives`)
+    for (const setup of value.pastLoadouts) {
+      stringList(setup, `${label} past loadout`)
+      check(setup.length <= MAX_LOADOUT_SLOTS, `${label} past loadout holds at most ${MAX_LOADOUT_SLOTS} skills`)
+    }
   }
   if (value.waitingSkillIds !== undefined) stringList(value.waitingSkillIds, `${label} waiting skills`)
   check(value.pastLifeItemIds === undefined || (Array.isArray(value.pastLifeItemIds) && value.pastLifeItemIds.every((id: unknown) => typeof id === 'string')), `${label} earlier-life items must be a list of text`)

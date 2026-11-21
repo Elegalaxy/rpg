@@ -1230,10 +1230,11 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
 
 ### Step 13.42: Keep three past loadouts
-- Status: `todo`
+- Status: `done`
 - Depends on: 13.37
 - Goal: the hero keeps the setups of the last three lives (newest first) instead of one, so reincarnating twice quickly no longer forgets the older one (GAME_DESIGN §10 "Combat setup across lives (Step 13.37)", Step 13.42 addendum).
 - Progress:
+  - 2026-11-21: Done. `pastLoadouts` (cap `MAX_PAST_SETUPS` in `persist/skillSlots.ts`), `pastSetups` and newest-setup `returnToLoadout` in `persist/pastSetup.ts`, `save.ts` validation, `reincarnation.ts`, `heroUpdates.ts`, Loadout line; tests in `pastSetup.test.ts`, `save.test.ts`.
 
 ### Step 13.41: Hunter's Mark rule template
 - Status: `done`

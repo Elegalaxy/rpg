@@ -161,7 +161,8 @@ describe('what reincarnation resets', () => {
     // Step 13.37: the combat setup is kept, not reset.
     expect(next.priorityRows).toEqual([{ skillId: 'cleave' }])
     expect(next.ruleStacks).toEqual([{ id: 'stack-1', name: 'Pack', when: [], rows: [{ skillId: 'cleave' }] }])
-    expect(next.pastLoadout).toEqual([...classWebs.warrior.startingSkillIds])
+    expect(next.pastLoadouts).toEqual([[...classWebs.warrior.startingSkillIds]])
+    expect(next.pastLoadout).toBeUndefined()
     // Cleave is not a starting skill, so the kept rules that use it wait.
     expect(next.waitingSkillIds).toEqual(['cleave'])
   })

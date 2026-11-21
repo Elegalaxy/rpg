@@ -6,3 +6,6 @@ import type { HeroPurchases } from './save.ts'
 export function loadoutSlots(hero: { purchases: HeroPurchases }): number {
   return hero.purchases.fifthSlot === true ? MAX_LOADOUT_SLOTS : LOADOUT_SLOT_COUNT
 }
+
+/** How many past lives' loadouts a hero keeps, newest first (Step 13.42). */
+export const MAX_PAST_SETUPS = 3

@@ -19,7 +19,7 @@ import {
   validateRules,
   waitingSkillIds,
 } from './loadout.ts'
-import { activeRowIndexes, carriedSetup, combatRules, restoreNotice, returnToLoadout } from './pastSetup.ts'
+import { activeRowIndexes, carriedSetup, combatRules, pastSetups, restoreNotice, returnToLoadout } from './pastSetup.ts'
 import { nextLifePreview, reincarnate } from './reincarnation.ts'
 import { createHero } from './roster.ts'
 import { newSave, parseSave, serializeSave, type SaveData, type SavedHero } from './save.ts'
@@ -82,7 +82,7 @@ describe('carriedSetup', () => {
   it('deep-copies the rows and stacks and remembers the old loadout', () => {
     const old = hero(endOfLife())
     const next = hero(ok(reincarnate(endOfLife(), 'hero-1', null)))
-    expect(next.pastLoadout).toEqual(OLD_LOADOUT)
+    expect(next.pastLoadouts).toEqual([OLD_LOADOUT])
     expect(next.ruleStacks).toEqual(old.ruleStacks)
     expect(next.ruleStacks[0]).not.toBe(old.ruleStacks[0])
     expect(next.priorityRows.slice(0, 2)).toEqual(old.priorityRows)
@@ -302,5 +302,66 @@ describe('saves with the setup fields', () => {
     const parsed = parseSave(serializeSave(save))
     expect(parsed.ok).toBe(true)
     if (parsed.ok) expect(hero(parsed.data).waitingSkillIds).toEqual(['cleave'])
+  })
+})
+
+describe('several past loadouts (Step 13.42)', () => {
+  function again(save: SaveData): SaveData {
+    return ok(reincarnate(change(save, () => ({ bossLossThisLife: true })), 'hero-1', null))
+  }
+
+  it('keeps both setups after two quick reincarnations, newest first', () => {
+    const second = again(ok(reincarnate(endOfLife(), 'hero-1', null)))
+    expect(hero(second).pastLoadouts).toEqual([STARTING, OLD_LOADOUT])
+    expect(hero(second).pastLoadout).toBeUndefined()
+  })
+
+  it('returns a skill that only the older setup had, and says so', () => {
+    const second = again(ok(reincarnate(endOfLife(), 'hero-1', null)))
+    let save = grantPoints(second, 'hero-1', 0, 5)
+    save = take(save, CLEAVE_NODES.slice(0, 2))
+    const result = takeNode(save, 'hero-1', 'warrior-cleave')
+    if (!result.ok) throw new Error(result.reason)
+    expect(result.restored?.returned).toEqual(['cleave'])
+    expect(hero(result.save).progress.loadout).toContain('cleave')
+    expect(restoreNotice(result.restored!)).toContain('Cleave is back in the loadout')
+  })
+
+  it('uses the newest kept setup that held the skill', () => {
+    const base = hero(ok(reincarnate(endOfLife(), 'hero-1', null)))
+    const held: SavedHero = {
+      ...base,
+      pastLoadouts: [['driving-blow', 'cleave'], ['driving-blow', 'sundering-blow', 'shield-brace', 'cleave']],
+      progress: { ...base.progress, learnedSkillIds: [...base.progress.learnedSkillIds, 'cleave'] },
+    }
+    const back = returnToLoadout(held, ['cleave'])
+    expect(back.returned).toEqual(['cleave'])
+    // The newest setup did not hold Sundering Blow, so that starting skill makes room.
+    expect(back.replaced).toEqual([{ out: 'sundering-blow', in: 'cleave' }])
+  })
+
+  it('reads an old single pastLoadout as the first slot and writes the new field at the next reincarnation', () => {
+    const base = hero(ok(reincarnate(endOfLife(), 'hero-1', null)))
+    const { pastLoadouts: _drop, ...rest } = base
+    const old: SavedHero = { ...rest, pastLoadout: OLD_LOADOUT, bossLossThisLife: true }
+    expect(pastSetups(old)).toEqual([OLD_LOADOUT])
+    const saved = change(ok(reincarnate(endOfLife(), 'hero-1', null)), () => old)
+    const parsed = parseSave(serializeSave(saved))
+    expect(parsed.ok).toBe(true)
+    const next = hero(again(saved))
+    expect(next.pastLoadouts).toEqual([STARTING, OLD_LOADOUT])
+    expect(next.pastLoadout).toBeUndefined()
+  })
+
+  it('keeps at most three and drops the oldest', () => {
+    let save = ok(reincarnate(endOfLife(), 'hero-1', null))
+    for (let life = 0; life < 3; life += 1) save = again(save)
+    expect(hero(save).pastLoadouts).toEqual([STARTING, STARTING, STARTING])
+  })
+
+  it('keeps waiting rules working from any kept setup', () => {
+    const second = again(ok(reincarnate(endOfLife(), 'hero-1', null)))
+    expect(waitingSkillIds(hero(second))).toEqual(['cleave'])
+    expect(combatRules(hero(second)).priorityRows.every((row) => row.skillId !== 'cleave')).toBe(true)
   })
 })

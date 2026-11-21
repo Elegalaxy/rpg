@@ -166,6 +166,7 @@ function removeVenomEdge(hero: SavedHero): SavedHero {
     ruleStacks: stacks,
   }
   if (hero.pastLoadout !== undefined) next.pastLoadout = hero.pastLoadout.filter((id) => id !== VENOM_EDGE)
+  if (hero.pastLoadouts !== undefined) next.pastLoadouts = hero.pastLoadouts.map((setup) => setup.filter((id) => id !== VENOM_EDGE))
   if (hero.waitingSkillIds !== undefined) {
     const waiting = hero.waitingSkillIds.filter((id) => id !== VENOM_EDGE)
     if (waiting.length > 0) next.waitingSkillIds = waiting

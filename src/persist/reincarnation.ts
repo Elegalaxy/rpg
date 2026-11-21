@@ -364,7 +364,7 @@ export function reincarnate(
     // Step 13.37: the combat setup carries; rules for skills not relearned yet wait.
     priorityRows: setup.priorityRows,
     ruleStacks: setup.ruleStacks,
-    pastLoadout: setup.pastLoadout,
+    pastLoadouts: setup.pastLoadouts,
     specialAmmo: hero.classId === 'ranger' ? Math.min(hero.specialAmmo, quiverLimit({ ...hero, progress })) : hero.specialAmmo,
     defeatedEnemyIds: [],
     rememberedEnemyIds: unionElites(hero.rememberedEnemyIds, hero.defeatedEnemyIds),
@@ -383,6 +383,7 @@ export function reincarnate(
     pastLifeItemIds: nextArchive.map((item) => item.id),
     freeUpgrades: (hero.freeUpgrades ?? 0) + artisanTokens(hero.purchases),
   }
+  delete renewed.pastLoadout
   if (setup.waitingSkillIds.length > 0) renewed.waitingSkillIds = setup.waitingSkillIds
   else delete renewed.waitingSkillIds
   const account = reachMilestone(save.account, 'first-reincarnation')

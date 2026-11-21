@@ -2685,6 +2685,7 @@ Decided 2026-11-20 (user: go with my picks). Persist and UI only; `src/sim`, con
 - Stand-in rules: for each starting skill the new life equips that was not in the old loadout, the class's reference rows for it (only rows whose skill is that starting skill and whose "skill is ready" skills are all available) are appended to the Default rules while there is room (12). They are pruned when that skill is replaced.
 - The Legacy screen and the planner show "Combat setup: kept" with counts.
 - Saves: `pastLoadout` and `waitingSkillIds` are optional (absent means none); no version bump. Waiting is derived, not stored on a row, because the sim's `PriorityRow` has no such field.
+- Three past loadouts (Step 13.42): reincarnating twice quickly used to forget the older loadout. The hero now keeps the loadouts of the last 3 lives in an optional `pastLoadouts` (a list of lists, newest first; the oldest is dropped past 3). An old save's single `pastLoadout` reads as the first entry and is replaced by `pastLoadouts` at the next reincarnation; no version bump. When a node teaches a skill, it returns from the newest kept setup that held it, and the "not in the old loadout" test for what makes room uses that same setup. Waiting rules are unchanged: they depend only on which skills the kept rules name and the new life cannot use, so they hold across any number of lives. The Loadout line names skills from every kept setup.
 
 ### Fifth skill slot (Step 13.34)
 

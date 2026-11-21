@@ -6,7 +6,7 @@ import { DEFAULT_STACK_ID, type PriorityRow, type RuleStack } from '../sim/types
 
 import { conditionSkillIds, pruneRows, rowWaits, ruleSkillIds, skillName, waitingSkillIds } from './loadout.ts'
 import type { SavedHero } from './save.ts'
-import { loadoutSlots } from './skillSlots.ts'
+import { MAX_PAST_SETUPS, loadoutSlots } from './skillSlots.ts'
 
 /** Combat setup across lives (Step 13.37). Pure: nothing here reads or writes a save by itself. */
 
@@ -18,11 +18,20 @@ export type SetupStats = {
   waitingRules: number
 }
 
+/**
+ * The loadouts of the last lives, newest first. A save from before Step 13.42 has only the single `pastLoadout`; it reads as the
+ * first entry, and the next reincarnation writes `pastLoadouts` and drops the old field.
+ */
+export function pastSetups(hero: SavedHero): string[][] {
+  if (hero.pastLoadouts !== undefined) return hero.pastLoadouts
+  return hero.pastLoadout !== undefined && hero.pastLoadout.length > 0 ? [hero.pastLoadout] : []
+}
+
 export type CarriedSetup = {
   priorityRows: PriorityRow[]
   ruleStacks: RuleStack[]
   waitingSkillIds: string[]
-  pastLoadout: string[]
+  pastLoadouts: string[][]
   stats: SetupStats
 }
 
@@ -58,6 +67,7 @@ export function carriedSetup(hero: SavedHero, progress: HeroProgress): CarriedSe
   const next: SavedHero = { ...hero, progress }
   const available = ruleSkillIds(next)
   const pastLoadout = [...hero.progress.loadout]
+  const pastLoadouts = [pastLoadout, ...pastSetups(hero).map((setup) => [...setup])].slice(0, MAX_PAST_SETUPS)
   const priorityRows: PriorityRow[] = structuredClone(hero.priorityRows)
   const ruleStacks: RuleStack[] = structuredClone(hero.ruleStacks)
   for (const id of progress.loadout) {
@@ -75,7 +85,7 @@ export function carriedSetup(hero: SavedHero, progress: HeroProgress): CarriedSe
     priorityRows,
     ruleStacks,
     waitingSkillIds: waiting,
-    pastLoadout,
+    pastLoadouts,
     stats: {
       rules: priorityRows.length + ruleStacks.reduce((sum, stack) => sum + stack.rows.length, 0),
       stacks: ruleStacks.length,
@@ -140,10 +150,12 @@ function waitingRuleCount(hero: SavedHero): number {
  * waiting skill that is usable now leaves the list. A hero with nothing to return and nothing waiting comes back unchanged.
  */
 export function returnToLoadout(hero: SavedHero, newlyLearned: readonly string[]): ReturnedLoadout {
-  const past = hero.pastLoadout ?? []
+  const setups = pastSetups(hero)
+  // Each skill comes back from the newest kept setup that held it.
+  const sourceOf = (id: string): string[] | undefined => setups.find((setup) => setup.includes(id))
   // The saved list, not the filtered one: a Convergence or Release node may already have made a skill usable.
   const before = countWaiting(hero.priorityRows, hero.ruleStacks, hero.waitingSkillIds ?? [])
-  const wanted = past.filter((id) => newlyLearned.includes(id) && !hero.progress.loadout.includes(id))
+  const wanted = newlyLearned.filter((id) => sourceOf(id) !== undefined && !hero.progress.loadout.includes(id))
   if (wanted.length === 0 && (hero.waitingSkillIds ?? []).length === 0) return { hero, returned: [], replaced: [], woke: 0 }
   const slots = loadoutSlots(hero)
   const starting = classWebs[hero.classId].startingSkillIds
@@ -151,6 +163,7 @@ export function returnToLoadout(hero: SavedHero, newlyLearned: readonly string[]
   const returned: string[] = []
   const replaced: { out: string; in: string }[] = []
   for (const id of wanted) {
+    const past = sourceOf(id) ?? []
     if (loadout.length < slots) {
       loadout.push(id)
     } else {
