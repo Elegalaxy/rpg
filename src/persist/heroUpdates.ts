@@ -3,7 +3,7 @@ import { DEFAULT_SUPPLY_ROWS, GREATER_DRAUGHT_ROW, RIFTGLASS_WARD_ROW, RULE_SUPP
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
-import type { PriorityRow } from '../sim/types.ts'
+import type { AutomationCondition, PriorityRow, RuleStack } from '../sim/types.ts'
 
 import { withFilledBoard } from './contracts.ts'
 import type { SaveData, SavedHero } from './save.ts'
@@ -13,7 +13,7 @@ import type { SaveData, SavedHero } from './save.ts'
  * lists the ones it already has, so a rule the player later removes does not come back. New heroes
  * start with every id.
  */
-export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules', 'warming-tonic-burn-rule'] as const
+export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules', 'warming-tonic-burn-rule', 'assassin-venom-passive'] as const
 
 const FADE_BACK = 'fade-back'
 const VOLLEY = 'volley'
@@ -123,6 +123,57 @@ function addWarmingTonicBurnRule(hero: SavedHero): SavedHero {
   return { ...hero, priorityRows: [...hero.priorityRows.slice(0, at), copyRow(row), ...hero.priorityRows.slice(at)] }
 }
 
+const VENOM_EDGE = 'venom-edge'
+
+const namesVenomEdge = (condition: AutomationCondition): boolean => condition.kind === 'skillReady' && condition.skillId === VENOM_EDGE
+
+/** A row without Venom Edge: null when the row is the skill itself, else the row without "skill is ready" conditions that name it. */
+function withoutVenomEdgeRow(row: PriorityRow): PriorityRow | null {
+  if (row.skillId === VENOM_EDGE) return null
+  if (row.conditions === undefined || !row.conditions.some(namesVenomEdge)) return row
+  return { ...row, conditions: row.conditions.filter((condition) => !namesVenomEdge(condition)).map((condition) => ({ ...condition })) }
+}
+
+function withoutVenomEdgeRows(rows: readonly PriorityRow[]): PriorityRow[] {
+  return rows.flatMap((row) => {
+    const kept = withoutVenomEdgeRow(row)
+    return kept === null ? [] : [kept]
+  })
+}
+
+/**
+ * Venom Edge became the Assassin's Envenomed strikes passive on 2026-11-21 (Step 13.39). The skill leaves the
+ * loadout, the learned list, every rule and rule stack (a "skill is ready" condition that names it is dropped; a
+ * stack whose trigger was only that condition is dropped with it), and the kept setup of an earlier life. The Venom
+ * Edge node stays allocated and now raises the passive. A loadout that shrinks keeps the free slot.
+ */
+function removeVenomEdge(hero: SavedHero): SavedHero {
+  if (hero.classId !== 'assassin') return hero
+  const progress = hero.progress
+  const stacks = hero.ruleStacks.flatMap((stack): RuleStack[] => {
+    const when = stack.when.filter((condition) => !namesVenomEdge(condition))
+    if (when.length === 0 && stack.when.length > 0) return []
+    return [{ ...stack, when, rows: withoutVenomEdgeRows(stack.rows) }]
+  })
+  const next: SavedHero = {
+    ...hero,
+    progress: {
+      ...progress,
+      learnedSkillIds: progress.learnedSkillIds.filter((id) => id !== VENOM_EDGE),
+      loadout: progress.loadout.filter((id) => id !== VENOM_EDGE),
+    },
+    priorityRows: withoutVenomEdgeRows(hero.priorityRows),
+    ruleStacks: stacks,
+  }
+  if (hero.pastLoadout !== undefined) next.pastLoadout = hero.pastLoadout.filter((id) => id !== VENOM_EDGE)
+  if (hero.waitingSkillIds !== undefined) {
+    const waiting = hero.waitingSkillIds.filter((id) => id !== VENOM_EDGE)
+    if (waiting.length > 0) next.waitingSkillIds = waiting
+    else delete next.waitingSkillIds
+  }
+  return next
+}
+
 const APPLY: { [id in (typeof HERO_UPDATES)[number]]: (hero: SavedHero, save: SaveData) => SavedHero } = {
   'supply-rules': addSupplyRules,
   'ranger-fade-back': addFadeBack,
@@ -131,6 +182,7 @@ const APPLY: { [id in (typeof HERO_UPDATES)[number]]: (hero: SavedHero, save: Sa
   'warming-tonic-rule': addWarmingTonicRule,
   'crafted-supply-rules': addCraftedSupplyRules,
   'warming-tonic-burn-rule': addWarmingTonicBurnRule,
+  'assassin-venom-passive': removeVenomEdge,
 }
 
 /** Apply every update a hero does not have yet, in order, and record it. */

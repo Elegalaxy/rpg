@@ -2870,6 +2870,8 @@ Reading: the any-hit trigger alone undershoots (the damped forms are worse, as t
 
 Decision (2026-11-21, user approved the Toxic nodes result): the boss Poison cap fix ships. `ENVENOM.toxicBossCapFactor` is 1, so a boss takes the hero's full Poison cap while Toxic Opportunity is allocated (without the node it stays 60%). Measured as `live-cap100`: Warden prepared +3.3 with Toxic Opportunity and +1.0 with Toxic Sovereign vs `current` with the same nodes, prepared tier +3.2 / -0.8, crossings 3 / 1, median win time -5.8% / -2.6%. The any-hit trigger, `toxicEvery` and `toxicCooldownMs` stay measurement-only and dormant.
 
+Saves (Step 13.39 part 4): the one-time hero update `assassin-venom-passive` runs after validation for every Assassin that does not have it. It removes Venom Edge from the loadout and the learned list, drops every rule naming it, removes "skill is ready" conditions that name it (a rule stack whose only trigger was such a condition is dropped), and removes it from the kept setup of earlier lives (`pastLoadout`, `waitingSkillIds`). The Venom Edge node stays allocated and now raises the passive tick. A loadout that shrinks keeps its free slot. No save version change; new heroes start with the update recorded.
+
 ### Later lives (Step 13.18)
 
 Decided 2026-11-17 (user approved, design A, "Echoes of past lives"). Persist and UI only; `src/sim`, content numbers and every harness matrix stay as they are.

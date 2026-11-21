@@ -4,7 +4,7 @@ import { DEFAULT_SUPPLY_ROWS, GREATER_DRAUGHT_ROW, RIFTGLASS_WARD_ROW, WARD_CHAR
 import { classWebs } from '../content/webs/index.ts'
 import type { PriorityRow } from '../sim/types.ts'
 
-import { HERO_UPDATES } from './heroUpdates.ts'
+import { HERO_UPDATES, applyHeroUpdates } from './heroUpdates.ts'
 import { createHero } from './roster.ts'
 import { newSave, parseSave, serializeSave, type SaveData, type SavedHero } from './save.ts'
 
@@ -15,7 +15,7 @@ const OLD_RANGER_ROWS: PriorityRow[] = [
   { skillId: 'piercing-arrow' },
 ]
 
-function fresh(classId: 'warrior' | 'ranger'): SaveData {
+function fresh(classId: 'warrior' | 'ranger' | 'assassin'): SaveData {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId })
   if (!made.ok) throw new Error(made.reason)
   return made.save
@@ -100,5 +100,65 @@ describe('one-time hero updates', () => {
     const parsed = parseSave(serializeSave(save))
     if (!parsed.ok) throw new Error(parsed.reason)
     expect(parsed.data).toEqual(save)
+  })
+})
+
+describe('Venom Edge becomes a passive (Step 13.39)', () => {
+  const OLD_FOUR = ['mark-for-death', 'shadow-cut', 'venom-edge', 'execute']
+  const readyVenom = { kind: 'skillReady' as const, skillId: 'venom-edge', operator: 'present' as const }
+  const oldAssassin = (hero: SavedHero, extra: Partial<SavedHero> = {}): SavedHero => ({
+    ...hero,
+    progress: { ...hero.progress, learnedSkillIds: [...OLD_FOUR], loadout: [...OLD_FOUR], allocatedNodeIds: ['assassin-venom-edge', 'assassin-potent-toxins'] },
+    priorityRows: [
+      { skillId: 'mark-for-death', conditions: [{ kind: 'mark', operator: 'absent' }] },
+      { skillId: 'venom-edge', conditions: [{ kind: 'status', who: 'target', statusId: 'poison', measure: 'stacks', operator: 'atMost', value: 2 }] },
+      { skillId: 'execute', conditions: [readyVenom, { kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }] },
+      { skillId: 'shadow-cut' },
+    ],
+    ruleStacks: [
+      { id: 'burst', name: 'Burst', when: [{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 50 }], rows: [{ skillId: 'venom-edge' }, { skillId: 'shadow-cut' }] },
+    ],
+    ...extra,
+  })
+
+  it('strips Venom Edge from the loadout, learned list, rules and stacks, and keeps the node', () => {
+    const hero = loadOld(fresh('assassin'), (entry) => oldAssassin(entry)).heroes[0]!
+    expect(hero.progress.loadout).toEqual(['mark-for-death', 'shadow-cut', 'execute'])
+    expect(hero.progress.learnedSkillIds).toEqual(['mark-for-death', 'shadow-cut', 'execute'])
+    expect(hero.progress.allocatedNodeIds).toContain('assassin-venom-edge')
+    const mine = hero.priorityRows.filter((row) => !['greater-draught', 'healing-draught', 'antidote', 'riftglass-ward', 'ward-charm', 'warming-tonic'].includes(row.skillId))
+    expect(mine.map((row) => row.skillId)).toEqual(['mark-for-death', 'execute', 'shadow-cut'])
+    expect(mine[1]!.conditions).toEqual([{ kind: 'hpPercent', who: 'target', operator: 'atMost', value: 30 }])
+    expect(hero.ruleStacks[0]!.rows.map((row) => row.skillId)).toEqual(['shadow-cut'])
+    expect(hero.updates).toContain('assassin-venom-passive')
+  })
+
+  it('drops a stack whose only trigger named Venom Edge, and cleans 13.37 past loadout and waiting data', () => {
+    const hero = loadOld(fresh('assassin'), (entry) =>
+      oldAssassin(entry, {
+        ruleStacks: [{ id: 'only', name: 'Only', when: [readyVenom], rows: [{ skillId: 'shadow-cut' }] }],
+        pastLoadout: ['mark-for-death', 'venom-edge', 'shadow-cut'],
+        waitingSkillIds: ['venom-edge'],
+      }),
+    ).heroes[0]!
+    expect(hero.ruleStacks).toEqual([])
+    expect(hero.pastLoadout).toEqual(['mark-for-death', 'shadow-cut'])
+    expect(hero.waitingSkillIds).toBeUndefined()
+    const some = loadOld(fresh('assassin'), (entry) => oldAssassin(entry, { waitingSkillIds: ['venom-edge', 'fan-of-knives'] })).heroes[0]!
+    expect(some.waitingSkillIds).toEqual(['fan-of-knives'])
+  })
+
+  it('is idempotent, and leaves a new hero and other classes alone', () => {
+    const migrated = loadOld(fresh('assassin'), (entry) => oldAssassin(entry))
+    const again = applyHeroUpdates(migrated)
+    expect(again).toBe(migrated)
+    const reparsed = parseSave(serializeSave(migrated))
+    if (!reparsed.ok) throw new Error(reparsed.reason)
+    expect(reparsed.data).toEqual(migrated)
+    const made = fresh('assassin').heroes[0]!
+    expect(made.progress.loadout).toEqual(['mark-for-death', 'shadow-cut', 'execute'])
+    expect(made.updates).toContain('assassin-venom-passive')
+    const warrior = loadOld(fresh('warrior'), (entry) => entry).heroes[0]!
+    expect(warrior.progress.loadout).toEqual(fresh('warrior').heroes[0]!.progress.loadout)
   })
 })
