@@ -1218,10 +1218,11 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
 
 ### Step 13.44: Gear mix-up and safe selling
-- Status: `todo`
+- Status: `done`
 - Depends on: 13.37
 - Goal: the shop's Sell list and the archive are grouped (Worn; Heirlooms and kept gear; Earlier lives; Current life) with badges; risky gear needs a two-step sell (GAME_DESIGN §9 "Safe selling (Step 13.44)"). No undo. Heirlooms stay unsellable, shown disabled with the reason.
 - Progress:
+  - 2026-11-21: Done. `persist/sellSafety.ts` (`needsSellConfirm`, `sellGroup`, `RISKY_QUALITY` 1.05), `ui/town/sellArm.ts` (two-click state machine, fake-timer tests), `SellButton.tsx`, `SellList.tsx` (extracted from `Town.tsx`), grouped archive in `Equipment.tsx`, Guide sentence in the Greyhaven topic. No jsdom in the project, so the two-click flow is tested through the state machine plus static markup of both states; clicking was checked in a browser.
 
 ### Step 13.43: Keep the between-lives plan
 - Status: `done`

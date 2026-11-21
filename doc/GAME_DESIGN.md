@@ -2165,6 +2165,16 @@ First-playable town numbers, decided 2026-10-31:
 - Repair restores an item to full durability. One item costs `ceil(missing durability × (1 + item level ÷ 2) ÷ 10)` gold. A disabled item is repaired the same way.
 - Debt is kept on the account and added to by each defeat. It can be paid off in any amount from the account's gold, and it still blocks nothing.
 
+### Safe selling (Step 13.44)
+
+Decided 2026-11-21 (user approved). UI and one pure helper only; selling, prices and the carried share are unchanged, and `sellItem` still refuses an heirloom. Nothing can be undone after a sale, so the Sell list now tells kept gear from new gear and asks twice before it sells something that is easy to regret.
+
+- Representation: an heirloom is an item with `heirloom: { heroId, cap }`, worn or in the archive. At reincarnation every worn piece goes to the archive and the hero's `pastLifeItemIds` lists every archive id at that moment (heirlooms included); the new starter set has new ids and is in no list. The id is dropped from the list when the item is sold.
+- Groups (the Sell list and the Equipment archive): Worn (equipped pieces, a badge says which of the others it is); Heirlooms and kept gear (heirlooms, shown disabled with the reason "An heirloom cannot be sold"); Earlier lives (archive pieces in `pastLifeItemIds` that are not heirlooms, paying only the carried share); Current life (everything else). The riskiest groups come first after Worn, so the new starter set is never mixed with kept gear. Every row carries a badge for its group.
+- Two-step sell, no undo: plain current-life gear (no modifier, no socket, quality below the threshold) sells with one click. Risky gear (earlier-life gear, an item with a modifier, a socket, or quality at or above the threshold; an heirloom is risky and blocked besides) needs a second click: the first click turns the same button into "Confirm sell +X g" (warning style, same place, no popup), a second click sells. It goes back to "Sell" after 4 seconds, when the button loses focus, or on Escape. The accessible name changes with it. Worn pieces follow the same rule.
+- Threshold: quality 1.05 (105%). Starter and shop gear is exactly 100% and a craft or upgrade can reach 90% to 120%, so a piece at 105% or more has been improved on purpose and is worth a second look. The 80% suggested while planning would have flagged every piece, because quality never goes below 90%.
+- Helper: `needsSellConfirm(item, earlierIds)` in `persist/sellSafety.ts`, with `sellGroup` and `RISKY_QUALITY`.
+
 ### Crafting
 
 - NPC artisans produce standard base items.

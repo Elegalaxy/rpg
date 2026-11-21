@@ -1304,3 +1304,28 @@ button.help-mark {
   background: var(--panel);
   font-size: 0.85rem;
 }
+
+/* Safe selling (Step 13.44): the risky Sell button holds both labels so "Confirm sell" does not move anything. */
+button.sell-button-confirm {
+  display: inline-grid;
+  justify-items: center;
+  align-content: center;
+}
+
+button.sell-button-confirm .sell-label {
+  grid-area: 1 / 1;
+}
+
+button.sell-button-confirm .sell-label-off {
+  visibility: hidden;
+}
+
+button.sell-button-confirm[aria-label^='Confirm'] {
+  background: var(--warn);
+  color: var(--bg);
+}
+
+h4.sell-group {
+  margin: var(--s3) 0 var(--s1);
+  font-size: 0.95rem;
+}

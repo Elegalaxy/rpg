@@ -9,6 +9,7 @@ import { supplyLock } from './crafting.ts'
 import { previewEquip, wearerOf, type EquipPreview } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import { purseOf, updatePurse, type SaveData, type SavedHero } from './save.ts'
+import { HEIRLOOM_SELL_REASON } from './sellSafety.ts'
 
 function closed(save: SaveData): string | null {
   return save.expedition === null ? null : 'Town services are closed while an expedition is running.'
@@ -69,7 +70,7 @@ export function sellItem(save: SaveData, itemId: string): RosterResult {
   const worn = hero !== null && slot !== undefined ? hero.equipment[slot] : null
   const item = archived ?? worn
   if (item === null || item === undefined) return { ok: false, reason: 'That item is not in the archive or worn by the selected hero.' }
-  if (item.heirloom !== undefined) return { ok: false, reason: 'An heirloom cannot be sold.' }
+  if (item.heirloom !== undefined) return { ok: false, reason: HEIRLOOM_SELL_REASON }
   const gold = purse.gold + sellPriceFor(hero, item)
   const past = hero?.pastLifeItemIds
   const pruned = past === undefined ? {} : { pastLifeItemIds: past.filter((id) => id !== itemId) }

@@ -9,10 +9,11 @@ import { selectedHero } from '../../persist/character.ts'
 import { recipePrice, recipesForSale, supplyLock } from '../../persist/crafting.ts'
 import { DRILL_MS, MAX_DRILLS_PER_LEVEL, purseOf, type SaveData } from '../../persist/save.ts'
 import { drillInfo, heroAway, trainCheck } from '../../persist/training.ts'
-import { previewEquip, wearerOf } from '../../persist/equipment.ts'
-import { previewBuy, repairAllCost, sellPriceFor } from '../../persist/town.ts'
+import { wearerOf } from '../../persist/equipment.ts'
+import { previewBuy, repairAllCost } from '../../persist/town.ts'
 import { GearChanges } from './GearChanges.tsx'
 import { groupItems } from './groupItems.ts'
+import { SellList } from './SellList.tsx'
 import { ITEM_MODIFIERS, appliesToText, type ItemBase, type ItemInstance } from '../../sim/economy.ts'
 import { SUPPLY_SLOT_COUNT } from '../../sim/expedition.ts'
 import { packSlots, stackLimit } from '../../persist/pack.ts'
@@ -23,7 +24,6 @@ import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
 import { useNarrow } from '../useNarrow.ts'
 import {
   buyItemFromUi,
-  equipFromUi,
   buyRecipeFromUi,
   brewSupplyFromUi,
   buySupplyFromUi,
@@ -31,7 +31,6 @@ import {
   payDebtFromUi,
   repairAllFromUi,
   repairOneFromUi,
-  sellItemFromUi,
   sellMaterialFromUi,
   trainHeroFromUi,
   buyMaterialFromUi,
@@ -130,7 +129,6 @@ function GearShop({ place, startJob = 'buy' }: { place: PlaceDef; startJob?: Gea
   const gold = purseOf(save).gold
   const worn = Object.values(hero.equipment).filter((item): item is ItemInstance => item !== null && mine(item))
   const archived = purseOf(save).archive.filter(mine)
-  const earlier = new Set(hero.pastLifeItemIds ?? [])
   const damaged = [...worn, ...archived].filter((item) => item.durability < item.maxDurability)
   const repairAllPrice = repairAllCost(hero, mine)
   const queueCount = purseOf(save).craftQueue.length
@@ -190,60 +188,7 @@ function GearShop({ place, startJob = 'buy' }: { place: PlaceDef; startJob?: Gea
       {job === 'sell' ? (
         <>
       <h3>Sell</h3>
-      {worn.length + archived.length === 0 ? <p>You have nothing of this kind to sell.</p> : null}
-      <ul className="shop-rows">
-        {worn.map((item) => (
-          <ShopRow
-            key={item.id}
-            name={itemName(item)}
-            owned={1}
-            effect={`Worn · Item level ${item.itemLevel}`}
-            costs={[[{ kind: 'gold', amount: sellPriceFor(hero, item), prefix: '+' }]]}
-            actions={
-              <button
-                type="button"
-                className="btn-warn"
-                disabled={closed}
-                aria-label={`Sell worn ${item.id}`}
-                onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}. Fill the slot before the next expedition.`)}
-              >
-                Sell
-              </button>
-            }
-          />
-        ))}
-        {groupItems(archived, (item) => (earlier.has(item.id) ? 'earlier' : '')).map(({ item, count }) => (
-          <ShopRow
-            key={item.id}
-            name={
-              earlier.has(item.id) ? (
-                <>
-                  {itemName(item)}{' '}
-                  <Tag kind="info" title="Gear from an earlier life sells for only the share your reincarnation carries over.">
-                    Earlier life
-                  </Tag>
-                </>
-              ) : (
-                itemName(item)
-              )
-            }
-            owned={count > 1 ? count : undefined}
-            effect={`Archive · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
-            note={<GearChanges preview={previewEquip(save, hero.id, item.id)} empty="No stat change from what you wear." />}
-            costs={[[{ kind: 'gold', amount: sellPriceFor(hero, item), prefix: '+' }]]}
-            actions={
-              <>
-                <button type="button" className="btn-good" disabled={closed} aria-label={`Wear ${item.id}`} onClick={() => run(equipFromUi(item.id, null), `Put on ${itemName(item)}.`)}>
-                  Wear
-                </button>
-                <button type="button" className="btn-warn" disabled={closed} aria-label={`Sell ${item.id}`} onClick={() => run(sellItemFromUi(item.id), `Sold ${itemName(item)}.`)}>
-                  Sell
-                </button>
-              </>
-            }
-          />
-        ))}
-      </ul>
+      <SellList save={save} hero={hero} worn={worn} archived={archived} closed={closed} run={run} />
         </>
       ) : null}
 

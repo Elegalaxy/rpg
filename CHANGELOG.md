@@ -11,6 +11,8 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: the shop's Sell list and the Equipment archive are grouped (Worn, Heirlooms and kept gear, Earlier lives, Current life) with a badge on every piece, and heirlooms show a disabled Sell with the reason. [13.44]
+- Improved: selling earlier-life gear or a piece with a modifier, a socket or quality of 105% or more needs a second click on the same button (Confirm sell); it goes back after a few seconds, on leaving the button or on Escape. [13.44]
 - Improved: the Between lives planner keeps your staged purchases and heirloom picks when you reload or step back; entries that no longer work are dropped with a notice, and a Reset plan button clears it. [13.43]
 - Improved: reincarnating remembers the loadouts of your last three lives, not just one, so a skill from an older life still returns to the loadout when you learn it again. [13.42]
 - New: a Ranger rule template, Top up Readiness: Hunter's Mark when Readiness is at most 60, with a blank slot for your damage rule; the Guide's Ranger tips mention it. [13.41]

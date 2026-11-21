@@ -6,6 +6,7 @@ import { itemBase, itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { changeKind, previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
 import { bagCapacity } from '../../persist/bag.ts'
+import { SELL_GROUP_LABELS, SELL_GROUP_ORDER, sellGroup } from '../../persist/sellSafety.ts'
 import { EQUIPMENT_SLOT_IDS, MODIFIER_STACK_CAP, gearGaps, modifierCapNotes, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
 import { Tag } from '../Kit.tsx'
@@ -79,6 +80,7 @@ export function Equipment() {
     )
   }
   const stats = statsFor(hero)
+  const earlier = new Set(hero.pastLifeItemIds ?? [])
   const lines = stats === null ? null : statLines(stats)
   const capNotes = modifierCapNotes(hero.equipment)
   const gaps = gearGaps(hero.equipment, itemBase)
@@ -208,13 +210,25 @@ export function Equipment() {
               <Help label="About the archive">Pick a slot above to equip one of these.</Help>
             </p>
           )}
-          <ul className="rows" aria-label="Archive">
-            {purseOf(save).archive.map((item) => (
-              <Row key={item.id}>
-                <ItemFacts item={item} />
-              </Row>
-            ))}
-          </ul>
+          {SELL_GROUP_ORDER.filter((group) => group !== 'worn').map((group) => {
+            const members = purseOf(save).archive.filter((item) => sellGroup(item, false, earlier) === group)
+            if (members.length === 0) return null
+            return (
+              <section key={group} aria-label={`Archive: ${SELL_GROUP_LABELS[group]}`}>
+                <h4 className="sell-group">
+                  {SELL_GROUP_LABELS[group]} <span className="muted">({members.length})</span>
+                </h4>
+                <ul className="rows" aria-label={`Archive, ${SELL_GROUP_LABELS[group]}`}>
+                  {members.map((item) => (
+                    <Row key={item.id}>
+                      <ItemFacts item={item} />
+                      <Tag kind={group === 'current' ? 'plain' : 'info'}>{group === 'heirloom' ? 'Heirloom' : group === 'earlier' ? 'Earlier life' : 'Current life'}</Tag>
+                    </Row>
+                  ))}
+                </ul>
+              </section>
+            )
+          })}
         </div>
         <aside className="sticky-panel stats-panel" aria-label="Derived stats">
           <h3>Stats</h3>
