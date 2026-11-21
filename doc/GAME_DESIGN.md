@@ -401,7 +401,7 @@ The MVP Assassin web has fifteen nodes: five per cluster. Connections follow the
 
 #### Venom cluster
 
-1. Venom Edge: no effect of its own (Step 13.50). Envenomed strikes (the Assassin's innate Poison on direct damage) ticks for 10% of snapshotted Physical Power with or without the node; the node stays as the entry of the Venom branch and the prerequisite of Potent Toxins. The node keeps its name so its id `assassin-venom-edge` stays. It no longer unlocks a skill (the Venom Edge skill is retired).
+1. Venom Edge: no effect of its own. Envenomed strikes (the Assassin's innate Poison on direct damage) ticks for 10% of snapshotted Physical Power with or without the node; the node is the entry of the Venom branch and the prerequisite of Potent Toxins.
 2. Potent Toxins: increase Poison's stack cap from 5 to 7, shared duration from 8 to 10 seconds, and Poison application Potency by 10.
 3. Fan of Knives: unlock the multi-target active skill. With Envenomed strikes it spreads Poison to every enemy it hits.
 4. Toxic Opportunity: applying at least one Poison stack to the Marked target grants one Advantage, subject to the normal one-trigger-per-action cap. Poison ticks do not generate Advantage. Bosses keep the full Poison stack cap (no 60% reduction) while this node is allocated.
