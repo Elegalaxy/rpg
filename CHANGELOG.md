@@ -9,7 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.20.0 · 2026-11-22 · Safer selling and kept plans
 
 - Improved: Make heirloom now is always shown on the Legacy screen, with your heirloom slots owned, used and free, and the reason when it cannot be used (no free slot, nothing to choose, or an expedition running). [13.45]
 - Improved: the shop's Sell list and the Equipment archive are grouped (Worn, Heirlooms and kept gear, Earlier lives, Current life) with a badge on every piece, and heirlooms show a disabled Sell with the reason. [13.44]
