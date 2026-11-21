@@ -1,14 +1,16 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code implementer (2026-11-22, Steps 13.46 to 13.48; 13.49 by another implementer, see git log)
-- **Current Goal:** Idea batch 13.46 to 13.48 is done and pushed to `origin/main` (one commit each). 13.49 (Auto run repair at home) was pushed by another chat. Next is the user's decision on the Venom base tick, then closing the unreleased lines into a `## 0.x.0` changelog heading.
+- **Last Updated By:** Claude Code implementer (2026-11-22, Step 13.50)
+- **Current Goal:** Step 13.50 is done and pushed to `origin/main`: the Assassin's Envenomed strikes tick for 10% from the start and the Venom Edge node has no numeric effect. Steps 13.36 to 13.50 can now be closed into a `## 0.x.0` changelog heading after the user's playtest.
 - **Recent Changes & Files Touched:**
-  - 13.46: Legacy "Make heirloom now" shows the item list and button only when a slot is free and something is claimable; otherwise only the key-values and the reason. List sorted best first (item level, quality), worn pieces marked "(worn)". `claimOptions` in `persist/reincarnation.ts`, `ui/character/Legacy.tsx`, tests in `Legacy.test.tsx`.
-  - 13.47: measured the Assassin passive's 8% base tick with no Venom Edge node (measurement only, no content change). Harness variants `live-nonode`, `current-nonode`, `live-baseNN-nonode`, `VENOM_EXCLUDE=tyrant` in `harness/venom.ts`. Result: 8% fails (Warden prepared -16.0 vs the +/-8 limit; prepared tier -12.3 on the 12 cells without the Tyrant). A 10% base passes, 9% fails. Table in GAME_DESIGN §10 "Base tick on its own".
-  - 13.48: new matrix `npm run sim -- --matrix toxic --seed 1 --runs 5` (`harness/toxic.ts`, `toxic.test.ts`): Assassin plain / Toxic Opportunity / Toxic Sovereign vs every elite cell. Baseline recorded in GAME_DESIGN §10 "Toxic guard matrix". The nine older matrices stay byte-identical.
+  - Measured four node jobs with the 10% base (+1 Poison cap, +1% tick, +5% basic bonus, nothing): only "nothing" passes. The others break the Warden prepared +/-8 with Toxic Opportunity or Toxic Sovereign allocated; basic +5% also breaks the runaway limit. "Nothing" is numerically identical to the old node-allocated build.
+  - Content: `ENVENOM.coefficient` 0.1 in `content/scenarios.ts`; node text regenerated (`content/webs/nodeText.ts` from GAME_DESIGN §10 cluster text); Loadout passive text; comments in `persist/heroUpdates.ts`. No save migration (the node stays allocated).
+  - Harness (measurement only): variants `n10-cap|tick11|basic15|none`, `VENOM_BASELINE=live` report mode in `harness/venom.ts`; sim hooks `envenom.nodeBasicBonus` and `nodeCapBonus` (off in `gameDefs()`).
+  - Guards at `--seed 1 --runs 5`: only Assassin rows without the node moved (reference, telegraph, built); modded, cinder, hollows, warden, causeway, elites and toxic are byte-identical. Lines listed in GAME_DESIGN §10 "Venom Edge node after the 10% base".
+  - Tests: `scenarios.test.ts` assassin-vs-standard seed 42 time 8653 to 7731 ms; `venom.test.ts` expectations. Docs: GAME_DESIGN §10, IMPLEMENTATION_PLAN 13.50, CHANGELOG `Unreleased` Balance line.
 - **Active Decisions / Constraints:**
-  - No sim or content-number change in this batch. Never remove `// admin code`. One commit per part to `origin/main`; every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot: restore it, never commit it. `reports/` is gitignored.
-  - `current` in the venom harness drops the Burn Warming Tonic row on Tyrant cells (13-row cap), so Tyrant cells are not like-for-like with `live`; use `VENOM_EXCLUDE=tyrant` for the clean comparison.
-- **Risks:** `slotsRanger.test.ts` "is deterministic on a small run" can time out at 30 s when the machine is loaded (passes alone and on a quiet rerun). The shipped 8% base without the node is below the measurement band at the Warden.
-- **Not verified:** Legacy layout was checked by DOM measurements only (screenshots from the browser pane were stale at 375 px).
-- **Exact Next Step:** (1) User decides: keep 8% base (the node is what makes the Warden pass), or 10% base and give the Venom Edge node another job. (2) Close the unreleased changelog lines under a `## 0.x.0` heading.
+  - Never remove `// admin code`. One commit per part, pushed to `origin/main`; every game change adds a `CHANGELOG.md` line under `Unreleased`. `npm test` rewrites the scenarios snapshot file: restore it (`git checkout --`), it has no real change.
+  - Do not run measurements at the same time as the full `npm test` (slots harness tests time out).
+- **Risks:** Venom Edge is now a pure connector node (no effect text players can use); a later round could give it a job once the boss cap rules change. Warden prepared per-seed results are noisy (about +/-10 per seed at 100 runs).
+- **Not verified:** The node text in the in-game skill web in a browser; the Tyrant cells' `current` baseline stays a confound (12-cell tables decide).
+- **Exact Next Step:** Close 13.36 to 13.50 into a `## 0.x.0` changelog heading after the user's playtest; idea: give the Venom Edge node a small readable job later if the design wants one.
