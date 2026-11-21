@@ -56,7 +56,7 @@ export const nodeText: { readonly [nodeId: string]: string } = {
   "ranger-flame-arrow": "unlock the special-ammunition Fire active skill.",
   "ranger-efficient-quiver": "add 2 special-ammunition slots. Every third special arrow fired does not consume ammunition; the visible counter persists for the expedition.",
   "ranger-trapper": "automatically deploy one configured trap before the first enemy action, paying its normal Readiness and supply costs but no combat action. This opening effect is ready when leaving town and recharges after three completed encounters.",
-  "ranger-hunters-mark": "use a very short action to reveal target defenses and traits for the encounter and expose that information to target-priority rules; it does not duplicate Assassin execution mechanics.",
+  "ranger-hunters-mark": "use a very short action to reveal target defenses and traits for the encounter, expose that information to target-priority rules, and gain 20 Readiness; it does not duplicate Assassin execution mechanics.",
   "ranger-trail-sense": "increase travel-based Readiness generation by 25% and reveal one additional hidden route trait before departure.",
   "ranger-volley": "unlock the Readiness-spending multi-target active skill.",
   "ranger-press-the-trail": "after each victory, restore 5 Readiness per current expedition-momentum stack and gain +2 percentage points of escape chance per stack.",

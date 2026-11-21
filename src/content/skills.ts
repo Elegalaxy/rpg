@@ -120,11 +120,11 @@ const huntersMark = {
   id: 'hunters-mark',
   name: "Hunter's Mark",
   cost: 0,
-  cooldownSeconds: 5,
+  cooldownSeconds: 8,
   actionTimeCoefficient: 0.5,
   tags: ['mark'],
   target: 'single',
-  effects: [{ kind: 'reveal' }],
+  effects: [{ kind: 'reveal' }, { kind: 'resource', base: 20 }],
 } satisfies SkillDef
 
 const snareTrap = {

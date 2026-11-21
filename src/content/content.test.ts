@@ -220,9 +220,9 @@ describe('content integrity', () => {
     })
     expect(skills['hunters-mark']).toMatchObject({
       cost: 0,
-      cooldownSeconds: 5,
+      cooldownSeconds: 8,
       actionTimeCoefficient: 0.5,
-      effects: [{ kind: 'reveal' }],
+      effects: [{ kind: 'reveal' }, { kind: 'resource', base: 20 }],
     })
     expect(skills['aimed-shot']).toMatchObject({
       cost: 40,
