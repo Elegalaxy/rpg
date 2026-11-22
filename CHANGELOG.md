@@ -9,6 +9,9 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+- Fixed: three skill-web tooltips (Mana Ward, Smite, Judgment) no longer show developer step notes.
+
 ## 0.21.0 · 2026-11-22 · Auto run repair and a smoother screen
 - Improved: the Run dock has a Repair at home switch and shows 'Auto · repair' when it is on. [13.49]
 - Improved: when Auto run stops because gear is at 0 durability and Repair at home could not pay, the message says the cost and your gold; a toast says when it skipped pieces for lack of gold. [13.49]

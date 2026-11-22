@@ -484,7 +484,7 @@ Initial invocation recipes:
 #### Arcane cluster
 
 1. Arcane Bolt: reduce Mana cost from 5 to 3 and increase damage from 90% to 100% Magical Power.
-2. Mana Ward: unlock the Mana-spending defensive active skill. Its barrier is 85% Magical Power instead of 65% (Step 13.5; was 125% instead of 100%).
+2. Mana Ward: unlock the Mana-spending defensive active skill. Its barrier is 85% Magical Power instead of 65%.
 3. Arcane Recovery: increase restoration from 30 to 40 base Mana and reduce base cooldown from 10 to 8 seconds.
 4. Efficient Channeling: reduce Mana costs by 10% and increase passive Mana regeneration by 20%.
 5. Overcast, major keystone: when Mana is insufficient, each missing Mana costs 0.25% maximum HP. The spell gains +1% damage per missing Mana, capped at +30%. Overcast is ineligible if its health cost would be fatal.
@@ -506,7 +506,7 @@ The MVP Cleric web has fifteen nodes: five per cluster. Connections follow the f
 
 #### Devotion cluster
 
-1. Smite: increase damage from 130% to 150% Magical Power (Step 13.5; was 100% to 120%) and add 5 Status Potency to vow-related effects.
+1. Smite: increase damage from 130% to 150% Magical Power and add 5 Status Potency to vow-related effects.
 2. Vowkeeper: increase base Faith generation from Zeal, Endurance, and Temperance by 20%.
 3. Penance: unlock the health-for-Faith active skill.
 4. Steadfast Spirit: fulfilling a vow condition below 50% HP or while an enemy heavy action is telegraphed generates 5 additional base Faith, at most once per hero action.
@@ -522,7 +522,7 @@ The MVP Cleric web has fifteen nodes: five per cluster. Connections follow the f
 
 #### Judgment cluster
 
-1. Judgment: unlock the high-cost magical damage active skill. Judgment deals 280% Magical Power instead of 250% (Step 13.5; was 230% instead of 200%).
+1. Judgment: unlock the high-cost magical damage active skill. Judgment deals 280% Magical Power instead of 250%.
 2. Righteous Force: Faith-spending offensive skills gain +15% damage and +10 percentage points of magical penetration.
 3. Reciprocal Purpose: alternating between offensive and defensive Cleric skills reduces the second skill's Faith cost by 20%.
 4. Final Mercy: an effective Mend or Ward empowers the next Smite or Judgment by 25%; killing an enemy empowers the next Mend or Ward by 25%. Each side stores at most one charge.
