@@ -465,6 +465,14 @@ export function setAutoRunFromUi(on: boolean): void {
   commitSave(setHeroAutoRun(saveStatus.save, on), 'auto run toggled')
 }
 
+/** Switch the selected hero's Repair at home on or off, saved (the Auto run bar's switch). */
+export function setAutoRepairFromUi(on: boolean): void {
+  const hero = selectedHero(saveStatus.save)
+  if (hero === null || (hero.autoRepair === true) === on) return
+  debugLog('[ui]', 'auto repair', { on })
+  commitSave({ ...saveStatus.save, heroes: saveStatus.save.heroes.map((entry) => (entry.id === hero.id ? { ...entry, autoRepair: on } : entry)) }, 'auto repair toggled')
+}
+
 /** True when the session limit is set and reached. */
 function autoLimitReached(limit: number | null | undefined): boolean {
   return limit != null && autoFights >= limit
@@ -501,6 +509,7 @@ function afterAutoRun(expedition: ExpeditionState): void {
       commitSave(repair.save, 'auto run repair')
       pushToast(repairLine(repair.repaired, repair.gold))
     }
+    if (repair.unaffordable > 0) pushToast(`Repair at home skipped ${repair.unaffordable} ${repair.unaffordable === 1 ? 'piece' : 'pieces'}: not enough gold.`)
   }
   // The outcome card is skipped under Auto run, so its summary and moments come as toasts.
   pushToast(`${routes[routeId]?.name ?? routeId}: ${stats.fightsWon} ${stats.fightsWon === 1 ? 'fight' : 'fights'} won, +${stats.carriedGold} g, ${loot} loot.`)

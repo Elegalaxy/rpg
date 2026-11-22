@@ -109,6 +109,22 @@ describe('the run dock', () => {
     expect(running().outcome).toBe('ongoing')
   })
 
+  it('has a Repair at home switch, disabled until Auto run is on, and a badge when it is on', () => {
+    stubStorage()
+    createHeroFromUi({ name: 'Ash', race: 'human', classId: 'warrior' })
+    startExpeditionFromUi('splintered-road')
+    const hero = selectedHero(getSaveStatus().save)!
+    const html = (change: object) =>
+      renderToStaticMarkup(
+        <RunDockView expedition={running()} hero={{ ...hero, ...change }} waiting={false} collapsed={false} onToggle={() => undefined} onOpenMap={() => undefined} />,
+      )
+    expect(html({ autoRun: false })).toMatch(/<input[^>]*data-testid="dock-auto-repair"[^>]*disabled/)
+    const on = html({ autoRun: true, autoRepair: true })
+    expect(on).not.toMatch(/<input[^>]*data-testid="dock-auto-repair"[^>]*disabled/)
+    expect(on).toMatch(/<input[^>]*data-testid="dock-auto-repair"[^>]*checked/)
+    expect(on).toContain('Auto · repair')
+  })
+
   it('shows the fight number, its name and the enemies, with room kept between fights', () => {
     stubStorage()
     createHeroFromUi({ name: 'Ash', race: 'human', classId: 'warrior' })

@@ -102,6 +102,15 @@ describe('the shared step', () => {
     const poor = autoRepairStep(base({ [slot]: 0 }, 0)).save
     expect(autoRerunRefusal(poor, 'splintered-road')?.reason).toMatch(/is at 0 durability\. Repair it\./)
   })
+
+  it('says what the repair costs and what the hero has when Repair at home could not pay', () => {
+    const slot = slotsOf(base({}, 0))[0]!
+    const poor = autoRepairStep(base({ [slot]: 0 }, 3)).save
+    const cost = repairCost(hero(poor).equipment[slot as keyof Equipment]!)
+    expect(autoRerunRefusal(poor, 'splintered-road')?.reason).toContain(`Repair at home could not pay: it costs ${cost.toLocaleString('en-US')} g and you have 3 g.`)
+    const off = autoRepairStep(base({ [slot]: 0 }, 3, { autoRepair: false })).save
+    expect(autoRerunRefusal(off, 'splintered-road')?.reason).not.toContain('Repair at home')
+  })
 })
 
 describe('the save and reincarnation', () => {

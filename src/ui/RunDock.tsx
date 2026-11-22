@@ -10,7 +10,7 @@ import { StackPicker } from './combat/StackBar.tsx'
 import { hasStacks, summarizeStack } from './combat/stackSummary.ts'
 import { HoldActions } from './HoldActions.tsx'
 import { Kpi, KpiRow } from './Kit.tsx'
-import { escapeNowFromUi, expeditionWaiting, setAutoEscapeFromUi, setAutoRunFromUi, setRepeatRouteFromUi, useSaveStatus } from './store.ts'
+import { escapeNowFromUi, expeditionWaiting, setAutoEscapeFromUi, setAutoRepairFromUi, setAutoRunFromUi, setRepeatRouteFromUi, useSaveStatus } from './store.ts'
 
 function encounterLabel(id: string): string {
   return id.replace(/-/g, ' ')
@@ -86,6 +86,7 @@ export function RunDockView({
           {hero?.autoRun === true ? (
             <span className="run-dock-stack" data-testid="dock-auto" title={hero.autoRunMode === 'endless' ? 'Auto run is on, endless: the hero keeps going until a retreat, a defeat or the total fight limit.' : hero.autoRunMode === 'echo' ? 'Auto run is on, Echo climb: a Warden win on the Bastion gate raises the next Echo rank. A loss to the Warden stops Auto run.' : 'Auto run is on: the hero pushes on and repeats by your standing orders.'}>
               {hero.autoRunMode === 'endless' ? 'Auto · endless' : hero.autoRunMode === 'echo' ? 'Auto · echo' : 'Auto'}
+              {hero.autoRepair === true ? ' · repair' : ''}
             </span>
           ) : null}
           <span className="run-dock-hp">
@@ -157,6 +158,19 @@ export function RunDockView({
               <input type="checkbox" data-testid="dock-auto-run" checked={hero?.autoRun === true} onChange={(event) => setAutoRunFromUi(event.target.checked)} />
               Auto run: keeps pushing on and reruns this route
             </label>
+          </div>
+          <div className="run-dock-repeat">
+            <label className={hero?.autoRun === true ? undefined : 'is-disabled'}>
+              <input
+                type="checkbox"
+                data-testid="dock-auto-repair"
+                checked={hero?.autoRepair === true}
+                disabled={hero?.autoRun !== true}
+                onChange={(event) => setAutoRepairFromUi(event.target.checked)}
+              />
+              Repair at home between runs
+            </label>
+            <small className="muted">{hero?.autoRun === true ? 'Pays the normal price from your gold.' : 'Turn on Auto run to use this.'}</small>
           </div>
           <div className="run-dock-repeat">
             <label className={mastery.mastered ? undefined : 'is-disabled'}>

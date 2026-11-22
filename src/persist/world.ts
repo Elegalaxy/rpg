@@ -18,6 +18,7 @@ import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
 import { packFromStash } from './preparation.ts'
 import { itemBase } from '../content/items.ts'
+import { repairCost } from '../content/shop.ts'
 import { EQUIPMENT_SLOT_IDS, applyDurability, gearGaps } from '../sim/economy.ts'
 import { addContractProgress, refreshBoard } from './contracts.ts'
 import { defeatRecordId } from './crafting.ts'
@@ -523,7 +524,14 @@ export function autoRerunRefusal(save: SaveData, routeId: string, now: number | 
   if (hero === null) return { kind: 'blocked', reason: 'Select a hero first.' }
   if (packFromStash(hero).missing.length > 0) return { kind: 'supplies', reason: 'The packed supplies are not in the stash.' }
   const broken = disabledPieces(hero)
-  if (broken.length > 0) return { kind: 'blocked', reason: `${broken.join(', ')} ${broken.length === 1 ? 'is' : 'are'} at 0 durability. Repair ${broken.length === 1 ? 'it' : 'them'}.` }
+  if (broken.length > 0) {
+    const reason = `${broken.join(', ')} ${broken.length === 1 ? 'is' : 'are'} at 0 durability. Repair ${broken.length === 1 ? 'it' : 'them'}.`
+    if (hero.autoRepair !== true) return { kind: 'blocked', reason }
+    // Repair at home is on, so the gold ran short: say what is missing.
+    const need = Object.values(hero.equipment).reduce((sum, item) => sum + (item !== null && item.durability <= 0 ? repairCost(item) : 0), 0)
+    const gold = purseOf(save).gold
+    return { kind: 'blocked', reason: `${reason} Repair at home could not pay: it costs ${need.toLocaleString('en-US')} g and you have ${gold.toLocaleString('en-US')} g.` }
+  }
   const check = canStartRoute(save, routeId, now)
   return check.ok ? null : { kind: 'blocked', reason: check.reason }
 }
