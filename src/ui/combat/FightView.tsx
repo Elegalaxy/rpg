@@ -160,7 +160,7 @@ export function FightView({
             <div className="fight-hero-stack">
               <ActorCard
                 actor={hero}
-                spriteId={hero.id}
+                spriteId={hero.classId}
                 timeMs={combat.timeMs}
                 log={combat.log}
                 equippedSkillIds={hero.equippedSkillIds}

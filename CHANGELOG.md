@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: pixel art for the Warrior, Assassin, Mage, and Cleric, the Starved Wolf and the Fracture Shardling, and a painted Fractured Frontier behind the map nodes. The Ranger and the Deserter still use their initials.
 - New: sound is on by default. A button clicks, a hit thuds, and a level up plays two notes. Sound, next to Motion, turns it off and remembers that in this browser.
 - Improved: under Repair at home, the preparation screen shows what repairing your worn gear costs now next to your gold. [13.49]
 

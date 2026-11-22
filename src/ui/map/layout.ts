@@ -1,4 +1,4 @@
-/** Where each node sits in the map's coordinate space. The background is a placeholder. */
+/** Where each node sits in the map's coordinate space. The painted land is /map/frontier.png. */
 export const MAP_WIDTH = 540
 export const MAP_HEIGHT = 330
 

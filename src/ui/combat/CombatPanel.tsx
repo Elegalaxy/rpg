@@ -9,7 +9,7 @@ export function CombatPanel({ combat, queueError = null }: { combat: CombatState
     <section className="combat-panel" aria-label="Combat">
       <ActorCard
         actor={hero}
-        spriteId={hero.id}
+        spriteId={hero.classId}
         timeMs={combat.timeMs}
         log={combat.log}
         equippedSkillIds={hero.equippedSkillIds}

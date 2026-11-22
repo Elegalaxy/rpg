@@ -67,6 +67,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
     <>
       <svg className="world-map" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="group" aria-label="Map nodes">
         <rect className="map-background" x={0} y={0} width={WIDTH} height={HEIGHT} />
+        <image href="/map/frontier.png" x={0} y={0} width={WIDTH} height={HEIGHT} preserveAspectRatio="xMidYMid slice" />
         {legs.map((leg) => {
           const from = NODE_POSITIONS[leg.from]
           const to = NODE_POSITIONS[leg.to]
