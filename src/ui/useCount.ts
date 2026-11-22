@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { motionReduced } from './access.ts'
 import { debugLog } from './debug.ts'
 
 /** Ease a displayed number toward the real one. The first paint shows the real value. */
@@ -9,7 +10,7 @@ export function useCount(value: number, ms = 400): number {
   useEffect(() => {
     const start = from.current
     const delta = value - start
-    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduce = motionReduced()
     if (delta === 0 || reduce) {
       from.current = value
       setShown(value)

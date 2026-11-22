@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 import { momentLine, sortMoments, type Moment } from '../persist/moments.ts'
+import { motionReduced } from './access.ts'
 import { debugLog } from './debug.ts'
 
 /**
@@ -27,8 +28,7 @@ let cardLeaveTimer: ReturnType<typeof setTimeout> | null = null
 const listeners = new Set<() => void>()
 
 function motionMs(ms: number): number {
-  if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return 0
-  return ms
+  return motionReduced() ? 0 : ms
 }
 
 function set(next: Notices): void {

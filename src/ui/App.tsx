@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { applyAccess, storedAccess, type AccessChoice } from './access.ts'
 import { useCount } from './useCount.ts'
 
 import { xpToNextLevel } from '../sim/stats.ts'
@@ -150,6 +151,11 @@ function SubTabs<T extends string>({
 function ThemeSwitch() {
   const [choice, setChoice] = useState<ThemeChoice>(storedTheme)
   const [palette, setPalette] = useState<PaletteChoice>(storedPalette)
+  const [access, setAccess] = useState<AccessChoice>(storedAccess)
+  function changeAccess(next: AccessChoice): void {
+    setAccess(next)
+    applyAccess(next)
+  }
   return (
     <div className="controls">
       <label>
@@ -182,6 +188,36 @@ function ThemeSwitch() {
           <option value="system">System</option>
           <option value="light">Light</option>
           <option value="dark">Dark</option>
+        </select>
+      </label>
+      <label>
+        Text{' '}
+        <select
+          value={access.text}
+          onChange={(event) => changeAccess({ ...access, text: event.target.value === 'large' ? 'large' : 'default' })}
+        >
+          <option value="default">Default</option>
+          <option value="large">Large</option>
+        </select>
+      </label>
+      <label>
+        Contrast{' '}
+        <select
+          value={access.contrast}
+          onChange={(event) => changeAccess({ ...access, contrast: event.target.value === 'high' ? 'high' : 'default' })}
+        >
+          <option value="default">Default</option>
+          <option value="high">High</option>
+        </select>
+      </label>
+      <label>
+        Motion{' '}
+        <select
+          value={access.motion}
+          onChange={(event) => changeAccess({ ...access, motion: event.target.value === 'reduce' ? 'reduce' : 'system' })}
+        >
+          <option value="system">System</option>
+          <option value="reduce">Reduce</option>
         </select>
       </label>
     </div>

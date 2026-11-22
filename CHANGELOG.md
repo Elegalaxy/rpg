@@ -10,6 +10,8 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ---
 
 ## Unreleased
+
+- Improved: Text, Contrast and Motion sit with Style and Mode. Large text, high contrast, and Reduce motion are remembered in this browser.
 - Fixed: three skill-web tooltips (Mana Ward, Smite, Judgment) no longer show developer step notes.
 
 ## 0.21.0 · 2026-11-22 · Auto run repair and a smoother screen
