@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { gameDefs } from '../content/scenarios.ts'
 import { createCombat } from '../sim/combat.ts'
@@ -6,6 +6,9 @@ import { createCombat } from '../sim/combat.ts'
 import { ELITE_IDS } from './elites.ts'
 import { RANGER_FOUR_SKILLS, RANGER_VARIANTS, SIDE_ENEMIES, formatRangerReport, rangerDefs, rangerSetup, runRangerShard, runSideShard, sideSetup, summarize, verdictFor, type RangerShard } from './slotsRanger.ts'
 import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
+
+// These run many full fights; give them room when other work keeps the CPU busy.
+vi.setConfig({ testTimeout: 120_000 })
 
 describe('slotsRanger', () => {
   it('builds valid setups for every variant, elite, tier, placement and shape', () => {

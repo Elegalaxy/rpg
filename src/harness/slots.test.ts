@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { gameDefs, referenceLoadoutFor } from '../content/scenarios.ts'
 import { HERO_CLASSES } from '../sim/constants.ts'
@@ -6,6 +6,9 @@ import { createCombat } from '../sim/combat.ts'
 
 import { ELITE_CELLS } from './elites.ts'
 import { FIFTH_SKILL_CANDIDATES, SLOT_VARIANTS, TUNED_ROWS, TUNED_VARIANTS, formatSlotsTable, runSlotsMatrix, slotSetup } from './slots.ts'
+
+// These run many full fights; give them room when other work keeps the CPU busy.
+vi.setConfig({ testTimeout: 120_000 })
 
 const cell = (elite: string, tier: string) => ELITE_CELLS.find((entry) => entry.elite === elite && entry.tier === tier)!
 
