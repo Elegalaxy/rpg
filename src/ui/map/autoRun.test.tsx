@@ -331,6 +331,7 @@ describe('the Auto run mode on the preparation screen (Step 13.26)', () => {
     expect(off).toMatch(/<input[^>]*aria-label="Auto run repair"[^>]*disabled/)
     expect(off).toContain('Turn on Auto run to repair at home.')
     expect(prepare({ autoRun: true, autoRepair: true })).toMatch(/<input[^>]*aria-label="Auto run repair"[^>]*checked/)
+    expect(off).toContain('Worn gear needs no repair now.')
   })
 
   it('tags the run dock Auto · endless', async () => {

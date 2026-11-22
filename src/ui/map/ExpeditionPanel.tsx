@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { selectedHero } from '../../persist/character.ts'
+import { repairAllCost } from '../../persist/town.ts'
 import {
   AUTO_RUN_MAX,
   AUTO_RUN_MIN,
@@ -20,7 +21,7 @@ import {
   type PreparationDraft,
 } from '../../persist/preparation.ts'
 import { PACKS, STACK_LIMIT_REASON, packSlots } from '../../persist/pack.ts'
-import { REPEAT_LIMITS, type SavedHero } from '../../persist/save.ts'
+import { REPEAT_LIMITS, purseOf, type SavedHero } from '../../persist/save.ts'
 import { firstClearRewardText } from '../../content/firstClear.ts'
 import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
@@ -78,6 +79,8 @@ function PrepWho({ of }: { of: string }) {
 
 function PreparationForm({ hero }: { hero: SavedHero }) {
   const status = useSaveStatus()
+  const repairNeed = repairAllCost(hero)
+  const repairGold = purseOf(status.save).gold
   const [draft, setDraft] = useState<PreparationDraft>(() => {
     const start = draftFor(hero)
     return { ...start, supplies: clampToStash(start.supplies, hero.purse.supplies, packSlots(hero)) }
@@ -400,6 +403,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           </label>
           <Help label="About Auto run repair">Repairs worn gear at the normal price when the hero is home between runs.</Help>
         </div>
+        <p className="muted" data-testid="auto-repair-cost">
+          {repairNeed === 0 ? 'Worn gear needs no repair now.' : `Repairing worn gear now costs ${repairNeed.toLocaleString('en-US')} g; you have ${repairGold.toLocaleString('en-US')} g.`}
+        </p>
         {draft.autoRun === true ? null : <p className="muted">Turn on Auto run to repair at home.</p>}
         <p className="muted auto-mode-note" data-testid="auto-run-mode-note">
           {draft.autoRun !== true
