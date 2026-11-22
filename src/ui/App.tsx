@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { applyAccess, storedAccess, type AccessChoice } from './access.ts'
+import { applySound, storedSound, type SoundChoice } from './sound.ts'
 import { useCount } from './useCount.ts'
 
 import { xpToNextLevel } from '../sim/stats.ts'
@@ -152,6 +153,7 @@ function ThemeSwitch() {
   const [choice, setChoice] = useState<ThemeChoice>(storedTheme)
   const [palette, setPalette] = useState<PaletteChoice>(storedPalette)
   const [access, setAccess] = useState<AccessChoice>(storedAccess)
+  const [sound, setSound] = useState<SoundChoice>(storedSound)
   function changeAccess(next: AccessChoice): void {
     setAccess(next)
     applyAccess(next)
@@ -218,6 +220,20 @@ function ThemeSwitch() {
         >
           <option value="system">System</option>
           <option value="reduce">Reduce</option>
+        </select>
+      </label>
+      <label>
+        Sound{' '}
+        <select
+          value={sound}
+          onChange={(event) => {
+            const next = event.target.value === 'off' ? 'off' : 'on'
+            setSound(next)
+            applySound(next)
+          }}
+        >
+          <option value="on">On</option>
+          <option value="off">Off</option>
         </select>
       </label>
     </div>

@@ -20,6 +20,7 @@ import type {
 
 import { Tag } from '../Kit.tsx'
 import { debugLog } from '../debug.ts'
+import { playHit } from '../sound.ts'
 import { useCount } from '../useCount.ts'
 import { noteHeroQueue } from '../store.ts'
 import { interruptText, isHeavy, telegraphSkill } from './telegraphInfo.ts'
@@ -434,6 +435,7 @@ export function ActorCard({ actor, spriteId, timeMs, log, equippedSkillIds, clas
       crit: event.hit && event.crit,
     }))
     debugLog('[ui]', 'hit', { actorId: actor.id, text: added.map((item) => item.text) })
+    playHit()
     setFloaters((current) => [...current, ...added].slice(-4))
     card.classList.remove('is-hit')
     void card.offsetWidth

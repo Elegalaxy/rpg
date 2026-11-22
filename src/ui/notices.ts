@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 import { momentLine, sortMoments, type Moment } from '../persist/moments.ts'
 import { motionReduced } from './access.ts'
 import { debugLog } from './debug.ts'
+import { playLevel } from './sound.ts'
 
 /**
  * Pop-up notices, kept in memory only so a reload never replays them (doc/POPUP_NOTICES.md).
@@ -75,6 +76,7 @@ export function dismissToast(id: number): void {
 export function reportMoments(moments: readonly Moment[], mode: NoticeMode): void {
   if (moments.length === 0) return
   debugLog('[ui]', 'notice moments', { mode, kinds: moments.map((moment) => moment.kind) })
+  if (moments.some((moment) => moment.kind === 'level')) playLevel()
   if (mode === 'auto') {
     for (const moment of moments) pushToast(momentLine(moment))
     return

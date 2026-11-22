@@ -10,6 +10,8 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ---
 
 ## Unreleased
+
+- New: sound is on by default. A button clicks, a hit thuds, and a level up plays two notes. Sound, next to Motion, turns it off and remembers that in this browser.
 - Improved: under Repair at home, the preparation screen shows what repairing your worn gear costs now next to your gold. [13.49]
 
 - Improved: Text, Contrast and Motion sit with Style and Mode. Large text, high contrast, and Reduce motion are remembered in this browser.
