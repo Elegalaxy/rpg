@@ -490,6 +490,7 @@ function App() {
             </aside>
             <main className="content">
               <AwayPanel />
+              <div key={tab} className="screen-in">
               {tab === 'heroes' ? (
                 <>
                   <SubTabs
@@ -501,6 +502,7 @@ function App() {
                       skills: { count: skillPoints, what: 'unspent skill points' },
                     }}
                   />
+                  <div key={heroPart} className="screen-in">
                   {heroPart === 'overview' ? <Attributes /> : null}
                   {heroPart === 'skills' ? <SkillWeb /> : null}
                   {heroPart === 'combat' ? (
@@ -511,6 +513,7 @@ function App() {
                   ) : null}
                   {heroPart === 'gear' ? <Equipment /> : null}
                   {heroPart === 'legacy' ? <Legacy /> : null}
+                  </div>
                 </>
               ) : null}
               {tab === 'roster' ? (
@@ -527,7 +530,9 @@ function App() {
                   ) : (
                     <SubTabs tabs={TOWN_PARTS} current={townPart} onPick={setTownPart} badges={townBadges} />
                   )}
-                  <Town place={townPart} />
+                  <div key={townPart} className="screen-in">
+                    <Town place={townPart} />
+                  </div>
                 </>
               ) : null}
               {tab === 'map' ? (
@@ -545,6 +550,7 @@ function App() {
               {tab === 'combat' ? <CombatViewer /> : null}
               {tab === 'whatsnew' ? <WhatsNew /> : null}
               {tab === 'guide' ? <Guide target={guideTarget} /> : null}
+              </div>
             </main>
             {docked ? <RunDock onOpenMap={() => setTab('map')} /> : null}
             {narrow ? (

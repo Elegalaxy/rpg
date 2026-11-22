@@ -12,6 +12,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ## Unreleased
 - Fixed: the Venom Edge skill-web tooltip no longer shows developer notes. [13.50]
 
+- Improved: changing tab, Hero section, or Town place fades the new screen in, and the phone More sheet rises into place.
 - Improved: gold and XP count up to their new totals, and a fight's HP and resource numbers do the same.
 - Improved: in a fight, life bars ease, a hit flashes, and the damage number floats up.
 - Improved: the notice card fades out when it closes.

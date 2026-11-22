@@ -501,6 +501,32 @@ nav[aria-label='Main'] button {
   border-radius: var(--radius);
   background: var(--panel);
   box-shadow: 0 4px 16px rgb(0 0 0 / 35%);
+  animation: more-in 180ms ease-out;
+}
+
+.screen-in {
+  animation: screen-in 180ms ease-out;
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes more-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-in,
+  .more-sheet {
+    animation: none;
+  }
 }
 
 .more-list {
