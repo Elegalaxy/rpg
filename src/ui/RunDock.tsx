@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { selectedHero } from '../persist/character.ts'
 import type { SavedHero } from '../persist/save.ts'
-import { MASTERY_RETURNS, routeMastery } from '../persist/world.ts'
+import { MASTERY_RETURNS, routeCleared, routeMastery } from '../persist/world.ts'
 import { routes } from '../content/world.ts'
 import { MOMENTUM_CAP, bagIsFull, lootCapacityOf, type ExpeditionState } from '../sim/expedition.ts'
 import { readCollapsed, writeCollapsed } from './runDockState.ts'
@@ -10,7 +10,14 @@ import { StackPicker } from './combat/StackBar.tsx'
 import { hasStacks, summarizeStack } from './combat/stackSummary.ts'
 import { HoldActions } from './HoldActions.tsx'
 import { Kpi, KpiRow } from './Kit.tsx'
-import { escapeNowFromUi, expeditionWaiting, setAutoEscapeFromUi, setAutoRepairFromUi, setAutoRunFromUi, setRepeatRouteFromUi, useSaveStatus } from './store.ts'
+import { escapeNowFromUi, expeditionWaiting, getLastRouteId, setAutoEscapeFromUi, setAutoRepairFromUi, setAutoRunFromUi, setAwayRouteFromUi, setRepeatRouteFromUi, useSaveStatus } from './store.ts'
+
+function dockAwayRoute(hero: SavedHero, routeId: string): string | null {
+  if (routeCleared(hero, routeId)) return routeId
+  const last = getLastRouteId()
+  if (last !== null && routeCleared(hero, last)) return last
+  return Object.keys(routes).find((id) => routeCleared(hero, id)) ?? null
+}
 
 function encounterLabel(id: string): string {
   return id.replace(/-/g, ' ')
@@ -158,6 +165,22 @@ export function RunDockView({
               <input type="checkbox" data-testid="dock-auto-run" checked={hero?.autoRun === true} onChange={(event) => setAutoRunFromUi(event.target.checked)} />
               Auto run: keeps pushing on and reruns this route
             </label>
+          </div>
+          <div className="run-dock-repeat">
+            <button
+              type="button"
+              data-testid="dock-afk"
+              aria-pressed={hero?.awayRouteId != null}
+              disabled={hero === null || (hero.awayRouteId == null && dockAwayRoute(hero, expedition.id) === null)}
+              title={hero !== null && hero.awayRouteId == null && dockAwayRoute(hero, expedition.id) === null ? 'Clear a route before AFK can start it.' : undefined}
+              onClick={() => {
+                if (hero === null) return
+                setAwayRouteFromUi(hero.awayRouteId != null ? null : dockAwayRoute(hero, expedition.id))
+              }}
+            >
+              AFK: {hero?.awayRouteId != null ? 'On' : 'Off'}
+            </button>
+            <small className="muted">Off: nothing starts when you leave with no run. A run already out still follows Auto run.</small>
           </div>
           <div className="run-dock-repeat">
             <label className={hero?.autoRun === true ? undefined : 'is-disabled'}>

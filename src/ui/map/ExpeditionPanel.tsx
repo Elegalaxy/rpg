@@ -23,6 +23,7 @@ import {
 import { PACKS, STACK_LIMIT_REASON, packSlots } from '../../persist/pack.ts'
 import { REPEAT_LIMITS, purseOf, type SavedHero } from '../../persist/save.ts'
 import { firstClearRewardText } from '../../content/firstClear.ts'
+import { routeCleared } from '../../persist/world.ts'
 import { echoRewardId, echoRewardText } from '../../persist/firstClear.ts'
 import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
@@ -44,8 +45,10 @@ import { FightView } from '../combat/FightView.tsx'
 import { useNarrow } from '../useNarrow.ts'
 import {
   escapeNowFromUi,
+  getLastRouteId,
   setAutoEscapeFromUi,
   setAutoRunFromUi,
+  setAwayRouteFromUi,
   getAutoFights,
   getAutoNotice,
   savePreparationFromUi,
@@ -69,6 +72,37 @@ const CURSE_LABELS: { [curse: string]: string } = {
 function vowLabel(vow: string | null): string | null {
   if (vow === null || vow.length === 0) return null
   return VOW_LABELS[vow] ?? vow
+}
+
+/** A cleared route AFK can start: the one named, else the last one the player picked, else the first cleared route. */
+function defaultAwayRoute(hero: SavedHero, prefer?: string): string | null {
+  if (prefer !== undefined && routeCleared(hero, prefer)) return prefer
+  const last = getLastRouteId()
+  if (last !== null && routeCleared(hero, last)) return last
+  return Object.keys(routes).find((id) => routeCleared(hero, id)) ?? null
+}
+
+/** Turns the away route on or off. Off means nothing starts when the player leaves with no run. */
+function AfkSwitch({ hero, routeId }: { hero: SavedHero; routeId?: string }) {
+  const on = hero.awayRouteId != null
+  const next = defaultAwayRoute(hero, routeId)
+  return (
+    <span className="run-bar-escape">
+      <button
+        type="button"
+        data-testid="afk-toggle"
+        aria-pressed={on}
+        disabled={!on && next === null}
+        title={!on && next === null ? 'Clear a route before AFK can start it.' : undefined}
+        onClick={() => setAwayRouteFromUi(on ? null : next)}
+      >
+        AFK: {on ? 'On' : 'Off'}
+      </button>
+      <Help label="About AFK">
+        Off: nothing starts when you leave with no run. On: a cleared route starts then. A run already out still follows Auto run.
+      </Help>
+    </span>
+  )
 }
 
 type PrepGroup = 'every' | 'pack' | 'auto' | 'orders' | 'afk'
@@ -491,6 +525,21 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
           draft.awayRouteId === '' ? 'Nothing starts' : (routes[draft.awayRouteId]?.name ?? 'A route'),
         )}
         <div className="controls">
+          <button
+            type="button"
+            data-testid="afk-toggle"
+            aria-pressed={draft.awayRouteId !== ''}
+            disabled={draft.awayRouteId === '' && defaultAwayRoute(hero) === null}
+            title={draft.awayRouteId === '' && defaultAwayRoute(hero) === null ? 'Clear a route before AFK can start it.' : undefined}
+            onClick={() => patch({ awayRouteId: draft.awayRouteId === '' ? (defaultAwayRoute(hero) ?? '') : '' })}
+          >
+            AFK: {draft.awayRouteId === '' ? 'Off' : 'On'}
+          </button>
+          <Help label="About AFK">
+            Off: nothing starts when you leave with no run. On: the route below starts if you have cleared it. A run already out still follows Auto run.
+          </Help>
+        </div>
+        <div className="controls">
           <label>
             If I have no run, start{' '}
             <select aria-label="Away route" value={draft.awayRouteId} onChange={(event) => patch({ awayRouteId: event.target.value })}>
@@ -739,6 +788,9 @@ function RunBar({ expedition }: { expedition: ExpeditionState }) {
               always work.
             </Help>
           </span>
+        ) : null}
+        {expedition.outcome === 'ongoing' && hero !== null ? (
+          <AfkSwitch hero={hero} routeId={expedition.id} />
         ) : null}
         {expedition.retreatThresholds.length > 0 && expedition.outcome === 'ongoing' ? (
           <span className="run-bar-escape">

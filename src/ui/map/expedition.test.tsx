@@ -16,6 +16,7 @@ import {
   savePreparationFromUi,
   settleAndRepeatFromUi,
   settleExpeditionFromUi,
+  setAwayRouteFromUi,
   startExpeditionFromUi,
   MASTERED_TRAVEL_SPEEDUP,
   TRAVEL_SPEEDUP,
@@ -217,6 +218,23 @@ describe('the expedition panel', () => {
     expect(html).toContain('Play the run for me, then rerun the route')
     expect(html).toContain('aria-label="Auto run"')
     expect(html).toContain('data-testid="away-plan"')
+    expect(html).toContain('AFK: Off')
+    expect(html).toContain('data-testid="afk-toggle"')
+  })
+
+  it('turns AFK off from the run, and on only for a cleared route', () => {
+    commitSave(newSave(), 'test', false)
+    expect(createHeroFromUi({ name: 'Cy', race: 'human', classId: 'warrior' })).toBeNull()
+    seeds([1])
+    expect(startExpeditionFromUi('splintered-road')).toBeNull()
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('AFK: Off')
+    const hero = selectedHero(getSaveStatus().save)
+    if (hero === null) throw new Error('no hero')
+    commitSave({ ...getSaveStatus().save, heroes: [{ ...hero, clearedNodeIds: ['splintered-road'], awayRouteId: 'splintered-road' }] }, 'test', false)
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('AFK: On')
+    setAwayRouteFromUi(null)
+    expect(selectedHero(getSaveStatus().save)?.awayRouteId).toBeNull()
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('AFK: Off')
   })
 
   it('shows the cleric vow in the run bar and hides it for other classes', () => {

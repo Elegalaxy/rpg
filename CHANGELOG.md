@@ -10,6 +10,8 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ---
 
 ## Unreleased
+- Improved: AFK has an On/Off button in preparation, on the run, and in the run dock. Off means nothing starts when you leave with no run.
+- Fixed: opening a socket shows the item's quality before and after, as a percent, the same way a craft does.
 - New: Echo rank 3 and every fifth rank after it are milestones: they pay 3 free upgrades and gold (500 g per rank number) the first time, and the preparation screen shows the next reward. [13.52]
 - Fixed: the frontier map painting stays sharp, and the place names stay readable on top of it.
 - Improved: an heirloom can be sold once your level reaches the level it was kept at. Until then Sell stays off and says which level that is.

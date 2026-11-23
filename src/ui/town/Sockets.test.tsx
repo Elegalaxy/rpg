@@ -79,7 +79,7 @@ describe('the Sockets panel', () => {
     setup(17, keenBow)
     const open = renderToStaticMarkup(<Sockets />)
     expect(open).toContain('<dt>Quality</dt>')
-    expect(open).toContain('+3, up to 112%')
+    expect(open).toContain('100% → 103%')
     setup(17, { ...keenBow, socketed: true })
     commitSave(updatePurse(getSaveStatus().save, { materials: { cinderite: 20 } }), 'test')
     const infuse = renderToStaticMarkup(<Sockets />)

@@ -468,6 +468,18 @@ export function setAutoRunFromUi(on: boolean): void {
   commitSave(setHeroAutoRun(saveStatus.save, on), 'auto run toggled')
 }
 
+/** Set or clear the route that starts when the player leaves with no run. Null turns AFK off. */
+export function setAwayRouteFromUi(routeId: string | null): void {
+  const hero = selectedHero(saveStatus.save)
+  const next = routeId !== null && routes[routeId] !== undefined ? routeId : null
+  if (hero === null || hero.awayRouteId === next) return
+  debugLog('[ui]', 'away route', { routeId: next })
+  commitSave(
+    { ...saveStatus.save, heroes: saveStatus.save.heroes.map((entry) => (entry.id === hero.id ? { ...entry, awayRouteId: next } : entry)) },
+    'away route toggled',
+  )
+}
+
 /** Switch the selected hero's Repair at home on or off, saved (the Auto run bar's switch). */
 export function setAutoRepairFromUi(on: boolean): void {
   const hero = selectedHero(saveStatus.save)

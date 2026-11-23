@@ -128,7 +128,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                       {!socketed ? (
                         <>
                           <dt>Quality</dt>
-                          <dd data-testid="socket-quality">{qualityEffectText(gem)}</dd>
+                          <dd data-testid="socket-quality">{qualityEffectText(gem, item.quality)}</dd>
                         </>
                       ) : (
                         <>

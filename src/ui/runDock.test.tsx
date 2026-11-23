@@ -123,6 +123,8 @@ describe('the run dock', () => {
     expect(on).not.toMatch(/<input[^>]*data-testid="dock-auto-repair"[^>]*disabled/)
     expect(on).toMatch(/<input[^>]*data-testid="dock-auto-repair"[^>]*checked/)
     expect(on).toContain('Auto · repair')
+    expect(html({ awayRouteId: null })).toContain('AFK: Off')
+    expect(html({ awayRouteId: 'splintered-road', clearedNodeIds: ['splintered-road'] })).toContain('AFK: On')
   })
 
   it('shows the fight number, its name and the enemies, with room kept between fights', () => {
