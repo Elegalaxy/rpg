@@ -56,7 +56,7 @@ describe('the Sockets panel', () => {
     const html = renderToStaticMarkup(<Sockets />)
     expect(html).toContain('<dt>Replaces</dt>')
     expect(html).toMatch(/data-testid="infuse-replaces"[^>]*>.*Precise II → /)
-    expect(html).toContain('the first modifier stays')
+    expect(html).toContain('The first modifier stays.')
     setup(17, { ...keenBow, socketed: true })
     expect(renderToStaticMarkup(<Sockets />)).not.toContain('<dt>Replaces</dt>')
   })

@@ -140,7 +140,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                         <>
                           <dt>Replaces</dt>
                           <dd data-testid="infuse-replaces">
-                            <Tag kind="bad">{replacesLine(item, pickedModifier)}</Tag> <small className="muted">its rank and temper are lost; the first modifier stays</small>
+                            <Tag kind="bad">{replacesLine(item, pickedModifier)}</Tag>
                           </dd>
                         </>
                       ) : null}
@@ -148,7 +148,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                       <dd>{tokens > 0 && !socketed ? 'Now' : `${CRAFT_MS / 1000} s`}</dd>
                     </dl>
                   }
-                  note={!socketed ? (socketBlock ?? undefined) : (infuseBlock ?? undefined)}
+                  note={!socketed ? (socketBlock ?? undefined) : (infuseBlock ?? (second ? 'Re-infusing replaces the second modifier; its rank and temper are lost. The first modifier stays.' : undefined))}
                   costs={
                     !socketed
                       ? [[{ kind: 'mat', amount: SOCKET_MATERIAL_COST, label: gem }, { kind: 'gold', amount: socketGold(item.itemLevel) }]]
