@@ -10,6 +10,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ---
 
 ## Unreleased
+- Improved: Re-infuse shows which modifier it replaces (with its rank and temper) and needs a second click to confirm.
 
 - Improved: the Guide now explains the three Undead curses, rule stacks, the safe pouch, and Echo rank.
 - Fixed: a free upgrade happens at once, and the confirmation is no longer shown as an error. A paid socket or rank-up still waits in the queue.

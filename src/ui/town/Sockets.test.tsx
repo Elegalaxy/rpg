@@ -7,7 +7,9 @@ import { selectedHero } from '../../persist/character.ts'
 import { purseOf, updatePurse } from '../../persist/save.ts'
 import type { ItemInstance } from '../../sim/economy.ts'
 import { commitSave, createHeroFromUi, getSaveStatus } from '../store.ts'
+import { ReinfuseButton } from './ReinfuseButton.tsx'
 import { Sockets } from './Sockets.tsx'
+import { replacesLine } from './replacesLine.ts'
 
 function setup(level: number, item: ItemInstance): void {
   if (getSaveStatus().save.heroes.length === 0) expect(createHeroFromUi({ name: 'Ash', race: 'human', classId: 'warrior' })).toBeNull()
@@ -49,6 +51,30 @@ describe('the Sockets panel', () => {
     expect(poor).toMatch(/disabled=""[^>]*aria-label="Open socket bow"/)
     expect(poor).toContain('That costs 480 gold. You have 10.')
   })
+  it('names the modifier a re-infuse replaces, and not on a first infuse', () => {
+    setup(17, { ...keenBow, socketed: true, modifiers: ['keen', 'precise'], modifierRanks: [1, 2] })
+    const html = renderToStaticMarkup(<Sockets />)
+    expect(html).toContain('<dt>Replaces</dt>')
+    expect(html).toMatch(/data-testid="infuse-replaces"[^>]*>.*Precise II → /)
+    expect(html).toContain('the first modifier stays')
+    setup(17, { ...keenBow, socketed: true })
+    expect(renderToStaticMarkup(<Sockets />)).not.toContain('<dt>Replaces</dt>')
+  })
+
+  it('replacesLine names the second modifier, with its rank, and the new one', () => {
+    expect(replacesLine({ ...keenBow, socketed: true, modifiers: ['keen', 'precise'] }, 'keen')).toBe('Precise → Keen')
+    expect(replacesLine(keenBow, 'precise')).toBeNull()
+  })
+
+  it('Re-infuse is a two-click button: Confirm replace once armed', () => {
+    const plain = renderToStaticMarkup(<ReinfuseButton disabled={false} label="Infuse bow" confirmLabel="Confirm replace bow" onConfirm={() => undefined} />)
+    expect(plain).toContain('aria-label="Infuse bow"')
+    const armed = renderToStaticMarkup(<ReinfuseButton disabled={false} label="Infuse bow" confirmLabel="Confirm replace bow" onConfirm={() => undefined} initialArmed />)
+    expect(armed).toContain('aria-label="Confirm replace bow"')
+    const off = renderToStaticMarkup(<ReinfuseButton disabled label="Infuse bow" confirmLabel="Confirm replace bow" onConfirm={() => undefined} initialArmed />)
+    expect(off).toContain('aria-label="Infuse bow"')
+  })
+
   it('shows what the socket material does to quality, and the temper of the infuse material', () => {
     setup(17, keenBow)
     const open = renderToStaticMarkup(<Sockets />)

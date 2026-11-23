@@ -22,6 +22,8 @@ import { Help } from '../Help.tsx'
 import { ShopRow, Tag } from '../Kit.tsx'
 import { queueInfuseFromUi, queueSocketFromUi, spendFreeUpgradeFromUi, useSaveStatus } from '../store.ts'
 import { FreeUpgradeButton } from './FreeUpgrade.tsx'
+import { ReinfuseButton } from './ReinfuseButton.tsx'
+import { replacesLine } from './replacesLine.ts'
 import { groupItems } from './groupItems.ts'
 import { qualityEffectText, temperText } from './materialEffect.ts'
 
@@ -134,6 +136,14 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                           <dd data-testid="infuse-temper">{pickedModifier === '' ? 'none' : temperText(temperGrade(pickedModifier, mat))}</dd>
                         </>
                       )}
+                      {socketed && second && pickedModifier !== '' ? (
+                        <>
+                          <dt>Replaces</dt>
+                          <dd data-testid="infuse-replaces">
+                            <Tag kind="bad">{replacesLine(item, pickedModifier)}</Tag> <small className="muted">its rank and temper are lost; the first modifier stays</small>
+                          </dd>
+                        </>
+                      ) : null}
                       <dt>Time</dt>
                       <dd>{tokens > 0 && !socketed ? 'Now' : `${CRAFT_MS / 1000} s`}</dd>
                     </dl>
@@ -197,9 +207,18 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                             </option>
                           ))}
                         </select>
-                        <button type="button" className="btn-primary" disabled={infuseBlock !== null} aria-label={`Infuse ${item.id}`} onClick={() => report(queueInfuseFromUi(item.id, pickedModifier, mat))}>
-                          {second ? 'Re-infuse' : 'Infuse'}
-                        </button>
+                        {second ? (
+                          <ReinfuseButton
+                            disabled={infuseBlock !== null}
+                            label={`Infuse ${item.id}`}
+                            confirmLabel={`Confirm replace ${item.id}`}
+                            onConfirm={() => report(queueInfuseFromUi(item.id, pickedModifier, mat))}
+                          />
+                        ) : (
+                          <button type="button" className="btn-primary" disabled={infuseBlock !== null} aria-label={`Infuse ${item.id}`} onClick={() => report(queueInfuseFromUi(item.id, pickedModifier, mat))}>
+                            Infuse
+                          </button>
+                        )}
                       </div>
                     )
                   }
