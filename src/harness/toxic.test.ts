@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { ELITE_CELLS } from './elites.ts'
 import { TOXIC_BUILDS, formatToxicTable, runToxicMatrix } from './toxic.ts'
 import { parseVariant, venomSetup } from './venom.ts'
-// This runs every elite with every build; give it room when other work keeps the CPU busy.vi.setConfig({ testTimeout: 120_000 })
+
+// This runs every elite with every build; give it room when other work keeps the CPU busy.
+vi.setConfig({ testTimeout: 120_000 })
 
 describe('toxic matrix (Step 13.48)', () => {
   it('allocates the Toxic nodes only in their own builds', () => {
