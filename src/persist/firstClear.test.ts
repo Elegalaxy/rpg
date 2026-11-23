@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
-import { ECHO_RANK_TOKENS, echoRewardsDue, firstClearLabel, firstClearsDue, payFirstClears } from './firstClear.ts'
+import { ECHO_RANK_TOKENS, echoReward, echoRewardText, echoRewardsDue, firstClearLabel, firstClearsDue, payFirstClears } from './firstClear.ts'
 import { runOffline } from './offline.ts'
 import { bonusesDue, reincarnate } from './reincarnation.ts'
 import { createHero } from './roster.ts'
@@ -101,7 +101,9 @@ describe('first-clear payout', () => {
     const hero3 = hero(withHero({ echoRank: 3 }))
     expect(echoRewardsDue(hero3)).toEqual([1, 2, 3])
     const paid = payFirstClears(hero3).hero
-    expect(paid.freeUpgrades).toBe(3 * ECHO_RANK_TOKENS)
+    // Ranks 1 and 2 pay 1 each; rank 3 is a milestone: 3 upgrades and 1,500 g.
+    expect(paid.freeUpgrades).toBe(2 * ECHO_RANK_TOKENS + 3)
+    expect(paid.purse.gold - hero3.purse.gold).toBe(1500)
     expect(paid.firstClearIds).toEqual(['echo:1', 'echo:2', 'echo:3'])
     expect(echoRewardsDue(paid)).toEqual([])
     expect(payFirstClears(paid).hero).toBe(paid)
@@ -110,6 +112,15 @@ describe('first-clear payout', () => {
     expect(echoRewardsDue(again)).toEqual([])
     // Only the next new rank pays.
     expect(echoRewardsDue({ ...paid, echoRank: 4 })).toEqual([4])
+  })
+
+  it('milestone ranks (3, then every fifth) pay 3 free upgrades and 500 g per rank', () => {
+    expect([1, 2, 3, 4, 5, 6, 9, 10, 15].map((rank) => echoReward(rank).milestone)).toEqual([false, false, true, false, true, false, false, true, true])
+    expect(echoReward(2)).toEqual({ tokens: 1, gold: 0, milestone: false })
+    expect(echoReward(5)).toEqual({ tokens: 3, gold: 2500, milestone: true })
+    expect(echoRewardText(2)).toBe('1 free upgrade')
+    expect(echoRewardText(10)).toBe('3 free upgrades and 5,000 g')
+    expect(firstClearLabel('echo:5', undefined)).toBe('Echo rank 5 (milestone)')
   })
 
   it('a defeat does not pay an Echo rank, and the label reads "Echo rank N"', () => {

@@ -1219,6 +1219,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-23: Part 1 done (design recorded).
   - 2026-11-23: Done. `ECHO_RANK_TOKENS`, `echoRewardsDue`, `echoRewardId`, `firstClearLabel` in `persist/firstClear.ts` (paid by `payFirstClears` on a safe return, recorded as `echo:N` in `firstClearIds`, no save change); Echo moment line in `persist/moments.ts`; away report names the rank; `repairNeed`/`repairHave` on the away summary and the line in `AwayPanel.tsx`; tests.
 
+### Step 13.52: Echo milestone rewards
+- Status: `done`
+- Depends on: 13.51
+- Goal: user ask 2026-11-24: a bigger reward at higher Echo ranks (GAME_DESIGN §6 Milestone ranks).
+- Progress:
+  - 2026-11-24: Done. `echoReward`, `echoRewardText`, `isEchoMilestone` in `persist/firstClear.ts`; toast and away label say milestone; preparation screen line `echo-next-reward`; Guide sentence; tests.
+
 ### Step 13.50: Assassin base tick 10% and a new job for the Venom Edge node
 - Status: `done`
 - Depends on: 13.47, 13.48

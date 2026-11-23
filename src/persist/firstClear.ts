@@ -15,8 +15,36 @@ export function firstClearsDue(hero: SavedHero): FirstClearReward[] {
   })
 }
 
-/** Free upgrades for each Echo rank first unlocked (Step 13.51). */
+/** Free upgrades for an ordinary Echo rank first unlocked (Step 13.51). */
 export const ECHO_RANK_TOKENS = 1
+/** Free upgrades for a milestone Echo rank (Step 13.52). */
+export const ECHO_MILESTONE_TOKENS = 3
+/** A milestone rank also pays this much gold per rank number. */
+export const ECHO_MILESTONE_GOLD_PER_RANK = 500
+
+/** Milestone Echo ranks: 3, then every fifth rank (5, 10, 15, ...). */
+export function isEchoMilestone(rank: number): boolean {
+  return rank === 3 || (rank > 0 && rank % 5 === 0)
+}
+
+export interface EchoReward {
+  tokens: number
+  gold: number
+  milestone: boolean
+}
+
+/** What first unlocking Echo rank `rank` pays. */
+export function echoReward(rank: number): EchoReward {
+  const milestone = isEchoMilestone(rank)
+  return milestone ? { tokens: ECHO_MILESTONE_TOKENS, gold: ECHO_MILESTONE_GOLD_PER_RANK * rank, milestone } : { tokens: ECHO_RANK_TOKENS, gold: 0, milestone }
+}
+
+/** Reward text for a toast or the preparation screen, e.g. "3 free upgrades and 2,500 g". */
+export function echoRewardText(rank: number): string {
+  const reward = echoReward(rank)
+  const upgrades = `${reward.tokens} free upgrade${reward.tokens === 1 ? '' : 's'}`
+  return reward.gold > 0 ? `${upgrades} and ${reward.gold.toLocaleString('en-US')} g` : upgrades
+}
 
 /** The id recorded in `firstClearIds` once Echo rank `rank` has paid its reward. */
 export function echoRewardId(rank: number): string {
@@ -33,7 +61,7 @@ export function echoRewardsDue(hero: SavedHero): number[] {
 
 /** The name a paid id shows in reports: the node name, or "Echo rank N". */
 export function firstClearLabel(id: string, nodeName: string | undefined): string {
-  return id.startsWith('echo:') ? `Echo rank ${id.slice(5)}` : (nodeName ?? id)
+  return id.startsWith('echo:') ? `Echo rank ${id.slice(5)}${isEchoMilestone(Number(id.slice(5))) ? ' (milestone)' : ''}` : (nodeName ?? id)
 }
 
 /** Pay everything due into the hero's purse and free upgrades, and record it. The same hero object when nothing is due. */
@@ -49,7 +77,11 @@ export function payFirstClears(hero: SavedHero): { hero: SavedHero; paid: FirstC
     if (reward.materialId !== null) materials[reward.materialId] = (materials[reward.materialId] ?? 0) + reward.quantity
     tokens += reward.tokens
   }
-  tokens += echoDue.length * ECHO_RANK_TOKENS
+  for (const rank of echoDue) {
+    const reward = echoReward(rank)
+    tokens += reward.tokens
+    gold += reward.gold
+  }
   return {
     hero: {
       ...hero,

@@ -23,6 +23,7 @@ import {
 import { PACKS, STACK_LIMIT_REASON, packSlots } from '../../persist/pack.ts'
 import { REPEAT_LIMITS, purseOf, type SavedHero } from '../../persist/save.ts'
 import { firstClearRewardText } from '../../content/firstClear.ts'
+import { echoRewardId, echoRewardText } from '../../persist/firstClear.ts'
 import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
 import { countNames } from '../town/groupItems.ts'
@@ -80,6 +81,8 @@ function PrepWho({ of }: { of: string }) {
 function PreparationForm({ hero }: { hero: SavedHero }) {
   const status = useSaveStatus()
   const repairNeed = repairAllCost(hero)
+  const nextEchoRank = hero.echoRank + 1
+  const nextEchoReward = (hero.firstClearIds ?? []).includes(echoRewardId(nextEchoRank)) ? null : echoRewardText(nextEchoRank)
   const repairGold = purseOf(status.save).gold
   const [draft, setDraft] = useState<PreparationDraft>(() => {
     const start = draftFor(hero)
@@ -255,6 +258,11 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             <Help label="About Echo ranks">
               Choose 0 to {hero.echoRank}. Each rank multiplies the boss HP, Power, Armor, and Resistance by 1.12. A victory unlocks the next rank.
             </Help>
+            {nextEchoReward === null ? null : (
+              <p data-testid="echo-next-reward">
+                Beating the Warden at rank {hero.echoRank} unlocks rank {hero.echoRank + 1}: {nextEchoReward}.
+              </p>
+            )}
           </div>
         ) : null}
       </fieldset>
