@@ -1,6 +1,10 @@
+import { useEffect, useRef } from 'react'
+
 import { purseOf, type SaveData } from '../persist/save.ts'
 
+import { debugLog } from './debug.ts'
 import { goldTotals } from './goldTotals.ts'
+import { playGold } from './sound.ts'
 import { useCount } from './useCount.ts'
 
 const money = (value: number): string => value.toLocaleString('en-US')
@@ -12,6 +16,18 @@ export function GoldLine({ save }: { save: SaveData }) {
   const total = useCount(gold.total)
   const carried = useCount(gold.carried)
   const banked = useCount(gold.banked)
+  const seenGold = useRef<number | null>(null)
+  useEffect(() => {
+    if (seenGold.current === null) {
+      seenGold.current = gold.total
+      return
+    }
+    if (gold.total > seenGold.current) {
+      debugLog('[ui]', 'gold gained', { from: seenGold.current, to: gold.total })
+      playGold()
+    }
+    seenGold.current = gold.total
+  }, [gold.total])
   return (
     <span className="gold-line" data-testid="gold-line">
       <span className="gold-total">

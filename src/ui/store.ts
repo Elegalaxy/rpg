@@ -43,6 +43,7 @@ import type { CombatState } from '../sim/types.ts'
 
 import { debugLog } from './debug.ts'
 import { pushToast, reportMoments, type NoticeMode } from './notices.ts'
+import { playDefeat, playVictory } from './sound.ts'
 import { momentsBetween, type MomentKind } from '../persist/moments.ts'
 import { routes } from '../content/world.ts'
 import { createGameLoop } from './loop.ts'
@@ -397,6 +398,8 @@ function applySteps(count: number): void {
     stepCombat(combat, defs)
     if (combat.outcome !== 'ongoing') {
       const end = combat.log[combat.log.length - 1]
+      if (combat.outcome === 'victory') playVictory()
+      else if (combat.outcome === 'defeat') playDefeat()
       commitSave(saveStatus.save, 'encounter end', false)
       debugLog('[loop]', 'encounter end', {
         scenarioId: snapshot.scenarioId,
@@ -590,6 +593,8 @@ export function advanceExpedition(count: number): void {
     if (expedition.history.length > before && selectedHero(saveStatus.save)?.autoRun === true) autoFights += 1
     if (inFight !== null && expedition.history.length > before) {
       const entry = expedition.history[expedition.history.length - 1]
+      if (entry?.outcome === 'victory') playVictory()
+      else if (entry?.outcome === 'defeat') playDefeat()
       if (entry !== undefined) {
         finishedFights = [...finishedFights, { fight: entry.index + 1, encounterId: entry.encounterId, combat: inFight }].slice(-KEPT_FIGHTS)
       }

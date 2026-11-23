@@ -79,6 +79,34 @@ export function playHit(): void {
   debugLog('[ui]', 'sound play', { cue: 'hit' })
 }
 
+/** A bright rise when a fight is won. */
+export function playVictory(): void {
+  const ctx = context()
+  if (ctx === null) return
+  tone(ctx, 523, ctx.currentTime, 0.1, 0.05)
+  tone(ctx, 659, ctx.currentTime + 0.08, 0.1, 0.05)
+  tone(ctx, 784, ctx.currentTime + 0.16, 0.16, 0.05)
+  debugLog('[ui]', 'sound play', { cue: 'victory' })
+}
+
+/** A low fall when a fight is lost. */
+export function playDefeat(): void {
+  const ctx = context()
+  if (ctx === null) return
+  tone(ctx, 220, ctx.currentTime, 0.14, 0.05)
+  tone(ctx, 146, ctx.currentTime + 0.12, 0.2, 0.05)
+  debugLog('[ui]', 'sound play', { cue: 'defeat' })
+}
+
+/** A short bright note when gold is gained. */
+export function playGold(): void {
+  const ctx = context()
+  if (ctx === null) return
+  tone(ctx, 988, ctx.currentTime, 0.06, 0.04)
+  tone(ctx, 1318, ctx.currentTime + 0.05, 0.08, 0.03)
+  debugLog('[ui]', 'sound play', { cue: 'gold' })
+}
+
 /** Two rising notes for a level up. */
 export function playLevel(): void {
   const ctx = context()

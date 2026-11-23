@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { applySound, playClick, playHit, playLevel, soundOn, storedSound } from './sound.ts'
+import { applySound, playClick, playDefeat, playGold, playHit, playLevel, playVictory, soundOn, storedSound } from './sound.ts'
 
 describe('sound', () => {
   afterEach(() => {
@@ -27,6 +27,9 @@ describe('sound', () => {
       playClick()
       playHit()
       playLevel()
+      playVictory()
+      playDefeat()
+      playGold()
     }).not.toThrow()
   })
 })
