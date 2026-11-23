@@ -10,6 +10,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ---
 
 ## Unreleased
+- Fixed: the frontier map painting stays sharp, and the place names stay readable on top of it.
 - Improved: an heirloom can be sold once your level reaches the level it was kept at. Until then Sell stays off and says which level that is.
 
 ## 0.22.0 · 2026-11-23 · Echo rank rewards and clearer Re-infuse
