@@ -201,7 +201,7 @@ export function claimOptions(hero: SavedHero): { item: ItemInstance; worn: boole
 /**
  * Step 13.32: use a free heirloom slot on an item right now, without reincarnating. The item keeps its level
  * as the cap and is scaled to the hero's level at once. No gold or materials. Earlier-life gear stays in
- * `pastLifeItemIds`, so the carried-share sell guard is unchanged (an heirloom cannot be sold at all).
+ * `pastLifeItemIds`, so the carried-share sell guard is unchanged. An heirloom can be sold once the hero reaches its cap.
  */
 export function claimHeirloom(save: SaveData, heroId: string, itemId: string): RosterResult {
   const hero = save.heroes.find((entry) => entry.id === heroId)

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { newItem } from '../content/items.ts'
+import { itemSellPrice } from '../content/shop.ts'
 import type { ItemInstance } from '../sim/economy.ts'
 
 import { createHero } from './roster.ts'
+import { newSave, purseOf, updatePurse } from './save.ts'
 import { RISKY_QUALITY, needsSellConfirm, sellGroup } from './sellSafety.ts'
-import { newSave, updatePurse } from './save.ts'
 import { sellItem } from './town.ts'
 
 const NONE: ReadonlySet<string> = new Set()
@@ -44,13 +45,44 @@ describe('sellGroup', () => {
 })
 
 describe('selling an heirloom', () => {
-  it('is still refused by sellItem, worn or in the archive', () => {
+  const kept: ItemInstance = { ...newItem('h1', 'weapon-bow', 5, 1), heirloom: { heroId: 'hero-1', cap: 5 } }
+
+  function stockedAt(level: number, pastLife = false) {
     const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
     if (!made.ok) throw new Error(made.reason)
-    const kept: ItemInstance = { ...newItem('h1', 'weapon-bow', 5, 1), heirloom: { heroId: 'hero-1', cap: 5 } }
-    const stocked = updatePurse(made.save, { archive: [kept] })
-    expect(sellItem(stocked, 'h1')).toEqual({ ok: false, reason: 'An heirloom cannot be sold.' })
-    const worn = { ...stocked, heroes: stocked.heroes.map((hero) => ({ ...hero, equipment: { ...hero.equipment, mainHand: kept } })) }
-    expect(sellItem(worn, 'h1').ok).toBe(false)
+    const withItem = updatePurse(made.save, { archive: [kept] })
+    return {
+      ...withItem,
+      heroes: withItem.heroes.map((hero) => ({
+        ...hero,
+        progress: { ...hero.progress, level },
+        ...(pastLife ? { pastLifeItemIds: ['h1'] } : {}),
+      })),
+    }
+  }
+
+  it('stays refused until the hero reaches the level the heirloom was kept at', () => {
+    expect(sellItem(stockedAt(1), 'h1')).toEqual({ ok: false, reason: 'An heirloom can be sold once you reach level 5.' })
+    expect(sellItem(stockedAt(4), 'h1').ok).toBe(false)
+    const worn = stockedAt(1)
+    const wearing = {
+      ...worn,
+      heroes: worn.heroes.map((hero) => ({ ...hero, equipment: { ...hero.equipment, mainHand: kept }, purse: { ...hero.purse, archive: [] } })),
+    }
+    expect(sellItem(wearing, 'h1').ok).toBe(false)
+  })
+
+  it('sells once the hero has reached that level, and an earlier-life heirloom still pays the carried share', () => {
+    const ready = stockedAt(5)
+    const sold = sellItem(ready, 'h1')
+    if (!sold.ok) throw new Error(sold.reason)
+    expect(purseOf(sold.save).gold).toBe(purseOf(ready).gold + itemSellPrice(kept))
+    expect(purseOf(sold.save).archive).toEqual([])
+
+    const earlier = stockedAt(5, true)
+    const shared = sellItem(earlier, 'h1')
+    if (!shared.ok) throw new Error(shared.reason)
+    expect(purseOf(shared.save).gold).toBe(purseOf(earlier).gold + Math.floor(itemSellPrice(kept) * 0.2))
+    expect(shared.save.heroes[0]?.pastLifeItemIds).toEqual([])
   })
 })

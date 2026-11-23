@@ -827,7 +827,12 @@ export function buyMaterialFromUi(materialId: string, quantity: number): string 
 }
 
 export function sellItemFromUi(itemId: string): string | null {
-  return applyTown(sellItem(saveStatus.save, itemId), 'sold item')
+  const hero = selectedHero(saveStatus.save)
+  const owned = hero === null ? [] : [...Object.values(hero.equipment), ...hero.purse.archive]
+  const item = owned.find((entry) => entry?.id === itemId)
+  const refusal = applyTown(sellItem(saveStatus.save, itemId), 'sold item')
+  if (item?.heirloom !== undefined) debugLog('[ui]', 'heirloom sell', { itemId, heroLevel: hero?.progress.level ?? null, cap: item.heirloom.cap, refusal })
+  return refusal
 }
 
 export function buyItemFromUi(baseId: string): string | null {

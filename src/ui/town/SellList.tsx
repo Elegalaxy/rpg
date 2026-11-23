@@ -1,6 +1,6 @@
 import { itemName } from '../../content/items.ts'
 import { previewEquip } from '../../persist/equipment.ts'
-import { HEIRLOOM_SELL_REASON, SELL_GROUP_LABELS, SELL_GROUP_ORDER, badgeGroup, needsSellConfirm, sellGroup, type SellGroup } from '../../persist/sellSafety.ts'
+import { SELL_GROUP_LABELS, SELL_GROUP_ORDER, badgeGroup, heirloomSellBlock, needsSellConfirm, sellGroup, type SellGroup } from '../../persist/sellSafety.ts'
 import type { SaveData, SavedHero } from '../../persist/save.ts'
 import { sellPriceFor } from '../../persist/town.ts'
 import type { ItemInstance } from '../../sim/economy.ts'
@@ -18,7 +18,7 @@ function GroupBadge({ group }: { group: SellGroup }) {
   if (group === 'worn') return <Tag kind="good">Worn</Tag>
   if (group === 'heirloom') {
     return (
-      <Tag kind="info" title="An heirloom is kept through every life and cannot be sold.">
+      <Tag kind="info" title="Kept through every life. It can be sold once your level reaches the level it was kept at.">
         Heirloom
       </Tag>
     )
@@ -35,7 +35,7 @@ function GroupBadge({ group }: { group: SellGroup }) {
 
 /**
  * The Sell job of a gear shop (Step 13.44): worn gear and the archive in headed groups, riskiest first, with a badge on every
- * row. Risky pieces ask twice; heirlooms are shown disabled with the reason.
+ * row. Risky pieces ask twice. An heirloom stays disabled until the hero reaches the level it was kept at.
  */
 export function SellList({
   save,
@@ -74,7 +74,7 @@ export function SellList({
             <ul className="shop-rows">
               {rows.map(({ item, worn: isWorn, count }) => {
                 const own = badgeGroup(item, earlier)
-                const blocked = item.heirloom !== undefined
+                const blockedReason = heirloomSellBlock(item, hero.progress.level)
                 const confirm = needsSellConfirm(item, earlier)
                 const price = sellPriceFor(hero, item)
                 return (
@@ -90,19 +90,15 @@ export function SellList({
                     effect={`${isWorn ? 'Worn' : 'Archive'} · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
                     note={
                       isWorn ? (
-                        blocked ? (
-                          HEIRLOOM_SELL_REASON
-                        ) : confirm ? (
-                          'Asks you to confirm before it sells.'
-                        ) : undefined
+                        blockedReason ?? (confirm ? 'Asks you to confirm before it sells.' : undefined)
                       ) : (
                         <>
                           <GearChanges preview={previewEquip(save, hero.id, item.id)} empty="No stat change from what you wear." />
-                          {blocked ? <> {HEIRLOOM_SELL_REASON}</> : confirm ? ' Asks you to confirm before it sells.' : null}
+                          {blockedReason !== null ? <> {blockedReason}</> : confirm ? ' Asks you to confirm before it sells.' : null}
                         </>
                       )
                     }
-                    costs={blocked ? [] : [[{ kind: 'gold', amount: price, prefix: '+' }]]}
+                    costs={blockedReason !== null ? [] : [[{ kind: 'gold', amount: price, prefix: '+' }]]}
                     actions={
                       <>
                         {isWorn ? null : (
@@ -114,7 +110,7 @@ export function SellList({
                           price={price}
                           needsConfirm={confirm}
                           disabled={closed}
-                          blockedReason={blocked ? HEIRLOOM_SELL_REASON : null}
+                          blockedReason={blockedReason}
                           label={isWorn ? `Sell worn ${item.id}` : `Sell ${item.id}`}
                           confirmLabel={`Confirm sell ${isWorn ? 'worn ' : ''}${item.id} for ${price} gold`}
                           initialArmed={armedId === item.id}

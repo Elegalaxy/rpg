@@ -52,8 +52,16 @@ describe('the Sell list groups (Step 13.44)', () => {
   it('shows an heirloom disabled with the reason, not hidden', () => {
     const out = html()
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*aria-label="Sell heir-1"/)
-    expect(out).toContain('title="An heirloom cannot be sold."')
-    expect(out).toContain('An heirloom cannot be sold.')
+    expect(out).toContain('title="Kept through every life. It can be sold once your level reaches the level it was kept at."')
+    expect(out).toContain('An heirloom can be sold once you reach level 5.')
+  })
+
+  it('lets the heirloom be sold, with a second click, once the hero reaches that level', () => {
+    const { save, hero } = setup()
+    const ready = { ...hero, progress: { ...hero.progress, level: 5 } }
+    const out = renderToStaticMarkup(<SellList save={save} hero={ready} worn={[]} archived={[heirloom]} closed={false} run={() => undefined} />)
+    expect(out).not.toContain('An heirloom can be sold once you reach level 5.')
+    expect(out).toMatch(/aria-label="Sell heir-1"[^>]*><span/)
   })
 
   it('sells plain current-life gear with a plain button and asks twice for the rest', () => {

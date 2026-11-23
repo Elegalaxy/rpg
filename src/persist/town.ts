@@ -9,7 +9,7 @@ import { supplyLock } from './crafting.ts'
 import { previewEquip, wearerOf, type EquipPreview } from './equipment.ts'
 import type { RosterResult } from './roster.ts'
 import { purseOf, updatePurse, type SaveData, type SavedHero } from './save.ts'
-import { HEIRLOOM_SELL_REASON } from './sellSafety.ts'
+import { heirloomSellBlock } from './sellSafety.ts'
 
 function closed(save: SaveData): string | null {
   return save.expedition === null ? null : 'Town services are closed while an expedition is running.'
@@ -58,7 +58,7 @@ export function sellPriceFor(hero: SavedHero | null, item: ItemInstance): number
 
 /**
  * Sell an item from the selected hero's archive, or one the hero is wearing (its slot is left empty, so the hero
- * cannot fight until it is filled). An heirloom cannot be sold.
+ * cannot fight until it is filled). An heirloom can be sold once the hero's level reaches the level it was kept at.
  */
 export function sellItem(save: SaveData, itemId: string): RosterResult {
   const shut = closed(save)
@@ -70,7 +70,8 @@ export function sellItem(save: SaveData, itemId: string): RosterResult {
   const worn = hero !== null && slot !== undefined ? hero.equipment[slot] : null
   const item = archived ?? worn
   if (item === null || item === undefined) return { ok: false, reason: 'That item is not in the archive or worn by the selected hero.' }
-  if (item.heirloom !== undefined) return { ok: false, reason: HEIRLOOM_SELL_REASON }
+  const blocked = heirloomSellBlock(item, hero?.progress.level ?? 0)
+  if (blocked !== null) return { ok: false, reason: blocked }
   const gold = purse.gold + sellPriceFor(hero, item)
   const past = hero?.pastLifeItemIds
   const pruned = past === undefined ? {} : { pastLifeItemIds: past.filter((id) => id !== itemId) }

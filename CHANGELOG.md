@@ -9,6 +9,9 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+- Improved: an heirloom can be sold once your level reaches the level it was kept at. Until then Sell stays off and says which level that is.
+
 ## 0.22.0 · 2026-11-23 · Echo rank rewards and clearer Re-infuse
 - New: unlocking a new Fractured Warden Echo rank for the first time also gives 1 free upgrade, paid when you next get home safe. [13.51]
 - Improved: when Repair at home skipped pieces while you were away, the away report also says what repairing it all costs and how much gold you have. [13.51]

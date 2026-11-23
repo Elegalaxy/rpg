@@ -20,8 +20,15 @@ export const SELL_GROUP_LABELS: { [group in SellGroup]: string } = {
   current: 'Current life',
 }
 
-/** The reason an heirloom cannot be sold, shared with `sellItem`'s refusal. */
-export const HEIRLOOM_SELL_REASON = 'An heirloom cannot be sold.'
+/**
+ * Why this heirloom cannot be sold yet, or null when the hero's level has reached the level it was kept at (`cap`).
+ * The shown item level follows the hero, so the check uses that kept level, not the scaled one.
+ */
+export function heirloomSellBlock(item: ItemInstance, heroLevel: number): string | null {
+  const cap = item.heirloom?.cap
+  if (cap === undefined || heroLevel >= cap) return null
+  return `An heirloom can be sold once you reach level ${cap}.`
+}
 
 export function isHeirloom(item: ItemInstance): boolean {
   return item.heirloom !== undefined
@@ -41,7 +48,7 @@ export function badgeGroup(item: ItemInstance, earlierIds: ReadonlySet<string>):
 }
 
 /**
- * Whether selling needs a second click: an heirloom (also blocked), gear from an earlier life, or a piece with a modifier,
+ * Whether selling needs a second click: an heirloom, gear from an earlier life, or a piece with a modifier,
  * a socket or quality at or above `RISKY_QUALITY`. Plain current-life gear sells with one click.
  */
 export function needsSellConfirm(item: ItemInstance, earlierIds: ReadonlySet<string>): boolean {
