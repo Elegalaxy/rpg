@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Fixed: a free upgrade happens at once, and the confirmation is no longer shown as an error. A paid socket or rank-up still waits in the queue.
 - New: pixel art for the Ranger, the Deserter, and the Grove and Bastion fighters (Blight Spider, Thornbeast, Rootmaw Stalker, Hollow Sentry, Fallen Arbalist, Echo Knight).
 - Improved: the map dots sit on the painted town, dead trees, bastion, gate, road, and water.
 - New: a won fight, a lost fight, and gold gained each play a short sound.

@@ -55,7 +55,8 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
   const [socketMaterial, setSocketMaterial] = useState<{ [itemId: string]: string }>({})
   const [infuseMaterial, setInfuseMaterial] = useState<{ [itemId: string]: string }>({})
   const [infuseModifier, setInfuseModifier] = useState<{ [itemId: string]: string }>({})
-  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null)
+  const report = (reason: string | null, done?: string) => setNotice(reason !== null ? { text: reason, ok: false } : done === undefined ? null : { text: done, ok: true })
   if (hero === null) return null
   const owned = purseOf(save).materials
   const targets = socketTargets(hero).filter((entry) => accepts(entry.item.baseId))
@@ -81,7 +82,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
       <h4>
         Sockets and infusing {tokens > 0 ? <Tag kind="good">Free upgrades: {tokens}</Tag> : null}
         <Help label="About sockets">
-          An item holds one modifier. Open a socket (hero level {SOCKET_MIN_HERO_LEVEL} and up) and Infuse a second, different one from a recipe you know. Infusing again replaces the second modifier. Both jobs take {CRAFT_MS / 1000} s in the crafting queue, and a socket stays when the item is upgraded.
+          An item holds one modifier. Open a socket (hero level {SOCKET_MIN_HERO_LEVEL} and up) and Infuse a second, different one from a recipe you know. Infusing again replaces the second modifier. A paid socket or infuse takes {CRAFT_MS / 1000} s in the crafting queue. A free upgrade opens the socket at once, and a socket stays when the item is upgraded.
         </Help>
       </h4>
       {!unlocked ? (
@@ -134,7 +135,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                         </>
                       )}
                       <dt>Time</dt>
-                      <dd>{CRAFT_MS / 1000} s</dd>
+                      <dd>{tokens > 0 && !socketed ? 'Now' : `${CRAFT_MS / 1000} s`}</dd>
                     </dl>
                   }
                   note={!socketed ? (socketBlock ?? undefined) : (infuseBlock ?? undefined)}
@@ -158,15 +159,15 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                             </option>
                           ))}
                         </select>
-                        <button type="button" className="btn-primary" disabled={socketBlock !== null} aria-label={`Open socket ${item.id}`} onClick={() => setError(queueSocketFromUi(item.id, gem))}>
-                          Open socket
+                        <button type="button" className="btn-primary" disabled={socketBlock !== null} aria-label={`Open socket ${item.id}`} onClick={() => report(queueSocketFromUi(item.id, gem))}>
+                          {tokens > 0 ? `Open socket · ${CRAFT_MS / 1000} s` : 'Open socket'}
                         </button>
                         {tokens > 0 ? (
                           <FreeUpgradeButton
                             subject={itemName(item)}
                             reason={freeBlock}
                             label={`Open socket free ${item.id}`}
-                            onConfirm={() => setError(spendFreeUpgradeFromUi(item.id, { kind: 'socket' }) ?? 'Socket opened with a free upgrade.')}
+                            onConfirm={() => report(spendFreeUpgradeFromUi(item.id, { kind: 'socket' }), 'Socket opened with a free upgrade.')}
                           />
                         ) : null}
                       </div>
@@ -196,7 +197,7 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
                             </option>
                           ))}
                         </select>
-                        <button type="button" className="btn-primary" disabled={infuseBlock !== null} aria-label={`Infuse ${item.id}`} onClick={() => setError(queueInfuseFromUi(item.id, pickedModifier, mat))}>
+                        <button type="button" className="btn-primary" disabled={infuseBlock !== null} aria-label={`Infuse ${item.id}`} onClick={() => report(queueInfuseFromUi(item.id, pickedModifier, mat))}>
                           {second ? 'Re-infuse' : 'Infuse'}
                         </button>
                       </div>
@@ -208,7 +209,11 @@ export function Sockets({ accepts = () => true }: { accepts?: (baseId: string) =
           </ul>
         </>
       )}
-      {error !== null ? <p role="alert" data-testid="socket-result">{error}</p> : null}
+      {notice !== null ? (
+        <p role={notice.ok ? 'status' : 'alert'} data-testid="socket-result">
+          {notice.text}
+        </p>
+      ) : null}
     </>
   )
 }

@@ -66,6 +66,7 @@ describe('the Ranks panel', () => {
     commitSave({ ...getSaveStatus().save, heroes: [{ ...hero, freeUpgrades: 1 }] }, 'test')
     const html = renderToStaticMarkup(<Ranks />)
     expect(html).toContain('Free upgrades: 1')
+    expect(html).toContain('>Now<')
     expect(html).toMatch(/<button[^>]*aria-label="Rank up free Keen on bow"[^>]*>Use free upgrade/)
     setup({ ...keenBow, modifierRanks: [2] })
     const second = selectedHero(getSaveStatus().save)!

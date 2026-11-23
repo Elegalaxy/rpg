@@ -55,7 +55,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'Retreat is automatic. Set the health level at which the hero tries to escape. Escape is a roll, not a promise: enemies keep acting while it is attempted, and a failed attempt can be retried later. A successful escape abandons the current fight and its loot, then walks home safely.',
       'Defeat has weight. Unsecured loot is lost, equipment loses durability, and a rescue fee is taken from the gold you carried; unpaid fees become debt. The hero must also rest before the next expedition. Gold you deposited stays safe.',
       'Gear also wears down slowly from ordinary fighting. A piece at no durability is disabled until repaired, never destroyed.',
-      'The first time a hero clears a zone and returns safely, it earns gold, that zone’s material and a free upgrade: open a socket or raise a modifier one rank, at no cost, at the crafters. The farthest zones also add Legacy at the next reincarnation. Each zone pays once per hero, ever; reincarnation does not reset it and a defeat never pays it.',
+      'The first time a hero clears a zone and returns safely, it earns gold, that zone’s material and a free upgrade: open a socket or raise a modifier one rank, at no cost, at the crafters. A free upgrade happens at once and does not wait in the queue. The farthest zones also add Legacy at the next reincarnation. Each zone pays once per hero, ever; reincarnation does not reset it and a defeat never pays it.',
     ],
   },
   {

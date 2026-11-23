@@ -33,7 +33,8 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
   const { save } = useSaveStatus()
   const hero = selectedHero(save)
   const [picks, setPicks] = useState<{ [key: string]: string }>({})
-  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null)
+  const report = (reason: string | null, done?: string) => setNotice(reason !== null ? { text: reason, ok: false } : done === undefined ? null : { text: done, ok: true })
   if (hero === null) return null
   const owned = purseOf(save).materials
   const tokens = hero.freeUpgrades ?? 0
@@ -59,7 +60,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
       <h4>
         Modifier ranks {tokens > 0 ? <Tag kind="good">Free upgrades: {tokens}</Tag> : null}
         <Help label="About ranks">
-          A modifier starts at rank I. Rank II raises its numbers by {rankPercent(2)}% and rank III by {rankPercent(3)}%, for gold by the modifier's level and materials; rank III asks for riftglass, duskiron or cinderite. Each rank-up takes {CRAFT_MS / 1000} s in the crafting queue. The stack cap counts pieces, not ranks.
+          A modifier starts at rank I. Rank II raises its numbers by {rankPercent(2)}% and rank III by {rankPercent(3)}%, for gold by the modifier's level and materials; rank III asks for riftglass, duskiron or cinderite. A paid rank-up takes {CRAFT_MS / 1000} s in the crafting queue. A free upgrade happens at once. The stack cap counts pieces, not ranks.
         </Help>
       </h4>
       {rows.length === 0 ? (
@@ -79,6 +80,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
               const material = materialFor(item, index, toRank)
               const block = rankCheck(save, hero, item, index, material)
               const freeBlock = rankCheck(save, hero, item, index, material, true)
+              const freeHere = tokens > 0 && toRank === 2 && !maxed
               const oldTemper = modifierTemperAt(item, index)
               const newTemper = Math.max(oldTemper, temperGrade(id, material))
               return (
@@ -100,7 +102,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
                       <dt>Temper</dt>
                       <dd data-testid="rank-temper">{maxed || newTemper === oldTemper ? `${temperText(oldTemper)}${maxed ? '' : ' (kept)'}` : `${temperText(oldTemper)} → ${temperText(newTemper)}`}</dd>
                       <dt>Time</dt>
-                      <dd>{CRAFT_MS / 1000} s</dd>
+                      <dd>{freeHere ? 'Now' : `${CRAFT_MS / 1000} s`}</dd>
                     </dl>
                   }
                   note={block ?? undefined}
@@ -125,16 +127,16 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
                         className="btn-primary"
                         disabled={block !== null}
                         aria-label={`Rank up ${modifier.name} on ${item.id}`}
-                        onClick={() => setError(queueRankUpFromUi(item.id, index, material))}
+                        onClick={() => report(queueRankUpFromUi(item.id, index, material))}
                       >
-                        {maxed ? 'Highest rank' : `Rank up to ${rankName(toRank)}`}
+                        {maxed ? 'Highest rank' : freeHere ? `Rank up to ${rankName(toRank)} · ${CRAFT_MS / 1000} s` : `Rank up to ${rankName(toRank)}`}
                       </button>
-                      {tokens > 0 && toRank === 2 ? (
+                      {freeHere ? (
                         <FreeUpgradeButton
                           subject={`${modifier.name} on ${itemName(item)}`}
                           reason={freeBlock}
                           label={`Rank up free ${modifier.name} on ${item.id}`}
-                          onConfirm={() => setError(spendFreeUpgradeFromUi(item.id, { kind: 'rank', index }) ?? 'Ranked up to II with a free upgrade.')}
+                          onConfirm={() => report(spendFreeUpgradeFromUi(item.id, { kind: 'rank', index }), 'Ranked up to II with a free upgrade.')}
                         />
                       ) : null}
                     </div>
@@ -145,7 +147,11 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
           </ul>
         </>
       )}
-      {error !== null ? <p role="alert" data-testid="rank-result">{error}</p> : null}
+      {notice !== null ? (
+        <p role={notice.ok ? 'status' : 'alert'} data-testid="rank-result">
+          {notice.text}
+        </p>
+      ) : null}
     </>
   )
 }

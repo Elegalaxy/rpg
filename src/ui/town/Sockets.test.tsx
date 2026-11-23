@@ -68,6 +68,7 @@ describe('the Sockets panel', () => {
     commitSave({ ...getSaveStatus().save, heroes: [{ ...hero, freeUpgrades: 2 }] }, 'test')
     const html = renderToStaticMarkup(<Sockets />)
     expect(html).toContain('Free upgrades: 2')
+    expect(html).toContain('>Now<')
     expect(html).toMatch(/<button[^>]*aria-label="Open socket free bow"[^>]*>Use free upgrade/)
     expect(html).not.toMatch(/disabled=""[^>]*aria-label="Open socket free bow"/)
   })
