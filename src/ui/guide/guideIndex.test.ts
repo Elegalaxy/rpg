@@ -6,6 +6,7 @@ import { SUPPLIES } from '../../content/supplies.ts'
 import { statuses } from '../../content/statuses.ts'
 import { classWebs } from '../../content/webs/index.ts'
 import { CLERIC_VOWS, ZEAL_BASE } from '../../sim/classes/cleric.ts'
+import { CURSES, HOLLOW_POWER } from '../../sim/races/racialNodes.ts'
 import { ITEM_MODIFIERS, MODIFIER_STACK_CAP } from '../../sim/economy.ts'
 import { HERO_CLASSES } from '../../sim/constants.ts'
 import { HERO_RACES } from '../../sim/progression.ts'
@@ -19,10 +20,11 @@ describe('buildGuide', () => {
     expect(ids.size).toBe(entries.length)
   })
 
-  it('has an entry for every class, race, vow, status and supply', () => {
+  it('has an entry for every class, race, vow, curse, status and supply', () => {
     for (const id of HERO_CLASSES) expect(ids.has(`class-${id}`), id).toBe(true)
     for (const id of HERO_RACES) expect(ids.has(`race-${id}`), id).toBe(true)
     for (const id of CLERIC_VOWS) expect(ids.has(`vow-${id}`), id).toBe(true)
+    for (const id of CURSES) expect(ids.has(`curse-${id}`), id).toBe(true)
     for (const id of Object.keys(statuses)) expect(ids.has(`status-${id}`), id).toBe(true)
     for (const supply of SUPPLIES) expect(ids.has(`supply-${supply.id}`), supply.id).toBe(true)
   })
@@ -71,6 +73,12 @@ describe('buildGuide', () => {
 })
 
 describe('searchGuide', () => {
+  it('generates Hollow Hunger from the curse constants', () => {
+    const hunger = entries.find((entry) => entry.id === 'curse-hollow-hunger')
+    expect(hunger?.facts.some((fact) => fact.value.includes(String(Math.round((HOLLOW_POWER - 1) * 100))))).toBe(true)
+    expect(entries.find((entry) => entry.id === 'race-undead')?.links.map((link) => link.id)).toEqual(CURSES.map((id) => `curse-${id}`))
+  })
+
   it('finds the vows and the Cleric for "vow", case-insensitively', () => {
     const found = searchGuide(entries, 'VOW', null).map((entry) => entry.id)
     for (const vow of CLERIC_VOWS) expect(found).toContain(`vow-${vow}`)
@@ -80,6 +88,9 @@ describe('searchGuide', () => {
   it('narrows by section and returns everything for an empty query', () => {
     expect(searchGuide(entries, '', null).length).toBe(entries.length)
     expect(searchGuide(entries, 'vow', 'races')).toEqual([])
+    const curses = searchGuide(entries, 'curse', 'races').map((entry) => entry.id)
+    for (const id of CURSES) expect(curses).toContain(`curse-${id}`)
+    expect(curses).toContain('race-undead')
     expect(searchGuide(entries, 'zzzz-nothing', null)).toEqual([])
   })
 
@@ -89,7 +100,9 @@ describe('searchGuide', () => {
     expect(fact('First clear: Drowned Causeway')).toBe('660 g · 15 riftglass · 1 free upgrade · +2 Legacy')
     expect(fact('First clear: Splintered Road')).toBe('180 g · 15 scrap · 1 free upgrade')
     expect(fact('First clear: Fracture Gate')).toBe('600 g · 1 free upgrade')
-    expect(topic.facts).toHaveLength(7)
+    expect(topic.facts).toHaveLength(9)
+    expect(fact('Safe pouch')).toMatch(/kept on defeat/)
+    expect(fact('Echo rank')).toMatch(/Fractured Warden/)
   })
 
   it('reads the reincarnation numbers from the constants (Step 13.31)', () => {

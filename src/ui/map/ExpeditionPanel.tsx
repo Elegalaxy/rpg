@@ -200,7 +200,8 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
                   </option>
                 ))}
               </select>
-            </label>
+            </label>{' '}
+            <GuideLink id={draft.curse === '' ? 'race-undead' : `curse-${draft.curse}`} label="Undead curses" />
           </div>
         ) : null}
         {hero.classId === 'ranger' ? (

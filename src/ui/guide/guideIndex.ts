@@ -3,8 +3,10 @@ import {
   EXTRA_CLASS_SKILLS,
   GUIDE_TOPICS,
   HIDDEN_SKILL_IDS,
+  CURSE_GENERAL_NOTE,
   VOW_GENERAL_NOTE,
   classGuide,
+  curseGuide,
   raceGuide,
   statusGuide,
   vowGuide,
@@ -37,6 +39,22 @@ import {
   type ClericVow,
 } from '../../sim/classes/cleric.ts'
 import { CRAFT_MS, SOCKET_MIN_HERO_LEVEL, UPGRADE_MS, recipePrice } from '../../persist/crafting.ts'
+import { SAFE_POUCH_ROOM } from '../../sim/expedition.ts'
+import { ECHO_RANK_GROWTH } from '../../sim/constants.ts'
+import { STILLNESS_READY } from '../../sim/races/undead.ts'
+import {
+  CURSES,
+  GRAVE_READY,
+  GRAVE_SPEED,
+  HOLLOW_HEAL_FRACTION,
+  HOLLOW_HEALING_RECEIVED,
+  HOLLOW_HP_FRACTION,
+  HOLLOW_POWER,
+  SOUL_CAP,
+  SOUL_DEBT_FEE,
+  SOUL_DEBT_PER_SOUL,
+  type Curse,
+} from '../../sim/races/racialNodes.ts'
 import { PACKS } from '../../persist/pack.ts'
 import { CLASS_PREFERENCE, HERO_CLASSES, type HeroClass } from '../../sim/constants.ts'
 import {
@@ -69,7 +87,17 @@ export const GUIDE_SECTIONS: readonly { id: GuideSection; label: string }[] = [
   { id: 'reincarnation', label: 'Reincarnation' },
 ]
 
-export type GuideEntryId = `class-${string}` | `race-${string}` | `vow-${string}` | `skill-${string}` | `status-${string}` | `supply-${string}` | `modifier-${string}` | `item-${string}` | `topic-${string}`
+export type GuideEntryId =
+  | `class-${string}`
+  | `race-${string}`
+  | `vow-${string}`
+  | `curse-${string}`
+  | `skill-${string}`
+  | `status-${string}`
+  | `supply-${string}`
+  | `modifier-${string}`
+  | `item-${string}`
+  | `topic-${string}`
 
 export type GuideFact = { label: string; value: string }
 export type GuideLinkRef = { id: GuideEntryId; label: string }
@@ -215,7 +243,47 @@ function raceEntry(race: HeroRace): GuideEntry {
     ],
     lines: [racialIntro[race]],
     prose: raceGuide[race].tips,
-    links: [],
+    links: race === 'undead' ? CURSES.map((curse) => ({ id: `curse-${curse}` as const, label: curseGuide[curse].name })) : [],
+  }
+}
+
+function curseFacts(curse: Curse): GuideFact[] {
+  switch (curse) {
+    case 'hollow-hunger':
+      return [
+        { label: 'Power', value: `+${percent(HOLLOW_POWER - 1)} all Power` },
+        { label: 'Healing received', value: percent(HOLLOW_HEALING_RECEIVED) },
+        {
+          label: 'Soul heal',
+          value: `Below ${percent(HOLLOW_HP_FRACTION)} HP, spend 1 Soul to heal ${percent(HOLLOW_HEAL_FRACTION)} of maximum HP, once per fight`,
+        },
+      ]
+    case 'grave-patience':
+      return [
+        { label: 'Action speed', value: percent(GRAVE_SPEED) },
+        { label: 'Stillness', value: `Ready after ${GRAVE_READY} undamaged actions, instead of ${STILLNESS_READY}` },
+        { label: 'Soul', value: 'Spending 1 Soul when Stillness fires keeps 1 progress' },
+      ]
+    case 'soul-debt':
+      return [
+        { label: 'Rescue fee', value: `×${SOUL_DEBT_FEE}, and the unpaid part becomes that much debt` },
+        { label: 'Power', value: `+${percent(SOUL_DEBT_PER_SOUL)} all Power per Soul Fragment, up to ${SOUL_CAP}` },
+      ]
+  }
+}
+
+function curseEntry(curse: Curse): GuideEntry {
+  const info = curseGuide[curse]
+  return {
+    id: `curse-${curse}`,
+    section: 'races',
+    group: 'Undead curses',
+    title: info.name,
+    summary: info.note,
+    facts: curseFacts(curse),
+    lines: [info.when],
+    prose: [CURSE_GENERAL_NOTE],
+    links: [{ id: 'race-undead', label: 'Undead' }],
   }
 }
 
@@ -407,6 +475,13 @@ function townFacts(): GuideFact[] {
 }
 
 /** One fact per zone that pays a first-clear reward, generated from the content table and the Legacy bonus. */
+function runFacts(): GuideFact[] {
+  return [
+    { label: 'Safe pouch', value: `Up to ${SAFE_POUCH_ROOM} of the rarest materials you carry, kept on defeat` },
+    { label: 'Echo rank', value: `Each rank multiplies the Fractured Warden's HP, Power, Armor and Resistance by ${ECHO_RANK_GROWTH}` },
+  ]
+}
+
 function firstClearFacts(): GuideFact[] {
   return FIRST_CLEAR_NODE_IDS.flatMap((nodeId) => {
     const reward = firstClearReward(nodeId)
@@ -436,7 +511,7 @@ function topicEntry(id: GuideTopicId): GuideEntry {
     section: TOPIC_SECTION[found.id],
     title: found.title,
     summary: found.summary,
-    facts: found.id === 'gear' ? gearFacts() : found.id === 'greyhaven' ? townFacts() : found.id === 'expeditions' ? firstClearFacts() : found.id === 'reincarnation' ? reincarnationFacts() : [],
+    facts: found.id === 'gear' ? gearFacts() : found.id === 'greyhaven' ? townFacts() : found.id === 'expeditions' ? [...firstClearFacts(), ...runFacts()] : found.id === 'reincarnation' ? reincarnationFacts() : [],
     lines: found.id === 'expeditions' ? [MASTERY_HELP] : [],
     prose: found.body,
     links: found.id === 'greyhaven' ? [{ id: 'topic-gear', label: 'Gear' }] : found.id === 'gear' ? [{ id: 'topic-greyhaven', label: 'Greyhaven and its shops' }] : [],
@@ -448,6 +523,7 @@ export function buildGuide(): GuideEntry[] {
   for (const classId of HERO_CLASSES) entries.push(classEntry(classId))
   for (const vow of CLERIC_VOWS) entries.push(vowEntry(vow))
   for (const race of HERO_RACES) entries.push(raceEntry(race))
+  for (const curse of CURSES) entries.push(curseEntry(curse))
   const owned = classOwnedSkills()
   for (const classId of HERO_CLASSES) {
     for (const [skillId, owner] of owned) {

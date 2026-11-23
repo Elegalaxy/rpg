@@ -1,6 +1,7 @@
 import type { HeroClass } from '../sim/constants.ts'
 import type { ClericVow } from '../sim/classes/cleric.ts'
 import type { HeroRace } from '../sim/progression.ts'
+import type { Curse } from '../sim/races/racialNodes.ts'
 
 /*
  * Hand-written text for the in-game Guide (GAME_DESIGN §12, "Guide page").
@@ -38,6 +39,7 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'Rules live in Combat setup. The hero tries the first rule, then the next, and uses the first skill whose conditions pass. Put the situations you care about most at the top and a cheap fallback at the bottom.',
       'A rule names a skill and optional conditions, such as the hero or enemy health, the class resource, a status on a target, or whether the enemy has telegraphed an attack. Supplies work the same way: a rule can drink a draught when health is low.',
       'A rule kept from an earlier life whose skill you have not relearned shows as waiting. It is left out of fights, and works again once you can use that skill.',
+      'You can keep extra rule lists, called stacks. In a fight the hero uses the first stack whose situation matches, and the default list when none of them do.',
       'Rule templates give you a working starting point for each class. The list shows how often each rule fires, so you can see which rules do the work and which never trigger.',
     ],
   },
@@ -53,7 +55,8 @@ export const GUIDE_TOPICS: readonly GuideTopic[] = [
       'Auto run can also hand in finished contracts and take contracts that fit the route each time the hero gets home, if you switch that option on.',
       'Auto run can also repair worn gear at the normal price each time the hero gets home, if you switch Repair at home on. A piece the gold cannot cover stays worn, and a piece at zero durability still stops Auto run.',
       'Retreat is automatic. Set the health level at which the hero tries to escape. Escape is a roll, not a promise: enemies keep acting while it is attempted, and a failed attempt can be retried later. A successful escape abandons the current fight and its loot, then walks home safely.',
-      'Defeat has weight. Unsecured loot is lost, equipment loses durability, and a rescue fee is taken from the gold you carried; unpaid fees become debt. The hero must also rest before the next expedition. Gold you deposited stays safe.',
+      'Defeat has weight. Unsecured loot is lost, except the most valuable part kept in the safe pouch. Equipment loses durability, and a rescue fee is taken from the gold you carried; unpaid fees become debt. The hero must also rest before the next expedition. Gold you deposited stays safe.',
+      'On the way to the Fracture Gate you choose an Echo rank, up to the highest you have unlocked. A higher rank makes only the Fractured Warden tougher. Beating a rank you have not beaten before unlocks the next one.',
       'Gear also wears down slowly from ordinary fighting. A piece at no durability is disabled until repaired, never destroyed.',
       'The first time a hero clears a zone and returns safely, it earns gold, that zone’s material and a free upgrade: open a socket or raise a modifier one rank, at no cost, at the crafters. A free upgrade happens at once and does not wait in the queue. The farthest zones also add Legacy at the next reincarnation. Each zone pays once per hero, ever; reincarnation does not reset it and a defeat never pays it.',
     ],
@@ -152,7 +155,7 @@ export const classGuide: Record<HeroClass, TipEntry> = {
   },
   cleric: {
     tips: [
-      'Choose your vow before leaving town. It decides how Faith is gained and cannot change during that expedition.',
+      'Choose your vow before leaving town. It decides how Faith is gained and cannot change during that expedition. The Sacred Balance keystone replaces Faith and vows.',
       'Faith is spent on healing, wards, and Judgment. Do not spend it all on the first heal; keep some for an emergency.',
       'Penance trades health for Faith, so use it only when you can afford the cost.',
     ],
@@ -182,6 +185,7 @@ export const raceGuide: Record<HeroRace, TipEntry> = {
     tips: [
       'Stillness rewards patience: a few actions in a row without taking direct damage charge a powerful strike.',
       'Undead pair well with classes that avoid damage, or with a barrier that absorbs hits.',
+      'With Cursebound, choose one curse before you leave. It lasts the whole expedition, and choosing none is allowed.',
     ],
   },
 }
@@ -208,6 +212,29 @@ export const vowGuide: Record<ClericVow, VowGuideEntry> = {
 
 export const VOW_GENERAL_NOTE =
   'Your vow is locked for the whole expedition. Failing an ordinary vow condition only stops Faith generation; it is not a penalty. The Exalted Vow keystone adds a real penalty for breaking the vow.'
+
+export type CurseGuideEntry = { name: string; when: string; note: string }
+
+export const curseGuide: Record<Curse, CurseGuideEntry> = {
+  'hollow-hunger': {
+    name: 'Hollow Hunger',
+    when: 'Raises all Power and lowers healing received. Once a fight, while health is low, one Soul Fragment can be spent to heal.',
+    note: 'A damage curse. The heal spends a Soul. Soul Harvest is what fills them.',
+  },
+  'grave-patience': {
+    name: 'Grave Patience',
+    when: 'Actions are slower, and Stillness is ready after fewer undamaged actions. Spending a Soul when Stillness fires keeps a step of progress.',
+    note: 'Trades speed for a Stillness strike that comes back sooner.',
+  },
+  'soul-debt': {
+    name: 'Soul Debt',
+    when: 'The rescue fee, and the debt it leaves, are higher. Each Soul Fragment held raises all Power, up to the Soul cap.',
+    note: 'Power grows with Souls, and a defeat costs more gold.',
+  },
+}
+
+export const CURSE_GENERAL_NOTE =
+  'A curse is chosen in town and locked for the expedition. It does nothing unless Cursebound is learned. Choosing none is allowed.'
 
 export const statusGuide: Record<string, { summary: string }> = {
   bleed: { summary: 'Damage over time that triggers when the target acts, so fast enemies bleed more often. Each stack lasts for a few of the target’s actions.' },
