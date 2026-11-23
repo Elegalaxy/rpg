@@ -62,6 +62,7 @@ export function AwayReportView({ report }: { report: AwayReport }) {
   const taken = report.heroes.reduce((sum, hero) => sum + (hero.contractsTaken ?? 0), 0)
   const repairedPieces = report.heroes.reduce((sum, hero) => sum + (hero.repairedPieces ?? 0), 0)
   const repairGold = report.heroes.reduce((sum, hero) => sum + (hero.repairGold ?? 0), 0)
+  const repairSkipped = report.heroes.reduce((sum, hero) => sum + (hero.repairSkipped ?? 0), 0)
   const banners = report.heroes.flatMap((hero) => {
     const line = awayBanner(hero)
     return line === null ? [] : [{ heroId: hero.heroId, line }]
@@ -126,6 +127,11 @@ export function AwayReportView({ report }: { report: AwayReport }) {
           </li>
         ) : null}
         {repairedPieces > 0 ? <li data-testid="away-auto-repair">{repairLine(repairedPieces, repairGold)}</li> : null}
+        {repairSkipped > 0 ? (
+          <li data-testid="away-repair-skipped">
+            Repair at home skipped {repairSkipped} {repairSkipped === 1 ? 'piece' : 'pieces'}: not enough gold.
+          </li>
+        ) : null}
         {firstClears.length > 0 ? <li data-testid="away-first-clear">First clear: {firstClears.join(', ')}.</li> : null}
         {contracts > 0 ? <li>Contracts finished: {contracts}. Collect them at the Contract Board.</li> : null}
         {report.discovered.length > 0 ? <li>Discovered: {report.discovered.join(', ')}.</li> : null}

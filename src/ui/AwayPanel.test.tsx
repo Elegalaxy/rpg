@@ -34,6 +34,12 @@ describe('the away repair line (Step 13.49)', () => {
     expect(html({ ...hero, repairedPieces: 1, repairGold: 7 })).toContain('Repaired 1 piece for 7 g.')
     expect(html(hero)).not.toContain('away-auto-repair')
   })
+
+  it('says when pieces were skipped for lack of gold, only when some were', () => {
+    expect(html({ ...hero, repairSkipped: 2 })).toContain('Repair at home skipped 2 pieces: not enough gold.')
+    expect(html({ ...hero, repairSkipped: 1 })).toContain('skipped 1 piece:')
+    expect(html(hero)).not.toContain('away-repair-skipped')
+  })
 })
 
 describe('the away banner (Step 13.15)', () => {

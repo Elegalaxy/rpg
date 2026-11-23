@@ -10,6 +10,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 ---
 
 ## Unreleased
+- Improved: the away report says when Repair at home skipped pieces because you could not afford them. [13.49]
 - Improved: Re-infuse shows which modifier it replaces (with its rank and temper) and needs a second click to confirm.
 
 - Improved: the Guide now explains the three Undead curses, rule stacks, the safe pouch, and Echo rank.

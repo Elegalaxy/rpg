@@ -62,6 +62,8 @@ export type HeroAwaySummary = {
   /** Worn pieces and the gold Auto run spent repairing them at home while away (Step 13.49). Absent counts as 0. */
   repairedPieces?: number
   repairGold?: number
+  /** Worn pieces Auto run could not afford to repair while away. Absent counts as 0. */
+  repairSkipped?: number
   /** Endless runs that ended by a retreat while away. Absent counts as 0. */
   endlessRetreats?: number
   /** Auto run was on when the player left, so the run kept going under the standing orders. */
@@ -402,6 +404,7 @@ function rerun(ctx: Ctx, auto: boolean): boolean {
     if (contracts.taken > 0) lane.summary.contractsTaken = (lane.summary.contractsTaken ?? 0) + contracts.taken
     const repair = autoRepairStep(ctx.save)
     ctx.save = repair.save
+    if (repair.unaffordable > 0) lane.summary.repairSkipped = (lane.summary.repairSkipped ?? 0) + repair.unaffordable
     if (repair.repaired > 0) {
       lane.summary.repairedPieces = (lane.summary.repairedPieces ?? 0) + repair.repaired
       lane.summary.repairGold = (lane.summary.repairGold ?? 0) + repair.gold
