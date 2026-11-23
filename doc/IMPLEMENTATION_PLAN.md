@@ -1211,6 +1211,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-18: Part 2 done. `MATERIAL_BUY_MULTIPLIER`, `BUYABLE_MATERIALS`, `MATERIAL_BUY_PRICE` in `content/shop.ts`; `buyMaterial` in `persist/town.ts`; `buyMaterialFromUi`; tests in `persist/town.test.ts`.
   - 2026-11-18: Part 3 done. `TradingPost` (`ui/town/Town.tsx`) has a labelled Sell group and, for common materials, a Buy group (Buy 1, 10, 100 with gold cost, disabled with title plus a reserved reason line; `btn-info`; classes `trade-group`, `trade-label`, `trade-reason` in `theme.css`); Help line; Greyhaven Guide prose and a generated buy price fact; tests in `ui/town/TradingPost.test.tsx`. Browser and 375 px layout not checked.
 
+### Step 13.51: Echo rank reward and the away repair cost
+- Status: `done`
+- Depends on: 13.24, 13.49
+- Goal: user ask 2026-11-23: a reward per Fractured Warden Echo rank (1 free upgrade the first time a hero unlocks it, GAME_DESIGN §6 Rank reward), and the away report's skipped-repair line also says what repairing costs against the hero's gold. Persist and UI only; the sim, content numbers and harness are untouched.
+- Progress:
+  - 2026-11-23: Part 1 done (design recorded).
+  - 2026-11-23: Done. `ECHO_RANK_TOKENS`, `echoRewardsDue`, `echoRewardId`, `firstClearLabel` in `persist/firstClear.ts` (paid by `payFirstClears` on a safe return, recorded as `echo:N` in `firstClearIds`, no save change); Echo moment line in `persist/moments.ts`; away report names the rank; `repairNeed`/`repairHave` on the away summary and the line in `AwayPanel.tsx`; tests.
+
 ### Step 13.50: Assassin base tick 10% and a new job for the Venom Edge node
 - Status: `done`
 - Depends on: 13.47, 13.48

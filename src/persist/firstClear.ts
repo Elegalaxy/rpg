@@ -15,10 +15,32 @@ export function firstClearsDue(hero: SavedHero): FirstClearReward[] {
   })
 }
 
+/** Free upgrades for each Echo rank first unlocked (Step 13.51). */
+export const ECHO_RANK_TOKENS = 1
+
+/** The id recorded in `firstClearIds` once Echo rank `rank` has paid its reward. */
+export function echoRewardId(rank: number): string {
+  return `echo:${rank}`
+}
+
+/** The Echo ranks 1 to the hero's `echoRank` whose reward has not been paid yet. */
+export function echoRewardsDue(hero: SavedHero): number[] {
+  const paid = hero.firstClearIds ?? []
+  const ranks: number[] = []
+  for (let rank = 1; rank <= hero.echoRank; rank += 1) if (!paid.includes(echoRewardId(rank))) ranks.push(rank)
+  return ranks
+}
+
+/** The name a paid id shows in reports: the node name, or "Echo rank N". */
+export function firstClearLabel(id: string, nodeName: string | undefined): string {
+  return id.startsWith('echo:') ? `Echo rank ${id.slice(5)}` : (nodeName ?? id)
+}
+
 /** Pay everything due into the hero's purse and free upgrades, and record it. The same hero object when nothing is due. */
 export function payFirstClears(hero: SavedHero): { hero: SavedHero; paid: FirstClearReward[] } {
   const due = firstClearsDue(hero)
-  if (due.length === 0) return { hero, paid: [] }
+  const echoDue = echoRewardsDue(hero)
+  if (due.length === 0 && echoDue.length === 0) return { hero, paid: [] }
   const materials = { ...hero.purse.materials }
   let gold = hero.purse.gold
   let tokens = hero.freeUpgrades ?? 0
@@ -27,12 +49,13 @@ export function payFirstClears(hero: SavedHero): { hero: SavedHero; paid: FirstC
     if (reward.materialId !== null) materials[reward.materialId] = (materials[reward.materialId] ?? 0) + reward.quantity
     tokens += reward.tokens
   }
+  tokens += echoDue.length * ECHO_RANK_TOKENS
   return {
     hero: {
       ...hero,
       purse: { ...hero.purse, gold, materials },
       freeUpgrades: tokens,
-      firstClearIds: [...(hero.firstClearIds ?? []), ...due.map((reward) => reward.nodeId)],
+      firstClearIds: [...(hero.firstClearIds ?? []), ...due.map((reward) => reward.nodeId), ...echoDue.map(echoRewardId)],
     },
     paid: due,
   }

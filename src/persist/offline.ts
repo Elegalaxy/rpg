@@ -13,6 +13,8 @@ import { packFromStash } from './preparation.ts'
 import { contractFor, purseOf, type SaveData } from './save.ts'
 import { autoContractsStep } from './autoContracts.ts'
 import { autoRepairStep } from './autoRepair.ts'
+import { firstClearLabel } from './firstClear.ts'
+import { repairAllCost } from './town.ts'
 import { isEndlessAutoRun, autoRerunRefusal, autoRunDefeatNote, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 import { nodes, routes } from '../content/world.ts'
 
@@ -64,6 +66,9 @@ export type HeroAwaySummary = {
   repairGold?: number
   /** Worn pieces Auto run could not afford to repair while away. Absent counts as 0. */
   repairSkipped?: number
+  /** What repairing the worn gear still needed, and the hero's gold, the last time pieces were skipped (Step 13.51). */
+  repairNeed?: number
+  repairHave?: number
   /** Endless runs that ended by a retreat while away. Absent counts as 0. */
   endlessRetreats?: number
   /** Auto run was on when the player left, so the run kept going under the standing orders. */
@@ -404,14 +409,21 @@ function rerun(ctx: Ctx, auto: boolean): boolean {
     if (contracts.taken > 0) lane.summary.contractsTaken = (lane.summary.contractsTaken ?? 0) + contracts.taken
     const repair = autoRepairStep(ctx.save)
     ctx.save = repair.save
-    if (repair.unaffordable > 0) lane.summary.repairSkipped = (lane.summary.repairSkipped ?? 0) + repair.unaffordable
+    if (repair.unaffordable > 0) {
+      lane.summary.repairSkipped = (lane.summary.repairSkipped ?? 0) + repair.unaffordable
+      const wearer = selectedHero(ctx.save)
+      if (wearer !== null) {
+        lane.summary.repairNeed = repairAllCost(wearer)
+        lane.summary.repairHave = wearer.purse.gold
+      }
+    }
     if (repair.repaired > 0) {
       lane.summary.repairedPieces = (lane.summary.repairedPieces ?? 0) + repair.repaired
       lane.summary.repairGold = (lane.summary.repairGold ?? 0) + repair.gold
     }
   }
   const claimedAfter = selectedHero(ctx.save)?.firstClearIds ?? []
-  const newlyPaid = claimedAfter.filter((id) => !claimedBefore.includes(id)).map((id) => nodes[id]?.name ?? id)
+  const newlyPaid = claimedAfter.filter((id) => !claimedBefore.includes(id)).map((id) => firstClearLabel(id, nodes[id]?.name))
   if (newlyPaid.length > 0) lane.summary.firstClears = [...(lane.summary.firstClears ?? []), ...newlyPaid]
   if (auto) {
     // The same refusal rule the live Auto run uses; a refusal switches Auto run off.

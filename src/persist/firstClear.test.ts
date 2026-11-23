@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { selectedHero } from './character.ts'
 import { startExpedition } from './expeditionSetup.ts'
-import { firstClearsDue, payFirstClears } from './firstClear.ts'
+import { ECHO_RANK_TOKENS, echoRewardsDue, firstClearLabel, firstClearsDue, payFirstClears } from './firstClear.ts'
 import { runOffline } from './offline.ts'
 import { bonusesDue, reincarnate } from './reincarnation.ts'
 import { createHero } from './roster.ts'
@@ -95,6 +95,29 @@ describe('first-clear payout', () => {
   it('payFirstClears returns the same hero when nothing is due', () => {
     const plain = hero(withHero())
     expect(payFirstClears(plain).hero).toBe(plain)
+  })
+
+  it('pays 1 free upgrade per Echo rank first unlocked, once, and not again after reincarnation resets the rank', () => {
+    const hero3 = hero(withHero({ echoRank: 3 }))
+    expect(echoRewardsDue(hero3)).toEqual([1, 2, 3])
+    const paid = payFirstClears(hero3).hero
+    expect(paid.freeUpgrades).toBe(3 * ECHO_RANK_TOKENS)
+    expect(paid.firstClearIds).toEqual(['echo:1', 'echo:2', 'echo:3'])
+    expect(echoRewardsDue(paid)).toEqual([])
+    expect(payFirstClears(paid).hero).toBe(paid)
+    // A new life: the rank is back at 0, the ids stay, and reaching rank 3 again pays nothing.
+    const again = { ...paid, echoRank: 3 }
+    expect(echoRewardsDue(again)).toEqual([])
+    // Only the next new rank pays.
+    expect(echoRewardsDue({ ...paid, echoRank: 4 })).toEqual([4])
+  })
+
+  it('a defeat does not pay an Echo rank, and the label reads "Echo rank N"', () => {
+    const save = withHero({ echoRank: 1 })
+    expect(hero(settleExpedition(finished(save, 'defeat'), 1)).freeUpgrades ?? 0).toBe(0)
+    expect(hero(settleExpedition(finished(save, 'returned'), 1)).freeUpgrades).toBe(ECHO_RANK_TOKENS)
+    expect(firstClearLabel('echo:2', undefined)).toBe('Echo rank 2')
+    expect(firstClearLabel('withered-grove', 'Withered Grove')).toBe('Withered Grove')
   })
 
   it('the preview equals what settle pays, and is empty for a defeat or an ongoing run', () => {

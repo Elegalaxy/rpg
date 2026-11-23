@@ -1,4 +1,5 @@
 import { firstClearReward, firstClearRewardText } from '../content/firstClear.ts'
+import { ECHO_RANK_TOKENS, firstClearLabel } from './firstClear.ts'
 import { selectedHero } from './character.ts'
 import { isComplete } from './contracts.ts'
 import { bossFaced } from './reincarnation.ts'
@@ -41,6 +42,7 @@ export function momentsBetween(before: SaveData, after: SaveData): Moment[] {
   for (const nodeId of now.firstClearIds ?? []) {
     const reward = paid.has(nodeId) ? null : firstClearReward(nodeId)
     if (reward !== null) moments.push({ kind: 'firstClear', text: `${reward.name}: ${firstClearRewardText(reward)}` })
+    else if (!paid.has(nodeId) && nodeId.startsWith('echo:')) moments.push({ kind: 'firstClear', text: `${firstClearLabel(nodeId, undefined)}: ${ECHO_RANK_TOKENS} free upgrade` })
   }
   for (const active of now.purse.contracts) {
     const def = contractFor(now.purse, active.contractId)
