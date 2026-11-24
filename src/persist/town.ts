@@ -103,7 +103,7 @@ export function buyItem(save: SaveData, heroId: string, baseId: string): RosterR
   const hero = save.heroes.find((entry) => entry.id === heroId)
   if (hero === undefined) return { ok: false, reason: 'That hero is not on the roster.' }
   const base = itemBase(baseId)
-  if (base === undefined) return { ok: false, reason: 'Greyhaven does not sell that.' }
+  if (base === undefined || (base.type === 'accessory' && base.starterOnly === true)) return { ok: false, reason: 'Greyhaven does not sell that.' }
   const blocked = classBlock(wearerOf(hero), base)
   if (blocked !== null) return { ok: false, reason: blocked }
   const price = itemBuyPrice(hero.progress.level)

@@ -261,6 +261,28 @@ describe('what equipping changes', () => {
     expect(lines['Magical status resistance']).toBe(10)
   })
 
+  it('adds the Amulet and Talisman implicits to the derived stats and the combat setup', () => {
+    const raw = heroSave()
+    const save = { ...raw, heroes: raw.heroes.map((h) => ({ ...h, progress: { ...h.progress, level: 30 } })) }
+    const base = hero(save)
+    const gearUp = (items: [string, string]): SaveData => ({
+      ...save,
+      heroes: save.heroes.map((h) => ({
+        ...h,
+        equipment: { ...h.equipment, accessory0: newItem('t0', items[0], 30), accessory1: newItem('t1', items[1], 30) },
+      })),
+    })
+    const plain = statsFor(base)!
+    const amulets = statsFor(hero(gearUp(['accessory-amulet', 'accessory-charm'])))!
+    expect(amulets.maxHp / plain.maxHp).toBeCloseTo(1.0075, 10)
+    const both = hero(gearUp(['accessory-amulet', 'accessory-talisman']))
+    const stats = statsFor(both)!
+    expect(stats.maxHp / plain.maxHp).toBeCloseTo(1.0075, 10)
+    expect(stats.critDamage).toBeCloseTo(plain.critDamage + 0.03, 10)
+    expect(blueprintForHero(both, 'splintered-road').hero.statBonuses).toEqual({ maxHpBonus: 0.0075, critDamageBonus: 0.03 })
+    expect(blueprintForHero(base, 'splintered-road').hero.statBonuses).toEqual({})
+  })
+
   it('shows the physical status resistance from Staunch', () => {
     const save = heroSave()
     const plain = Object.fromEntries(statLines(statsFor(hero(save))!).map((line) => [line.label, line.value]))

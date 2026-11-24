@@ -439,6 +439,10 @@ function itemEntry(base: ItemBase): GuideEntry {
       { label: 'Kind', value: TYPE_NAMES[base.type] },
       { label: 'Worn in', value: wornIn(base) },
       { label: 'Preferred by', value: preferredBy(base) },
+      ...(base.type === 'accessory' && base.implicit !== undefined
+        ? [{ label: 'Built-in stat', value: `${base.implicit.key === 'maxHpBonus' ? 'Maximum HP' : 'Critical damage'}, more at a higher item level` }]
+        : []),
+      ...(base.type === 'accessory' && base.starterOnly === true ? [{ label: 'Source', value: 'Starting gear only' }] : []),
     ],
     lines: base.type === 'weapon' && base.weaponKind === 'twoHanded' ? ['Leaves the off-hand slot empty.'] : [],
     prose: [],

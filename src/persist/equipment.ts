@@ -1,5 +1,5 @@
 import { developmentItems, itemBase, itemName } from '../content/items.ts'
-import { ITEM_MODIFIERS, modifierRankAt, modifierTemperAt, modifierTextAt, TEMPER_PER_POINT, rankName, equipBlock, equipItem, gearFromEquipment, slotsFor, statBonusesFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
+import { ITEM_MODIFIERS, modifierRankAt, modifierTemperAt, modifierTextAt, TEMPER_PER_POINT, rankName, equipBlock, equipItem, gearBonusesFor, gearFromEquipment, slotsFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
 import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats, type HeroDerivedStats } from '../sim/stats.ts'
 import { renaissanceActive } from '../sim/progression.ts'
@@ -25,7 +25,7 @@ export function statsFor(hero: SavedHero): HeroDerivedStats | null {
     gear,
     racialNodeIds: nodeIds,
     renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
-    ...statBonusesFor(hero.equipment),
+    ...gearBonusesFor(hero.equipment, itemBase),
   })
 }
 

@@ -3,6 +3,7 @@ import {
   ITEM_MAX_DURABILITY,
   ITEM_MODIFIERS,
   emptyEquipment,
+  implicitBonuses,
   modifierRankAt,
   rankName,
   type Equipment,
@@ -45,14 +46,24 @@ const bases: ItemBase[] = [
   { id: 'offhand-dagger', name: 'Off-hand Dagger', type: 'offHand', offHandKind: 'dagger' },
   { id: 'offhand-quiver', name: 'Quiver', type: 'offHand', offHandKind: 'quiver' },
   ...armorBases(),
-  { id: 'accessory-ring', name: 'Ring', type: 'accessory' },
-  { id: 'accessory-charm', name: 'Charm', type: 'accessory' },
+  { id: 'accessory-ring', name: 'Ring', type: 'accessory', starterOnly: true },
+  { id: 'accessory-charm', name: 'Charm', type: 'accessory', starterOnly: true },
+  { id: 'accessory-amulet', name: 'Amulet', type: 'accessory', implicit: { key: 'maxHpBonus', perLevel: 0.00025 } },
+  { id: 'accessory-talisman', name: 'Talisman', type: 'accessory', implicit: { key: 'critDamageBonus', perLevel: 0.001 } },
 ]
 
 export const itemBases: { readonly [id: string]: ItemBase } = Object.fromEntries(bases.map((base) => [base.id, base]))
 
 export function itemBase(baseId: string): ItemBase | undefined {
   return itemBases[baseId]
+}
+
+/** The line for an accessory base's implicit stat at an item level, such as `+1.5% maximum HP`. Null when the base has none. */
+export function implicitText(baseId: string, itemLevel: number): string | null {
+  const bonus = implicitBonuses(itemBase(baseId), itemLevel)
+  if (bonus.maxHpBonus !== undefined) return `+${Math.round(bonus.maxHpBonus * 1000) / 10}% maximum HP`
+  if (bonus.critDamageBonus !== undefined) return `+${Math.round(bonus.critDamageBonus * 1000) / 10} points critical damage`
+  return null
 }
 
 /** The item's name with its modifiers in front, such as `Keen Bow`. */

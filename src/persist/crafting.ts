@@ -154,7 +154,7 @@ export function craftCheck(save: SaveData, hero: SavedHero, request: CraftReques
   const shut = closed(save)
   if (shut !== null) return shut
   const base = itemBase(request.baseId)
-  if (base === undefined) return 'Pick something to craft.'
+  if (base === undefined || (base.type === 'accessory' && base.starterOnly === true)) return 'Pick something to craft.'
   const classProblem = classBlock(wearerOf(hero), base)
   if (classProblem !== null) return classProblem
   if (!Number.isInteger(request.itemLevel) || request.itemLevel < 1) return 'Item level must be a whole number of at least 1.'

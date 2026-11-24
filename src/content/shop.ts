@@ -1,6 +1,6 @@
 import { classBlock, type ItemInstance, type Wearer } from '../sim/economy.ts'
 
-import { itemBases } from './items.ts'
+import { implicitText, itemBases } from './items.ts'
 
 /** Gold Greyhaven pays for one unit of a material (G1). Scrap is worth less. */
 export const MATERIAL_SELL_PRICE: { readonly [materialId: string]: number } = {
@@ -47,16 +47,19 @@ export function repairCost(item: ItemInstance): number {
   return Math.ceil((missing * (1 + item.itemLevel / 2)) / 10)
 }
 
-export type ShopEntry = { baseId: string; name: string; itemLevel: number; price: number }
+/** `implicit` is the accessory base's own stat line at the sold item level, or null. */
+export type ShopEntry = { baseId: string; name: string; itemLevel: number; price: number; implicit: string | null }
 
 /** Every base item the hero's class can use, at the hero's level, in the order the content lists them. No supplies are sold. */
 export function shopStock(heroLevel: number, wearer?: Wearer): ShopEntry[] {
   return Object.values(itemBases)
+    .filter((base) => !(base.type === 'accessory' && base.starterOnly === true))
     .filter((base) => wearer === undefined || classBlock(wearer, base) === null)
     .map((base) => ({
       baseId: base.id,
       name: base.name,
       itemLevel: heroLevel,
       price: itemBuyPrice(heroLevel),
+      implicit: implicitText(base.id, heroLevel),
     }))
 }

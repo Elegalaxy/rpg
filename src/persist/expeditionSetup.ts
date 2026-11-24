@@ -11,7 +11,7 @@ import {
   type ExpeditionEncounterDef,
   type ExpeditionState,
 } from '../sim/expedition.ts'
-import { EQUIPMENT_SLOT_IDS, gearFromEquipment, statBonusesFor } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, gearBonusesFor, gearFromEquipment } from '../sim/economy.ts'
 import { renaissanceActive } from '../sim/progression.ts'
 
 import { bagCapacity } from './bag.ts'
@@ -83,7 +83,7 @@ export function blueprintForHero(
       ...(rules.ruleStacks.length > 0 ? { ruleStacks: structuredClone(rules.ruleStacks) } : {}),
       allocatedNodeIds: [...nodeIds],
       renaissance: renaissanceActive(nodeIds, classWebs[hero.classId]),
-      statBonuses: statBonusesFor(hero.equipment),
+      statBonuses: gearBonusesFor(hero.equipment, itemBase),
       masteryRank: masteryRank(hero),
       ...(hero.classId === 'ranger' ? { specialAmmo: hero.specialAmmo } : {}),
       ...(hero.vow !== null ? { vow: hero.vow } : {}),

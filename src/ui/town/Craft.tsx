@@ -76,7 +76,7 @@ export function Craft({ accepts = () => true, part }: { accepts?: (baseId: strin
 
   const rank = proficiencyRank(hero.craftXp)
   const level = levelText.trim() === '' ? hero.progress.level : Number(levelText.trim())
-  const craftable = Object.values(itemBases).filter((base) => accepts(base.id) && classBlock(wearerOf(hero), base) === null)
+  const craftable = Object.values(itemBases).filter((base) => !(base.type === 'accessory' && base.starterOnly === true) && accepts(base.id) && classBlock(wearerOf(hero), base) === null)
   const chosenBase = craftable.some((base) => base.id === baseId) ? baseId : (craftable[0]?.id ?? baseId)
   const range = qualityRange(materialId, rank)
   const shownModifier = modifierId !== '' && ITEM_MODIFIERS[modifierId] !== undefined && itemBases[chosenBase] !== undefined && modifierFits(ITEM_MODIFIERS[modifierId], itemBases[chosenBase]) ? modifierId : ''

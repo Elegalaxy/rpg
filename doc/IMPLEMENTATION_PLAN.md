@@ -1655,6 +1655,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Parts: P1 docs; P2 sim and content (types, bases, `gearBonusesFor`, persist callers, starter-only); P3 UI implicit line, browser-checked; P4 `--matrix late` trinket variants and numbers.
 - Progress:
   - 2026-11-24: P1 done (docs).
+  - 2026-11-24: P2 done: accessory base variant (`implicit`, `starterOnly`), `implicitBonuses`, `addStatBonuses`, `gearBonusesFor` in `sim/economy.ts`; `accessory-amulet` and `accessory-talisman` in `content/items.ts` with `implicitText`; `shopStock` skips starter-only bases and carries `implicit`; `buyItem` and `craftCheck` refuse them; `persist/equipment.ts` and `persist/expeditionSetup.ts` use `gearBonusesFor`; Craft list and Guide item entries updated. Tests: `content/accessoryBases.test.ts`, `equipment.test.ts`, `town.test.ts`, `crafting.test.ts`.
 
 ## 8. Risks, and what would reveal them early
 

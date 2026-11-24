@@ -22,7 +22,15 @@ export type ItemBase =
   | { id: string; name: string; type: 'weapon'; weaponKind: WeaponKind }
   | { id: string; name: string; type: 'offHand'; offHandKind: OffHandKind }
   | { id: string; name: string; type: 'armor'; slot: ArmorSlot; category: ArmorCategory }
-  | { id: string; name: string; type: 'accessory' }
+  | {
+      id: string
+      name: string
+      type: 'accessory'
+      /** One stat that grows with item level and ignores quality (Step 14.4). Not a modifier: no stack cap, rank or temper. */
+      implicit?: { key: 'maxHpBonus' | 'critDamageBonus'; perLevel: number }
+      /** Not sold and not craftable (the starting Ring and Charm). Owned ones keep working. */
+      starterOnly?: true
+    }
 
 /** One item the player owns. Plain JSON. Starter gear has quality 1 and no modifiers. */
 export type ItemInstance = {
@@ -359,6 +367,30 @@ export function scaledBonus(key: string, value: number, rank: number, temper = 0
 /** Whether a modifier has numeric bonuses a rank can raise (Hauler's has only bag room, so it has none). */
 export function rankable(modifier: ItemModifier): boolean {
   return Object.keys(modifier.bonus).length > 0
+}
+
+/** The implicit stat of an accessory base at an item level, rounded to 4 decimals of the fraction. Empty for anything else. */
+export function implicitBonuses(base: ItemBase | undefined, itemLevel: number): StatBonuses {
+  if (base === undefined || base.type !== 'accessory' || base.implicit === undefined) return {}
+  return { [base.implicit.key]: Math.round(base.implicit.perLevel * itemLevel * 10_000) / 10_000 }
+}
+
+/** The key-wise sum of two bonus sets. */
+export function addStatBonuses(a: StatBonuses, b: StatBonuses): StatBonuses {
+  const total: { [key in keyof StatBonuses]: number } = { ...a }
+  for (const key of Object.keys(b) as (keyof StatBonuses)[]) total[key] = (total[key] ?? 0) + (b[key] ?? 0)
+  return total
+}
+
+/** Everything worn that adds to the hero's stats: the counted modifiers plus the implicits of both accessories (Step 14.4). */
+export function gearBonusesFor(equipment: Equipment, lookup: BaseLookup): StatBonuses {
+  let total = statBonusesFor(equipment)
+  for (const slot of ['accessory0', 'accessory1'] as const) {
+    const item = equipment[slot]
+    if (item === null) continue
+    total = addStatBonuses(total, implicitBonuses(lookup(item.baseId), item.itemLevel))
+  }
+  return total
 }
 
 /** The modifier's effect line at a rank and temper: every number in the rank I text scaled and rounded to one decimal. */
