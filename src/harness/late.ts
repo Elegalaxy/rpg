@@ -1,6 +1,8 @@
+import { itemBase } from '../content/items.ts'
 import { gameDefs } from '../content/scenarios.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
+import { addStatBonuses, implicitBonuses } from '../sim/economy.ts'
 import { deriveSeed } from '../sim/rng.ts'
 import type { CombatSetup } from '../sim/types.ts'
 
@@ -24,6 +26,8 @@ export type LateVariant = {
   baseline: string
   /** Recorded in the table but not part of the acceptance numbers. */
   recordOnly?: boolean
+  /** An Amulet and a Talisman at the tier's level are worn on top of the tier (Step 14.4): their implicits are added to the stat bonuses. */
+  trinkets?: boolean
 }
 
 const cinderPrepared = (): WardenTier => CINDER_TIERS.find((tier) => tier.id === 'prepared')!
@@ -46,6 +50,8 @@ export const LATE_VARIANTS: readonly LateVariant[] = [
   { id: 'cinder-tempered-weapon', zone: 'tyrant', baseline: 'cinder-prepared', tier: swapped(cinderPrepared(), 'cinder-tempered-weapon', { mainHand: 'tempered' }), recordOnly: true },
   /** The Burn check (Step 14.3): prepared minus this row is the Warming Tonic's value against the Tyrant. */
   { id: 'cinder-notonic', zone: 'tyrant', baseline: 'cinder-prepared', tier: { ...notonicVariant(cinderPrepared()), id: 'cinder-notonic' }, recordOnly: true },
+  { id: 'cinder-trinkets', zone: 'tyrant', baseline: 'cinder-prepared', tier: { ...cinderPrepared(), id: 'cinder-trinkets' }, trinkets: true },
+  { id: 'warden-trinkets', zone: 'warden', baseline: 'warden-prepared', tier: { ...wardenPrepared(), id: 'warden-trinkets' }, trinkets: true },
   { id: 'warden-staunch', zone: 'warden', baseline: 'warden-prepared', tier: swapped(wardenPrepared(), 'warden-staunch', { hands: 'staunch', feet: 'staunch' }) },
 ]
 
@@ -60,11 +66,16 @@ export type LateRow = {
   hpLost: number
 }
 
-export function lateSetup(classId: HeroClass, zone: LateZone, tier: WardenTier): CombatSetup {
-  if (zone === 'warden') return wardenSetup(classId, tier)
+export function lateSetup(classId: HeroClass, zone: LateZone, tier: WardenTier, trinkets = false): CombatSetup {
   const tyrant = CINDER_FIGHTS.find((fight) => fight.id === 'tyrant')!
-  return cinderSetup(classId, tier, tyrant, 'rules')
+  const setup = zone === 'warden' ? wardenSetup(classId, tier) : cinderSetup(classId, tier, tyrant, 'rules')
+  if (!trinkets) return setup
+  const worn = addStatBonuses(implicitBonuses(itemBase('accessory-amulet'), tier.level), implicitBonuses(itemBase('accessory-talisman'), tier.level))
+  return { ...setup, hero: { ...setup.hero, statBonuses: addStatBonuses(setup.hero.statBonuses ?? {}, worn) } }
 }
+
+/** Every id the table can show: the two baselines and each variant. */
+export const LATE_IDS: readonly string[] = [...Object.values(LATE_BASELINES).map((tier) => tier.id), ...LATE_VARIANTS.map((variant) => variant.id)]
 
 function measure(setup: CombatSetup, seed: number, runs: number): { winRate: number; hpLost: number } {
   const defs = gameDefs()
@@ -79,7 +90,8 @@ function measure(setup: CombatSetup, seed: number, runs: number): { winRate: num
 }
 
 /** Every class at each baseline and each variant. */
-export function runLateMatrix(seed: number, runs: number, classes: readonly HeroClass[] = HERO_CLASSES): LateRow[] {
+/** `only` limits the variants (and their baselines, which always run) to those ids. */
+export function runLateMatrix(seed: number, runs: number, classes: readonly HeroClass[] = HERO_CLASSES, only?: readonly string[]): LateRow[] {
   if (!Number.isInteger(runs) || runs < 1 || runs > MAX_BATCH_RUNS) throw new Error(`runs must be an integer from 1 to ${MAX_BATCH_RUNS}, received ${runs}`)
   const rows: LateRow[] = []
   for (const classId of classes) {
@@ -88,13 +100,14 @@ export function runLateMatrix(seed: number, runs: number, classes: readonly Hero
       rows.push({ classId, id: baseline.id, zone, baseline: baseline.id, recordOnly: false, ...measure(lateSetup(classId, zone, baseline), seed, runs) })
     }
     for (const variant of LATE_VARIANTS) {
+      if (only !== undefined && !only.includes(variant.id)) continue
       rows.push({
         classId,
         id: variant.id,
         zone: variant.zone,
         baseline: variant.baseline,
         recordOnly: variant.recordOnly === true,
-        ...measure(lateSetup(classId, variant.zone, variant.tier), seed, runs),
+        ...measure(lateSetup(classId, variant.zone, variant.tier, variant.trinkets === true), seed, runs),
       })
     }
   }

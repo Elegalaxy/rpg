@@ -20,7 +20,7 @@ import { formatFreeCsv, runFreeMatrix } from './freeUpgrade.ts'
 import { formatModdedCsv, formatModdedTable, runModdedMatrix, writeModdedCsv } from './modded.ts'
 import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
 import { formatCinderTable, runCinderMatrix } from './cinder.ts'
-import { formatLateTable, runLateMatrix } from './late.ts'
+import { LATE_IDS, formatLateTable, runLateMatrix } from './late.ts'
 import { ELITE_CELLS, ELITE_IDS, ELITE_MODES, formatElitesTable, runElitesMatrix, type EliteFilter } from './elites.ts'
 import { formatPackTable, runPackMatrix } from './pack.ts'
 import { formatSlotsTable, runSlotsMatrix } from './slots.ts'
@@ -341,7 +341,7 @@ function printMatrix(args: ParsedArgs): void {
   if (args.matrix === 'late') {
     console.log(`[sim] matrix late seed ${seed} runs ${runs}`)
     const started = performance.now()
-    const rows = runLateMatrix(seed, runs)
+    const rows = runLateMatrix(seed, runs, parseList('--classes', args.classes, HERO_CLASSES), parseList('--tiers', args.tiers, LATE_IDS))
     const elapsedMs = performance.now() - started
     process.stdout.write(formatLateTable(rows))
     printTiming(rows.length * runs, elapsedMs)

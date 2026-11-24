@@ -11,6 +11,10 @@ describe('the late modifier matrix', () => {
       const baseline = LATE_BASELINES[variant.zone]
       expect(variant.baseline).toBe(baseline.id)
       const changed = Object.entries(variant.tier.modifiers).filter(([slot, id]) => baseline.modifiers[slot as keyof typeof baseline.modifiers] !== id)
+      if (variant.trinkets === true) {
+        expect(variant.tier.modifiers).toEqual(baseline.modifiers)
+        continue
+      }
       if (variant.id === 'cinder-notonic') {
         expect(variant.tier.supplies).not.toEqual(baseline.supplies)
         continue
@@ -19,6 +23,24 @@ describe('the late modifier matrix', () => {
       for (const [, id] of changed) expect(ITEM_MODIFIERS[id as string]).toBeDefined()
     }
   })
+
+  it('adds the Amulet and Talisman implicits at the tier level to the trinket variants only', () => {
+    const warden = LATE_VARIANTS.find((variant) => variant.id === 'warden-trinkets')!
+    const cinder = LATE_VARIANTS.find((variant) => variant.id === 'cinder-trinkets')!
+    const plainWarden = lateSetup('warrior', 'warden', warden.tier).hero.statBonuses ?? {}
+    const wardenBonus = lateSetup('warrior', 'warden', warden.tier, true).hero.statBonuses ?? {}
+    expect(wardenBonus.maxHpBonus).toBeCloseTo((plainWarden.maxHpBonus ?? 0) + 0.005, 10)
+    expect(wardenBonus.critDamageBonus).toBeCloseTo((plainWarden.critDamageBonus ?? 0) + 0.02, 10)
+    const plainCinder = lateSetup('mage', 'tyrant', cinder.tier).hero.statBonuses ?? {}
+    const cinderBonus = lateSetup('mage', 'tyrant', cinder.tier, true).hero.statBonuses ?? {}
+    expect(cinderBonus.maxHpBonus).toBeCloseTo((plainCinder.maxHpBonus ?? 0) + 0.0075, 10)
+    expect(cinderBonus.critDamageBonus).toBeCloseTo((plainCinder.critDamageBonus ?? 0) + 0.03, 10)
+  })
+
+  it('limits a run to the named variants and always keeps the baselines', () => {
+    const rows = runLateMatrix(1, 1, ['warrior'], ['warden-trinkets'])
+    expect(rows.map((row) => row.id)).toEqual(['cinder-prepared', 'warden-prepared', 'warden-trinkets'])
+  }, 60_000)
 
   it('builds a setup for every class and zone', () => {
     for (const classId of HERO_CLASSES) {
