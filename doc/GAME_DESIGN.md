@@ -2450,6 +2450,16 @@ Armor categories multiply each piece's neutral budget:
 
 Accessories do not provide base Armor or Resistance. They provide attributes, status/resource adjustments, and special modifiers.
 
+Accessory bases (Step 14.4, decided 2026-11-24). An accessory base may carry one implicit stat that grows with item level and ignores quality. Implicits are not modifiers: no stack cap, rank or temper. They add to the hero's gear bonuses through `gearBonusesFor` (modifier bonuses plus the implicits of both accessories). Values are rounded to 4 decimals of the fraction.
+
+| Base | Implicit | At item level 10 / 20 / 30 / 40 |
+|---|---|---|
+| Ring, Charm (starter only) | none | none |
+| Amulet | +0.05% max HP per item level | 0.5% / 1% / 1.5% / 2% |
+| Talisman | +0.2 points crit damage per item level | +2 / +4 / +6 / +8 points |
+
+Every modifier that fits an accessory fits both new bases. Greyhaven's shop and the Craft screen sell and craft the Amulet and the Talisman at the usual base price (item level x 10 gold) and craft cost; the Ring and the Charm are starter-only, no longer sold or craftable (owned ones keep working). Reference and harness heroes keep zero-stat accessories, so every earlier matrix is unchanged. Power bound (seeds 1 to 3 x 100 runs, rules, mean): Warden prepared and Cinder Tyrant prepared with an Amulet and a Talisman at the tier's level, minus the plain tier, at most +8 win points per class; if not, halve the per-level numbers once, re-measure, then stop and report. Measured with `--matrix late` (`warden-trinkets`, `cinder-trinkets`).
+
 Quality:
 
 - Primary Power and Defense vary from 90%-110% quality.

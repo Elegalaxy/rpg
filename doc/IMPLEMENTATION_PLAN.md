@@ -1648,6 +1648,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-24: P2 code done: `statusImmunity` effect (sim types, skills validation, supply use in `combat.ts`, `tryApplyStatus` logs `immune` after the roll draw), Warming Tonic content and price, tests in `statusImmunity.test.ts`. Measurement below.
   - 2026-11-24: P3 code done: `physicalStatusResistanceBonus` (economy, stats, hero `physicalStatusResistance` in `combat.ts`, a stat row in `persist/equipment.ts`), Staunch, Ruthless, Ironbound and Swift in `ITEM_MODIFIERS`, Tempered 0.06 on weapons and accessories. Tests in `modifiers.test.ts`, `crafting.test.ts`, `legacySaves.test.ts`, `equipment.test.ts`, `statusImmunity.test.ts`.
 
+### Step 14.4: Amulet and Talisman accessory bases
+- Status: `in progress`
+- Depends on: 14.3
+- Goal: two new accessory bases with one implicit stat each (Amulet: max HP; Talisman: crit damage), sold and crafted from now on, with Ring and Charm starter-only. Rules in GAME_DESIGN section 9 "Accessory bases (Step 14.4)".
+- Parts: P1 docs; P2 sim and content (types, bases, `gearBonusesFor`, persist callers, starter-only); P3 UI implicit line, browser-checked; P4 `--matrix late` trinket variants and numbers.
+- Progress:
+  - 2026-11-24: P1 done (docs).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
