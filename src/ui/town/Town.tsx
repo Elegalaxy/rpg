@@ -20,7 +20,7 @@ import { packSlots, stackLimit } from '../../persist/pack.ts'
 import { PackWorkshop } from './PackWorkshop.tsx'
 import { Collapsible } from '../Collapsible.tsx'
 import { Help } from '../Help.tsx'
-import { Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
+import { ImplicitLine, Kpi, KpiRow, ShopRow, Tag } from '../Kit.tsx'
 import { useNarrow } from '../useNarrow.ts'
 import {
   buyItemFromUi,
@@ -165,7 +165,12 @@ function GearShop({ place, startJob = 'buy' }: { place: PlaceDef; startJob?: Gea
             <ShopRow
               key={entry.baseId}
               name={entry.name}
-              effect={`Item level ${entry.itemLevel} · Quality 100%`}
+              effect={
+                <>
+                  {`Item level ${entry.itemLevel} · Quality 100%`}
+                  {entry.implicit === null ? null : <ImplicitLine text={entry.implicit} />}
+                </>
+              }
               note={<GearChanges preview={previewBuy(save, hero.id, entry.baseId)} empty="No stat change from what you wear." />}
               costs={[[{ kind: 'gold', amount: entry.price }]]}
               actions={

@@ -24,6 +24,16 @@ export function Tag({ kind, children, title, testId }: { kind: TagKind; children
   )
 }
 
+/** An accessory base's built-in stat as a quiet key-value line: label in the muted tier, the figure in tabular numerals. */
+export function ImplicitLine({ text }: { text: string }) {
+  return (
+    <small className="item-implicit" data-testid="implicit-line">
+      <span className="item-implicit-label">Built-in</span>
+      <span className="item-implicit-value">{text}</span>
+    </small>
+  )
+}
+
 export type Cost = { kind: 'gold' | 'mat'; amount: number; label?: string; prefix?: string }
 
 /** A cost as a pill: "15 gold" in amber, or "3 hide" in slate. */

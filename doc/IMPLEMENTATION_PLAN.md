@@ -1656,6 +1656,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-24: P1 done (docs).
   - 2026-11-24: P2 done: accessory base variant (`implicit`, `starterOnly`), `implicitBonuses`, `addStatBonuses`, `gearBonusesFor` in `sim/economy.ts`; `accessory-amulet` and `accessory-talisman` in `content/items.ts` with `implicitText`; `shopStock` skips starter-only bases and carries `implicit`; `buyItem` and `craftCheck` refuse them; `persist/equipment.ts` and `persist/expeditionSetup.ts` use `gearBonusesFor`; Craft list and Guide item entries updated. Tests: `content/accessoryBases.test.ts`, `equipment.test.ts`, `town.test.ts`, `crafting.test.ts`.
+  - 2026-11-24: P3 done: `ImplicitLine` in `ui/Kit.tsx` (muted label, tabular figure, existing tokens), shown on Town buy rows (`ShopEntry.implicit`), Sell rows and worn-gear rows; Jeweler blurb and Guide line say amulets and talismans. Browser-checked on the dev server at 1280 and 375 wide (buy row, Sell row, Equipment row; no horizontal overflow; the label stacks above the figure on the phone). Test in `SellList.test.tsx`.
 
 ## 8. Risks, and what would reveal them early
 

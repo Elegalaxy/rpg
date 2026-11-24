@@ -2,14 +2,14 @@ import { Help } from '../Help.tsx'
 import { useState } from 'react'
 import { purseOf } from '../../persist/save.ts'
 
-import { itemBase, itemName } from '../../content/items.ts'
+import { implicitText, itemBase, itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { changeKind, previewEquip, statLines, statsFor } from '../../persist/equipment.ts'
 import { bagCapacity } from '../../persist/bag.ts'
 import { SELL_GROUP_LABELS, SELL_GROUP_ORDER, sellGroup } from '../../persist/sellSafety.ts'
 import { EQUIPMENT_SLOT_IDS, MODIFIER_STACK_CAP, gearGaps, modifierCapNotes, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Row } from '../Row.tsx'
-import { Tag } from '../Kit.tsx'
+import { ImplicitLine, Tag } from '../Kit.tsx'
 import { QualityHelp } from './QualityHelp.tsx'
 import { groupItems } from './groupItems.ts'
 import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
@@ -42,7 +42,8 @@ const STAT_LABELS = [
 ]
 
 function describeItem(item: ItemInstance): string {
-  return `${itemName(item)}, item level ${item.itemLevel}, quality ${Math.round(item.quality * 100)}%, durability ${item.durability}/${item.maxDurability}`
+  const implicit = implicitText(item.baseId, item.itemLevel)
+  return `${itemName(item)}, item level ${item.itemLevel}, quality ${Math.round(item.quality * 100)}%, durability ${item.durability}/${item.maxDurability}${implicit === null ? '' : `, built-in ${implicit}`}`
 }
 
 /** One piece as a name over muted facts, with worn-down durability called out in colour and text. */
@@ -58,6 +59,7 @@ function ItemFacts({ item }: { item: ItemInstance }) {
           {item.durability <= 0 ? '✕ Broken' : `${wear === 'bad' ? '▼ ' : ''}${item.durability}/${item.maxDurability}`}
         </Tag>
       </small>
+      {implicitText(item.baseId, item.itemLevel) === null ? null : <ImplicitLine text={implicitText(item.baseId, item.itemLevel) ?? ''} />}
     </span>
   )
 }

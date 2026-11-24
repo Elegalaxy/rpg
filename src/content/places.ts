@@ -17,7 +17,7 @@ export type PlaceDef = {
 export const PLACES: readonly PlaceDef[] = [
   { id: 'weaponsmith', name: 'Weaponsmith', blurb: 'Weapons and off-hands: buy, sell, repair, craft, and upgrade.', gear: ['weapon', 'offHand'] },
   { id: 'armorer', name: 'Armorer', blurb: 'Helms, chestpieces, gloves, and boots: buy, sell, repair, craft, and upgrade.', gear: ['armor'] },
-  { id: 'jeweler', name: 'Jeweler', blurb: 'Rings and charms: buy, sell, repair, craft, and upgrade.', gear: ['accessory'] },
+  { id: 'jeweler', name: 'Jeweler', blurb: 'Amulets and talismans: buy, sell, repair, craft, and upgrade.', gear: ['accessory'] },
   { id: 'potion-shop', name: 'Potion Shop', blurb: 'Potions, antidotes, and smoke for the road.' },
   { id: 'trading-post', name: 'Trading Post', blurb: 'Sells your materials for gold.' },
   { id: 'trainer', name: 'Trainer', blurb: 'Paid drills that give a part of the next level, up to three a level.' },

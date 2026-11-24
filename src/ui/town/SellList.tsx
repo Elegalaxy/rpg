@@ -1,10 +1,10 @@
-import { itemName } from '../../content/items.ts'
+import { implicitText, itemName } from '../../content/items.ts'
 import { previewEquip } from '../../persist/equipment.ts'
 import { SELL_GROUP_LABELS, SELL_GROUP_ORDER, badgeGroup, heirloomSellBlock, needsSellConfirm, sellGroup, type SellGroup } from '../../persist/sellSafety.ts'
 import type { SaveData, SavedHero } from '../../persist/save.ts'
 import { sellPriceFor } from '../../persist/town.ts'
 import type { ItemInstance } from '../../sim/economy.ts'
-import { ShopRow, Tag } from '../Kit.tsx'
+import { ImplicitLine, ShopRow, Tag } from '../Kit.tsx'
 import { equipFromUi, sellItemFromUi } from '../store.ts'
 
 import { GearChanges } from './GearChanges.tsx'
@@ -87,7 +87,12 @@ export function SellList({
                       </>
                     }
                     owned={count > 1 ? count : undefined}
-                    effect={`${isWorn ? 'Worn' : 'Archive'} · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
+                    effect={
+                      <>
+                        {`${isWorn ? 'Worn' : 'Archive'} · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
+                        {implicitText(item.baseId, item.itemLevel) === null ? null : <ImplicitLine text={implicitText(item.baseId, item.itemLevel) ?? ''} />}
+                      </>
+                    }
                     note={
                       isWorn ? (
                         blockedReason ?? (confirm ? 'Asks you to confirm before it sells.' : undefined)

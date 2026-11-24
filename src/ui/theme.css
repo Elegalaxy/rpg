@@ -901,6 +901,26 @@ li.row + li.row {
   font-size: 0.85rem;
 }
 
+.item-implicit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s2);
+  align-items: baseline;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.item-implicit-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.item-implicit-value {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
 /* Trading Post: a text label names each side so Sell and Buy never differ by colour alone. */
 .trade-label {
   min-width: 2.5rem;

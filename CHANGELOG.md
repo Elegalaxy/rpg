@@ -14,6 +14,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 - Fixed: beating the Fractured Warden raises the next Warden by one Echo rank right away, including a later fight in the same run.
 - Improved: Echo climb runs Fracture Gate through the Bastion and fights the Warden at your highest unlocked rank, then raises that rank after a win.
 - Fixed: the frontier map painting and the fight portraits load on the published site.
+- Improved: Amulets and Talismans show their built-in stat on the shop, Sell and gear rows. The Jeweler now deals in amulets and talismans. [14.4]
 - New: Amulet (more maximum HP the higher its item level) and Talisman (more critical damage) accessories, sold in Greyhaven and craftable. The Ring and the Charm are now starting gear only; the ones you own keep working. [14.4]
 - New: four late modifiers (Staunch, Ruthless, Ironbound, Swift) unlock once any hero has defeated the Emberwrought Tyrant. Staunch makes Bleed, Poison and other physical statuses land less often. [14.3]
 - Balance: Tempered gives more armor and magical penetration, and now also goes on accessories. [14.3]

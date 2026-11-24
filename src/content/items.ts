@@ -61,8 +61,8 @@ export function itemBase(baseId: string): ItemBase | undefined {
 /** The line for an accessory base's implicit stat at an item level, such as `+1.5% maximum HP`. Null when the base has none. */
 export function implicitText(baseId: string, itemLevel: number): string | null {
   const bonus = implicitBonuses(itemBase(baseId), itemLevel)
-  if (bonus.maxHpBonus !== undefined) return `+${Math.round(bonus.maxHpBonus * 1000) / 10}% maximum HP`
-  if (bonus.critDamageBonus !== undefined) return `+${Math.round(bonus.critDamageBonus * 1000) / 10} points critical damage`
+  if (bonus.maxHpBonus !== undefined) return `+${Math.round(bonus.maxHpBonus * 10_000) / 100}% maximum HP`
+  if (bonus.critDamageBonus !== undefined) return `+${Math.round(bonus.critDamageBonus * 10_000) / 100} points critical damage`
   return null
 }
 

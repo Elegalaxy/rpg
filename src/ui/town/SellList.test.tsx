@@ -90,3 +90,22 @@ describe('the Sell list groups (Step 13.44)', () => {
     expect(renderToStaticMarkup(<SellList save={save} hero={hero} worn={[]} archived={[]} closed={false} run={() => undefined} />)).toContain('nothing of this kind')
   })
 })
+
+describe('the built-in stat of accessories (Step 14.4)', () => {
+  it('shows an Amulet and a Talisman with their stat line and nothing for a Ring', () => {
+    const { save, hero } = setup()
+    const out = renderToStaticMarkup(
+      <SellList
+        save={save}
+        hero={hero}
+        worn={[]}
+        archived={[newItem('amulet-1', 'accessory-amulet', 30), newItem('talisman-1', 'accessory-talisman', 30), newItem('ring-1', 'accessory-ring', 30)]}
+        closed={false}
+        run={() => undefined}
+      />,
+    )
+    expect(out).toContain('+0.75% maximum HP')
+    expect(out).toContain('+3 points critical damage')
+    expect(out.match(/data-testid="implicit-line"/g)).toHaveLength(2)
+  })
+})
