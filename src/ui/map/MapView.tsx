@@ -66,7 +66,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const mapArt = (
     <>
       <div className="map-frame">
-        <img className="map-art" src="/map/frontier.png" alt="" />
+        <img className="map-art" src={`${import.meta.env.BASE_URL}map/frontier.png`} alt="" />
         <svg className="world-map" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="group" aria-label="Map nodes">
           {legs.map((leg) => {
           const from = NODE_POSITIONS[leg.from]

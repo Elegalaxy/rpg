@@ -201,7 +201,7 @@ function ActorSprite({ spriteId, name }: { spriteId: string; name: string }) {
   return (
     <img
       className="actor-sprite"
-      src={`/sprites/${encodeURIComponent(spriteId)}.png`}
+      src={`${import.meta.env.BASE_URL}sprites/${encodeURIComponent(spriteId)}.png`}
       alt=""
       width={64}
       height={64}
