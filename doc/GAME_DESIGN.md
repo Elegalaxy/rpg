@@ -2759,6 +2759,31 @@ First-playable supplies, decided 2026-11-03:
 - The scripted intro fills the bag exactly: Shardling pair 8, wolf pair 8, Deserter 4. The next fight is where extra loot is lost.
 - Changed 2026-11-08 (user approved, Step 13.2): on a route whose last node is not the Road, the fights at earlier nodes (the Road's 3 fixed fights) drop gold but no materials, so they no longer fill the bag before the zone's own loot. A Road-only run is unchanged. See "Grove and Bastion materials" in §6.
 
+### Elite uniques (Step 14.6)
+
+Decided 2026-11-24 (user approved; numbers are proposals and the measurement gates decide). The first time a hero defeats each of the six elites and then gets home safely, that hero receives one named unique item: a normal crafted-style item with one fixed modifier plus one signature bonus. There are no general drops and no repeat drops (a chance roll would shift existing seeds), no RNG change and no save version bump. The sim only changes in `gearBonusesFor`, which adds each worn unique's signature (the same pattern as the accessory implicits).
+
+| Elite (zone) | Unique | Slot | Item level | Fixed modifier | Signature |
+|---|---|---|---|---|---|
+| Rootmaw Stalker (Withered Grove) | Rootmaw Treads | feet | 14 | Nimble | Stalker's Step: +3 Evasion, +3 Accuracy |
+| Echo Knight (Fallen Bastion) | Echoing Visor | head | 16 | Sturdy | Echo: +2 points cooldown reduction, +5 magical status resistance |
+| Tidebound Colossus (Drowned Causeway) | Tidebound Carapace | chest | 22 | Stalwart | Undertow: heals 2% of damage dealt |
+| Hollowmaw Reaver (Rift Hollows) | Hollowmaw Fang | main hand | 26 | Bloodbound | Gorge: +2 points critical chance, +15 points critical damage |
+| Emberwrought Tyrant (Cinder Scar) | Emberwrought Heart | off hand | 32 | Kindled | Banked Fire: +10 magical status resistance, +4 points armor and magical penetration |
+| Briar Matriarch (Bloodthorn Barrens) | Briarheart Talisman | accessory (Talisman base, its implicit applies too) | 38 | Staunch | Thornblood: +10 physical status resistance, +3% maximum HP |
+
+Every stat above already exists in `StatBonuses` (evasion, accuracy, cooldown reduction, critical chance and damage, armor and magical penetration, lifesteal, maximum HP, both status resistances), so there is no substitution. The six slots differ and each fixed modifier's level is at or below the item level.
+
+Rules:
+- The item is `{ baseId, itemLevel, quality 1.10, durability 100/100, modifiers: [the fixed one], uniqueId }` with no socket, ranks or tempers. The base follows the hero's class (armor category, weapon kind and off-hand kind from the starter table); a Cross-Trained Human uses the class default. The Talisman is the same base for every class.
+- The signature scales by min(1, item level / table item level), with the usual rounding (flat points one decimal, fractions four). Rank, temper and quality never touch it, and upgrading past the base level does not raise it. An item below its base level keeps a fraction of it until upgraded.
+- The signature is not a modifier: no stack cap, no rank, no temper. The fixed modifier is an ordinary modifier (counts toward the stack cap, can be ranked and tempered) and cannot be replaced.
+- Upgrade, free tokens, open socket, infuse (slot 1 only), rank up, temper and repair all work. Craft never makes a unique. An heirloom keeps its `uniqueId`. Reincarnation sends it to the archive with other gear. Selling is allowed at a fixed price of item level x 20 gold (quality ignored), and always asks for a second click that says it cannot be earned again.
+- Award: a hero's defeated elites of this life (not the remembered ones from earlier lives) that are not in its first-clear ledger as `unique:<id>` are paid when an expedition settles with the outcome returned. The item goes to the archive and the ledger id is recorded. An elite beaten on a run that ends in defeat stays due. If the hero already holds an item with that unique id, only the ledger id is recorded. Each unique is paid once per hero ever; a sold or lost one is gone. Old saves are paid retroactively at the next safe return.
+- An unknown unique id loads as a plain item with the base name and no signature.
+
+Bands (measured with `--matrix uniques`, rules mode, seeds 1 to 3 x 100, mean): every non-record single-unique cell minus its prepared baseline is at most +8 win points for every class (the Warden prepared bound), and the all-six row minus prepared is at most +30 for every class. Cells: Warden prepared (level 20): each of the Colossus, Reaver, Tyrant and Matriarch uniques alone (heirloom-scaled at level 20 over item level) and all six together; Reaver prepared: Colossus; Tyrant prepared: Reaver, plus all six as a record; Matriarch prepared: Tyrant and all six, record only (its gates are accepted exceptions). One-time fallback: halve the failing unique's signature, re-measure, then stop and report. The Warden Warrior is the likely trip.
+
 ## 10. Reincarnation and Long-Term Progression
 
 ### Trigger

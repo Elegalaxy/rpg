@@ -1680,6 +1680,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-24: P9b (second tuning round after the user decision): Matriarch HP 6,800, Power 72, enrage 90 s, interrupt 4%, Lash one Bleed at 0.10, Venom Burst five Poison at 0.30, Stalker Bleed 0.30, summon at 50% with level-35 Stalkers. Matriarch prepared 55 / 96 / 34 / 52 / 51 (Tyrant 52 / 96 / 61 / 93 / 45): (a) fails only for the Cleric (51 against a ceiling of 50.3); (b) fails for crafted minus plain (W +41, R +52, C +35) and over-levelled R and M at 84; (c) passes (+31 / +3 / +4 / +19 / +14); (d) fails for the Ranger (-3); (e) and (f) pass. The crafted-minus-plain band and the ceilings of (a) cannot hold together (a harder Matriarch drops the Ranger and Mage under 30). Prepared minus noantidote is still negative for the Cleric (-24) even with the Bleed row. Full tables in GAME_DESIGN.
   - 2026-11-24: P10 done: guards re-run against a fresh pre-change baseline (reference, warden, causeway, hollows, cinder, built, telegraph, late byte-identical; elites differ only in the matriarch rows), full test suite 174 files pass, the Unreleased lines closed under `## 0.24.0 · 2026-11-24 · Late Frontier`, HANDOFF rewritten. The open gates are recorded above; they need a user decision (accept the crafted-minus-plain and Ranger telegraph exceptions, or allow more Power with a Ranger and Mage sustain fix).
 
+### Step 14.6: Elite uniques
+- Status: `open`
+- Depends on: 14.5
+- Goal: the first safe-return defeat of each of the six elites pays that hero one named unique item (fixed modifier plus signature bonus). Rules, table, bands and fallback in GAME_DESIGN section 9 "Elite uniques (Step 14.6)". The Matriarch's accepted gate exceptions are not touched; its measurement cells are record-only.
+- Parts: P1 docs; P2 sim (`uniqueId`, `sim/uniques.ts`, `gearBonusesFor`); P3 `--matrix uniques` and numbers; P4 item model (content, itemName, save check, sell price, sell safety); P5 award (persist, settle hook, preview, moments, offline); P6 UI and Guide, browser-checked; P7 close.
+- Acceptance: gates in GAME_DESIGN; typecheck, lint, npm test and architecture test pass; guards (reference CSV, warden, causeway, hollows, cinder, barrens, built, telegraph, late, elites at seed 1 x 100) byte-identical to origin/main.
+- Progress:
+  - 2026-11-24: P1 done (docs).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
