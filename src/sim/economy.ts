@@ -1,5 +1,6 @@
 import { CLASS_PREFERENCE, type HeroClass } from './constants.ts'
 import type { ArmorCategory, ArmorSlot, OffHandKind, WeaponKind } from './constants.ts'
+import { uniqueSignature } from './uniques.ts'
 import type { AccessoryPiece, ArmorPiece, HeroGear, OffHandPiece, WeaponPiece } from './stats.ts'
 
 /** The eight equipment slots. Accessories fill the two accessory slots in order. */
@@ -50,6 +51,8 @@ export type ItemInstance = {
   modifierTempers?: number[]
   /** Set on a hero's heirloom: its level follows that hero's level, up to `cap`. Only that hero can use it. */
   heirloom?: { heroId: string; cap: number }
+  /** Set on an elite unique (Step 14.6): names its row in `UNIQUE_ITEMS`. An unknown id is a plain item with no signature. */
+  uniqueId?: string
 }
 
 /** Equipped items by slot. A hero needs every slot filled except the off-hand under a two-handed weapon. */
@@ -356,6 +359,12 @@ export function bonusFactor(rank: number, temper = 0): number | undefined {
 /** Flat point bonuses keep one decimal when scaled; every other bonus is a fraction and keeps four. */
 const FLAT_BONUS_KEYS: readonly string[] = ['accuracyBonus', 'evasionBonus', 'equipmentHealingPower', 'magicalStatusResistanceBonus', 'physicalStatusResistanceBonus']
 
+/** A bonus value rounded the way scaled bonuses are: flat point keys keep one decimal, every fraction keeps four. */
+export function roundBonus(key: string, value: number): number {
+  const digits = FLAT_BONUS_KEYS.includes(key) ? 10 : 10_000
+  return Math.round(value * digits) / digits
+}
+
 /** One bonus value at a rank and temper. Rank I with no temper (and anything unknown) returns the value untouched. */
 export function scaledBonus(key: string, value: number, rank: number, temper = 0): number {
   const factor = bonusFactor(rank, temper)
@@ -382,13 +391,18 @@ export function addStatBonuses(a: StatBonuses, b: StatBonuses): StatBonuses {
   return total
 }
 
-/** Everything worn that adds to the hero's stats: the counted modifiers plus the implicits of both accessories (Step 14.4). */
+/** Everything worn that adds to the hero's stats: the counted modifiers, the implicits of both accessories (Step 14.4) and the signature of every worn unique (Step 14.6). */
 export function gearBonusesFor(equipment: Equipment, lookup: BaseLookup): StatBonuses {
   let total = statBonusesFor(equipment)
   for (const slot of ['accessory0', 'accessory1'] as const) {
     const item = equipment[slot]
     if (item === null) continue
     total = addStatBonuses(total, implicitBonuses(lookup(item.baseId), item.itemLevel))
+  }
+  for (const slot of EQUIPMENT_SLOT_IDS) {
+    const item = equipment[slot]
+    if (item === null || item.uniqueId === undefined) continue
+    total = addStatBonuses(total, uniqueSignature(item))
   }
   return total
 }

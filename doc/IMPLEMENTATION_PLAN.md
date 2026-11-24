@@ -1688,6 +1688,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Acceptance: gates in GAME_DESIGN; typecheck, lint, npm test and architecture test pass; guards (reference CSV, warden, causeway, hollows, cinder, barrens, built, telegraph, late, elites at seed 1 x 100) byte-identical to origin/main.
 - Progress:
   - 2026-11-24: P1 done (docs).
+  - 2026-11-25: P2 done: `ItemInstance.uniqueId`, `roundBonus` and `gearBonusesFor` adding each worn unique's signature in `sim/economy.ts`; the table, `uniqueSignature` (scaled by item level over table level) and `uniqueSignatureText` in the new `sim/uniques.ts`; tests in `sim/uniques.test.ts` (scaling, rounding, no stack cap, unknown id ignored). The Colossus's Undertow is expressible with the existing `lifestealFraction`, so there is no substitution.
 
 ## 8. Risks, and what would reveal them early
 
