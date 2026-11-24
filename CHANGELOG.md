@@ -9,8 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
-
+## 0.24.0 · 2026-11-24 · Late Frontier
 - Improved: heroes now drink an Antidote at 3 Bleed stacks as well as 3 Poison stacks (it always removed both). New heroes get the rule when the 12-rule limit has room, and existing heroes get it once right after their Antidote rule. [14.5]
 - New: Salvage contracts ask for bloodstone once the Bloodthorn Barrens is discovered. The first defeat of the Briar Matriarch and the first clear of the Barrens each add to your Legacy, and the Matriarch stays defeated on later lives. [14.5]
 - Balance: the Swift recipe now unlocks when any hero defeats the Briar Matriarch instead of the Emberwrought Tyrant. Heroes who already learned it keep it. [14.5]

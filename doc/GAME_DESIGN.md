@@ -1279,7 +1279,7 @@ Gate status: (a) median 52, floor 30 met (Ranger 34), one class above 85 (A), ce
 
 How the choice was made (seed-1 prepared rules, wins W/A/R/M/C): Poison and Bleed applications were the strongest lever on the Warrior and Cleric, but Bleed (it ticks on hero actions) hurts the Ranger most, so Bleed was kept at one weak application and Poison went to the cap. Coefficient 0.30 on two applications each gave 85/93/15/42/59 (Ranger far under 30); a third Poison and second Bleed gave 47/66/7/17/37; poison-only extras 76/89/26/25/51; five Poison at 0.30 with a weak Bleed gave 65/89/29/42/44 at interrupt 5%, 67/95/32/61/53 at 4% and 63/58/24/32/42 at 8%. Summon at 50% with level 34 / 35 / 36 / 38 Stalkers gave, roughly (seed 1), W 61 / 56 / 54 / 46 (Ranger 36 / 34 / 30 / 27, Cleric 47 / 53 / 45 / 47); the summon at 45% and a Power of 70 or 71 moved the Warrior up by 8 to 10 points, so Power 72 is the ceiling that keeps the Warrior near its ceiling.
 
-Guards: only a subset ran before the work stopped (see the plan Progress line); no sim file changed apart from the `EXPEDITION_IDS` and `MATERIAL_RARITY` constants and the Swift requirement.
+Guards (final, 2026-11-24): against a fresh baseline taken on the tree before the Antidote and Matriarch changes, seed 1 x 100, stdout minus the timing line, `--matrix reference`, `warden`, `causeway`, `hollows`, `cinder`, `built`, `telegraph` and `late` are byte-identical, and `--matrix elites` differs only in the `matriarch` rows. `--expedition bloodthorn-barrens` seeds 1 to 5 run cleanly (checked earlier in the step).
 
 ### Events
 
