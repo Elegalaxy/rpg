@@ -181,7 +181,7 @@ describe('harness CLI', () => {
     const unknown = runCli(['--matrix', 'nope', '--seed', '1', '--runs', '1'])
     expect(unknown.status).toBe(1)
     expect(unknown.stderr).toContain("unknown matrix 'nope'")
-    expect(unknown.stderr).toContain('valid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites')
+    expect(unknown.stderr).toContain('valid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, barrens, elites')
 
     const missingRuns = runCli(['--matrix', 'reference', '--seed', '1'])
     expect(missingRuns.status).toBe(1)
@@ -205,6 +205,18 @@ describe('harness CLI', () => {
     expect(ok.status).toBe(0)
     expect(ok.stdout).toContain('mage reaver prepared rules:')
     expect(ok.stdout).not.toContain('mage reaver over')
+  }, 60_000)
+
+  it('filters the barrens matrix and rejects an unknown filter value', () => {
+    const bad = runCli(['--matrix', 'barrens', '--seed', '1', '--runs', '1', '--fights', 'dragon'])
+    expect(bad.status).toBe(1)
+    expect(bad.stderr).toContain('unknown --fights value "dragon"')
+
+    const ok = runCli(['--matrix', 'barrens', '--seed', '1', '--runs', '1', '--classes', 'mage', '--tiers', 'prepared', '--fights', 'crawler'])
+    expect(ok.status).toBe(0)
+    expect(ok.stdout).toContain('mage prepared rules: crawler')
+    expect(ok.stdout).toContain('mage prepared blind: crawler')
+    expect(ok.stdout).not.toContain('mage arrived')
   }, 60_000)
 
   it('prints a one-run reference matrix twice, stable apart from the timing line', () => {

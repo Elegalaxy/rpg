@@ -22,6 +22,10 @@ describe('elites matrix', () => {
       'tyrant:prepared',
       'tyrant:over',
       'tyrant:prepared-crafted',
+      'matriarch:arrived',
+      'matriarch:prepared',
+      'matriarch:over',
+      'matriarch:prepared-crafted',
     ])
   })
 
@@ -29,7 +33,7 @@ describe('elites matrix', () => {
     for (const classId of HERO_CLASSES) {
       for (const cell of ELITE_CELLS) {
         const setup = eliteSetup(classId, cell)
-        const expected = { warden: 'fractured-warden', colossus: 'tidebound-colossus', reaver: 'hollowmaw-reaver', tyrant: 'emberwrought-tyrant' }[cell.elite]
+        const expected = { warden: 'fractured-warden', colossus: 'tidebound-colossus', reaver: 'hollowmaw-reaver', tyrant: 'emberwrought-tyrant', matriarch: 'briar-matriarch' }[cell.elite]
         expect(setup.enemies[0]?.defId).toBe(expected)
         const blind = eliteSetup(classId, cell, 'blind')
         const telegraphRows = (blind.hero.priorityRows ?? []).filter((row) =>

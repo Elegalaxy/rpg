@@ -20,6 +20,7 @@ import { formatFreeCsv, runFreeMatrix } from './freeUpgrade.ts'
 import { formatModdedCsv, formatModdedTable, runModdedMatrix, writeModdedCsv } from './modded.ts'
 import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
 import { formatCinderTable, runCinderMatrix } from './cinder.ts'
+import { BARRENS_FIGHT_IDS, BARRENS_TIER_IDS, formatBarrensTable, runBarrensMatrix } from './barrens.ts'
 import { LATE_IDS, formatLateTable, runLateMatrix } from './late.ts'
 import { ELITE_CELLS, ELITE_IDS, ELITE_MODES, formatElitesTable, runElitesMatrix, type EliteFilter } from './elites.ts'
 import { formatPackTable, runPackMatrix } from './pack.ts'
@@ -54,6 +55,7 @@ type ParsedArgs = {
   elites?: string
   tiers?: string
   modes?: string
+  fights?: string
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -90,7 +92,8 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       name !== '--classes' &&
       name !== '--elites' &&
       name !== '--tiers' &&
-      name !== '--modes'
+      name !== '--modes' &&
+      name !== '--fights'
     ) {
       throw new CliError(`unknown argument ${JSON.stringify(token)}`)
     }
@@ -112,6 +115,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     else if (name === '--elites') parsed.elites = value
     else if (name === '--tiers') parsed.tiers = value
     else if (name === '--modes') parsed.modes = value
+    else if (name === '--fights') parsed.fights = value
     else parsed.matrix = value
   }
   return parsed
@@ -277,8 +281,8 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'slots' && args.matrix !== 'modded' && args.matrix !== 'free' && args.matrix !== 'toxic' && args.matrix !== 'late') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites, pack, slots, modded, free, toxic, late`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'barrens' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'slots' && args.matrix !== 'modded' && args.matrix !== 'free' && args.matrix !== 'toxic' && args.matrix !== 'late') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, barrens, elites, pack, slots, modded, free, toxic, late`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
@@ -344,6 +348,19 @@ function printMatrix(args: ParsedArgs): void {
     const rows = runLateMatrix(seed, runs, parseList('--classes', args.classes, HERO_CLASSES), parseList('--tiers', args.tiers, LATE_IDS))
     const elapsedMs = performance.now() - started
     process.stdout.write(formatLateTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
+  if (args.matrix === 'barrens') {
+    console.log(`[sim] matrix barrens seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const rows = runBarrensMatrix(seed, runs, {
+      ...(args.classes === undefined ? {} : { classes: parseList('--classes', args.classes, HERO_CLASSES) }),
+      ...(args.tiers === undefined ? {} : { tiers: parseList('--tiers', args.tiers, BARRENS_TIER_IDS) }),
+      ...(args.fights === undefined ? {} : { fights: parseList('--fights', args.fights, BARRENS_FIGHT_IDS) }),
+    })
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatBarrensTable(rows))
     printTiming(rows.length * runs, elapsedMs)
     return
   }

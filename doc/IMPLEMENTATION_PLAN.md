@@ -1668,6 +1668,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-24: P1 done (docs).
   - 2026-11-24: P2 done: Barbed Stalker, Venomhide Crawler, Thornwitch and Briar Matriarch in `content/enemies.ts`, five encounters in `content/encounters.ts` (not yet on the world map; bloodstone not yet a registered material), tests in `content/barrens.test.ts`. XP fallback used once: the proposed 2.2 / 1.87 multipliers gave about 62 barrens-mixed fights per level at level 37, so all three regulars were scaled by one factor (Crawler and Thornwitch 3.4, Stalker 2.9) to reach about 40.
+  - 2026-11-24: P3 done: `src/harness/barrens.ts` and `--matrix barrens` (with `--classes`, `--tiers`, `--fights` filters), Matriarch cells in `--matrix elites`, the 12th node per class appended to `BUILD_ORDER`. Measurement tooling only; numbers in P9.
 
 ## 8. Risks, and what would reveal them early
 

@@ -6,6 +6,7 @@ import type { CombatSetup } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
 import { CAUSEWAY_FIGHTS, CAUSEWAY_TIERS } from './causeway.ts'
+import { BARRENS_FIGHTS, BARRENS_TIERS } from './barrens.ts'
 import { CINDER_FIGHTS, CINDER_TIERS, cinderTierSetup } from './cinder.ts'
 import { HOLLOWS_FIGHTS, HOLLOWS_TIERS } from './hollows.ts'
 import { blindSetup } from './telegraph.ts'
@@ -16,7 +17,7 @@ import { WARDEN_TIERS, craftedVariant, wardenSetup, type WardenTier } from './wa
  * Hollowmaw Reaver for every class, with the class reference rules and with the telegraph and interrupt rows
  * removed, plus a crafted-supplies variant of each prepared tier. Measurements only; nothing here tunes.
  */
-export const ELITE_IDS = ['warden', 'colossus', 'reaver', 'tyrant'] as const
+export const ELITE_IDS = ['warden', 'colossus', 'reaver', 'tyrant', 'matriarch'] as const
 export type EliteId = (typeof ELITE_IDS)[number]
 
 export const ELITE_MODES = ['rules', 'blind'] as const
@@ -26,6 +27,7 @@ const wardenTier = (id: string): WardenTier => WARDEN_TIERS.find((tier) => tier.
 const causewayTier = (id: string): WardenTier => CAUSEWAY_TIERS.find((tier) => tier.id === id)!
 const hollowsTier = (id: string): WardenTier => HOLLOWS_TIERS.find((tier) => tier.id === id)!
 const cinderTier = (id: string): WardenTier => CINDER_TIERS.find((tier) => tier.id === id)!
+const barrensTier = (id: string): WardenTier => BARRENS_TIERS.find((tier) => tier.id === id)!
 
 export type EliteCell = {
   elite: EliteId
@@ -34,7 +36,7 @@ export type EliteCell = {
   tierDef: WardenTier
 }
 
-/** The tiers measured per elite: Warden prepared/over/causeway, Colossus arrived/prepared/over, Reaver prepared/over, Tyrant arrived/prepared/over (Step 13.6), plus a crafted variant of each prepared tier. */
+/** The tiers measured per elite: Warden prepared/over/causeway, Colossus arrived/prepared/over, Reaver prepared/over, Tyrant arrived/prepared/over (Step 13.6), Matriarch arrived/prepared/over (Step 14.5), plus a crafted variant of each prepared tier. */
 export const ELITE_CELLS: readonly EliteCell[] = [
   ...(['prepared', 'over', 'causeway'] as const).map((id) => ({ elite: 'warden' as const, tier: id, tierDef: wardenTier(id) })),
   { elite: 'warden', tier: 'prepared-crafted', tierDef: craftedVariant(wardenTier('prepared')) },
@@ -44,6 +46,8 @@ export const ELITE_CELLS: readonly EliteCell[] = [
   { elite: 'reaver', tier: 'prepared-crafted', tierDef: craftedVariant(hollowsTier('prepared')) },
   ...(['arrived', 'prepared', 'over'] as const).map((id) => ({ elite: 'tyrant' as const, tier: id, tierDef: cinderTier(id) })),
   { elite: 'tyrant', tier: 'prepared-crafted', tierDef: craftedVariant(cinderTier('prepared')) },
+  ...(['arrived', 'prepared', 'over'] as const).map((id) => ({ elite: 'matriarch' as const, tier: id, tierDef: barrensTier(id) })),
+  { elite: 'matriarch', tier: 'prepared-crafted', tierDef: craftedVariant(barrensTier('prepared')) },
 ]
 
 /** The diagnostic rows: Warrior and Cleric at the Warden with every row's target priority removed (the old untargeted reference rules, for comparison with the targeted ones). */
@@ -71,6 +75,7 @@ export function eliteSetup(classId: HeroClass, cell: EliteCell, mode: EliteMode 
   if (cell.elite === 'colossus') setup = { ...base, enemies: CAUSEWAY_FIGHTS.find((fight) => fight.id === 'colossus')!.enemies }
   if (cell.elite === 'reaver') setup = { ...base, enemies: HOLLOWS_FIGHTS.find((fight) => fight.id === 'reaver')!.enemies }
   if (cell.elite === 'tyrant') setup = { ...base, enemies: CINDER_FIGHTS.find((fight) => fight.id === 'tyrant')!.enemies }
+  if (cell.elite === 'matriarch') setup = { ...base, enemies: BARRENS_FIGHTS.find((fight) => fight.id === 'matriarch')!.enemies }
   return mode === 'blind' ? blindSetup(setup) : setup
 }
 

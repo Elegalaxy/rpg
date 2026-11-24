@@ -8,7 +8,7 @@ import { BUILD_ORDER, BUILT_ENEMIES, builtNodeIds, builtSetup, formatBuiltTable,
 describe('reference builds', () => {
   it('give every class eleven real nodes in a legal order, with no keystone', () => {
     for (const classId of HERO_CLASSES) {
-      expect(BUILD_ORDER[classId]).toHaveLength(11)
+      expect(BUILD_ORDER[classId]).toHaveLength(12)
       const ids = builtNodeIds(classId, 11)
       const web = classWebs[classId]
       ids.forEach((id, position) => {

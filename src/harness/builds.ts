@@ -15,11 +15,11 @@ import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
  * improve the four skills that loadout already uses, plus the class resource and survival.
  */
 export const BUILD_ORDER: { readonly [classId in HeroClass]: readonly string[] } = {
-  warrior: ['Driving Blow', 'Rising Heat', 'Sundering Blow', 'Weapon Discipline', 'Shield Brace', 'Second Wind', 'Cleave', 'Defiance', 'Bloodletting', 'Shield Impact', 'Reckless Strike'],
-  assassin: ['Shadow Cut', 'Smoke Step', 'Elusive Footwork', 'Venom Edge', 'Potent Toxins', 'Mark for Death', 'Exploit Weakness', 'Execute', 'Relentless', 'Ambush', 'Fan of Knives'],
-  ranger: ['Aimed Shot', 'Steady Hands', 'Piercing Arrow', 'Patient Shot', 'Snare Trap', 'Reinforced Snare', "Hunter's Mark", 'Trail Sense', 'Flame Arrow', 'Efficient Quiver', 'Volley'],
-  mage: ['Fireball', 'Frost Lance', 'Arcane Bolt', 'Mana Ward', 'Arcane Recovery', 'Efficient Channeling', 'Chain Lightning', 'Elemental Affinity', 'Spell Memory', 'Quick Study', 'Defensive Preparation'],
-  cleric: ['Smite', 'Vowkeeper', 'Mend', 'Penance', 'Ward', 'Steadfast Spirit', 'Judgment', 'Righteous Force', 'Consecration', 'Safeguard', 'Reciprocal Purpose'],
+  warrior: ['Driving Blow', 'Rising Heat', 'Sundering Blow', 'Weapon Discipline', 'Shield Brace', 'Second Wind', 'Cleave', 'Defiance', 'Bloodletting', 'Shield Impact', 'Reckless Strike', 'Heavy Follow-Through'],
+  assassin: ['Shadow Cut', 'Smoke Step', 'Elusive Footwork', 'Venom Edge', 'Potent Toxins', 'Mark for Death', 'Exploit Weakness', 'Execute', 'Relentless', 'Ambush', 'Fan of Knives', 'Toxic Opportunity'],
+  ranger: ['Aimed Shot', 'Steady Hands', 'Piercing Arrow', 'Patient Shot', 'Snare Trap', 'Reinforced Snare', "Hunter's Mark", 'Trail Sense', 'Flame Arrow', 'Efficient Quiver', 'Volley', 'Press the Trail'],
+  mage: ['Fireball', 'Frost Lance', 'Arcane Bolt', 'Mana Ward', 'Arcane Recovery', 'Efficient Channeling', 'Chain Lightning', 'Elemental Affinity', 'Spell Memory', 'Quick Study', 'Defensive Preparation', 'Rehearsed Casting'],
+  cleric: ['Smite', 'Vowkeeper', 'Mend', 'Penance', 'Ward', 'Steadfast Spirit', 'Judgment', 'Righteous Force', 'Consecration', 'Safeguard', 'Reciprocal Purpose', 'Final Mercy'],
 }
 
 /** The node ids of the first `points` nodes of a class's reference build. */
