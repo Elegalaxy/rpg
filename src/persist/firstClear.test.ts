@@ -42,7 +42,7 @@ describe('first-clear payout', () => {
     const save = withHero({ clearedNodeIds: GROVE_CLEARED })
     const run = finished(save, 'returned')
     const paid = hero(settleExpedition(run, 1))
-    expect(paid.purse.gold).toBe(runGold(run) + 180 + 420)
+    expect(paid.purse.gold).toBe(runGold(run) + 210 + 420)
     expect(paid.purse.materials.scrap).toBe(15)
     expect(paid.purse.materials.hide).toBe(15)
     expect(paid.freeUpgrades).toBe(2)
@@ -196,7 +196,7 @@ describe('away runs pay like live runs', () => {
     // Same settle function: a live settle of the same state pays the same.
     const liveRun = finished({ ...away, heroes: [ready] }, 'returned', 'splintered-road')
     const live = hero(settleExpedition(liveRun, 1))
-    expect(live.purse.gold).toBe(runGold(liveRun) + 180)
+    expect(live.purse.gold).toBe(runGold(liveRun) + 210)
     expect(live.freeUpgrades).toBe(1)
   })
 })

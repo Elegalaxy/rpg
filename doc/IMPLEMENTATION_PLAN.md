@@ -1622,6 +1622,15 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-16: Part 7 done. `TemplatePicker.tsx` (cards grouped by situation, 44px targets, locked or stack-limit cards disabled with the reason, replace-rules confirm); `Rules.tsx` opens it from a Templates button and the empty state, shows a "Still to fill in" note list after applying. Browser-checked at 1024 and 375 wide.
   - 2026-11-16: Part 8 done. HANDOFF rewritten. Verified in the browser pane at 1024 and 375 wide (chain, in-place edit, router, picker, apply with replace confirm, no horizontal overflow). Not verified in a real fight: live "Used N×" counts (unit-tested only). src/sim, content/scenarios.ts and the snapshots are untouched.
 
+### Stage 14: Content fill
+
+### Step 14.1: Frontier fill
+- Status: `done`
+- Depends on: 13.53
+- Goal: the Withered Grove and the Fallen Bastion get a second drawn fight each (`grove-deep`, `bastion-deep`), and the first three nodes' level bands match GAME_DESIGN §7 "First-region level bands" (Road 1-7, Grove 6-14, Bastion 8-16). Rules and measurements in GAME_DESIGN §7 "Frontier fill (Step 14.1)". Content only; the sim and every matrix guard are untouched.
+- Progress:
+  - 2026-11-24: Done. `content/encounters.ts` (`groveDeep`, `bastionDeep`, registered), `content/world.ts` (draw tables, `levels`), tests updated deliberately (`content.test.ts` new encounters; Splintered Road first clear 180 to 210 gold because the reward reads `levels.max`; `map.test.tsx` band 1 to 7). Reference expedition routes at seeds 1 to 5: the Road is unchanged; the Grove and Bastion reference hero is now level 8 and 10 (band minimum plus 2, was 10 and 12): all four fixed regular fights are still won on 9 of 10 runs and the elites are still retreats (as before), except Grove seed 5 where the Warrior now retreats from `grove-mixed` (won before) and Grove seed 4 where the Rootmaw fight is a retreat instead of a defeat. The new fights are drawn only after the fixed list, so no fixed route changes beyond the lower hero level.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |

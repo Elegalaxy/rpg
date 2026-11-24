@@ -95,7 +95,7 @@ describe('route info', () => {
     const save = withHero()
     const road = routeInfo('splintered-road', save)
     expect(road.nodeNames).toEqual(['Greyhaven', 'Splintered Road'])
-    expect(road.levels).toEqual({ min: 1, max: 6 })
+    expect(road.levels).toEqual({ min: 1, max: 7 })
     expect(road.fights).toBe(3)
     expect(road.travelSeconds).toBe(20)
     expect(road.resources).toEqual([{ name: 'Scrap Heap', materialId: 'scrap', quantity: 4 }])

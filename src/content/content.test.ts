@@ -591,6 +591,16 @@ describe('content integrity', () => {
       { enemyId: 'hollow-sentry', slot: 0, level: 12 },
       { enemyId: 'fallen-arbalist', slot: 1, level: 12 },
     ])
+    expect(encounters['grove-deep']?.members).toEqual([
+      { enemyId: 'thornbeast', slot: 0, level: 12 },
+      { enemyId: 'blight-spider', slot: 1, level: 10 },
+      { enemyId: 'blight-spider', slot: 2, level: 10 },
+    ])
+    expect(encounters['bastion-deep']?.members).toEqual([
+      { enemyId: 'hollow-sentry', slot: 0, level: 12 },
+      { enemyId: 'hollow-sentry', slot: 1, level: 12 },
+      { enemyId: 'fallen-arbalist', slot: 2, level: 13 },
+    ])
     for (const encounter of Object.values(encounters)) {
       for (const member of encounter.members) {
         expect(enemies[member.enemyId], `${encounter.id} ${member.enemyId}`).toBeDefined()

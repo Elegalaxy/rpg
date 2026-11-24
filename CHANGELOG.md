@@ -9,6 +9,11 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
+## Unreleased
+
+- Balance: The Withered Grove and the Fallen Bastion each have a second, tougher fight in their random draw, so long runs no longer repeat one fight. [14.1]
+- Balance: The Splintered Road level band is now 1-7, the Withered Grove 6-14 and the Fallen Bastion 8-16, and the Road's first-clear gold rises from 180 to 210. [14.1]
+
 ## 0.23.0 · 2026-11-24 · Echo milestones and sockets
 - New: a milestone Echo rank also gives 15 Legacy (instead of 5) at your next reincarnation. [13.53]
 - Improved: the preparation screen shows the reward for Echo rank 1 before you have beaten the Warden. [13.53]

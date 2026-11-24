@@ -8,7 +8,7 @@ describe('first-clear rewards', () => {
       const reward = firstClearReward(id)
       return [id, reward?.gold, reward?.materialId, reward?.quantity, reward?.tokens]
     })
-    expect(table).toContainEqual(['splintered-road', 180, 'scrap', 15, 1])
+    expect(table).toContainEqual(['splintered-road', 210, 'scrap', 15, 1])
     expect(table).toContainEqual(['withered-grove', 420, 'hide', 15, 1])
     expect(table).toContainEqual(['fallen-bastion', 480, 'shard', 15, 1])
     expect(table).toContainEqual(['fracture-gate', 600, null, 0, 1])

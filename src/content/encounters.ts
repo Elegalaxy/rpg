@@ -85,6 +85,28 @@ export const bastionMixed: EncounterDef = {
   ],
 }
 
+/** One level-12 Thornbeast and two level-10 Blight Spiders. Drawn after the fixed fights (Step 14.1). */
+export const groveDeep: EncounterDef = {
+  id: 'grove-deep',
+  name: 'Withered Grove Deep',
+  members: [
+    { enemyId: 'thornbeast', slot: 0, level: 12 },
+    { enemyId: 'blight-spider', slot: 1, level: 10 },
+    { enemyId: 'blight-spider', slot: 2, level: 10 },
+  ],
+}
+
+/** Two level-12 Hollow Sentries and one level-13 Fallen Arbalist. Drawn after the fixed fights (Step 14.1). */
+export const bastionDeep: EncounterDef = {
+  id: 'bastion-deep',
+  name: 'Fallen Bastion Deep',
+  members: [
+    { enemyId: 'hollow-sentry', slot: 0, level: 12 },
+    { enemyId: 'hollow-sentry', slot: 1, level: 12 },
+    { enemyId: 'fallen-arbalist', slot: 2, level: 13 },
+  ],
+}
+
 /** The Withered Grove elite, level 14. The Fracture Gate needs this defeat. */
 export const rootmawEncounter: EncounterDef = {
   id: 'rootmaw-stalker',
@@ -250,6 +272,8 @@ export const encounters: { [id: string]: EncounterDef } = {
   [roadMixed.id]: roadMixed,
   [groveMixed.id]: groveMixed,
   [bastionMixed.id]: bastionMixed,
+  [groveDeep.id]: groveDeep,
+  [bastionDeep.id]: bastionDeep,
   [rootmawEncounter.id]: rootmawEncounter,
   [echoKnightEncounter.id]: echoKnightEncounter,
   [wardenEncounter.id]: wardenEncounter,

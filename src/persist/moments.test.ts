@@ -36,7 +36,7 @@ describe('moments between two saves', () => {
     expect(moments.map((moment) => moment.kind)).toEqual(['level', 'warden', 'warden', 'firstClear', 'contract', 'discovery'])
     expect(moments[0]).toEqual({ kind: 'level', level: 2, points: 4 })
     expect(moments[1]).toEqual({ kind: 'warden', text: 'The Fractured Warden fell. Echo rank 1 is unlocked.' })
-    expect(moments[3]).toEqual({ kind: 'firstClear', text: 'Splintered Road: 180 g · 15 scrap · 1 free upgrade' })
+    expect(moments[3]).toEqual({ kind: 'firstClear', text: 'Splintered Road: 210 g · 15 scrap · 1 free upgrade' })
     expect(moments[4]).toEqual({ kind: 'contract', text: contract.name })
     expect(moments[5]).toEqual({ kind: 'discovery', text: unseen.name })
     expect(momentLine(moments[0]!)).toBe('Level 2 reached. 4 points to spend.')

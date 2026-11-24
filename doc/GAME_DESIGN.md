@@ -1494,6 +1494,21 @@ First-region level bands:
 
 These formulas are calibration targets. Individual enemies can override any value when their role requires it.
 
+### Frontier fill (Step 14.1)
+
+Decided 2026-11-24 (user: section 7 is the truth for level bands). Two changes, content only; the sim, skills and every other zone are untouched.
+
+**Level bands.** `levels` on the three first nodes now match the bands above: Splintered Road 1-7 (was 1-6), Withered Grove 6-14 (was 8-14), Fallen Bastion 8-16 (was 10-16). Readers: the map's level band, the harness reference hero (route's last node `levels.min` plus 2, so a Grove run now measures a level-8 hero, a Bastion run a level-10 hero), and the first-clear reward (`30 x levels.max`), so the Splintered Road first clear pays 210 gold (was 180); the Grove and Bastion maxima are unchanged. The Fracture Gate routes still end at the Gate (18-20).
+
+**Second drawn fight for the Grove and the Bastion.** Each zone drew one fight (`grove-mixed`, `bastion-mixed`), so a long run repeated it. Each gets one more, drawn from the fourth fight on with equal chance. Existing enemies only (no new bounty targets, drops or material sources):
+
+| Encounter | Members | Draw table after |
+|---|---|---|
+| `grove-deep` | Thornbeast level 12, Blight Spider level 10, Blight Spider level 10 | `grove-mixed`, `grove-deep` |
+| `bastion-deep` | Hollow Sentry level 12, Hollow Sentry level 12, Fallen Arbalist level 13 | `bastion-mixed`, `bastion-deep` |
+
+Measured with the reference hero of each class (nodes = level / 3, starter modifiers, 2 Healing Draughts, 30 runs, seed 1; win % / mean share of max HP lost, Warrior, Assassin, Ranger, Mage, Cleric): `grove-deep` at level 8 100/44, 100/57, 100/48, 97/54, 100/43; level 10 100/43, 100/51, 100/44, 100/44, 100/40; level 14 100/42, 100/44, 100/33, 100/49, 100/41; `bastion-deep` at level 10 100/45, 100/44, 100/45, 100/48, 100/40; level 12 100/43, 100/41, 100/39, 100/43, 100/40; level 16 100/36, 100/46, 100/23, 100/27, 100/41. The mixed fights at the same levels cost 11-47%; the deep fights cost 23-57%, a few points to 20 points more at band level, and an under-levelled Mage at level 8 in the Bastion wins 83% with 70% lost. Both stay a step below the elite fights (one-enemy boss-tier fights with their own mechanics). Rejected compositions: with a Fracture Wisp or an Oathbound Echo as the third member (new bounty targets), and two Arbalists (the level-8 Mage wins 60%).
+
 ### Class balance pass (Step 13.5)
 
 Decided 2026-11-08 (user accepted all recommendations). Warrior and Cleric cannot beat the Warden and trail the other classes at the elites; the Mage's Mana Ward is the outlier. Order: lift Warrior and Cleric, trim Mage, then harden the elites (Colossus, Reaver). Skill and node text in §4 and §7 changes only in the part that changes the number.
@@ -2260,7 +2275,7 @@ Why: the gold and material sinks above are fed by repeating routes, and the firs
 
 | Node | Max level | Gold | Material | Token | Legacy |
 |---|---|---|---|---|---|
-| Splintered Road | 6 | 180 | 15 scrap | 1 | none |
+| Splintered Road | 7 | 210 | 15 scrap | 1 | none |
 | Withered Grove | 14 | 420 | 15 hide | 1 | none |
 | Fallen Bastion | 16 | 480 | 15 shard | 1 | none |
 | Fracture Gate | 20 | 600 | none | 1 | none |
