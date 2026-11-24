@@ -5,7 +5,7 @@ import { gameDefs, referenceLoadoutFor } from '../content/scenarios.ts'
 import type { GameDefs, PriorityRow, SkillDef, CombatSetup } from '../sim/types.ts'
 
 import { builtSetup } from './builds.ts'
-import { ELITE_CELLS, ELITE_IDS, type EliteId } from './elites.ts'
+import { CLASSIC_ELITE_IDS, ELITE_CELLS, type EliteId } from './elites.ts'
 import { SWAP_OUT, measureSlot, placeRows, slotSetup, type SlotTier } from './slots.ts'
 
 /**
@@ -115,7 +115,7 @@ export type RangerShard = { config: string; seed: number; runs: number; tier: st
 export function runRangerShard(config: string, seed: number, runs: number, tier: SlotTier): RangerShard {
   const parts = config.split(':')
   const rows: RangerCellRow[] = []
-  for (const elite of ELITE_IDS) {
+  for (const elite of CLASSIC_ELITE_IDS) {
     let setup: CombatSetup | null
     let defs = gameDefs()
     if (parts[0] === 'four') {
@@ -200,7 +200,7 @@ export function summarize(shards: readonly RangerShard[], config: string, fourSk
   const perSeed = seeds.map((seed) => (mean(rowsOf(five, seed).map((row) => row.winRate)) - mean(rowsOf(four, seed).map((row) => row.winRate))) * 100)
   let crossing = 0
   const medianChanges: number[] = []
-  for (const elite of ELITE_IDS) {
+  for (const elite of CLASSIC_ELITE_IDS) {
     const win = (list: readonly RangerShard[]) => mean(seeds.map((seed) => rowsOf(list, seed).find((row) => row.elite === elite)!.winRate))
     if (win(four) < 0.95 && win(five) >= 0.95) crossing += 1
     const median = (list: readonly RangerShard[]) => {
@@ -213,7 +213,7 @@ export function summarize(shards: readonly RangerShard[], config: string, fourSk
   }
   const fourMean = mean(seeds.map((seed) => mean(rowsOf(four, seed).map((row) => row.winRate)))) * 100
   const fiveMean = mean(seeds.map((seed) => mean(rowsOf(five, seed).map((row) => row.winRate)))) * 100
-  return { config, tier, fourMean, fiveMean, change: mean(perSeed), perSeed, crossing, cells: ELITE_IDS.length, medianChange: medianChanges.length === 0 ? null : mean(medianChanges) }
+  return { config, tier, fourMean, fiveMean, change: mean(perSeed), perSeed, crossing, cells: CLASSIC_ELITE_IDS.length, medianChange: medianChanges.length === 0 ? null : mean(medianChanges) }
 }
 
 /** Every config with a summary at both tiers, plus the verdict, as a text table. */

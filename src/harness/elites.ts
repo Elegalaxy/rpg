@@ -19,6 +19,8 @@ import { WARDEN_TIERS, craftedVariant, wardenSetup, type WardenTier } from './wa
  */
 export const ELITE_IDS = ['warden', 'colossus', 'reaver', 'tyrant', 'matriarch'] as const
 export type EliteId = (typeof ELITE_IDS)[number]
+/** The four elites the older matrices (pack, slots, slotsRanger) measure; they do not add the Matriarch, so their output and tests stay as they were. */
+export const CLASSIC_ELITE_IDS: readonly EliteId[] = ['warden', 'colossus', 'reaver', 'tyrant']
 
 export const ELITE_MODES = ['rules', 'blind'] as const
 export type EliteMode = (typeof ELITE_MODES)[number]

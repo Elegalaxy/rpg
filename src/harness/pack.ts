@@ -6,7 +6,7 @@ import { deriveSeed } from '../sim/rng.ts'
 import type { CombatSetup } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
-import { ELITE_CELLS, ELITE_IDS, eliteSetup, type EliteCell, type EliteId } from './elites.ts'
+import { CLASSIC_ELITE_IDS, ELITE_CELLS, eliteSetup, type EliteCell, type EliteId } from './elites.ts'
 
 /**
  * The crafted backpack measurement (Step 13.22 part 2): the same hero, rules and elite fight with 4, 5 and 6 supply
@@ -76,7 +76,7 @@ export function runPackMatrix(seed: number, runs: number, filter: PackFilter = {
   const rows: PackRow[] = []
   for (const classId of HERO_CLASSES) {
     if (filter.classes !== undefined && !filter.classes.includes(classId)) continue
-    for (const elite of ELITE_IDS) {
+    for (const elite of CLASSIC_ELITE_IDS) {
       if (filter.elites !== undefined && !filter.elites.includes(elite)) continue
       for (const tier of PACK_TIERS) {
         if (filter.tiers !== undefined && !filter.tiers.includes(tier)) continue

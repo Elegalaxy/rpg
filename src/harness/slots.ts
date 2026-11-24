@@ -8,7 +8,7 @@ import { deriveSeed } from '../sim/rng.ts'
 import type { AutomationCondition, CombatSetup, GameDefs, PriorityRow } from '../sim/types.ts'
 
 import { HARNESS_LIMIT_MS, MAX_BATCH_RUNS } from './batch.ts'
-import { ELITE_CELLS, ELITE_IDS, eliteSetup, type EliteCell, type EliteId } from './elites.ts'
+import { CLASSIC_ELITE_IDS, ELITE_CELLS, eliteSetup, type EliteCell, type EliteId } from './elites.ts'
 
 /**
  * The fifth skill slot measurement (Step 13.34 part 2): the same hero, rules and elite fight with the class's four
@@ -209,7 +209,7 @@ export function runSlotsMatrix(seed: number, runs: number, filter: SlotsFilter =
     if (filter.classes !== undefined && !filter.classes.includes(classId)) continue
     for (const skillId of FIFTH_SKILL_CANDIDATES[classId]) {
       if (filter.skills !== undefined && !filter.skills.includes(skillId)) continue
-      for (const elite of ELITE_IDS) {
+      for (const elite of CLASSIC_ELITE_IDS) {
         if (filter.elites !== undefined && !filter.elites.includes(elite)) continue
         for (const tier of SLOT_TIERS) {
           if (filter.tiers !== undefined && !filter.tiers.includes(tier)) continue

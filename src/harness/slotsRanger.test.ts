@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { gameDefs } from '../content/scenarios.ts'
 import { createCombat } from '../sim/combat.ts'
 
-import { ELITE_IDS } from './elites.ts'
+import { CLASSIC_ELITE_IDS } from './elites.ts'
 import { RANGER_FOUR_SKILLS, RANGER_VARIANTS, SIDE_ENEMIES, formatRangerReport, rangerDefs, rangerSetup, runRangerShard, runSideShard, sideSetup, summarize, verdictFor, type RangerShard } from './slotsRanger.ts'
 import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
 
@@ -14,7 +14,7 @@ describe('slotsRanger', () => {
   it('builds valid setups for every variant, elite, tier, placement and shape', () => {
     for (const variant of RANGER_VARIANTS) {
       const defs = rangerDefs(variant)
-      for (const elite of ELITE_IDS) {
+      for (const elite of CLASSIC_ELITE_IDS) {
         for (const tier of ['prepared', 'prepared-crafted'] as const) {
           for (const placement of ['first', 'last'] as const) {
             for (const shape of variant.id === 'P-snare' ? (['five'] as const) : (['five', 'swap'] as const)) {
@@ -88,8 +88,8 @@ describe('slotsRanger', () => {
   it('is deterministic on a small run, and a shard has one row per elite', () => {
     const a = runRangerShard('HM-X:last:five', 1, 2, 'prepared')
     expect(runRangerShard('HM-X:last:five', 1, 2, 'prepared')).toEqual(a)
-    expect(a.rows.map((row) => row.elite)).toEqual([...ELITE_IDS])
-    expect(runRangerShard('four:hunters-mark', 1, 2, 'prepared').rows).toHaveLength(ELITE_IDS.length)
+    expect(a.rows.map((row) => row.elite)).toEqual([...CLASSIC_ELITE_IDS])
+    expect(runRangerShard('four:hunters-mark', 1, 2, 'prepared').rows).toHaveLength(CLASSIC_ELITE_IDS.length)
     const side = runSideShard('HM-X', 'last', 1, 2)
     expect(side.rows).toHaveLength(SIDE_ENEMIES.length * 2)
     expect(runSideShard('HM-X', 'last', 1, 2)).toEqual(side)
@@ -101,7 +101,7 @@ describe('slotsRanger', () => {
       seed,
       runs: 100,
       tier: 'prepared',
-      rows: ELITE_IDS.map((elite, index) => ({ config, elite, tier: 'prepared', winRate: wins[index]!, hpLost: 0.5, medianWinMs: median })),
+      rows: CLASSIC_ELITE_IDS.map((elite, index) => ({ config, elite, tier: 'prepared', winRate: wins[index]!, hpLost: 0.5, medianWinMs: median })),
     })
     const shards = [1, 2, 3].flatMap((seed) => [shard('four:hunters-mark', seed, [0.5, 0.6, 0.7, 0.96], 100_000), shard('HM-X:last:five', seed, [0.56, 0.66, 0.76, 0.99], 95_000)])
     const summary = summarize(shards, 'HM-X:last:five', 'hunters-mark', 'prepared')!
