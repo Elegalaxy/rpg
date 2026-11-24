@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { enemies } from '../content/enemies.ts'
+import { ANTIDOTE_BLEED_ROW } from '../content/supplies.ts'
 import { HERO_CLASSES } from '../sim/constants.ts'
 
+import { CINDER_TIERS } from './cinder.ts'
+import { WARDEN_TIERS, wardenSetup } from './warden.ts'
 import { BARRENS_FIGHTS, BARRENS_TIERS, BARRENS_VARIANTS, barrensSetup, formatBarrensTable, runBarrensMatrix } from './barrens.ts'
 
 describe('barrens matrix', () => {
@@ -47,6 +50,20 @@ describe('barrens matrix', () => {
           expect(telegraphRows).toHaveLength(0)
         }
       }
+    }
+  })
+
+  it('gives every Barrens tier the Antidote Bleed row within 12 rows, and leaves the Warden and Cinder tiers without it', () => {
+    const bleedRows = (rows: readonly { skillId: string; conditions?: unknown }[] | undefined): number =>
+      (rows ?? []).filter((row) => row.skillId === 'antidote' && JSON.stringify(row.conditions) === JSON.stringify(ANTIDOTE_BLEED_ROW.conditions)).length
+    for (const classId of HERO_CLASSES) {
+      for (const tier of [...BARRENS_TIERS, ...BARRENS_VARIANTS]) {
+        const rows = barrensSetup(classId, tier, BARRENS_FIGHTS[0]!).hero.priorityRows
+        expect(rows?.length ?? 0, `${classId} ${tier.id}`).toBeLessThanOrEqual(12)
+        expect(bleedRows(rows), `${classId} ${tier.id}`).toBe(1)
+      }
+      expect(bleedRows(wardenSetup(classId, WARDEN_TIERS[1]!).hero.priorityRows)).toBe(0)
+      expect(bleedRows(wardenSetup(classId, CINDER_TIERS[1]!).hero.priorityRows)).toBe(0)
     }
   })
 

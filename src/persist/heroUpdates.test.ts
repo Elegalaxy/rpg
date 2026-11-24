@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_SUPPLY_ROWS, GREATER_DRAUGHT_ROW, RIFTGLASS_WARD_ROW, WARD_CHARM_ROW, WARMING_TONIC_BURN_ROW, WARMING_TONIC_ROW } from '../content/supplies.ts'
+import { ANTIDOTE_BLEED_ROW, DEFAULT_SUPPLY_ROWS, GREATER_DRAUGHT_ROW, RIFTGLASS_WARD_ROW, WARD_CHARM_ROW, WARMING_TONIC_BURN_ROW, WARMING_TONIC_ROW } from '../content/supplies.ts'
 import { classWebs } from '../content/webs/index.ts'
 import type { PriorityRow } from '../sim/types.ts'
 
@@ -43,7 +43,7 @@ describe('one-time hero updates', () => {
   it('puts the crafted supply rules just above their basic counterparts, once', () => {
     const own: PriorityRow[] = [{ skillId: 'healing-draught' }, { skillId: 'antidote' }, { skillId: 'ward-charm' }, { skillId: 'driving-blow' }]
     const rows = loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: own })).heroes[0]!.priorityRows
-    expect(rows.map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught', 'antidote', 'riftglass-ward', 'ward-charm', 'warming-tonic', 'warming-tonic', 'driving-blow'])
+    expect(rows.map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught', 'antidote', 'antidote', 'riftglass-ward', 'ward-charm', 'warming-tonic', 'warming-tonic', 'driving-blow'])
     const named = loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: [{ skillId: 'greater-draught' }, ...own] })).heroes[0]!.priorityRows
     expect(named.filter((row) => row.skillId === 'greater-draught')).toHaveLength(1)
   })
@@ -52,7 +52,7 @@ describe('one-time hero updates', () => {
     const plain = [{ skillId: 'driving-blow' }]
     const loaded = loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: plain }))
     const hero = loaded.heroes[0]!
-    expect(hero.priorityRows).toEqual([...DEFAULT_SUPPLY_ROWS, ...plain])
+    expect(hero.priorityRows).toEqual([...DEFAULT_SUPPLY_ROWS.slice(0, 3), ANTIDOTE_BLEED_ROW, ...DEFAULT_SUPPLY_ROWS.slice(3), ...plain])
     expect(hero.updates).toEqual([...HERO_UPDATES])
 
     const removed = { ...loaded, heroes: [{ ...hero, priorityRows: plain }] }
@@ -63,10 +63,20 @@ describe('one-time hero updates', () => {
 
   it('leaves a hero that already names a supply alone, and fits the 12-rule limit', () => {
     const own: PriorityRow[] = [{ skillId: 'antidote' }, { skillId: 'driving-blow' }]
-    expect(loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: own })).heroes[0]!.priorityRows).toEqual([own[0], RIFTGLASS_WARD_ROW, WARD_CHARM_ROW, WARMING_TONIC_ROW, WARMING_TONIC_BURN_ROW, GREATER_DRAUGHT_ROW, own[1]])
+    expect(loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: own })).heroes[0]!.priorityRows).toEqual([own[0], ANTIDOTE_BLEED_ROW, RIFTGLASS_WARD_ROW, WARD_CHARM_ROW, WARMING_TONIC_ROW, WARMING_TONIC_BURN_ROW, GREATER_DRAUGHT_ROW, own[1]])
     const eleven = Array.from({ length: 11 }, () => ({ skillId: 'driving-blow' }))
     const rows = loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: eleven })).heroes[0]!.priorityRows
     expect(rows.map((row) => row.skillId)).toEqual(['greater-draught', ...eleven.map((row) => row.skillId)])
+  })
+
+  it('adds the Antidote Bleed row right after an existing Antidote row, once, and nothing for a hero with no Antidote row', () => {
+    const own: PriorityRow[] = [{ skillId: 'healing-draught' }, { skillId: 'antidote' }, { skillId: 'driving-blow' }]
+    const rows = loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: own })).heroes[0]!.priorityRows
+    const at = rows.findIndex((row) => row.skillId === 'antidote')
+    expect(rows[at + 1]).toEqual(ANTIDOTE_BLEED_ROW)
+    expect(rows.filter((row) => row.skillId === 'antidote')).toHaveLength(2)
+    const none = loadOld(fresh('warrior'), (hero) => ({ ...hero, priorityRows: [{ skillId: 'healing-draught' }, { skillId: 'driving-blow' }] })).heroes[0]!.priorityRows
+    expect(none.some((row) => row.skillId === 'antidote' && (row.conditions ?? []).some((c) => c.kind === 'status' && c.statusId === 'bleed'))).toBe(false)
   })
 
   it('adds the Burn Tonic row right after an existing Tonic row, once, and not when a Burn row exists', () => {
@@ -83,8 +93,8 @@ describe('one-time hero updates', () => {
     const hero = loadOld(fresh('ranger'), (entry) => oldRanger(entry)).heroes[0]!
     expect(hero.progress.learnedSkillIds).toEqual(['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap', 'fade-back'])
     expect(hero.progress.loadout).toEqual(['aimed-shot', 'piercing-arrow', 'fade-back', 'snare-trap'])
-    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught', 'antidote', 'riftglass-ward', 'ward-charm', 'warming-tonic', 'warming-tonic', 'fade-back', 'snare-trap', 'aimed-shot', 'piercing-arrow'])
-    expect(hero.priorityRows[7]).toEqual({ skillId: 'fade-back', conditions: [{ kind: 'telegraph', operator: 'present' }] })
+    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught', 'antidote', 'antidote', 'riftglass-ward', 'ward-charm', 'warming-tonic', 'warming-tonic', 'fade-back', 'snare-trap', 'aimed-shot', 'piercing-arrow'])
+    expect(hero.priorityRows[8]).toEqual({ skillId: 'fade-back', conditions: [{ kind: 'telegraph', operator: 'present' }] })
   })
 
   it('only teaches Fade Back to a Ranger whose Volley came from the node', () => {
@@ -92,7 +102,7 @@ describe('one-time hero updates', () => {
     const hero = loadOld(fresh('ranger'), (entry) => oldRanger(entry, [volleyNode])).heroes[0]!
     expect(hero.progress.learnedSkillIds).toContain('fade-back')
     expect(hero.progress.loadout).toEqual(['aimed-shot', 'piercing-arrow', 'volley', 'snare-trap'])
-    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught', 'antidote', 'riftglass-ward', 'ward-charm', 'warming-tonic', 'warming-tonic', 'snare-trap', 'volley', 'aimed-shot', 'piercing-arrow'])
+    expect(hero.priorityRows.map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught', 'antidote', 'antidote', 'riftglass-ward', 'ward-charm', 'warming-tonic', 'warming-tonic', 'snare-trap', 'volley', 'aimed-shot', 'piercing-arrow'])
   })
 
   it('changes nothing for a new hero', () => {

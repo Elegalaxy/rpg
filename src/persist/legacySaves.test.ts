@@ -89,7 +89,7 @@ describe('a save from the first version of the game', () => {
       awayRun: null,
       routeReturns: {},
     })
-    expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules', 'warming-tonic-burn-rule', 'assassin-venom-passive'])
+    expect(hero.updates).toEqual(['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules', 'warming-tonic-burn-rule', 'assassin-venom-passive', 'antidote-bleed-rule'])
     expect(hero.priorityRows.slice(0, 2).map((row) => row.skillId)).toEqual(['greater-draught', 'healing-draught'])
   })
 

@@ -36,6 +36,7 @@ export const BARRENS_TIERS: readonly WardenTier[] = [
     nodes: 11,
     quality: 1.2,
     burnRow: false,
+    bleedRow: true,
     modifiers: BARRENS_ARRIVED_MODIFIERS,
     supplies: ['healing-draught', 'healing-draught', 'healing-draught'],
     classModifiers: CLERIC_MODIFIERS,
@@ -47,6 +48,7 @@ export const BARRENS_TIERS: readonly WardenTier[] = [
     nodes: 12,
     quality: 1.24,
     burnRow: false,
+    bleedRow: true,
     modifiers: BARRENS_PREPARED_MODIFIERS,
     supplies: PREPARED_SUPPLIES,
     classModifiers: CLERIC_MODIFIERS,
@@ -58,6 +60,7 @@ export const BARRENS_TIERS: readonly WardenTier[] = [
     nodes: 12,
     quality: 1.24,
     burnRow: false,
+    bleedRow: true,
     modifiers: BARRENS_PREPARED_MODIFIERS,
     supplies: PREPARED_SUPPLIES,
     classModifiers: CLERIC_MODIFIERS,
@@ -157,6 +160,7 @@ export type BarrensFilter = {
   classes?: readonly HeroClass[]
   tiers?: readonly string[]
   fights?: readonly string[]
+  modes?: readonly BarrensMode[]
 }
 
 /** Every class at every tier (and the variants) against every Barrens fight, with and without telegraph rules where they matter. */
@@ -172,6 +176,7 @@ export function runBarrensMatrix(seed: number, runs: number, filter: BarrensFilt
         if (filter.fights !== undefined && !filter.fights.includes(fight.id)) continue
         for (const mode of BARRENS_MODES) {
           if (mode === 'blind' && !fight.blind) continue
+          if (filter.modes !== undefined && !filter.modes.includes(mode)) continue
           const setup = barrensSetup(classId, tier, fight, mode)
           let wins = 0
           let lost = 0

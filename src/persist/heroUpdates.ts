@@ -1,5 +1,5 @@
 import { contracts } from '../content/contracts.ts'
-import { DEFAULT_SUPPLY_ROWS, GREATER_DRAUGHT_ROW, RIFTGLASS_WARD_ROW, RULE_SUPPLY_IDS, WARD_CHARM_ROW, WARMING_TONIC_BURN_ROW, WARMING_TONIC_ROW } from '../content/supplies.ts'
+import { ANTIDOTE_BLEED_ROW, DEFAULT_SUPPLY_ROWS, GREATER_DRAUGHT_ROW, RIFTGLASS_WARD_ROW, RULE_SUPPLY_IDS, WARD_CHARM_ROW, WARMING_TONIC_BURN_ROW, WARMING_TONIC_ROW } from '../content/supplies.ts'
 import { referenceLoadoutFor } from '../content/scenarios.ts'
 import { classWebs } from '../content/webs/index.ts'
 import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
@@ -13,7 +13,7 @@ import type { SaveData, SavedHero } from './save.ts'
  * lists the ones it already has, so a rule the player later removes does not come back. New heroes
  * start with every id.
  */
-export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules', 'warming-tonic-burn-rule', 'assassin-venom-passive'] as const
+export const HERO_UPDATES = ['supply-rules', 'ranger-fade-back', 'contract-board', 'ward-charm-rule', 'warming-tonic-rule', 'crafted-supply-rules', 'warming-tonic-burn-rule', 'assassin-venom-passive', 'antidote-bleed-rule'] as const
 
 const FADE_BACK = 'fade-back'
 const VOLLEY = 'volley'
@@ -123,6 +123,22 @@ function addWarmingTonicBurnRule(hero: SavedHero): SavedHero {
   return { ...hero, priorityRows: [...hero.priorityRows.slice(0, at), copyRow(row), ...hero.priorityRows.slice(at)] }
 }
 
+/**
+ * The Antidote's Bleed rule came on 2026-11-24 (Step 14.5). It goes right after the hero's own Antidote row, or after
+ * the supply rules when the hero has none, unless an Antidote row already reads Bleed or the hero has no Antidote row
+ * and the 12-rule limit is full.
+ */
+function addAntidoteBleedRule(hero: SavedHero): SavedHero {
+  const row = ANTIDOTE_BLEED_ROW
+  const readsBleed = (existing: PriorityRow): boolean =>
+    existing.skillId === row.skillId && (existing.conditions ?? []).some((condition) => condition.kind === 'status' && condition.statusId === 'bleed')
+  if (hero.priorityRows.some(readsBleed)) return hero
+  if (hero.priorityRows.length >= MAX_PRIORITY_ROWS) return hero
+  const antidote = hero.priorityRows.findIndex((existing) => existing.skillId === row.skillId)
+  if (antidote < 0) return hero
+  return { ...hero, priorityRows: [...hero.priorityRows.slice(0, antidote + 1), copyRow(row), ...hero.priorityRows.slice(antidote + 1)] }
+}
+
 const VENOM_EDGE = 'venom-edge'
 
 const namesVenomEdge = (condition: AutomationCondition): boolean => condition.kind === 'skillReady' && condition.skillId === VENOM_EDGE
@@ -184,6 +200,7 @@ const APPLY: { [id in (typeof HERO_UPDATES)[number]]: (hero: SavedHero, save: Sa
   'crafted-supply-rules': addCraftedSupplyRules,
   'warming-tonic-burn-rule': addWarmingTonicBurnRule,
   'assassin-venom-passive': removeVenomEdge,
+  'antidote-bleed-rule': addAntidoteBleedRule,
 }
 
 /** Apply every update a hero does not have yet, in order, and record it. */

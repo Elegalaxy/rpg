@@ -20,7 +20,7 @@ import { formatFreeCsv, runFreeMatrix } from './freeUpgrade.ts'
 import { formatModdedCsv, formatModdedTable, runModdedMatrix, writeModdedCsv } from './modded.ts'
 import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
 import { formatCinderTable, runCinderMatrix } from './cinder.ts'
-import { BARRENS_FIGHT_IDS, BARRENS_TIER_IDS, formatBarrensTable, runBarrensMatrix } from './barrens.ts'
+import { BARRENS_FIGHT_IDS, BARRENS_MODES, BARRENS_TIER_IDS, formatBarrensTable, runBarrensMatrix } from './barrens.ts'
 import { LATE_IDS, formatLateTable, runLateMatrix } from './late.ts'
 import { ELITE_CELLS, ELITE_IDS, ELITE_MODES, formatElitesTable, runElitesMatrix, type EliteFilter } from './elites.ts'
 import { formatPackTable, runPackMatrix } from './pack.ts'
@@ -358,6 +358,7 @@ function printMatrix(args: ParsedArgs): void {
       ...(args.classes === undefined ? {} : { classes: parseList('--classes', args.classes, HERO_CLASSES) }),
       ...(args.tiers === undefined ? {} : { tiers: parseList('--tiers', args.tiers, BARRENS_TIER_IDS) }),
       ...(args.fights === undefined ? {} : { fights: parseList('--fights', args.fights, BARRENS_FIGHT_IDS) }),
+      ...(args.modes === undefined ? {} : { modes: parseList('--modes', args.modes, BARRENS_MODES) }),
     })
     const elapsedMs = performance.now() - started
     process.stdout.write(formatBarrensTable(rows))

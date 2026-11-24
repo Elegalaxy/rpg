@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_SUPPLY_ROWS, WARD_CHARM_ROW, supplyTable, type SupplyDef } from '../content/supplies.ts'
+import { ANTIDOTE_BLEED_ROW, DEFAULT_SUPPLY_ROWS, startingRules, withAntidoteBleedRow, WARD_CHARM_ROW, supplyTable, type SupplyDef } from '../content/supplies.ts'
 import { SMOKE_BOMB_ID, SPLINTERED_ROAD_ID } from '../sim/expedition.ts'
 
 import { buildCondition, draftsFromRows, describeCondition, summarizeRule } from './loadout.ts'
@@ -77,9 +77,24 @@ describe('packing supplies', () => {
 describe('supply rules', () => {
   it('gives a new hero the supply rules on top', () => {
     const hero = heroSave().heroes[0]!
-    expect(hero.priorityRows.slice(0, DEFAULT_SUPPLY_ROWS.length)).toEqual(DEFAULT_SUPPLY_ROWS)
+    expect(hero.priorityRows.slice(0, 3)).toEqual(DEFAULT_SUPPLY_ROWS.slice(0, 3))
+    expect(hero.priorityRows[3]).toEqual(ANTIDOTE_BLEED_ROW)
     expect(hero.packedSupplies).toEqual([])
     expect(purseOf(heroSave()).supplies).toEqual({})
+  })
+
+  it('adds the Antidote Bleed row after the Poison row when the 12-rule limit leaves room, and not for a hero with no room', () => {
+    const classRows = [{ skillId: 'driving-blow' }]
+    const rows = startingRules(classRows)
+    expect(rows[2]).toEqual(DEFAULT_SUPPLY_ROWS[2])
+    expect(rows[3]).toEqual(ANTIDOTE_BLEED_ROW)
+    expect(ANTIDOTE_BLEED_ROW.conditions).toEqual([{ kind: 'status', who: 'hero', statusId: 'bleed', measure: 'stacks', operator: 'atLeast', value: 3 }])
+    expect(rows).toHaveLength(DEFAULT_SUPPLY_ROWS.length + 2)
+    const full = startingRules(Array.from({ length: 12 - DEFAULT_SUPPLY_ROWS.length }, () => ({ skillId: 'driving-blow' })))
+    expect(full).toHaveLength(12)
+    expect(full).not.toContainEqual(ANTIDOTE_BLEED_ROW)
+    expect(withAntidoteBleedRow([{ skillId: 'driving-blow' }])).toEqual([{ skillId: 'driving-blow' }])
+    expect(withAntidoteBleedRow(withAntidoteBleedRow(rows)).filter((row) => row.skillId === 'antidote')).toHaveLength(2)
   })
 
   it('starts the Ward Charm rule on a telegraph while the hero is at 70% HP or less', () => {

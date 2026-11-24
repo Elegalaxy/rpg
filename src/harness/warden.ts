@@ -1,6 +1,6 @@
 import { referenceHeroAtLevel } from '../content/heroes.ts'
 import { gameDefs } from '../content/scenarios.ts'
-import { WARMING_TONIC_BURN_ROW, startingRules } from '../content/supplies.ts'
+import { ANTIDOTE_BLEED_ROW, WARMING_TONIC_BURN_ROW, startingRules, withAntidoteBleedRow } from '../content/supplies.ts'
 import { HERO_CLASSES, type HeroClass } from '../sim/constants.ts'
 import { createCombat, runCombat } from '../sim/combat.ts'
 import { MAX_PRIORITY_ROWS } from '../sim/automation.ts'
@@ -38,6 +38,8 @@ export type WardenTier = {
    * which never fires where there is no Chill, makes room.
    */
   burnRow?: boolean
+  /** The hero keeps the default Antidote Bleed row (Step 14.5). Off by default so the earlier matrices keep the rules they were measured with. */
+  bleedRow?: boolean
   /** Per-class replacements for single slots in `modifiers` (for example Hallowed for a healer). */
   classModifiers?: { readonly [classId in HeroClass]?: Partial<WardenTier['modifiers']> }
 }
@@ -197,10 +199,19 @@ function modifierEquipment(modifiers: WardenTier['modifiers']): Equipment {
 
 const sameCondition = (a: PriorityRow, b: PriorityRow): boolean => JSON.stringify(a.conditions) === JSON.stringify(b.conditions)
 
-/** The starting supply rules for a tier: without `burnRow` the Burn Tonic row is left out. */
+/** The starting supply rules for a tier: without `burnRow` the Burn Tonic row is left out, and without `bleedRow` the Antidote Bleed row. */
 function tierRules(classRows: readonly PriorityRow[], tier: WardenTier): PriorityRow[] {
-  const rules = startingRules(classRows)
+  let rules = startingRules(classRows)
   const isBurnRow = (row: PriorityRow): boolean => row.skillId === WARMING_TONIC_BURN_ROW.skillId && sameCondition(row, WARMING_TONIC_BURN_ROW)
+  const isBleedRow = (row: PriorityRow): boolean => row.skillId === ANTIDOTE_BLEED_ROW.skillId && sameCondition(row, ANTIDOTE_BLEED_ROW)
+  if (tier.bleedRow === true) {
+    rules = withAntidoteBleedRow(rules.filter((row) => !isBleedRow(row)))
+    // A Bleed tier has no Chill, so the Chill Tonic row makes room when the limit is exceeded.
+    if (tier.burnRow !== true) rules = rules.filter((row) => !isBurnRow(row))
+    const chill = rules.findIndex((row) => row.skillId === WARMING_TONIC_BURN_ROW.skillId && !isBurnRow(row))
+    return rules.length > MAX_PRIORITY_ROWS && chill >= 0 ? rules.filter((_, index) => index !== chill) : rules
+  }
+  rules = rules.filter((row) => !isBleedRow(row))
   if (tier.burnRow !== true) return rules.filter((row) => !isBurnRow(row))
   if (rules.length <= MAX_PRIORITY_ROWS) return rules
   const chill = rules.findIndex((row) => row.skillId === WARMING_TONIC_BURN_ROW.skillId && !isBurnRow(row))

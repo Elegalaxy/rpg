@@ -113,6 +113,12 @@ export const WARMING_TONIC_BURN_ROW: PriorityRow = {
   conditions: [{ kind: 'status', who: 'hero', statusId: 'burn', measure: 'stacks', operator: 'atLeast', value: 3 }],
 }
 
+/** The Antidote's second default rule: drink it at 3 Bleed stacks (it removes Poison and Bleed alike; decided 2026-11-24, Step 14.5). Not in `DEFAULT_SUPPLY_ROWS`: `startingRules` adds it right after the Poison row when the 12-rule limit leaves room (a Mage keeps all five class rows and gets no room). */
+export const ANTIDOTE_BLEED_ROW: PriorityRow = {
+  skillId: 'antidote',
+  conditions: [{ kind: 'status', who: 'hero', statusId: 'bleed', measure: 'stacks', operator: 'atLeast', value: 3 }],
+}
+
 /** The Greater Draught's default rule: drink it at 40% HP or less, above the Healing Draught row (30% until 2026-11-09). */
 export const GREATER_DRAUGHT_ROW: PriorityRow = {
   skillId: 'greater-draught',
@@ -139,10 +145,20 @@ export const DEFAULT_SUPPLY_ROWS: readonly PriorityRow[] = [
   WARMING_TONIC_BURN_ROW,
 ]
 
-/** A hero's starting rules: the supply rules, then the class rules. */
+/** The rows with the Antidote Bleed row right after the first Antidote row, unless a row already reads Bleed for the Antidote or there is no Antidote row. */
+export function withAntidoteBleedRow(rows: readonly PriorityRow[]): PriorityRow[] {
+  const copy = (row: PriorityRow): PriorityRow => ({ ...row, ...(row.conditions === undefined ? {} : { conditions: row.conditions.map((condition) => ({ ...condition })) }) })
+  const has = rows.some((row) => row.skillId === ANTIDOTE_BLEED_ROW.skillId && JSON.stringify(row.conditions) === JSON.stringify(ANTIDOTE_BLEED_ROW.conditions))
+  const at = rows.findIndex((row) => row.skillId === ANTIDOTE_BLEED_ROW.skillId)
+  if (has || at < 0) return rows.map(copy)
+  return [...rows.slice(0, at + 1).map(copy), copy(ANTIDOTE_BLEED_ROW), ...rows.slice(at + 1).map(copy)]
+}
+
+/** A hero's starting rules: the supply rules, then the class rules, with the Antidote Bleed row after the Poison row when it fits in 12. */
 export function startingRules(classRows: readonly PriorityRow[]): PriorityRow[] {
-  return [...DEFAULT_SUPPLY_ROWS, ...classRows].map((row) => ({
+  const rows = [...DEFAULT_SUPPLY_ROWS, ...classRows].map((row) => ({
     ...row,
     ...(row.conditions === undefined ? {} : { conditions: row.conditions.map((condition) => ({ ...condition })) }),
   }))
+  return rows.length < 12 ? withAntidoteBleedRow(rows) : rows
 }
