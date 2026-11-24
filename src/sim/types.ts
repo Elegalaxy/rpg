@@ -639,7 +639,7 @@ export type ActionDelayEvent = {
   nextReadyMs: number
 }
 
-export type StatusAttemptResult = 'applied' | 'resisted' | 'contact' | 'cap' | 'guaranteed'
+export type StatusAttemptResult = 'applied' | 'resisted' | 'contact' | 'cap' | 'guaranteed' | 'immune'
 
 export type StatusAttemptEvent = {
   type: 'statusAttempt'
@@ -1369,6 +1369,16 @@ export type TelegraphWardEffect = {
 }
 
 /**
+ * Supplies only: the hero cannot gain the listed statuses for this long. An attempt still draws its roll (the
+ * RNG draw order does not change) and is logged `immune`; nothing is applied. A second supply sets the end to the later of the two.
+ */
+export type StatusImmunityEffect = {
+  kind: 'statusImmunity'
+  statusIds: readonly string[]
+  durationSeconds: number
+}
+
+/**
  * Remove every stack of the listed statuses from the user, in the listed order. `limit` stops after
  * that many statuses were removed; omitted removes every listed one present.
  */
@@ -1401,6 +1411,7 @@ export type SkillEffect =
   | CleanseEffect
   | SkillDodgeEffect
   | TelegraphWardEffect
+  | StatusImmunityEffect
   | StealSupplyEffect
 
 export type SkillRequirement = {
@@ -1525,6 +1536,8 @@ export type CombatHero = CombatActor & {
   skillDodgeUntilMs: number | null
   /** A supply's ward lasts through this time and spends on the next telegraphed damaging skill. Null when none is up. */
   telegraphWard: { untilMs: number; eliteDamageFraction: number; name: string; charges: number } | null
+  /** A supply's immunity: the listed statuses cannot be applied to the hero through this time. Null when none is up. */
+  statusImmunity: { statusIds: string[]; untilMs: number; name: string } | null
   /** Supplies an enemy took this fight. A win returns them. */
   stolenSupplies: string[]
   /** Special arrows already fired this expedition. Null when the setup omits the counter. */

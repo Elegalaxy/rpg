@@ -84,6 +84,10 @@ function formatStatusAttempt(event: Extract<LogEvent, { type: 'statusAttempt' }>
   if (event.result === 'contact') {
     return `${when}, ${event.actorName}'s ${event.statusName} does not apply to ${event.targetName} because a barrier absorbed the hit.`
   }
+  if (event.result === 'immune') {
+    const until = event.expiresMs === null ? '' : ` until ${seconds(event.expiresMs)}s`
+    return `${when}, ${event.actorName}'s ${event.statusName} has no effect on ${event.targetName}: immune${until}.`
+  }
   const school = event.school === 'none' ? 'resistance' : `${event.school} resistance`
   const roll = `chance ${event.chance}, roll ${event.roll}, potency ${event.potency}, ${school} ${event.resistance}`
   if (event.result === 'resisted') {

@@ -553,6 +553,7 @@ const warmingTonic = {
   effects: [
     { kind: 'cleanse', statusIds: ['chill', 'burn'] },
     { kind: 'heal', maxHpFraction: 0.1, healingCoefficient: 0 },
+    { kind: 'statusImmunity', statusIds: ['burn'], durationSeconds: 10 },
   ],
 } satisfies SkillDef
 

@@ -737,6 +737,24 @@ export function tryApplyStatus(input: ApplyInput & { defs: { statuses: { [id: st
   const resistance = statusResistance(input.target, school)
   const chance = applicationChance(input.effect.baseChance, potency, resistance)
   const roll = drawRoll(input)
+  const immunity = input.target === input.state.hero ? input.state.hero.statusImmunity : null
+  if (immunity !== null && immunity.statusIds.includes(def.id) && input.timeMs <= immunity.untilMs) {
+    attemptEvent(input, def, {
+      school,
+      baseChance: input.effect.baseChance,
+      potency,
+      resistance,
+      chance,
+      roll,
+      result: 'immune',
+      stacks: 0,
+      intensity: 0,
+      expiresMs: immunity.untilMs,
+      delayMs: null,
+      nextReadyMs: null,
+    })
+    return
+  }
   if (!(roll < chance)) {
     attemptEvent(input, def, {
       school,

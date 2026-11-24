@@ -55,10 +55,10 @@ export const SUPPLIES: readonly SupplyDef[] = [
   {
     id: 'warming-tonic',
     name: 'Warming Tonic',
-    price: 12,
-    effect: 'Removes all Chill and Burn, and restores 10% of maximum HP.',
+    price: 15,
+    effect: 'Removes all Chill and Burn, restores 10% of maximum HP, and stops new Burn for 10 seconds.',
     ruleUsed: true,
-    brew: { materialId: 'hide', quantity: 2, gold: 4 },
+    brew: { materialId: 'hide', quantity: 2, gold: 5 },
   },
   {
     id: 'greater-draught',

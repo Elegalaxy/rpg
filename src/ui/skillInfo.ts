@@ -67,6 +67,8 @@ export function effectLine(effect: SkillEffect): string {
       return effect.fraction > 0 ? `Cuts every hit by ${percent(effect.fraction)} until your next action` : ''
     case 'telegraphWard':
       return `Wards off the next ${effect.charges === undefined || effect.charges === 1 ? 'telegraphed attack' : `${effect.charges} telegraphed attacks`} within ${effect.durationSeconds} s; elites and bosses still deal ${percent(effect.eliteDamageFraction)}`
+    case 'statusImmunity':
+      return `Stops new ${listNames(effect.statusIds.map(statusName), 'and')} for ${effect.durationSeconds} s`
     case 'incomingDamage':
       if (effect.multiplier === 1) return ''
       return effect.multiplier > 1 ? `You take ${percent(effect.multiplier - 1)} more damage afterwards` : `You take ${percent(1 - effect.multiplier)} less damage afterwards`

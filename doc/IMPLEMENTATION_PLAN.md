@@ -1645,6 +1645,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Parts: P1 docs; P2 Tonic immunity (sim and content); P3 physical status resistance, the four modifiers, Tempered numbers; P4 `--matrix late` harness and measurement; P5 close step and HANDOFF.
 - Progress:
   - 2026-11-24: P1 done (docs).
+  - 2026-11-24: P2 code done: `statusImmunity` effect (sim types, skills validation, supply use in `combat.ts`, `tryApplyStatus` logs `immune` after the roll draw), Warming Tonic content and price, tests in `statusImmunity.test.ts`. Measurement below.
 
 ## 8. Risks, and what would reveal them early
 

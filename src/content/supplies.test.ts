@@ -56,7 +56,7 @@ describe('supplies', () => {
       ['antidote', 10, true, { materialId: 'shard', quantity: 2, gold: 3 }],
       ['smoke-bomb', 20, false, { materialId: 'scrap', quantity: 3, gold: 8 }],
       ['ward-charm', 20, true, { materialId: 'shard', quantity: 3, gold: 8 }],
-      ['warming-tonic', 12, true, { materialId: 'hide', quantity: 2, gold: 4 }],
+      ['warming-tonic', 15, true, { materialId: 'hide', quantity: 2, gold: 5 }],
       ['greater-draught', null, true, { materialId: 'riftglass', quantity: 2, gold: 10 }],
       ['riftglass-ward', null, true, { materialId: 'riftglass', quantity: 2, gold: 12 }],
     ])

@@ -59,6 +59,7 @@ import type {
   SkillDef,
   SkillEffect,
   SummonEffect,
+  StatusImmunityEffect,
   TelegraphWardEffect,
 } from './types.ts'
 
@@ -84,6 +85,7 @@ export const SKILL_EFFECT_KINDS = [
   'cleanse',
   'skillDodge',
   'telegraphWard',
+  'statusImmunity',
   'stealSupply',
 ] as const
 
@@ -490,6 +492,15 @@ function assertEffect(value: unknown, skillId: string): SkillEffect {
     }
     return parsed
   }
+  if (kind === 'statusImmunity') {
+    assertPositive(value.durationSeconds, `skill '${skillId}' immunity duration`)
+    const ids = value.statusIds
+    if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => typeof id !== 'string')) {
+      throw new Error(`skill '${skillId}' immunity needs status ids`)
+    }
+    const parsed: StatusImmunityEffect = { kind, statusIds: [...(ids as string[])], durationSeconds: value.durationSeconds }
+    return parsed
+  }
   if (kind === 'cleanse') {
     const ids = value.statusIds
     if (!Array.isArray(ids) || ids.length === 0) throw new Error(`skill '${skillId}' cleanse needs status ids`)
@@ -566,8 +577,8 @@ export function assertSkillDef(value: unknown): asserts value is SkillDef {
     throw new Error(`skill '${id}' supply must be true or omitted, received ${describeValue(value.supply)}`)
   }
   for (const effect of value.effects as { kind: string }[]) {
-    if (value.supply === true && effect.kind !== 'heal' && effect.kind !== 'cleanse' && effect.kind !== 'barrier' && effect.kind !== 'telegraphWard') {
-      throw new Error(`supply '${id}' can only heal, cleanse, or ward, received '${effect.kind}'`)
+    if (value.supply === true && effect.kind !== 'heal' && effect.kind !== 'cleanse' && effect.kind !== 'barrier' && effect.kind !== 'telegraphWard' && effect.kind !== 'statusImmunity') {
+      throw new Error(`supply '${id}' can only heal, cleanse, ward, or grant immunity, received '${effect.kind}'`)
     }
   }
 }
@@ -1229,6 +1240,9 @@ export function applySkillEffects(
     }
     if (effect.kind === 'telegraphWard') {
       throw new Error(`skill '${skill.id}' effect 'telegraphWard' is for supplies only`)
+    }
+    if (effect.kind === 'statusImmunity') {
+      throw new Error(`skill '${skill.id}' effect 'statusImmunity' is for supplies only`)
     }
     if (effect.kind === 'cleanse') {
       cleanseListed(state, hero, scheduledMs, effect.statusIds, effect.limit)

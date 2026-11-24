@@ -1980,6 +1980,16 @@ function resolveSupply(state: CombatState, skill: SkillDef, scheduled: number): 
       }
       continue
     }
+    if (effect.kind === 'statusImmunity') {
+      const untilMs = scheduled + roundDurationMs(effect.durationSeconds, `${skill.id} immunity`)
+      const current = hero.statusImmunity
+      hero.statusImmunity = {
+        statusIds: [...new Set([...(current === null || current.untilMs < scheduled ? [] : current.statusIds), ...effect.statusIds])],
+        untilMs: current === null ? untilMs : Math.max(current.untilMs, untilMs),
+        name: skill.name,
+      }
+      continue
+    }
     if (effect.kind === 'barrier' && effect.source === 'anchorMaxHp') {
       const amount = hero.maxHp * effect.coefficient
       const expiresMs = scheduled + roundDurationMs(effect.durationSeconds, `${skill.id} barrier`)
@@ -2577,6 +2587,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     supplies: readSupplyList(hero.supplies),
     skillDodgeUntilMs: null,
     telegraphWard: null,
+    statusImmunity: null,
     stolenSupplies: [],
     suppliedArrowCount: readOptionalCount(hero.specialArrowCount, 'special arrow count'),
     suppliedTrapperCooldown: readOptionalCount(hero.trapperCooldown, 'trapper cooldown'),
