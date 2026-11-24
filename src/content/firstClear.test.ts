@@ -3,7 +3,7 @@ import { FIRST_CLEAR_NODE_IDS, firstClearReward } from './firstClear.ts'
 
 describe('first-clear rewards', () => {
   it('matches the design table, in node order', () => {
-    expect(FIRST_CLEAR_NODE_IDS).toEqual(['splintered-road', 'withered-grove', 'fallen-bastion', 'drowned-causeway', 'rift-hollows', 'cinder-scar', 'fracture-gate'])
+    expect(FIRST_CLEAR_NODE_IDS).toEqual(['splintered-road', 'withered-grove', 'fallen-bastion', 'drowned-causeway', 'rift-hollows', 'cinder-scar', 'bloodthorn-barrens', 'fracture-gate'])
     const table = FIRST_CLEAR_NODE_IDS.map((id) => {
       const reward = firstClearReward(id)
       return [id, reward?.gold, reward?.materialId, reward?.quantity, reward?.tokens]
@@ -15,7 +15,8 @@ describe('first-clear rewards', () => {
     expect(table).toContainEqual(['drowned-causeway', 660, 'riftglass', 15, 1])
     expect(table).toContainEqual(['rift-hollows', 840, 'duskiron', 15, 1])
     expect(table).toContainEqual(['cinder-scar', 1020, 'cinderite', 15, 1])
-    expect(FIRST_CLEAR_NODE_IDS).toHaveLength(7)
+    expect(table).toContainEqual(['bloodthorn-barrens', 1200, 'bloodstone', 15, 1])
+    expect(FIRST_CLEAR_NODE_IDS).toHaveLength(8)
   })
 
   it('has no reward for the town or an unknown node', () => {

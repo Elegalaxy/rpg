@@ -100,7 +100,7 @@ describe('searchGuide', () => {
     expect(fact('First clear: Drowned Causeway')).toBe('660 g · 15 riftglass · 1 free upgrade · +2 Legacy')
     expect(fact('First clear: Splintered Road')).toBe('210 g · 15 scrap · 1 free upgrade')
     expect(fact('First clear: Fracture Gate')).toBe('600 g · 1 free upgrade')
-    expect(topic.facts).toHaveLength(9)
+    expect(topic.facts).toHaveLength(10)
     expect(fact('Safe pouch')).toMatch(/kept on defeat/)
     expect(fact('Echo rank')).toMatch(/Fractured Warden/)
   })

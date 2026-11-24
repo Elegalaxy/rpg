@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: Bloodthorn Barrens, a fifth zone for levels 34 to 40, opens once you have beaten the Emberwrought Tyrant. Barbed Stalkers, Venomhide Crawlers and Thornwitches make you bleed and poison you, and the Briar Matriarch waits at the end. [14.5]
 - Fixed: beating the Fractured Warden raises the next Warden by one Echo rank right away, including a later fight in the same run.
 - Improved: Echo climb runs Fracture Gate through the Bastion and fights the Warden at your highest unlocked rank, then raises that rank after a win.
 - Fixed: the frontier map painting and the fight portraits load on the published site.

@@ -48,6 +48,14 @@ describe('world map with the Cinder Scar', () => {
   })
 })
 
+describe('world map with the Bloodthorn Barrens', () => {
+  it('shows the Bloodthorn Barrens node as undiscovered', () => {
+    const html = renderToStaticMarkup(<MapView />)
+    expect(html).toContain('Bloodthorn Barrens')
+    expect(html).toContain('aria-label="Bloodthorn Barrens, locked. Not discovered yet."')
+  })
+})
+
 describe('map contract track', () => {
   afterEach(() => {
     commitSave(newSave(), 'test', false)

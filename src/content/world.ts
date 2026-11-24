@@ -65,6 +65,7 @@ export const FRACTURE_GATE_NODE = 'fracture-gate'
 export const DROWNED_CAUSEWAY_NODE = 'drowned-causeway'
 export const RIFT_HOLLOWS_NODE = 'rift-hollows'
 export const CINDER_SCAR_NODE = 'cinder-scar'
+export const BLOODTHORN_BARRENS_NODE = 'bloodthorn-barrens'
 
 export const nodes: { readonly [id: string]: WorldNode } = {
   [GREYHAVEN_ID]: {
@@ -142,6 +143,18 @@ export const nodes: { readonly [id: string]: WorldNode } = {
     gate: { defeatedEnemyIds: ['hollowmaw-reaver'] },
     discoveryId: 'node:cinder-scar',
   },
+  [BLOODTHORN_BARRENS_NODE]: {
+    id: BLOODTHORN_BARRENS_NODE,
+    name: 'Bloodthorn Barrens',
+    kind: 'zone',
+    levels: { min: 34, max: 40 },
+    encounterIds: ['stalker-pair', 'crawler', 'barrens-mixed', 'briar-matriarch'],
+    drawEncounterIds: ['barrens-mixed', 'barrens-deep', 'stalker-pair'],
+    resource: { id: 'bloodstone-outcrop', name: 'Bloodstone Outcrop', materialId: 'bloodstone', quantity: 3 },
+    eliteEnemyId: 'briar-matriarch',
+    gate: { defeatedEnemyIds: ['emberwrought-tyrant'] },
+    discoveryId: 'node:bloodthorn-barrens',
+  },
   [FRACTURE_GATE_NODE]: {
     id: FRACTURE_GATE_NODE,
     name: 'Fracture Gate',
@@ -163,6 +176,7 @@ export const legs: readonly Leg[] = [
   { from: SPLINTERED_ROAD_NODE, to: DROWNED_CAUSEWAY_NODE, travelMs: LEG_TRAVEL_MS },
   { from: SPLINTERED_ROAD_NODE, to: RIFT_HOLLOWS_NODE, travelMs: LEG_TRAVEL_MS },
   { from: SPLINTERED_ROAD_NODE, to: CINDER_SCAR_NODE, travelMs: LEG_TRAVEL_MS },
+  { from: SPLINTERED_ROAD_NODE, to: BLOODTHORN_BARRENS_NODE, travelMs: LEG_TRAVEL_MS },
 ]
 
 /** Route ids match the expedition ids the simulation accepts. */
@@ -206,6 +220,11 @@ export const routes: { readonly [id: string]: Route } = {
     id: 'cinder-scar',
     name: 'Road to the Cinder Scar',
     nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, CINDER_SCAR_NODE],
+  },
+  'bloodthorn-barrens': {
+    id: 'bloodthorn-barrens',
+    name: 'Road to the Bloodthorn Barrens',
+    nodeIds: [GREYHAVEN_ID, SPLINTERED_ROAD_NODE, BLOODTHORN_BARRENS_NODE],
   },
 }
 

@@ -11,4 +11,5 @@ export const NODE_POSITIONS: { readonly [id: string]: { x: number; y: number } }
   'drowned-causeway': { x: 120, y: 290 },
   'rift-hollows': { x: 360, y: 290 },
   'cinder-scar': { x: 500, y: 270 },
+  'bloodthorn-barrens': { x: 430, y: 205 },
 }

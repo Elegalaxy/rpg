@@ -27,6 +27,7 @@ describe('the map on a phone', () => {
     expect(html).toContain('<details class="map-fold"><summary>World map</summary>')
     expect(html).toContain('Splintered Road')
     expect(html).not.toContain('Road to the Cinder Scar')
+    expect(html).not.toContain('Road to the Bloodthorn Barrens')
     expect(html).toMatch(/Show \d+ locked routes/)
     expect(html).toContain('class="start-dock"')
   })

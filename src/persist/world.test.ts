@@ -475,3 +475,48 @@ describe('Cinder Scar in the save', () => {
     expect(info.fights).toBe(7)
   })
 })
+
+describe('Bloodthorn Barrens in the save', () => {
+  it('is discovered when the Splintered Road is cleared, and stays gated on the Tyrant', () => {
+    const save = withRun('bloodthorn-barrens')
+    expect(fightNodeIds(routes['bloodthorn-barrens']!)).toEqual([
+      'splintered-road',
+      'splintered-road',
+      'splintered-road',
+      'bloodthorn-barrens',
+      'bloodthorn-barrens',
+      'bloodthorn-barrens',
+      'bloodthorn-barrens',
+    ])
+    victoryFor(save.expedition!, 3)
+    const next = recordProgress(save)
+    expect(next.account.discoveries).toContain('node:bloodthorn-barrens')
+    const hero = selectedHero(next)!
+    expect(nodeStatus(node('bloodthorn-barrens'), next, hero)).toEqual({
+      state: 'locked',
+      reason: 'Defeat Emberwrought Tyrant first.',
+    })
+    expect(canStartRoute({ ...next, expedition: null }, 'bloodthorn-barrens')).toEqual({
+      ok: false,
+      reason: 'Bloodthorn Barrens: Defeat Emberwrought Tyrant first.',
+    })
+    const ready = { ...next, expedition: null, heroes: next.heroes.map((h) => ({ ...h, defeatedEnemyIds: ['emberwrought-tyrant'] })) }
+    expect(nodeStatus(node('bloodthorn-barrens'), ready, selectedHero(ready)!).state).toBe('discovered')
+    expect(canStartRoute(ready, 'bloodthorn-barrens').ok).toBe(true)
+  })
+
+  it('records the Matriarch as a defeated elite and lists the route info with its enemies', () => {
+    let save = withRun('bloodthorn-barrens')
+    victoryFor(save.expedition!, 7)
+    save = recordProgress(save)
+    const hero = selectedHero(save)!
+    expect(hero.defeatedEnemyIds).toEqual(['briar-matriarch'])
+    expect(hero.clearedNodeIds).toEqual(['splintered-road', 'bloodthorn-barrens'])
+    expect(save.account.discoveries).toContain('defeated:briar-matriarch')
+    const info = routeInfo('bloodthorn-barrens', save)
+    expect(info.enemyNames).toEqual(expect.arrayContaining(['Barbed Stalker', 'Venomhide Crawler', 'Thornwitch', 'Briar Matriarch']))
+    expect(info.levels).toEqual({ min: 1, max: 40 })
+    expect(info.resources.map((entry) => entry.materialId)).toEqual(['scrap', 'bloodstone'])
+    expect(info.fights).toBe(7)
+  })
+})
