@@ -20,6 +20,7 @@ import { formatFreeCsv, runFreeMatrix } from './freeUpgrade.ts'
 import { formatModdedCsv, formatModdedTable, runModdedMatrix, writeModdedCsv } from './modded.ts'
 import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
 import { formatCinderTable, runCinderMatrix } from './cinder.ts'
+import { formatLateTable, runLateMatrix } from './late.ts'
 import { ELITE_CELLS, ELITE_IDS, ELITE_MODES, formatElitesTable, runElitesMatrix, type EliteFilter } from './elites.ts'
 import { formatPackTable, runPackMatrix } from './pack.ts'
 import { formatSlotsTable, runSlotsMatrix } from './slots.ts'
@@ -276,8 +277,8 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'slots' && args.matrix !== 'modded' && args.matrix !== 'free' && args.matrix !== 'toxic') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites, pack, slots, modded, free, toxic`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'slots' && args.matrix !== 'modded' && args.matrix !== 'free' && args.matrix !== 'toxic' && args.matrix !== 'late') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, elites, pack, slots, modded, free, toxic, late`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
@@ -334,6 +335,15 @@ function printMatrix(args: ParsedArgs): void {
     const rows = runPackMatrix(seed, runs)
     const elapsedMs = performance.now() - started
     process.stdout.write(formatPackTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
+  if (args.matrix === 'late') {
+    console.log(`[sim] matrix late seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const rows = runLateMatrix(seed, runs)
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatLateTable(rows))
     printTiming(rows.length * runs, elapsedMs)
     return
   }
