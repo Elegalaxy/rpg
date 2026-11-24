@@ -1164,6 +1164,56 @@ Accepted deviations (no lever left, no band loosened further): (1) The Mage tele
 
 Guards: `--matrix reference` (the tracked CSV), `warden`, `causeway`, `hollows`, `built` and `telegraph` (seed 1, 100 runs) are byte-identical to the baseline captured before the edits (the timing line aside); `--matrix elites` is identical apart from the Tyrant rows.
 
+### Fifth zone: Bloodthorn Barrens
+
+Decided 2026-11-24 (user approved: one more Frontier zone first), Step 14.5. One zone, one elite (the Briar Matriarch), enemies that put Bleed and Poison on heroes so Staunch (physical status resistance, Step 14.3) matters, and one new material (bloodstone). No sim mechanic changes: it reuses `applyStatus` with `power: 'physical'`, telegraphs, the HP summon trait, `eliteEnrage` and the ally barrier skill. All numbers below are proposals; the measurement gates decide them.
+
+World:
+
+- Node Bloodthorn Barrens, levels 34-40, reached by a leg from the Splintered Road (same travel time as the other legs). Resource node Bloodstone Outcrop gives 3 bloodstone per visit (display only). Map position {430, 205}; the map height stays 330.
+- Gate: the Emberwrought Tyrant defeated (personal to the hero, Remembered Paths apply). The gate message reads "Defeat Emberwrought Tyrant first."
+- Route `bloodthorn-barrens` "Road to the Bloodthorn Barrens": Greyhaven, Splintered Road, Bloodthorn Barrens. Fixed fights in order: `stalker-pair` (2 Barbed Stalkers, level 34), `crawler` (one Venomhide Crawler, level 35), `barrens-mixed` (Crawler and Thornwitch, level 35), then the elite fight `briar-matriarch`. Drawn fights after the fixed ones: `barrens-mixed`, `barrens-deep` (Stalker, Crawler and Thornwitch, all level 37), `stalker-pair`.
+- Pass-through rule (Step 13.2): only the Barrens' own fights drop materials.
+
+Regular enemies (framework: a Standard level-37 enemy has 820 HP, 45 Power and 79 Armor and Resistance; Bleed and Poison coefficient 0.12 for regulars, 0.15 for the elite, range 0.10-0.18):
+
+| Enemy | Levels | Archetype | Skills | Drop |
+| --- | --- | --- | --- | --- |
+| Barbed Stalker | 34-38 | Skirmisher (pairs) | Serrated Rake: 90% Physical Power, 60% base chance to apply Bleed (physical), 4 s cooldown | 2 cinderite |
+| Venomhide Crawler | 35-40 | Standard | Caustic Spray: 2.0 s telegraph, 200% Physical Power, two Poison applications at 100% chance (physical), interruptible at 25% of max HP, 10 s cooldown | 4 bloodstone |
+| Thornwitch | 34-39 | Support (1.5x Armor, 0.5x Resistance: the Pyre Acolyte inverted) | Bramble Ward: ally barrier worth 100% of its Magical Power, 8 s cooldown, targets the ally with the lowest barrier (a copy of Kindle). Thorn Lash: 90% Physical Power, 50% base chance to apply Bleed, no cooldown | 3 bloodstone |
+
+Elite Briar Matriarch (starting values; ranges are the tuning space):
+
+- Level 38 Standard elite. 6,300 HP (range 5,800-6,800), Power 78 (72-84), Consistency 25, action time 2.2 s. No stance.
+- Hemorrhage Lash: 110% Physical Power, 75% base chance to apply Bleed (coefficient 0.15), 6 s cooldown. Venom Burst: 2.5 s telegraph, 260% Physical Power, can critically hit, two Poison applications at 100% (0.15), interruptible at 5% of max HP (4-8%), 10 s cooldown.
+- At 40% HP a 2 s telegraph summons 2 Barbed Stalkers (level 34) through the HP summon trait (fallback 50% if over-levelled is under 85%).
+- Late enrage `eliteEnrage(100_000)` (start range 90-120 s): the Warden per-stack numbers from Step 13.5 part 8a.
+- Drops 10 bloodstone. Gold is the elite rate. Its first defeat records `defeated:briar-matriarch` and unlocks Swift. XP multiplier 1.
+
+Bloodstone (new material): sells for 12 gold, not buyable. A craft rolls quality 114% to 124%. As an upgrade material it adds +6 points, up to 124%, cost 3. It is last in `MATERIAL_RARITY` and in the socket materials. Tempering with bloodstone is capped at 5 (the modifier temper maximum), not 6.
+
+Modifier unlock change: Swift now unlocks on the first Briar Matriarch defeat by any hero (it was the Tyrant, Step 14.3). Staunch, Ruthless and Ironbound stay on the Tyrant. Learned recipes stay learned. Accounts that beat the Tyrant but not the Matriarch and have not learned Swift lose access until the Matriarch falls (accepted).
+
+Contracts, first clear and Legacy: the Salvage contract gains a bloodstone entry, N from 5 to 10, contract level 37, reward paid in cinderite. The first clear reward is automatic (the first-clear table: 1,200 gold, 15 bloodstone, 1 free upgrade). The first Matriarch defeat gives 3 Legacy once (`elite:briar-matriarch`), and a hero who has entered the Barrens counts as a fifth late zone for the Legacy zone bonus (+2). The Matriarch joins the Remembered Paths list. No save version bump.
+
+Harness (`--matrix barrens`): tiers are built on the Cinder prepared set with the Cleric on Kindled and Devout. Arrived (level 34, 11 nodes, quality 1.20, the Cinder prepared set with Emberward on hands and feet, 3 Healing Draughts), Prepared (level 36, 12 nodes, 1.24, the Arrived set with Staunch on hands and feet, 2 Draughts, 1 Antidote and 1 Ward Charm), Over-levelled (level 39, 12 nodes, 1.24, as Prepared). Variants `prepared-nostaunch` (Nimble on hands and feet) and `prepared-noantidote` (record only). `BUILD_ORDER` gains the 12th non-keystone node per class (Warrior Heavy Follow-Through, Assassin Toxic Opportunity, Ranger Press the Trail, Mage Rehearsed Casting, Cleric Final Mercy); existing prefixes do not change. `--matrix elites` gains `matriarch` cells.
+
+Acceptance bands (mean of seeds 1-3 x 100 runs, rules mode):
+
+- (a) Matriarch prepared: median of the five classes 50-75%, every class at least 30%, at most 2 classes above 85%, and each class at most its own Tyrant prepared +5 (the Tyrant is re-measured on the same tree; the Tyrant cells are stale, about 52 / 96 / 61 / 93 / 45).
+- (b) Arrived at most 25% for at least 4 classes; over-levelled at least 85% for all; crafted minus plain at most +30 points.
+- (c) Staunch check: prepared minus `prepared-nostaunch` at least +8 Matriarch win points for at least 3 classes.
+- (d) Telegraph check: rules minus blind at least +10 for the Warrior and Ranger.
+- (e) Regular fights, prepared: at least 95% wins for every class; `barrens-mixed` and `barrens-deep` lose 15-40% of maximum HP (recorded; at least 5 of 10 cells, the Cinder precedent).
+- (f) About 35-45 `barrens-mixed` fights per level at level 37.
+- (g) `--expedition bloodthorn-barrens` seeds 1-5 run cleanly.
+- (h) Guards: the reference CSV, warden, causeway, hollows, cinder, built, telegraph and late matrices byte-identical; elites identical apart from the new rows.
+
+Tuning order: seed-1 grid of HP {5,800; 6,300; 6,800} x Power {72; 78; 84}, then enrage, then the interrupt; the status coefficients are the lever for (c). One-time fallbacks, then stop and report (never loosen a band): Power above 84 needs a user decision; status coefficient to 0.18 for (c) (if still failing, record as accepted); scale the XP of all three regulars by one factor to reach 40 fights per level; summon trigger 40% to 50% if over-levelled is under 85%.
+
+Risks: barriers (the Mage Mana Ward, the Cleric Ward) and high VIT shrug off Bleed and Poison, so (c) may pass for only 2 or 3 classes; the Antidote only has a Poison row (a Bleed row is a later follow-up).
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
@@ -1511,7 +1561,7 @@ Measured with the reference hero of each class (nodes = level / 3, starter modif
 
 ### Late modifiers and Cinder fixes (Step 14.3)
 
-Decided 2026-11-24 (user approved the plan; numbers are proposed and the measurement gates below decide). Ranks I to III use the shared multiplier (1, 1.5, 2.0) and temper; the stack cap of 2 across worn gear applies. Four new modifiers, all unlocked by the first Emberwrought Tyrant defeat by any hero (Zone 5 may later move an unlock to its own elite; learned recipes are kept):
+Decided 2026-11-24 (user approved the plan; numbers are proposed and the measurement gates below decide). Ranks I to III use the shared multiplier (1, 1.5, 2.0) and temper; the stack cap of 2 across worn gear applies. Four new modifiers, all unlocked by the first Emberwrought Tyrant defeat by any hero (Zone 5, Step 14.5, moves the Swift unlock to its own elite, the Briar Matriarch; learned recipes are kept):
 
 | Modifier | Effect | Min level | Slots | Recipe | Unlock |
 | --- | --- | --- | --- | --- | --- |

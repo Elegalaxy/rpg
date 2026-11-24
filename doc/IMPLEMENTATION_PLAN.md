@@ -1660,6 +1660,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-24: P3 done: `ImplicitLine` in `ui/Kit.tsx` (muted label, tabular figure, existing tokens), shown on Town buy rows (`ShopEntry.implicit`), Sell rows and worn-gear rows; Jeweler blurb and Guide line say amulets and talismans. Browser-checked on the dev server at 1280 and 375 wide (buy row, Sell row, Equipment row; no horizontal overflow; the label stacks above the figure on the phone). Test in `SellList.test.tsx`.
   - 2026-11-24: P4 done: `warden-trinkets` and `cinder-trinkets` in `--matrix late`. At the proposed per-level numbers Warden prepared Warrior was +11.0 (bound +8), so the per-level numbers were halved once (Amulet 0.025% max HP, Talisman 0.1 points crit damage per item level): Warden +4.0 / -0.3 / 0.0 / +6.0 / +2.3, Cinder -1.0 / -0.7 / -0.7 / +0.3 / +6.3. Guards byte-identical.
 
+### Step 14.5: Fifth Frontier zone, Bloodthorn Barrens
+- Status: `in progress`
+- Depends on: 14.4
+- Goal: one more Frontier zone (levels 34-40) with the Briar Matriarch elite, Bleed and Poison enemies so Staunch matters, and bloodstone. Rules, numbers and acceptance gates in GAME_DESIGN "Fifth zone: Bloodthorn Barrens".
+- Parts: P1 docs; P2 enemies, encounters and tests; P3 harness (barrens matrix, elites cells, BUILD_ORDER); P4 world node, leg, route; P5 bloodstone tables and temper clamp; P6 Swift unlock moves; P7 Salvage, Legacy, remembered; P8 browser check; P9 tuning against the gates; P10 close docs and HANDOFF.
+- Progress:
+  - 2026-11-24: P1 done (docs).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
