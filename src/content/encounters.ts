@@ -265,6 +265,51 @@ export const tyrantEncounter: EncounterDef = {
   members: [{ enemyId: 'emberwrought-tyrant', slot: 0, level: 32 }],
 }
 
+/** Two level-34 Barbed Stalkers. */
+export const stalkerPair: EncounterDef = {
+  id: 'stalker-pair',
+  name: 'Barbed Stalker Pair',
+  members: [
+    { enemyId: 'barbed-stalker', slot: 0, level: 34 },
+    { enemyId: 'barbed-stalker', slot: 1, level: 34 },
+  ],
+}
+
+/** One level-35 Venomhide Crawler. */
+export const crawlerEncounter: EncounterDef = {
+  id: 'crawler',
+  name: 'Venomhide Crawler',
+  members: [{ enemyId: 'venomhide-crawler', slot: 0, level: 35 }],
+}
+
+/** Level-35 Venomhide Crawler and Thornwitch. */
+export const barrensMixed: EncounterDef = {
+  id: 'barrens-mixed',
+  name: 'Bloodthorn Barrens Mixed',
+  members: [
+    { enemyId: 'venomhide-crawler', slot: 0, level: 35 },
+    { enemyId: 'thornwitch', slot: 1, level: 35 },
+  ],
+}
+
+/** Level-37 Barbed Stalker, Venomhide Crawler and Thornwitch. */
+export const barrensDeep: EncounterDef = {
+  id: 'barrens-deep',
+  name: 'Bloodthorn Barrens Deep',
+  members: [
+    { enemyId: 'barbed-stalker', slot: 0, level: 37 },
+    { enemyId: 'venomhide-crawler', slot: 1, level: 37 },
+    { enemyId: 'thornwitch', slot: 2, level: 37 },
+  ],
+}
+
+/** The Bloodthorn Barrens elite, level 38. */
+export const matriarchEncounter: EncounterDef = {
+  id: 'briar-matriarch',
+  name: 'Briar Matriarch',
+  members: [{ enemyId: 'briar-matriarch', slot: 0, level: 38 }],
+}
+
 export const encounters: { [id: string]: EncounterDef } = {
   [shardlingPair.id]: shardlingPair,
   [wolfPair.id]: wolfPair,
@@ -292,6 +337,11 @@ export const encounters: { [id: string]: EncounterDef } = {
   [cinderMixed.id]: cinderMixed,
   [cinderDeep.id]: cinderDeep,
   [tyrantEncounter.id]: tyrantEncounter,
+  [stalkerPair.id]: stalkerPair,
+  [crawlerEncounter.id]: crawlerEncounter,
+  [barrensMixed.id]: barrensMixed,
+  [barrensDeep.id]: barrensDeep,
+  [matriarchEncounter.id]: matriarchEncounter,
 }
 
 /** An encounter as an expedition fight list entry, with each enemy's drops copied from its definition. Gold is level × 2, or × 3 for an elite or the boss (G1). */

@@ -1138,6 +1138,182 @@ export const emberwroughtTyrant: EnemyDef = {
   drop: { materialId: 'cinderite', baseQuantity: 10 },
 }
 
+const serratedRake: EnemySkillDef = {
+  id: 'serrated-rake',
+  name: 'Serrated Rake',
+  coefficient: 0.9,
+  school: 'physical',
+  cooldownSeconds: 4,
+  tag: 'serrated-rake',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 0.9 },
+    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.6, coefficient: 0.12, power: 'physical' },
+  ],
+}
+
+/** Levels 34-38. Skirmisher, in pairs. Serrated Rake bleeds. Drops 2 cinderite. */
+export const barbedStalker: EnemyDef = {
+  id: 'barbed-stalker',
+  name: 'Barbed Stalker',
+  level: 34,
+  levelMin: 34,
+  levelMax: 38,
+  archetype: 'skirmisher',
+  school: 'physical',
+  filler: { school: 'physical' },
+  overrides: { xpMultiplier: 2.9 },
+  skills: [serratedRake],
+  drop: { materialId: 'cinderite', baseQuantity: 2 },
+}
+
+const causticSpray: EnemySkillDef = {
+  id: 'caustic-spray',
+  name: 'Caustic Spray',
+  coefficient: 2,
+  school: 'physical',
+  cooldownSeconds: 10,
+  telegraphMs: 2000,
+  tag: 'caustic-spray',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  interruptMaxHpFraction: 0.25,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 2 },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.12, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.12, power: 'physical' },
+  ],
+}
+
+/** Levels 35-40. Standard. Caustic Spray is a 2.0 s interruptible wind-up that poisons twice. Drops 4 bloodstone. */
+export const venomhideCrawler: EnemyDef = {
+  id: 'venomhide-crawler',
+  name: 'Venomhide Crawler',
+  level: 35,
+  levelMin: 35,
+  levelMax: 40,
+  archetype: 'standard',
+  school: 'physical',
+  filler: { school: 'physical' },
+  overrides: { xpMultiplier: 3.4 },
+  skills: [causticSpray],
+  drop: { materialId: 'bloodstone', baseQuantity: 4 },
+}
+
+const brambleWard: EnemySkillDef = {
+  id: 'bramble-ward',
+  name: 'Bramble Ward',
+  coefficient: 0,
+  school: 'magical',
+  cooldownSeconds: 8,
+  tag: 'ward',
+  tags: ['defense'],
+  canCrit: false,
+  allyTarget: 'lowestBarrier',
+  effects: [{ kind: 'barrier', source: 'magical', coefficient: 1, durationSeconds: 8 }],
+}
+
+const thornLash: EnemySkillDef = {
+  id: 'thorn-lash',
+  name: 'Thorn Lash',
+  coefficient: 0.9,
+  school: 'physical',
+  cooldownSeconds: 0,
+  tag: 'thorn-lash',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 0.9 },
+    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.5, coefficient: 0.12, power: 'physical' },
+  ],
+}
+
+/** Levels 34-39. Support defense is replaced by 1.5x Armor and 0.5x Resistance. Bramble Ward shields an ally, then Thorn Lash bleeds. Drops 3 bloodstone. */
+export const thornwitch: EnemyDef = {
+  id: 'thornwitch',
+  name: 'Thornwitch',
+  level: 34,
+  levelMin: 34,
+  levelMax: 39,
+  archetype: 'support',
+  school: 'physical',
+  filler: { school: 'physical' },
+  overrides: { armorMultiplier: 1.5, resistanceMultiplier: 0.5, xpMultiplier: 3.4 },
+  skills: [brambleWard, thornLash],
+  drop: { materialId: 'bloodstone', baseQuantity: 3 },
+}
+
+const hemorrhageLash: EnemySkillDef = {
+  id: 'hemorrhage-lash',
+  name: 'Hemorrhage Lash',
+  coefficient: 1.1,
+  school: 'physical',
+  cooldownSeconds: 6,
+  tag: 'hemorrhage-lash',
+  tags: ['physical', 'attack'],
+  canCrit: false,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 1.1 },
+    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.75, coefficient: 0.15, power: 'physical' },
+  ],
+}
+
+const venomBurst: EnemySkillDef = {
+  id: 'venom-burst',
+  name: 'Venom Burst',
+  coefficient: 2.6,
+  school: 'physical',
+  cooldownSeconds: 10,
+  telegraphMs: 2500,
+  tag: 'venom-burst',
+  tags: ['physical', 'attack'],
+  canCrit: true,
+  interruptMaxHpFraction: 0.05,
+  effects: [
+    { kind: 'damage', school: 'physical', coefficient: 2.6 },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.15, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.15, power: 'physical' },
+  ],
+}
+
+const summonBarbedStalkers: EnemySkillDef = {
+  id: 'summon-barbed-stalkers',
+  name: 'Summon Barbed Stalkers',
+  coefficient: 0,
+  school: 'physical',
+  cooldownSeconds: 0,
+  telegraphMs: 2000,
+  tag: 'summon-stalkers',
+  tags: ['summon'],
+  canCrit: false,
+  trigger: 'hp',
+  hpFraction: 0.4,
+  effects: [
+    { kind: 'summon', enemyId: 'barbed-stalker', level: 34 },
+    { kind: 'summon', enemyId: 'barbed-stalker', level: 34 },
+  ],
+}
+
+/**
+ * Level 38 standard elite. Hemorrhage Lash bleeds, Venom Burst is a 2.5 s wind-up that poisons twice and can be
+ * interrupted by a small hit (5%). At 40% HP it summons 2 Barbed Stalkers. No stance. Late enrage. Drops 10 bloodstone.
+ */
+export const briarMatriarch: EnemyDef = {
+  id: 'briar-matriarch',
+  name: 'Briar Matriarch',
+  level: 38,
+  archetype: 'standard',
+  elite: true,
+  school: 'physical',
+  filler: { school: 'physical' },
+  overrides: { maxHp: 6300, power: 78, consistency: 25, actionTime: 2.2 },
+  timePressure: eliteEnrage(100_000),
+  traitIds: [HP_SUMMON_TRAIT],
+  skills: [hemorrhageLash, venomBurst, summonBarbedStalkers],
+  drop: { materialId: 'bloodstone', baseQuantity: 10 },
+}
+
 export const enemies: { [id: string]: EnemyDef } = {
   [standardDummy.id]: standardDummy,
   [fractureShardling.id]: fractureShardling,
@@ -1166,4 +1342,8 @@ export const enemies: { [id: string]: EnemyDef } = {
   [slagGolem.id]: slagGolem,
   [pyreAcolyte.id]: pyreAcolyte,
   [emberwroughtTyrant.id]: emberwroughtTyrant,
+  [barbedStalker.id]: barbedStalker,
+  [venomhideCrawler.id]: venomhideCrawler,
+  [thornwitch.id]: thornwitch,
+  [briarMatriarch.id]: briarMatriarch,
 }
