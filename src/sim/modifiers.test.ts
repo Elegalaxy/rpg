@@ -255,7 +255,7 @@ describe('the Cinder Scar modifiers', () => {
       ['ironbound', 36, 950, { maxHpBonus: 0.07 }],
       ['swift', 38, 1000, { cooldownReductionBonus: 0.03, accuracyBonus: 3 }],
     ] as const) {
-      expect(ITEM_MODIFIERS[id]).toMatchObject({ minLevel, recipeGold, bonus, requires: { enemyId: 'emberwrought-tyrant' } })
+      expect(ITEM_MODIFIERS[id]).toMatchObject({ minLevel, recipeGold, bonus, requires: { enemyId: id === 'swift' ? 'briar-matriarch' : 'emberwrought-tyrant' } })
     }
     const lateFits = (id: string): boolean[] => [sword, shield, chest, ring].map((base) => modifierFits(ITEM_MODIFIERS[id]!, base))
     expect(lateFits('staunch')).toEqual([false, false, true, true])

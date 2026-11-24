@@ -94,6 +94,12 @@ describe('searchGuide', () => {
     expect(searchGuide(entries, 'zzzz-nothing', null)).toEqual([])
   })
 
+  it('says the Swift recipe unlocks after the Briar Matriarch and Staunch after the Tyrant', () => {
+    const needs = (id: string): string | undefined => entries.find((entry) => entry.id === `modifier-${id}`)?.facts.find((item) => item.label === 'Needs')?.value
+    expect(needs('swift')).toBe('Recipe unlocks after any hero defeats Briar Matriarch')
+    expect(needs('staunch')).toBe('Recipe unlocks after any hero defeats Emberwrought Tyrant')
+  })
+
   it('lists first-clear facts per zone from the content table', () => {
     const topic = entries.find((entry) => entry.id === 'topic-expeditions')!
     const fact = (label: string) => topic.facts.find((item) => item.label === label)?.value

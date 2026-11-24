@@ -425,7 +425,7 @@ export function modifierFits(modifier: ItemModifier, base: ItemBase): boolean {
   return true
 }
 
-/** The twenty-two modifiers: six first-playable (G8), three from Batch C, three gated ones from the Drowned Causeway, three from the Rift Hollows, three from the Cinder Scar and four late ones unlocked by the Emberwrought Tyrant. Percent values are fractions: 0.02 is 2 points. */
+/** The twenty-two modifiers: six first-playable (G8), three from Batch C, three gated ones from the Drowned Causeway, three from the Rift Hollows, three from the Cinder Scar, three late ones unlocked by the Emberwrought Tyrant and Swift, unlocked by the Briar Matriarch. Percent values are fractions: 0.02 is 2 points. */
 export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
   keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance', appliesTo: ['weapon', 'accessory'] },
   precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy', appliesTo: ['weapon', 'offHand', 'accessory'] },
@@ -575,7 +575,7 @@ export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
     text: '+3 points cooldown reduction, +3 Accuracy',
     appliesTo: ['weapon', 'accessory'],
     recipeGold: 1000,
-    requires: { enemyId: 'emberwrought-tyrant' },
+    requires: { enemyId: 'briar-matriarch' },
   },
 }
 

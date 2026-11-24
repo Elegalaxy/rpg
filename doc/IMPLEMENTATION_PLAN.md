@@ -1671,6 +1671,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-24: P3 done: `src/harness/barrens.ts` and `--matrix barrens` (with `--classes`, `--tiers`, `--fights` filters), Matriarch cells in `--matrix elites`, the 12th node per class appended to `BUILD_ORDER`. Measurement tooling only; numbers in P9.
   - 2026-11-24: P4 done: node, leg and route `bloodthorn-barrens` in `content/world.ts`, `EXPEDITION_IDS` append, guidance order, map position {430, 205}; tests in `content/world.test.ts`, `persist/world.test.ts`, `content/firstClear.test.ts`, `ui/map/map.test.tsx`, `mapPhone.test.tsx`, `guideIndex.test.ts`. Bloodstone tables come in P5.
   - 2026-11-24: P5 done: bloodstone in `MATERIAL_QUALITY` (114% to 124%), `UPGRADE_QUALITY_POINTS` (6), the upgrade cap (124%), `SOCKET_MATERIALS`, `MATERIAL_RARITY` (last) and the sell price (12, not buyable). Temper trap fixed: `materialTemper` clamps to `MODIFIER_TEMPER_MAX` (5) and `temperGrade` uses it; `rareMaterialsText()` builds the rare-material wording from `SOCKET_MATERIALS`. Tests in `crafting.test.ts`, `pack.test.ts`, `ranks.test.ts`, `sockets.test.ts`, `town.test.ts`, `expedition.test.ts`, `materialSources.test.ts`, `Sockets.test.tsx`.
+  - 2026-11-24: P6 done: Swift `requires` the Briar Matriarch (`sim/economy.ts`), modifier-count comment updated; learned recipes stay learned. Tests in `sim/modifiers.test.ts`, `persist/crafting.test.ts`, `ui/guide/guideIndex.test.ts`.
 
 ## 8. Risks, and what would reveal them early
 

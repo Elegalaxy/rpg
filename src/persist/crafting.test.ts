@@ -789,6 +789,24 @@ describe('Cinder Scar recipes', () => {
     expect(ok(buyRecipe(found, 'tempered')).account.recipes).toContain('tempered')
   })
 
+  it('locks Swift behind the Briar Matriarch while Staunch, Ruthless and Ironbound stay on the Tyrant', () => {
+    const tyrantOnly = withGold(40, ['node:cinder-scar', 'node:bloodthorn-barrens'], ['emberwrought-tyrant'])
+    expect(buyRecipe(tyrantOnly, 'swift')).toEqual({ ok: false, reason: 'The Swift recipe is locked. Defeat Briar Matriarch with any hero first.' })
+    expect(recipeLock(tyrantOnly, 'staunch')).toBeNull()
+    expect(recipeLock(tyrantOnly, 'ruthless')).toBeNull()
+    expect(recipeLock(tyrantOnly, 'ironbound')).toBeNull()
+    const matriarch = withGold(40, ['node:bloodthorn-barrens'], ['briar-matriarch'])
+    expect(recipeLock(matriarch, 'swift')).toBeNull()
+    expect(purseOf(ok(buyRecipe(matriarch, 'swift'))).gold).toBe(5000 - 1000)
+    expect(recipeLock(withGold(40, ['defeated:briar-matriarch']), 'swift')).toBeNull()
+  })
+
+  it('keeps a learned Swift recipe learned', () => {
+    const base = withGold(40, [], [])
+    const learned = { ...base, account: { ...base.account, recipes: [...base.account.recipes, 'swift'] } }
+    expect(recipesForSale(learned).some((row) => row.modifierId === 'swift')).toBe(false)
+  })
+
   it('locks Kindled until any hero has defeated the Emberwrought Tyrant', () => {
     const save = withGold(34, ['node:cinder-scar'])
     expect(buyRecipe(save, 'kindled')).toEqual({ ok: false, reason: 'The Kindled recipe is locked. Defeat Emberwrought Tyrant with any hero first.' })
