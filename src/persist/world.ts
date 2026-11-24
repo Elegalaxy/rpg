@@ -305,16 +305,70 @@ export function newlyDiscovered(before: readonly string[], after: readonly strin
   })
 }
 
+/** The boss enemy of the fight this history entry recorded, including a draw after the opening list. */
+function bossOfHistory(expedition: ExpeditionState, entry: { index: number; encounterId: string }) {
+  const opened = expedition.opening[entry.index]
+  const fight =
+    opened !== undefined && opened.id === entry.encounterId
+      ? opened
+      : (expedition.draw.find((item) => item.id === entry.encounterId) ?? expedition.opening.find((item) => item.id === entry.encounterId))
+  return fight?.enemies.find((enemy) => enemies[enemy.defId]?.boss === true)
+}
+
 /** The Echo rank of each boss fight the expedition won, in order. Empty when no boss fell. */
 export function bossVictoryRanks(expedition: ExpeditionState): number[] {
   const ranks: number[] = []
   for (const entry of expedition.history) {
     if (entry.outcome !== 'victory') continue
-    const fight = expedition.opening[entry.index]
-    const boss = fight?.enemies.find((enemy) => enemies[enemy.defId]?.boss === true)
-    if (boss !== undefined) ranks.push(boss.rank ?? 0)
+    const boss = bossOfHistory(expedition, entry)
+    if (boss === undefined) continue
+    ranks.push(entry.rank ?? boss.rank ?? 0)
   }
   return ranks
+}
+
+/**
+ * Keep the rank a won boss was actually fought at. Later fights in the same run raise the draw,
+ * and reading that draw afterwards would count the win at the new rank.
+ */
+function rememberBossRanks(expedition: ExpeditionState): void {
+  for (const entry of expedition.history) {
+    if (entry.outcome !== 'victory' || entry.rank !== undefined) continue
+    const boss = bossOfHistory(expedition, entry)
+    if (boss !== undefined) entry.rank = boss.rank ?? 0
+  }
+}
+
+/** Raise bosses that have not been fought yet. A fight already in the history keeps the rank it had. */
+function stampFutureBossRank(expedition: ExpeditionState, rank: number): void {
+  const stamp = (enemiesInFight: readonly { defId: string; rank?: number }[]): void => {
+    for (const enemy of enemiesInFight) {
+      if (enemies[enemy.defId]?.boss === true && (enemy.rank ?? 0) < rank) enemy.rank = rank
+    }
+  }
+  for (const fight of expedition.draw) stamp(fight.enemies)
+  for (let index = expedition.encounterIndex; index < expedition.opening.length; index += 1) {
+    const fight = expedition.opening[index]
+    if (fight !== undefined) stamp(fight.enemies)
+  }
+}
+
+/**
+ * After a boss victory, unlock the next Echo rank and point the next unfought boss at the next fight rank.
+ * Safe to call again: a win is remembered at the rank it was fought, so a later call does not climb twice.
+ */
+export function climbEchoDuringRun(save: SaveData): SaveData {
+  const expedition = save.expedition
+  const hero = selectedHero(save)
+  if (expedition === null || hero === null) return save
+  rememberBossRanks(expedition)
+  const next = echoRanksAfter(hero, expedition)
+  if (next.echoRank === hero.echoRank && next.fightRank === hero.fightRank) return save
+  stampFutureBossRank(expedition, next.fightRank)
+  return {
+    ...save,
+    heroes: save.heroes.map((entry) => (entry.id === hero.id ? { ...entry, echoRank: next.echoRank, fightRank: next.fightRank } : entry)),
+  }
 }
 
 /**

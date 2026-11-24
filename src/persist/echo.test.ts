@@ -9,7 +9,7 @@ import { checkPreparation, draftFor } from './preparation.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, newSave, parseSave, type SaveData } from './save.ts'
 import { bossFaced, reincarnate, reincarnationBlock } from './reincarnation.ts'
-import { bossVictoryRanks, outcomeSummary, routeInfo, settleExpedition } from './world.ts'
+import { bossVictoryRanks, climbEchoDuringRun, outcomeSummary, routeInfo, settleExpedition } from './world.ts'
 
 function heroSave(echoRank = 0, fightRank = 0): SaveData {
   const made = createHero(newSave(), { name: 'Ash', race: 'human', classId: 'warrior' })
@@ -167,6 +167,41 @@ describe('unlocking ranks and the loss flag', () => {
     retreated.history = []
     const armed = { ...heroSave(5, 1), heroes: heroSave(5, 1).heroes.map((entry) => ({ ...entry, autoRun: true, autoRunMode: 'echo' as const })) }
     expect(hero(settleExpedition({ ...armed, expedition: retreated }))).toMatchObject({ echoRank: 5, fightRank: 1 })
+  })
+
+  it('counts a Warden won after the opening list, and raises the next Warden in that run', () => {
+    const armed = { ...heroSave(6, 6), heroes: heroSave(6, 6).heroes.map((entry) => ({ ...entry, autoRun: true, autoRunMode: 'echo' as const })) }
+    const onlyDraw = startExpedition(hero(armed), 'fracture-via-bastion', 1)
+    onlyDraw.history = [{ index: onlyDraw.opening.length, encounterId: 'fractured-warden', seed: 1, outcome: 'victory', durationMs: 1 }]
+    expect(bossVictoryRanks(onlyDraw)).toEqual([6])
+    expect(hero(settleExpedition({ ...armed, expedition: { ...onlyDraw, outcome: 'returned' } }))).toMatchObject({ echoRank: 7, fightRank: 7 })
+
+    const live = startExpedition(hero(armed), 'fracture-via-bastion', 1)
+    const at = wardenIndex(live)
+    live.history = [{ index: at, encounterId: 'fractured-warden', seed: 1, outcome: 'victory', durationMs: 1 }]
+    live.encounterIndex = at + 1
+    const climbed = climbEchoDuringRun({ ...armed, expedition: live })
+    expect(hero(climbed)).toMatchObject({ echoRank: 7, fightRank: 7 })
+    expect(live.opening[at]!.enemies[0]!.rank).toBe(6)
+    expect(live.draw[0]!.enemies[0]).toMatchObject({ defId: 'fractured-warden', rank: 7 })
+    expect(hero(climbEchoDuringRun(climbed))).toMatchObject({ echoRank: 7, fightRank: 7 })
+
+    live.history.push({ index: live.opening.length, encounterId: 'fractured-warden', seed: 2, outcome: 'victory', durationMs: 1 })
+    const again = climbEchoDuringRun(climbed)
+    expect(hero(again)).toMatchObject({ echoRank: 8, fightRank: 8 })
+    expect(live.history.map((entry) => entry.rank)).toEqual([6, 7])
+    expect(live.draw[0]!.enemies[0]!.rank).toBe(8)
+  })
+
+  it('does not raise the next Warden while repeating a rank the hero has already unlocked', () => {
+    const armed = { ...heroSave(6, 3), heroes: heroSave(6, 3).heroes.map((entry) => ({ ...entry, autoRun: true, autoRunMode: 'repeat' as const })) }
+    const live = startExpedition(hero(armed), 'fracture-via-bastion', 1)
+    const at = wardenIndex(live)
+    live.history = [{ index: at, encounterId: 'fractured-warden', seed: 1, outcome: 'victory', durationMs: 1 }]
+    live.encounterIndex = at + 1
+    const climbed = climbEchoDuringRun({ ...armed, expedition: live })
+    expect(hero(climbed)).toMatchObject({ echoRank: 6, fightRank: 3 })
+    expect(live.draw[0]!.enemies[0]!.rank).toBe(3)
   })
 
   it('says so on the outcome screen', () => {

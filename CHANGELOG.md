@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Fixed: beating the Fractured Warden raises the next Warden by one Echo rank right away, including a later fight in the same run.
 - Improved: Echo climb runs Fracture Gate through the Bastion and fights the Warden at your highest unlocked rank, then raises that rank after a win.
 - Fixed: the frontier map painting and the fight portraits load on the published site.
 - Balance: The Withered Grove and the Fallen Bastion each have a second, tougher fight in their random draw, so long runs no longer repeat one fight. [14.1]

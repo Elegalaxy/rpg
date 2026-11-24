@@ -195,6 +195,8 @@ export type ExpeditionEncounterRecord = {
   durationMs: number
   /** Enemy definition ids of every enemy that died in the fight, summons included, one entry per body. Older saves omit it. */
   slain?: string[]
+  /** Echo rank of the boss in this fight, recorded when the fight is won. Older saves omit it. */
+  rank?: number
 }
 
 export type CarriedHero = {

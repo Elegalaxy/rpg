@@ -15,7 +15,7 @@ import { autoContractsStep } from './autoContracts.ts'
 import { autoRepairStep } from './autoRepair.ts'
 import { firstClearLabel } from './firstClear.ts'
 import { repairAllCost } from './town.ts'
-import { isEndlessAutoRun, autoRerunRefusal, autoRunDefeatNote, beginExpedition, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
+import { isEndlessAutoRun, autoRerunRefusal, autoRunDefeatNote, beginExpedition, climbEchoDuringRun, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 import { nodes, routes } from '../content/world.ts'
 
 /** The most time a catch-up replays: eight hours (GAME_DESIGN §11). */
@@ -567,6 +567,7 @@ function runLane(ctx: Ctx, budget: number): void {
     stepExpedition(expedition, defs)
     used += 1
     if (expedition.history.length !== seen) {
+      ctx.save = climbEchoDuringRun(ctx.save)
       if (mode === 'auto') {
         const fought = expedition.history.length - seen
         lane.autoFights += fought

@@ -18,7 +18,7 @@ import { STEP_MS } from '../sim/constants.ts'
 import { savePreparation, type PreparationDraft } from '../persist/preparation.ts'
 import { autoContractsStep } from '../persist/autoContracts.ts'
 import { autoRepairStep, repairLine } from '../persist/autoRepair.ts'
-import { autoRerunRefusal, autoRunDefeatNote, beginExpedition, canStartRoute, newlyDiscovered, outcomeStats, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
+import { autoRerunRefusal, autoRunDefeatNote, beginExpedition, canStartRoute, climbEchoDuringRun, newlyDiscovered, outcomeStats, recordProgress, routeMastery, settleExpedition, shouldHold, decideHold } from '../persist/world.ts'
 import { requestEscapeNow, returnToTown, stepExpedition, type ExpeditionState } from '../sim/expedition.ts'
 import { restoreNotice, combatRules } from '../persist/pastSetup.ts'
 import { saveLoadout, saveRuleStacks, saveRules, type RowDraft, type StackDraft } from '../persist/loadout.ts'
@@ -616,7 +616,17 @@ export function advanceExpedition(count: number): void {
   const moved = expedition.history.length !== fights || expedition.phase !== phase || expedition.outcome !== 'ongoing'
   if (!moved) return
   const discoveredBefore = saveStatus.save.account.discoveries
+  const echoBefore = selectedHero(saveStatus.save)
   saveStatus = { ...saveStatus, save: recordProgress(saveStatus.save) }
+  saveStatus = { ...saveStatus, save: climbEchoDuringRun(saveStatus.save) }
+  const echoAfter = selectedHero(saveStatus.save)
+  if (echoBefore !== null && echoAfter !== null && echoAfter.echoRank > echoBefore.echoRank) {
+    debugLog('[ui]', 'echo rank climbed', { from: echoBefore.echoRank, to: echoAfter.echoRank, fightRank: echoAfter.fightRank })
+    pushToast(`Echo rank ${echoAfter.echoRank} unlocked.`)
+  } else if (echoBefore !== null && echoAfter !== null && echoAfter.fightRank > echoBefore.fightRank) {
+    debugLog('[ui]', 'echo fight rank climbed', { from: echoBefore.fightRank, to: echoAfter.fightRank })
+    pushToast(`The next Warden is Echo rank ${echoAfter.fightRank}.`)
+  }
   const found = newlyDiscovered(discoveredBefore, saveStatus.save.account.discoveries)
   if (found.length > 0) {
     discoveryNotices = [...discoveryNotices, ...found]
