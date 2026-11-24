@@ -1638,6 +1638,14 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-24: Checked, nothing to change. Hunter's Mark is the HM-R skill in `content/skills.ts` (Step 13.40, commit 7dd99d8). The Venom Edge node stays a pure connector node with no numbers, as decided in 13.50; revisit only if the boss cap rules change.
 
+### Step 14.3: Late modifiers, Tempered fix, Warming Tonic Burn immunity
+- Status: `in progress`
+- Depends on: 14.2
+- Goal: the Warming Tonic gives 10 s of Burn immunity, Tempered stops being a trap pick, and four late modifiers (Staunch, Ruthless, Ironbound, Swift) unlock on the first Emberwrought Tyrant defeat. Rules, numbers and acceptance gates in GAME_DESIGN "Late modifiers and Cinder fixes (Step 14.3)".
+- Parts: P1 docs; P2 Tonic immunity (sim and content); P3 physical status resistance, the four modifiers, Tempered numbers; P4 `--matrix late` harness and measurement; P5 close step and HANDOFF.
+- Progress:
+  - 2026-11-24: P1 done (docs).
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |

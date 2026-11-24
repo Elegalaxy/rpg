@@ -1028,7 +1028,7 @@ Modifiers (one per item; the stack cap is 2 across worn gear):
 | Modifier | Effect | Min level | Slots | Recipe | Unlock |
 | --- | --- | --- | --- | --- | --- |
 | Emberward | +10 magical status resistance (new field `magicalStatusResistanceBonus`; lowers the chance a magical status lands on the hero by 10 points) | 28 | armor, accessory | 700 gold | Cinder Scar discovered |
-| Tempered | +4 points Armor and magical penetration, +2 points crit chance | 28 | weapon | 700 gold | Cinder Scar discovered |
+| Tempered | +6 points Armor and magical penetration (4 until Step 14.3), +2 points crit chance | 28 | weapon, accessory (weapon only until Step 14.3) | 700 gold | Cinder Scar discovered |
 | Kindled | +5% max HP, +8 Healing Power | 30 | off-hand, accessory | 800 gold (`recipeGold`) | Emberwrought Tyrant defeated by any hero |
 
 Supplies: a new default rule row `WARMING_TONIC_BURN_ROW` (use Warming Tonic when the hero has 3 or more Burn stacks) is placed after the Warming Tonic row in `DEFAULT_SUPPLY_ROWS`. Existing heroes receive it once through the hero update `warming-tonic-burn-rule`. No new supply.
@@ -1160,7 +1160,7 @@ Checks (prepared tier):
 
 Against the bands: met are regular fights 100% wins (band 95%); Tyrant arrived at most 20% (0-6 for every class); prepared 40-85% for Assassin 75, Ranger 59, Mage 74 and Cleric 43, and the Warrior at 35 (the Warrior and Cleric band is at least 30); over-levelled at least 85% (89-100); crafted minus plain at most +30 (+10 to +26); the Emberward check (5 of 5 classes at +15 or more, band 3 of 5 at +10); XP about 40-41 `cinder-mixed` fights per level at level 30 (band 35-45).
 
-Accepted deviations (no lever left, no band loosened further): (1) The Mage telegraph difference at the Tyrant is 0 (rules 74, blind 74) and the Assassin's is +6 (band +10): the Mage is an exception like the Cleric (the Cleric does better blind, -42, as at the Colossus and Reaver). The Warrior (+16) and Ranger (+37) meet it. (2) Mixed-fight HP lost: 5 of 10 cells are inside 15-40% (cinder-mixed Assassin 16 and Cleric 24; cinder-deep Warrior 28, Assassin 23 and Cleric 34); Warrior 11, Ranger 4 and Mage 3 in `cinder-mixed`, and Ranger 14 and Mage 9 in `cinder-deep`, are under. (3) The Warming Tonic is close to obsolete in the Scar: prepared minus no-Tonic is -3 to -8 Tyrant wins, because the Tonic takes the place of a Healing Draught and Burn is cheap once Emberward is worn. A Burn immunity on the Tonic needs a new sim effect and is a follow-up. (4) Tempered looks like a trap pick against Bloodbound on the weapon slot (it is now in no tier); flagged for later. (5) Seed spread up to 20 points (Cleric prepared).
+Accepted deviations (no lever left, no band loosened further): (1) The Mage telegraph difference at the Tyrant is 0 (rules 74, blind 74) and the Assassin's is +6 (band +10): the Mage is an exception like the Cleric (the Cleric does better blind, -42, as at the Colossus and Reaver). The Warrior (+16) and Ranger (+37) meet it. (2) Mixed-fight HP lost: 5 of 10 cells are inside 15-40% (cinder-mixed Assassin 16 and Cleric 24; cinder-deep Warrior 28, Assassin 23 and Cleric 34); Warrior 11, Ranger 4 and Mage 3 in `cinder-mixed`, and Ranger 14 and Mage 9 in `cinder-deep`, are under. (3) The Warming Tonic is close to obsolete in the Scar: prepared minus no-Tonic is -3 to -8 Tyrant wins, because the Tonic takes the place of a Healing Draught and Burn is cheap once Emberward is worn. A Burn immunity on the Tonic needs a new sim effect and is a follow-up (resolved in Step 14.3). (4) Tempered looks like a trap pick against Bloodbound on the weapon slot (it is now in no tier); flagged for later (resolved in Step 14.3). (5) Seed spread up to 20 points (Cleric prepared).
 
 Guards: `--matrix reference` (the tracked CSV), `warden`, `causeway`, `hollows`, `built` and `telegraph` (seed 1, 100 runs) are byte-identical to the baseline captured before the edits (the timing line aside); `--matrix elites` is identical apart from the Tyrant rows.
 
@@ -1508,6 +1508,27 @@ Decided 2026-11-24 (user: section 7 is the truth for level bands). Two changes, 
 | `bastion-deep` | Hollow Sentry level 12, Hollow Sentry level 12, Fallen Arbalist level 13 | `bastion-mixed`, `bastion-deep` |
 
 Measured with the reference hero of each class (nodes = level / 3, starter modifiers, 2 Healing Draughts, 30 runs, seed 1; win % / mean share of max HP lost, Warrior, Assassin, Ranger, Mage, Cleric): `grove-deep` at level 8 100/44, 100/57, 100/48, 97/54, 100/43; level 10 100/43, 100/51, 100/44, 100/44, 100/40; level 14 100/42, 100/44, 100/33, 100/49, 100/41; `bastion-deep` at level 10 100/45, 100/44, 100/45, 100/48, 100/40; level 12 100/43, 100/41, 100/39, 100/43, 100/40; level 16 100/36, 100/46, 100/23, 100/27, 100/41. The mixed fights at the same levels cost 11-47%; the deep fights cost 23-57%, a few points to 20 points more at band level, and an under-levelled Mage at level 8 in the Bastion wins 83% with 70% lost. Both stay a step below the elite fights (one-enemy boss-tier fights with their own mechanics). Rejected compositions: with a Fracture Wisp or an Oathbound Echo as the third member (new bounty targets), and two Arbalists (the level-8 Mage wins 60%).
+
+### Late modifiers and Cinder fixes (Step 14.3)
+
+Decided 2026-11-24 (user approved the plan; numbers are proposed and the measurement gates below decide). Ranks I to III use the shared multiplier (1, 1.5, 2.0) and temper; the stack cap of 2 across worn gear applies. Four new modifiers, all unlocked by the first Emberwrought Tyrant defeat by any hero (Zone 5 may later move an unlock to its own elite; learned recipes are kept):
+
+| Modifier | Effect | Min level | Slots | Recipe | Unlock |
+| --- | --- | --- | --- | --- | --- |
+| Staunch | +10 physical status resistance (new field `physicalStatusResistanceBonus`; lowers the chance Bleed, Poison and physical-tagged statuses land on the hero by 10 points) | 32 | armor, accessory | 850 gold (`recipeGold`) | Emberwrought Tyrant defeated by any hero |
+| Ruthless | +3 points crit chance, +10 points crit damage | 34 | weapon, accessory | 900 gold | same |
+| Ironbound | +8% max HP | 36 | armor | 950 gold | same |
+| Swift | +3 points cooldown reduction, +3 Accuracy | 38 | weapon, accessory | 1,000 gold | same |
+
+Staunch has little use until a level 32 or higher enemy applies Bleed or Poison: no current Cinder Scar enemy does, so it is a modifier for later zones.
+
+**Tempered** was a trap pick against Bloodbound. It now gives +6 points Armor and magical penetration (was 4) and +2 points crit chance, on weapons and on accessories (was weapon only).
+
+**Warming Tonic** removes all Chill and Burn, restores 10% of maximum HP, and makes the hero immune to new Burn for 10 seconds (`statusImmunity` effect, supplies only). While immune, a Burn application still draws its roll (the RNG draw order does not change) and is logged `immune`; nothing is applied. A second Tonic sets the end to the later of the two; cleansing does not end it. Price 15 gold (was 12); brew 2 hide + 5 gold (was 4).
+
+Acceptance (seeds 1 to 3 x 100 runs, rules, mean over the seeds): (a) Tyrant prepared stays inside the bands (40 to 85; Warrior and Cleric at least 30) and within +/-8 of the 2026-11-10 numbers (Warrior 35, Assassin 75, Ranger 59, Mage 74, Cleric 43); prepared minus no-Tonic improves on (-3, -5, -8, -4, -8) for at least 3 classes (0 is not required). (b) `--matrix late`: each swapped modifier minus its baseline is at most +8 Tyrant win points for every class; Tempered on an accessory minus prepared is at least -3 averaged over the classes. (c) Guards: reference CSV, warden, causeway, hollows, built and telegraph byte-identical; elites identical apart from Tyrant rows. Fallbacks, each used once and then stop and report: immunity 10 s to 6 s; Ironbound 8% to 7%; Ruthless crit 3 to 2; Swift cooldown reduction 3 to 2.5; Tempered penetration 6 to 5 if over +8, crit 2 to 3 if under -3.
+
+`--matrix late` swaps one modifier into the Prepared tier of the Cinder Scar and of the Warden harness (the harness skips the level gate): Ironbound on head and chest instead of Stalwart; Ruthless on accessory 0 instead of Vicious; Swift on accessory 1 instead of Quick; Tempered on accessory 1 instead of Quick (`tempered-acc`) and on the weapon instead of Bloodbound (`tempered-weapon`, recorded only); Staunch on hands and feet instead of Nimble (Warden prepared). They are not added to the existing Warden or Cinder variant lists.
 
 ### Class balance pass (Step 13.5)
 
@@ -2582,7 +2603,7 @@ First-playable supplies, decided 2026-11-03:
 
 | Supply | Effect | Shop price | Brew | Unlock | Default rule |
 |---|---|---|---|---|---|
-| Warming Tonic | Removes all Chill and Burn from the hero and restores 10% of maximum HP. | 12 gold | 2 hide + 4 gold | none | Hero Chill at least 2 stacks |
+| Warming Tonic | Removes all Chill and Burn from the hero, restores 10% of maximum HP and makes the hero immune to new Burn for 10 seconds (Step 14.3). | 15 gold (12 until Step 14.3) | 2 hide + 5 gold (4 until Step 14.3) | none | Hero Chill at least 2 stacks |
 | Greater Draught | Restores 40% of maximum HP (35% until Step 13.21; 50% until Step 13.5 part 7). | not sold | 2 riftglass + 10 gold | Drowned Causeway discovered | Hero HP at most 40% (30% until Step 13.5 part 7b), placed above the Healing Draught row |
 | Riftglass Ward | Same as the Ward Charm but it lasts 8 seconds, absorbs up to 2 telegraphed attacks (Step 13.21) and an elite or boss still deals 35% of each damage effect (25% for one hit, 5 seconds, until Step 13.21). Changed 2026-11-17 (Step 13.20); it was a barrier of 25% of maximum HP for 8 seconds (30% until Step 13.5 part 7). | not sold | 2 riftglass + 12 gold | Any hero has beaten the Tidebound Colossus | Same conditions as the Ward Charm row, placed above it |
 
