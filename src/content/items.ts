@@ -10,6 +10,7 @@ import {
   type ItemBase,
   type ItemInstance,
 } from '../sim/economy.ts'
+import { uniqueDef } from '../sim/uniques.ts'
 
 const SLOT_NAMES: { [slot in ArmorSlot]: string } = { head: 'Helm', chest: 'Chestpiece', hands: 'Gloves', feet: 'Boots' }
 const CATEGORY_NAMES: { [category in ArmorCategory]: string } = {
@@ -66,13 +67,19 @@ export function implicitText(baseId: string, itemLevel: number): string | null {
   return null
 }
 
-/** The item's name with its modifiers in front, such as `Keen Bow`. */
+/** The item's name with its modifiers in front, such as `Keen Bow`. A unique shows its own name, then each modifier: `Rootmaw Treads · Nimble II`. */
 export function itemName(item: ItemInstance): string {
   const base = itemBase(item.baseId)?.name ?? item.baseId
   const prefix = item.modifiers.map((id, index) => {
     const rank = modifierRankAt(item, index)
     return `${ITEM_MODIFIERS[id]?.name ?? id}${rank > 1 ? ` ${rankName(rank)}` : ''}`
   })
+  const unique = uniqueDef(item.uniqueId)
+  if (unique !== undefined) {
+    const parts = [unique.name, ...prefix]
+    if (item.socketed === true && item.modifiers.length < 2) parts.push('open socket')
+    return parts.join(' · ')
+  }
   const name = [...prefix, base].join(' ')
   return item.socketed === true && item.modifiers.length < 2 ? `${name} (open socket)` : name
 }
@@ -84,6 +91,12 @@ const STARTER: { [classId in HeroClass]: { main: string; off: string; armor: Arm
   ranger: { main: 'weapon-bow', off: 'offhand-quiver', armor: 'medium' },
   mage: { main: 'weapon-caster', off: 'offhand-focus', armor: 'cloth' },
   cleric: { main: 'weapon-caster', off: 'offhand-shield', armor: 'medium' },
+}
+
+/** The starter base ids of a class: its main-hand weapon, off-hand and armor category. An elite unique takes the class's kind of base. */
+export function starterBaseIds(classId: HeroClass): { mainHand: string; offHand: string; armor: ArmorCategory } {
+  const plan = STARTER[classId]
+  return { mainHand: plan.main, offHand: plan.off, armor: plan.armor }
 }
 
 export function newItem(id: string, baseId: string, itemLevel: number, quality = 1): ItemInstance {

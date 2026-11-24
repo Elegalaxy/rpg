@@ -434,6 +434,8 @@ function assertItem(value: unknown, label: string): asserts value is ItemInstanc
   check(value.durability <= value.maxDurability, `${label} durability is above its maximum`)
   stringList(value.modifiers, `${label} modifiers`)
   for (const id of value.modifiers) check(ITEM_MODIFIERS[id] !== undefined, `${label} has an unknown modifier ${describeValue(id)}`)
+  // An unknown unique id is allowed: it loads as a plain item with no signature (Step 14.6).
+  check(value.uniqueId === undefined || (typeof value.uniqueId === 'string' && value.uniqueId.length > 0), `${label} unique id must be a non-empty text`)
   check(value.socketed === undefined || typeof value.socketed === 'boolean', `${label} socket flag must be true or false`)
   check(value.modifiers.length <= MAX_ITEM_MODIFIERS, `${label} holds ${value.modifiers.length} modifiers, at most ${MAX_ITEM_MODIFIERS}`)
   check(new Set(value.modifiers).size === value.modifiers.length, `${label} holds the same modifier twice`)

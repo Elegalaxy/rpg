@@ -1689,6 +1689,8 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-24: P1 done (docs).
   - 2026-11-25: P2 done: `ItemInstance.uniqueId`, `roundBonus` and `gearBonusesFor` adding each worn unique's signature in `sim/economy.ts`; the table, `uniqueSignature` (scaled by item level over table level) and `uniqueSignatureText` in the new `sim/uniques.ts`; tests in `sim/uniques.test.ts` (scaling, rounding, no stack cap, unknown id ignored). The Colossus's Undertow is expressible with the existing `lifestealFraction`, so there is no substitution.
+  - 2026-11-25: P3 code done: `src/harness/uniques.ts` and `--matrix uniques` (rules mode, `--classes`, `--tiers`; Warden, Reaver, Tyrant and Matriarch prepared tiers, each unique's modifier swapped in and its signature added at the tier level, the Talisman implicit for the Matriarch unique). Numbers are recorded after the measurement (see the later P3 line).
+  - 2026-11-25: P4 done: `starterBaseIds` and `itemName` for uniques in `content/items.ts`; `content/uniques.ts` (`uniqueBaseFor`, `uniqueItemFor`, source and zone names); fixed sell price (table level x 20 gold) in `content/shop.ts`; `assertItem` accepts an optional non-empty `uniqueId` and an unknown id loads as a plain item; `needsSellConfirm` always true for a unique. Tests in `persist/uniqueItems.test.ts` (class bases, names, sell price, save round trip, old item without the field, free socket and rank, paid rank, infuse into slot 1).
 
 ## 8. Risks, and what would reveal them early
 

@@ -1,4 +1,5 @@
 import { classBlock, type ItemInstance, type Wearer } from '../sim/economy.ts'
+import { uniqueDef, type UniqueItemDef } from '../sim/uniques.ts'
 
 import { implicitText, itemBases } from './items.ts'
 
@@ -31,8 +32,18 @@ function roundHalfUp(value: number): number {
   return Math.floor(value + 0.5)
 }
 
-/** What Greyhaven pays for an item: `item level × 5 × quality`. */
+/** Gold per table item level a unique sells for (Step 14.6). */
+export const UNIQUE_SELL_PER_LEVEL = 20
+
+/** What a unique sells for: its table item level times 20 gold, whatever its quality or current level. */
+export function uniqueSellPrice(def: UniqueItemDef): number {
+  return def.itemLevel * UNIQUE_SELL_PER_LEVEL
+}
+
+/** What Greyhaven pays for an item: `item level × 5 × quality`, or the fixed price of a unique. */
 export function itemSellPrice(item: ItemInstance): number {
+  const unique = uniqueDef(item.uniqueId)
+  if (unique !== undefined) return uniqueSellPrice(unique)
   return roundHalfUp(item.itemLevel * 5 * item.quality)
 }
 

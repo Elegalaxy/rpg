@@ -34,6 +34,14 @@ export function isHeirloom(item: ItemInstance): boolean {
   return item.heirloom !== undefined
 }
 
+/** An elite unique (Step 14.6): a hero is paid each one once, so a sold one is gone for good. */
+export function isUnique(item: ItemInstance): boolean {
+  return item.uniqueId !== undefined
+}
+
+/** Added to the confirm button of a unique. */
+export const UNIQUE_SELL_WARNING = 'Cannot be earned again'
+
 /** Which group a piece is shown in. Worn pieces are always in Worn; their badge still says heirloom or earlier life. */
 export function sellGroup(item: ItemInstance, worn: boolean, earlierIds: ReadonlySet<string>): SellGroup {
   if (worn) return 'worn'
@@ -48,11 +56,11 @@ export function badgeGroup(item: ItemInstance, earlierIds: ReadonlySet<string>):
 }
 
 /**
- * Whether selling needs a second click: an heirloom, gear from an earlier life, or a piece with a modifier,
+ * Whether selling needs a second click: an heirloom, an elite unique, gear from an earlier life, or a piece with a modifier,
  * a socket or quality at or above `RISKY_QUALITY`. Plain current-life gear sells with one click.
  */
 export function needsSellConfirm(item: ItemInstance, earlierIds: ReadonlySet<string>): boolean {
-  if (isHeirloom(item)) return true
+  if (isHeirloom(item) || isUnique(item)) return true
   if (earlierIds.has(item.id)) return true
   return item.modifiers.length > 0 || item.socketed === true || item.quality >= RISKY_QUALITY
 }
