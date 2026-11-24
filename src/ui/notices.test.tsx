@@ -79,4 +79,32 @@ describe('pop-up notices', () => {
     console.log('[ui]', 'hand settle moments', { kinds })
     expect(kinds).toEqual(['level'])
   })
+
+describe('unique item notices (Step 14.6)', () => {
+  beforeEach(() => {
+    resetNotices()
+    vi.useFakeTimers()
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+    commitSave(newSave(), 'test', false)
+  })
+
+  it('titles the card Unique item and offers Open Equipment', () => {
+    reportMoments([{ kind: 'unique', text: 'New unique item: Rootmaw Treads, from the Rootmaw Stalker. It is in your archive.' }], 'hand')
+    commitSave(heroSave(), 'test', false)
+    const html = renderToStaticMarkup(<Notices onGo={() => undefined} />)
+    expect(html).toContain('Unique item')
+    expect(html).toContain('New unique item: Rootmaw Treads, from the Rootmaw Stalker. It is in your archive.')
+    expect(html).toContain('Open Equipment')
+  })
+
+  it('shows the same line as a toast under Auto run', () => {
+    reportMoments([{ kind: 'unique', text: 'New unique item: Rootmaw Treads, from the Rootmaw Stalker. It is in your archive.' }], 'auto')
+    expect(getNotices().toasts[0]?.text).toBe('New unique item: Rootmaw Treads, from the Rootmaw Stalker. It is in your archive.')
+  })
+})
 })

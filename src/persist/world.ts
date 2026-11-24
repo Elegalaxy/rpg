@@ -20,9 +20,11 @@ import { packFromStash } from './preparation.ts'
 import { itemBase } from '../content/items.ts'
 import { repairCost } from '../content/shop.ts'
 import { EQUIPMENT_SLOT_IDS, applyDurability, gearGaps } from '../sim/economy.ts'
+import type { UniqueItemDef } from '../sim/uniques.ts'
 import { addContractProgress, refreshBoard } from './contracts.ts'
 import { defeatRecordId } from './crafting.ts'
 import { firstClearsDue, payFirstClears } from './firstClear.ts'
+import { payUniques } from './uniques.ts'
 import type { FirstClearReward } from '../content/firstClear.ts'
 import { recallXp, scaleHeirlooms } from './reincarnation.ts'
 import { openByMemory, zoneGateRecord } from './remembered.ts'
@@ -504,8 +506,8 @@ export function settleExpedition(save: SaveData, now: number | null = null): Sav
         expedition.outcome === 'returned' ? { ...hero.routeReturns, [expedition.id]: (hero.routeReturns[expedition.id] ?? 0) + 1 } : hero.routeReturns,
       purse,
     }
-    // A node cleared on a defeated run stays due until a later safe return (Step 13.24).
-    return expedition.outcome === 'returned' ? payFirstClears(settledHero).hero : settledHero
+    // A node cleared on a defeated run stays due until a later safe return (Step 13.24). So does an elite's unique (Step 14.6).
+    return expedition.outcome === 'returned' ? payUniques(payFirstClears(settledHero).hero).hero : settledHero
   })
   const settled: SaveData = { ...progressed, account, heroes, expedition: null }
   const owner = selectedHero(progressed)
@@ -520,6 +522,16 @@ export function firstClearPreview(save: SaveData): FirstClearReward[] {
   if (save.expedition?.outcome !== 'returned') return []
   const hero = selectedHero(recordProgress(save))
   return hero === null ? [] : firstClearsDue(hero)
+}
+
+/**
+ * The uniques a finished safe return will pay when it is settled (Step 14.6), for the outcome card: the ones `settleExpedition`
+ * will create. Empty while the run is ongoing, defeated or closed.
+ */
+export function uniquePreview(save: SaveData): UniqueItemDef[] {
+  if (save.expedition?.outcome !== 'returned') return []
+  const hero = selectedHero(recordProgress(save))
+  return hero === null ? [] : payUniques(hero).paid
 }
 
 /**

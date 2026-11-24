@@ -6,11 +6,12 @@ import { dismissCard, dismissToast, useNotices } from './notices.ts'
 import { getAwayView, useSaveStatus } from './store.ts'
 
 /** Where a card's shortcut takes the player. */
-export type NoticeTarget = { tab: 'heroes'; heroPart: 'overview' | 'legacy' } | { tab: 'town'; place: 'contract-board' | 'weaponsmith' } | { tab: 'map' }
+export type NoticeTarget = { tab: 'heroes'; heroPart: 'overview' | 'legacy' | 'gear' } | { tab: 'town'; place: 'contract-board' | 'weaponsmith' } | { tab: 'map' }
 
 const TITLES: Record<MomentKind, string> = {
   level: 'Level up',
   warden: 'The Fractured Warden',
+  unique: 'Unique item',
   firstClear: 'First clear',
   contract: 'Contract complete',
   discovery: 'New place found',
@@ -25,6 +26,7 @@ function momentText(moment: Moment): string {
 function shortcut(moment: Moment): { label: string; to: NoticeTarget } | null {
   if (moment.kind === 'level') return moment.points > 0 ? { label: 'Spend points', to: { tab: 'heroes', heroPart: 'overview' } } : null
   if (moment.kind === 'warden') return { label: 'Open Legacy', to: { tab: 'heroes', heroPart: 'legacy' } }
+  if (moment.kind === 'unique') return { label: 'Open Equipment', to: { tab: 'heroes', heroPart: 'gear' } }
   if (moment.kind === 'firstClear') return { label: 'Spend the free upgrade', to: { tab: 'town', place: 'weaponsmith' } }
   if (moment.kind === 'contract') return { label: 'Go to the Contract Board', to: { tab: 'town', place: 'contract-board' } }
   return { label: 'Open the map', to: { tab: 'map' } }

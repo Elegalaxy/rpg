@@ -1,4 +1,5 @@
 import { FIRST_CLEAR_NODE_IDS, firstClearReward, type FirstClearReward } from '../content/firstClear.ts'
+import { uniqueDef } from '../sim/uniques.ts'
 import type { SavedHero } from './save.ts'
 
 /**
@@ -59,8 +60,9 @@ export function echoRewardsDue(hero: SavedHero): number[] {
   return ranks
 }
 
-/** The name a paid id shows in reports: the node name, or "Echo rank N". */
+/** The name a paid id shows in reports: the node name, "Echo rank N", or a unique item's name. */
 export function firstClearLabel(id: string, nodeName: string | undefined): string {
+  if (id.startsWith('unique:')) return uniqueDef(id.slice('unique:'.length))?.name ?? id
   return id.startsWith('echo:') ? `Echo rank ${id.slice(5)}${isEchoMilestone(Number(id.slice(5))) ? ' (milestone)' : ''}` : (nodeName ?? id)
 }
 

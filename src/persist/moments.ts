@@ -1,15 +1,18 @@
 import { firstClearReward, firstClearRewardText } from '../content/firstClear.ts'
+import { uniqueSourceName } from '../content/uniques.ts'
 import { echoRewardText, firstClearLabel } from './firstClear.ts'
 import { selectedHero } from './character.ts'
 import { isComplete } from './contracts.ts'
 import { bossFaced } from './reincarnation.ts'
 import { contractFor, type SaveData } from './save.ts'
+import { uniquesGained } from './uniques.ts'
 import { newlyDiscovered } from './world.ts'
 
 /** Something worth telling the player about, found by comparing the save before and after a change. */
 export type Moment =
   | { kind: 'level'; level: number; points: number }
   | { kind: 'warden'; text: string }
+  | { kind: 'unique'; text: string }
   | { kind: 'firstClear'; text: string }
   | { kind: 'contract'; text: string }
   | { kind: 'discovery'; text: string }
@@ -17,7 +20,7 @@ export type Moment =
 export type MomentKind = Moment['kind']
 
 /** The order moments are listed in when several arrive together. */
-export const MOMENT_ORDER: readonly MomentKind[] = ['level', 'warden', 'firstClear', 'contract', 'discovery']
+export const MOMENT_ORDER: readonly MomentKind[] = ['level', 'warden', 'unique', 'firstClear', 'contract', 'discovery']
 
 export function sortMoments(moments: readonly Moment[]): Moment[] {
   return [...moments].sort((a, b) => MOMENT_ORDER.indexOf(a.kind) - MOMENT_ORDER.indexOf(b.kind))
@@ -38,6 +41,7 @@ export function momentsBetween(before: SaveData, after: SaveData): Moment[] {
   }
   if (now.echoRank > was.echoRank) moments.push({ kind: 'warden', text: `The Fractured Warden fell. Echo rank ${now.echoRank} is unlocked.` })
   if (bossFaced(was) === null && bossFaced(now) !== null) moments.push({ kind: 'warden', text: 'You faced a boss this life. You can now reincarnate.' })
+  for (const def of uniquesGained(was, now)) moments.push({ kind: 'unique', text: `New unique item: ${def.name}, from the ${uniqueSourceName(def)}. It is in your archive.` })
   const paid = new Set(was.firstClearIds ?? [])
   for (const nodeId of now.firstClearIds ?? []) {
     const reward = paid.has(nodeId) ? null : firstClearReward(nodeId)

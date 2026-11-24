@@ -14,6 +14,7 @@ import { contractFor, purseOf, type SaveData } from './save.ts'
 import { autoContractsStep } from './autoContracts.ts'
 import { autoRepairStep } from './autoRepair.ts'
 import { firstClearLabel } from './firstClear.ts'
+import { uniquesGained } from './uniques.ts'
 import { repairAllCost } from './town.ts'
 import { isEndlessAutoRun, autoRerunRefusal, autoRunDefeatNote, beginExpedition, climbEchoDuringRun, newlyDiscovered, recordProgress, settleExpedition, shouldHold, decideHold, routeCleared } from './world.ts'
 import { nodes, routes } from '../content/world.ts'
@@ -79,6 +80,8 @@ export type HeroAwaySummary = {
   awayStarted?: boolean
   /** Names of the zones whose first-clear reward was paid during the replay (Step 13.24). Absent means none. */
   firstClears?: string[]
+  /** Names of the unique items a safe return paid during the replay (Step 14.6). Absent means none. */
+  uniques?: string[]
 }
 
 /** The "while you were away" report: shared facts, and one row per hero that ran. The selected hero is first. */
@@ -423,8 +426,10 @@ function rerun(ctx: Ctx, auto: boolean): boolean {
     }
   }
   const claimedAfter = selectedHero(ctx.save)?.firstClearIds ?? []
-  const newlyPaid = claimedAfter.filter((id) => !claimedBefore.includes(id)).map((id) => firstClearLabel(id, nodes[id]?.name))
+  const newlyPaid = claimedAfter.filter((id) => !claimedBefore.includes(id) && !id.startsWith('unique:')).map((id) => firstClearLabel(id, nodes[id]?.name))
   if (newlyPaid.length > 0) lane.summary.firstClears = [...(lane.summary.firstClears ?? []), ...newlyPaid]
+  const gained = uniquesGained(owner ?? null, selectedHero(ctx.save)).map((def) => def.name)
+  if (gained.length > 0) lane.summary.uniques = [...(lane.summary.uniques ?? []), ...gained]
   if (auto) {
     // The same refusal rule the live Auto run uses; a refusal switches Auto run off.
     const refusal = autoRerunRefusal(ctx.save, routeId)

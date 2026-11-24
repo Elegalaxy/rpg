@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 - Fixed: a curse kept from an earlier life no longer blocks Start before Cursebound is learned again.
 - Improved: the next-life planner uses + and − on each Legacy purchase, so you can change the plan before you reincarnate.
+- New: the first time a hero beats each of the six elites and then gets home safely, that hero is paid one named unique item in the archive, with a fixed modifier and a signature bonus. It can be worn, upgraded, socketed, ranked and kept as an heirloom. Sold, it is gone for good. A run that ends in defeat leaves it due, and older heroes are paid at their next safe return. [14.6]
 
 ## 0.24.0 · 2026-11-24 · Late Frontier
 - Improved: heroes now drink an Antidote at 3 Bleed stacks as well as 3 Poison stacks (it always removed both). New heroes get the rule when the 12-rule limit has room, and existing heroes get it once right after their Antidote rule. [14.5]
