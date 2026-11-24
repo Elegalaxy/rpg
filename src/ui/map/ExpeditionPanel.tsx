@@ -458,7 +458,7 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
             : draft.autoRunMode === 'endless'
               ? 'Keep going: ignores the walk-home orders below. Loot that does not fit the bag is lost.'
               : draft.autoRunMode === 'echo'
-                ? 'Climb Echo ranks: on Fracture Gate through the Bastion, a Warden win raises the next Echo rank by one. If the Warden defeats you, Auto run stops.'
+                ? 'Climb Echo ranks: the next run is Fracture Gate through the Bastion, and the Warden is fought at your highest unlocked rank. A win raises that rank by one. If the Warden defeats you, Auto run stops.'
                 : 'Repeat: the orders below walk the hero home, then the route reruns.'}
         </p>
         {draft.autoRun === true && draft.autoRunMode === 'endless' && draft.retreatPercent.trim() === '' ? (

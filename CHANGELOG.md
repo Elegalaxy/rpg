@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Improved: Echo climb runs Fracture Gate through the Bastion and fights the Warden at your highest unlocked rank, then raises that rank after a win.
 - Fixed: the frontier map painting and the fight portraits load on the published site.
 - Balance: The Withered Grove and the Fallen Bastion each have a second, tougher fight in their random draw, so long runs no longer repeat one fight. [14.1]
 - Balance: The Splintered Road level band is now 1-7, the Withered Grove 6-14 and the Fallen Bastion 8-16, and the Road's first-clear gold rises from 180 to 210. [14.1]

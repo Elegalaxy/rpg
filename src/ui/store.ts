@@ -711,18 +711,28 @@ export function canStartRouteNow(save: SaveData, routeId: string): ReturnType<ty
 
 /** Start a run on a route for the selected hero. Returns the reason it was refused, or null. */
 export function startExpeditionFromUi(routeId: string): string | null {
-  const check = canStartRouteNow(saveStatus.save, routeId)
+  // Echo climb always takes the Bastion gate and fights the highest unlocked rank.
+  let save = saveStatus.save
+  const climber = selectedHero(save)
+  let route = routeId
+  if (climber?.autoRun === true && climber.autoRunMode === 'echo') {
+    route = 'fracture-via-bastion'
+    if (climber.fightRank < climber.echoRank) {
+      save = { ...save, heroes: save.heroes.map((entry) => (entry.id === climber.id ? { ...entry, fightRank: climber.echoRank } : entry)) }
+    }
+  }
+  const check = canStartRouteNow(save, route)
   if (!check.ok) return check.reason
   const buffer = new Uint32Array(1)
   crypto.getRandomValues(buffer)
   const seed = (buffer[0] ?? 1) | 0
-  const begun = beginExpedition(saveStatus.save, routeId, seed, Date.now())
+  const begun = beginExpedition(save, route, seed, Date.now())
   if (!begun.ok) return begun.reason
   pushedAt = null
-  lastRouteId = routeId
+  lastRouteId = route
   finishedFights = []
   discoveryNotices = []
-  debugLog('[ui]', 'expedition start', { routeId, seed })
+  debugLog('[ui]', 'expedition start', { routeId: route, seed, echo: climber?.autoRunMode === 'echo' })
   commitSave(begun.save, 'expedition start')
   expeditionLoop.resetClock()
   if (!snapshot.paused) expeditionLoop.start()

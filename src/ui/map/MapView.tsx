@@ -40,13 +40,16 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
   const [routeId, setRouteId] = useState<string>(() => getLastRouteId() ?? 'splintered-road')
   const [error, setError] = useState<string | null>(null)
   const expedition = save.expedition
-  const info = routeInfo(routeId, save)
-  const start = canStartRouteNow(save, routeId)
-  const mastery = routeMastery(hero, routeId)
-  const lastNodeId = routes[routeId]?.nodeIds[(routes[routeId]?.nodeIds.length ?? 1) - 1]
+  // Echo climb ignores the route picked on the map and takes the Bastion gate at the highest unlocked rank.
+  const echoClimb = hero?.autoRun === true && hero.autoRunMode === 'echo'
+  const picked = echoClimb ? 'fracture-via-bastion' : routeId
+  const info = routeInfo(picked, save)
+  const start = canStartRouteNow(save, picked)
+  const mastery = routeMastery(hero, picked)
+  const lastNodeId = routes[picked]?.nodeIds[(routes[picked]?.nodeIds.length ?? 1) - 1]
   const firstClear = lastNodeId === undefined ? null : firstClearReward(lastNodeId)
   const firstClearClaimed = hero?.firstClearIds?.includes(lastNodeId ?? '') === true
-  const chosen = new Set(routes[routeId]?.nodeIds ?? [])
+  const chosen = new Set(routes[picked]?.nodeIds ?? [])
   const position = expedition === null ? null : markerPosition(expedition)
   const marker = position === null ? null : point(position)
   const shownRoute = expedition === null ? routeId : expedition.id
@@ -133,7 +136,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
         <legend>Route</legend>
         {shownRoutes.map((route) => (
           <label key={route.id}>
-            <input type="radio" name="rpg-route" checked={routeId === route.id} onChange={() => setRouteId(route.id)} />
+            <input type="radio" name="rpg-route" checked={picked === route.id} disabled={echoClimb && route.id !== 'fracture-via-bastion'} onChange={() => setRouteId(route.id)} />
             {route.name}
           </label>
         ))}
@@ -142,6 +145,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
             Show {hiddenRoutes} locked {hiddenRoutes === 1 ? 'route' : 'routes'}
           </button>
         ) : null}
+        {echoClimb ? <p className="muted">Echo climb runs Fracture Gate through the Bastion and fights the Warden at Echo rank {hero?.echoRank ?? 0}.</p> : null}
       </fieldset>
       <div aria-label="Route info">
         <h3>{info.route.name}</h3>
@@ -210,7 +214,7 @@ export function MapView({ onGo }: { onGo?: (to: GoTo) => void }) {
                 disabled={!start.ok}
                 aria-describedby={!start.ok ? 'start-blocked' : undefined}
                 data-tutor="start-expedition"
-                onClick={() => setError(startExpeditionFromUi(routeId))}
+                onClick={() => setError(startExpeditionFromUi(picked))}
               >
                 Start expedition
               </button>

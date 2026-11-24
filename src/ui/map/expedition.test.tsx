@@ -161,6 +161,31 @@ describe('the expedition panel', () => {
     expect(renderToStaticMarkup(<ExpeditionPanel />)).toContain('Fights of this run')
   })
 
+  it('an Echo climb starts the Bastion gate at the highest unlocked rank', () => {
+    commitSave(newSave(), 'test', false)
+    expect(createHeroFromUi({ name: 'Ny', race: 'human', classId: 'warrior' })).toBeNull()
+    const save = getSaveStatus().save
+    const hero = selectedHero(save)
+    if (hero === null) throw new Error('no hero')
+    commitSave(
+      {
+        ...save,
+        heroes: [{ ...hero, autoRun: true, autoRunMode: 'echo', echoRank: 4, fightRank: 1, clearedNodeIds: ['splintered-road', 'fallen-bastion', 'fracture-gate'] }],
+      },
+      'test',
+      false,
+    )
+    seeds([1])
+    expect(startExpeditionFromUi('withered-grove')).toBeNull()
+    const run = getSaveStatus().save.expedition
+    expect(run?.id).toBe('fracture-via-bastion')
+    const warden = run?.opening.find((fight) => fight.id === 'fractured-warden')
+    expect(warden?.enemies[0]?.rank).toBe(4)
+    expect(selectedHero(getSaveStatus().save)?.fightRank).toBe(4)
+    const after = getSaveStatus().save
+    commitSave({ ...after, expedition: null, heroes: after.heroes.map((entry) => ({ ...entry, autoRun: false, autoRunMode: 'repeat' as const })) }, 'test', false)
+  })
+
   it('settles a finished run and starts the same route again', () => {
     commitSave({ ...getSaveStatus().save, expedition: null }, 'test reset')
     seeds([7])
