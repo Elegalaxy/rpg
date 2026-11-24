@@ -24,10 +24,10 @@ export const BOSS_BONUS = 20
 export const RANK_BONUS = 5
 /** Extra Legacy for a milestone Echo rank (Step 13.53), on top of `RANK_BONUS`. */
 export const RANK_MILESTONE_BONUS = 10
-/** Legacy for the first clear of each of the three late zones (Step 13.24). */
+/** Legacy for the first clear of each of the four late zones (Step 13.24, Step 14.5). */
 export const ZONE_CLEAR_BONUS = 2
 /** The zones that pay `ZONE_CLEAR_BONUS`, each read from `firstClearIds`. */
-export const LEGACY_ZONES: readonly string[] = ['drowned-causeway', 'rift-hollows', 'cinder-scar']
+export const LEGACY_ZONES: readonly string[] = ['drowned-causeway', 'rift-hollows', 'cinder-scar', 'bloodthorn-barrens']
 
 export const ATTRIBUTE_SEED_COST = 3
 export const ATTRIBUTE_SEED_MAX = 10
@@ -96,6 +96,7 @@ export function bonusesDue(hero: SavedHero): Bonus[] {
   if (reached('tidebound-colossus')) add('elite:tidebound-colossus', 'First defeat of the Tidebound Colossus', ELITE_BONUS)
   if (reached('hollowmaw-reaver')) add('elite:hollowmaw-reaver', 'First defeat of the Hollowmaw Reaver', ELITE_BONUS)
   if (reached('emberwrought-tyrant')) add('elite:emberwrought-tyrant', 'First defeat of the Emberwrought Tyrant', ELITE_BONUS)
+  if (reached('briar-matriarch')) add('elite:briar-matriarch', 'First defeat of the Briar Matriarch', ELITE_BONUS)
   if (reached('fractured-warden')) add('boss:fractured-warden', 'First defeat of the Fractured Warden', BOSS_BONUS)
   for (const nodeId of LEGACY_ZONES) {
     // Reads firstClearIds (paid on a safe return), not clearedNodeIds, so a defeated run cannot bank it early.

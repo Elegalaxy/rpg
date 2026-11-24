@@ -104,6 +104,7 @@ describe('searchGuide', () => {
     const topic = entries.find((entry) => entry.id === 'topic-expeditions')!
     const fact = (label: string) => topic.facts.find((item) => item.label === label)?.value
     expect(fact('First clear: Drowned Causeway')).toBe('660 g · 15 riftglass · 1 free upgrade · +2 Legacy')
+    expect(fact('First clear: Bloodthorn Barrens')).toBe('1200 g · 15 bloodstone · 1 free upgrade · +2 Legacy')
     expect(fact('First clear: Splintered Road')).toBe('210 g · 15 scrap · 1 free upgrade')
     expect(fact('First clear: Fracture Gate')).toBe('600 g · 1 free upgrade')
     expect(topic.facts).toHaveLength(10)

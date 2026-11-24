@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- New: Salvage contracts ask for bloodstone once the Bloodthorn Barrens is discovered. The first defeat of the Briar Matriarch and the first clear of the Barrens each add to your Legacy, and the Matriarch stays defeated on later lives. [14.5]
 - Balance: the Swift recipe now unlocks when any hero defeats the Briar Matriarch instead of the Emberwrought Tyrant. Heroes who already learned it keep it. [14.5]
 - New: bloodstone, dropped in the Bloodthorn Barrens, is the best crafting, upgrade and socket material yet (quality up to 124%, sells for 12 gold). It binds the same top temper as cinderite. [14.5]
 - New: Bloodthorn Barrens, a fifth zone for levels 34 to 40, opens once you have beaten the Emberwrought Tyrant. Barbed Stalkers, Venomhide Crawlers and Thornwitches make you bleed and poison you, and the Briar Matriarch waits at the end. [14.5]

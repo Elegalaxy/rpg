@@ -7,6 +7,7 @@ export const ELITE_ENEMY_IDS: readonly string[] = [
   'tidebound-colossus',
   'hollowmaw-reaver',
   'emberwrought-tyrant',
+  'briar-matriarch',
 ]
 
 const ELITE_BONUS_PREFIX = 'elite:'

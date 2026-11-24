@@ -34,6 +34,7 @@ import {
   masteryRank,
   masteryXpFactor,
   nextLifePreview,
+  LEGACY_ZONES,
   recallNeed,
   recallTarget,
   recallXp,
@@ -551,6 +552,28 @@ describe('Emberwrought Tyrant Legacy bonus', () => {
     expect(hero(first).claimedBonuses).toContain('elite:emberwrought-tyrant')
     const again = { ...first, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true, defeatedEnemyIds: ['emberwrought-tyrant'] })) }
     expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:emberwrought-tyrant')).toBe(false)
+  })
+})
+
+describe('Briar Matriarch Legacy bonus', () => {
+  it('pays 3 Legacy once for the first defeat of the Briar Matriarch', () => {
+    const base = veteran()
+    const beaten = { ...base, heroes: base.heroes.map((h) => ({ ...h, defeatedEnemyIds: [...h.defeatedEnemyIds, 'briar-matriarch'] })) }
+    const due = bonusesDue(hero(beaten)).find((bonus) => bonus.id === 'elite:briar-matriarch')
+    expect(due).toMatchObject({ amount: 3, text: 'First defeat of the Briar Matriarch' })
+    expect(bonusesDue(hero(base)).some((bonus) => bonus.id === 'elite:briar-matriarch')).toBe(false)
+    const first = ok(reincarnate(beaten, 'hero-1', null))
+    expect(hero(first).claimedBonuses).toContain('elite:briar-matriarch')
+    const again = { ...first, heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true, defeatedEnemyIds: ['briar-matriarch'] })) }
+    expect(bonusesDue(hero(again)).some((bonus) => bonus.id === 'elite:briar-matriarch')).toBe(false)
+  })
+
+  it('pays 2 Legacy for the first clear of the Bloodthorn Barrens, read from the safe-return record', () => {
+    const base = veteran()
+    expect(LEGACY_ZONES).toEqual(['drowned-causeway', 'rift-hollows', 'cinder-scar', 'bloodthorn-barrens'])
+    const cleared = { ...base, heroes: base.heroes.map((h) => ({ ...h, firstClearIds: ['bloodthorn-barrens'] })) }
+    expect(bonusesDue(hero(cleared)).find((bonus) => bonus.id === 'zone:bloodthorn-barrens')).toMatchObject({ amount: 2, text: 'First clear of the Bloodthorn Barrens' })
+    expect(bonusesDue(hero(base)).some((bonus) => bonus.id === 'zone:bloodthorn-barrens')).toBe(false)
   })
 })
 

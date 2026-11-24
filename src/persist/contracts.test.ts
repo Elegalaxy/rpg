@@ -604,6 +604,48 @@ describe('Cinder Scar Salvage', () => {
   })
 })
 
+describe('Bloodthorn Barrens Salvage', () => {
+  const found = [...newSave().account.discoveries, 'node:withered-grove', 'node:fallen-bastion', 'node:drowned-causeway', 'node:rift-hollows', 'node:cinder-scar', 'node:bloodthorn-barrens']
+  const tyrant = { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight', 'tidebound-colossus', 'hollowmaw-reaver', 'emberwrought-tyrant'] }
+  const reaver = { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight', 'tidebound-colossus', 'hollowmaw-reaver'] }
+
+  it('offers bloodstone Salvage once the Barrens is discovered and the hero beat the Tyrant', () => {
+    expect(boardPool(found, tyrant).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass', 'secure:duskiron', 'secure:cinderite', 'secure:bloodstone'])
+    expect(boardPool(found, reaver).salvage.map((entry) => entry.key)).toEqual(['secure:riftglass', 'secure:duskiron', 'secure:cinderite'])
+    expect(targetKey({ kind: 'secure', materialId: 'bloodstone' })).toBe('secure:bloodstone')
+  })
+
+  it('rolls 5 to 10 bloodstone paying rewardFor(ceil(N / 3), 37, cinderite) with the usual roll', () => {
+    const seen: ContractDef[] = []
+    for (let seed = 1; seed <= 4000 && seen.length < 12; seed += 1) {
+      const rng = createRng(seed)
+      const offer = rollContract(`b-${seed}`, found, () => nextFloat(rng), [], tyrant)
+      if (offer?.target.kind === 'secure' && offer.target.materialId === 'bloodstone') seen.push(offer)
+    }
+    expect(seen.length).toBeGreaterThan(0)
+    for (const offer of seen) {
+      expect(offer.count).toBeGreaterThanOrEqual(5)
+      expect(offer.count).toBeLessThanOrEqual(10)
+      expect(offer.level).toBe(37)
+      expect(offer.name).toBe('Salvage: Bloodstone')
+      expect(offer.description).toBe(`Salvage: bring home ${offer.count} bloodstone (Bloodthorn Barrens).`)
+      const base = rewardFor(Math.ceil(offer.count / 3), 37, 'cinderite')
+      expect(offer.reward.materialId).toBe('cinderite')
+      expect(offer.reward.gold).toBeGreaterThanOrEqual(Math.floor(base.gold * 0.8))
+      expect(offer.reward.gold).toBeLessThanOrEqual(Math.ceil(base.gold * 1.3))
+    }
+  })
+
+  it('rolls boards without the Barrens exactly as before', () => {
+    const early = found.filter((id) => id !== 'node:bloodthorn-barrens')
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const a = createRng(seed)
+      const b = createRng(seed)
+      expect(rollContract('x', found, () => nextFloat(a), [], reaver)).toEqual(rollContract('x', early, () => nextFloat(b), [], reaver))
+    }
+  })
+})
+
 describe('kills of summoned enemies', () => {
   const echoDef: ContractDef = { ...contracts['cull-the-pack']!, id: 'echo-test', target: { kind: 'kill', enemyId: 'oathbound-echo' }, count: 5 }
   function runWith(slain: string[] | undefined, encounterId: string) {

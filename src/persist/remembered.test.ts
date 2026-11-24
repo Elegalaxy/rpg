@@ -50,6 +50,14 @@ describe('Remembered Paths', () => {
     })
   })
 
+  it('remembers the Tyrant and the Matriarch so the Cinder Scar and the Barrens stay open on a later life', () => {
+    const next = reincarnated(['emberwrought-tyrant', 'briar-matriarch', 'fractured-warden'])
+    expect(hero(next).rememberedEnemyIds).toEqual(['emberwrought-tyrant', 'briar-matriarch'])
+    expect(hero(next).claimedBonuses).toEqual(expect.arrayContaining(['elite:emberwrought-tyrant', 'elite:briar-matriarch']))
+    const barrensSave = { ...next, account: { ...next.account, discoveries: [...next.account.discoveries, 'node:bloodthorn-barrens'] } }
+    expect(nodeStatus(nodes['bloodthorn-barrens']!, barrensSave, hero(barrensSave))).toEqual({ state: 'discovered', reason: null, remembered: true })
+  })
+
   it('keeps a node discovered without the note once the hero beats the elites again', () => {
     const next = reincarnated(['rootmaw-stalker', 'echo-knight'])
     const again = withHero(next, { defeatedEnemyIds: ['rootmaw-stalker', 'echo-knight'] })
