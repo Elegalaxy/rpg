@@ -1631,6 +1631,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-24: Done. `content/encounters.ts` (`groveDeep`, `bastionDeep`, registered), `content/world.ts` (draw tables, `levels`), tests updated deliberately (`content.test.ts` new encounters; Splintered Road first clear 180 to 210 gold because the reward reads `levels.max`; `map.test.tsx` band 1 to 7). Reference expedition routes at seeds 1 to 5: the Road is unchanged; the Grove and Bastion reference hero is now level 8 and 10 (band minimum plus 2, was 10 and 12): all four fixed regular fights are still won on 9 of 10 runs and the elites are still retreats (as before), except Grove seed 5 where the Warrior now retreats from `grove-mixed` (won before) and Grove seed 4 where the Rootmaw fight is a retreat instead of a defeat. The new fights are drawn only after the fixed list, so no fixed route changes beyond the lower hero level.
 
+### Step 14.2: Ranger fifth skill and Venom Edge job
+- Status: `done` (already shipped as Step 13.40; no code change in this step)
+- Depends on: 13.35, 13.40, 13.50
+- Goal: apply the measured HM-R Hunter's Mark redesign to the real Ranger content, and give the Venom Edge node a job. Part 1 was found already in the game: `content/skills.ts` has Hunter's Mark at cooldown 8 with effects reveal and 20 Readiness, the "Top up Readiness" template (13.41), node text and Guide text generated from it, and the shipped content was re-measured at +7.3 prepared (Step 13.40). Part 2 is not approved: any numeric job for the Venom Edge node breaks the Warden prepared +/-8 rule with the Toxic nodes (Step 13.50).
+- Progress:
+  - 2026-11-24: Checked, nothing to change. Hunter's Mark is the HM-R skill in `content/skills.ts` (Step 13.40, commit 7dd99d8). The Venom Edge node stays a pure connector node with no numbers, as decided in 13.50; revisit only if the boss cap rules change.
+
 ## 8. Risks, and what would reveal them early
 
 | Risk | Early signal | Mitigation |
