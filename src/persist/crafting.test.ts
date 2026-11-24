@@ -32,6 +32,10 @@ import {
   MATERIAL_QUALITY,
   spendFreeUpgrade,
   UPGRADE_QUALITY_POINTS,
+  SOCKET_MATERIALS,
+  materialTemper,
+  rareMaterialsText,
+  temperGrade,
 } from './crafting.ts'
 import { equipFromArchive, statsFor } from './equipment.ts'
 import { blueprintForHero } from './expeditionSetup.ts'
@@ -494,7 +498,7 @@ describe('riftglass', () => {
     expect(qualityRange('riftglass', 5)?.low).toBeCloseTo(1.07, 10)
     expect(qualityRange('riftglass', 10)?.low).toBeCloseTo(1.12, 10)
     expect(qualityRange('riftglass', 10)?.high).toBe(1.12)
-    expect(Object.keys(MATERIAL_QUALITY)).toEqual(['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron', 'cinderite'])
+    expect(Object.keys(MATERIAL_QUALITY)).toEqual(['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron', 'cinderite', 'bloodstone'])
   })
 
   it('adds 3 upgrade points up to 112%, while other materials keep 110% and never lower quality', () => {
@@ -509,7 +513,7 @@ describe('riftglass', () => {
   })
 
   it('lists every material in the pick-a-material message, from the table', () => {
-    expect(pickMaterialText()).toBe('Pick scrap, hide, shard, witherbark, oathsteel, riftglass, duskiron, or cinderite.')
+    expect(pickMaterialText()).toBe('Pick scrap, hide, shard, witherbark, oathsteel, riftglass, duskiron, cinderite, or bloodstone.')
     const save = stocked()
     expect(craftCheck(save, hero(save), { ...bow, materialId: 'iron' })).toBe(pickMaterialText())
     expect(upgradeCheckText(save)).toBe(pickMaterialText())
@@ -620,6 +624,48 @@ describe('cinderite', () => {
     const none = updatePurse(stocked(), { materials: { shard: 20 } })
     expect(purseOf(none).materials.cinderite ?? 0).toBe(0)
     expect(craftCheck(none, hero(none), { ...bow, materialId: 'cinderite' })).toBe('That needs 6 cinderite. You have 0.')
+  })
+})
+
+describe('bloodstone', () => {
+  it('is the best craft material: 114% to 124%, rank raises the minimum up to the maximum', () => {
+    expect(qualityRange('bloodstone', 0)).toEqual({ low: 1.14, high: 1.24 })
+    expect(qualityRange('bloodstone', 5)?.low).toBeCloseTo(1.19, 10)
+    expect(qualityRange('bloodstone', 10)?.low).toBeCloseTo(1.24, 10)
+    expect(qualityRange('bloodstone', 10)?.high).toBe(1.24)
+  })
+
+  it('adds 6 upgrade points up to 124%, and costs 3 like most materials', () => {
+    expect(UPGRADE_QUALITY_POINTS.bloodstone).toBe(6)
+    expect(upgradedQuality(1, 'bloodstone')).toBeCloseTo(1.06)
+    expect(upgradedQuality(1.2, 'bloodstone')).toBe(1.24)
+    expect(upgradedQuality(1.24, 'bloodstone')).toBe(1.24)
+    expect(upgradedQuality(1.25, 'bloodstone')).toBe(1.25)
+    expect(upgradeCapFor('bloodstone')).toBe(1.24)
+    expect(upgradeMaterialCost('bloodstone')).toBe(3)
+  })
+
+  it('binds temper 5, never 6, so the save still validates', () => {
+    expect(materialTemper('bloodstone')).toBe(5)
+    expect(materialTemper('cinderite')).toBe(5)
+    expect(materialTemper('shard')).toBe(2)
+    expect(temperGrade('keen', 'bloodstone')).toBe(5)
+    expect(temperGrade('hauler', 'bloodstone')).toBe(0)
+    const save = updatePurse(stocked(1), { materials: { bloodstone: 6 } })
+    const done = finish(ok(queueCraft(save, 'hero-1', { ...bow, baseId: 'weapon-one-handed', itemLevel: 1, materialId: 'bloodstone', modifierId: 'keen' })))
+    expect(purseOf(done).archive.at(-1)?.modifierTempers).toEqual([5])
+    expect(purseOf(done).archive.at(-1)?.quality).toBeGreaterThanOrEqual(1.14)
+    expect(purseOf(done).archive.at(-1)?.quality).toBeLessThanOrEqual(1.24)
+  })
+
+  it('opens sockets and names every rare material in the reason', () => {
+    expect(SOCKET_MATERIALS).toContain('bloodstone')
+    expect(rareMaterialsText()).toBe('riftglass, duskiron, cinderite or bloodstone')
+  })
+
+  it('a hero with none sees it as 0 and cannot craft', () => {
+    const none = updatePurse(stocked(), { materials: { shard: 20 } })
+    expect(craftCheck(none, hero(none), { ...bow, materialId: 'bloodstone' })).toBe('That needs 6 bloodstone. You have 0.')
   })
 })
 

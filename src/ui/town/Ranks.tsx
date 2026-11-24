@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { itemName } from '../../content/items.ts'
 import { selectedHero } from '../../persist/character.ts'
-import { CRAFT_MS, RANK_MATERIAL_COST, rankCheck, rankGold, rankMaterials, socketTargets, temperGrade } from '../../persist/crafting.ts'
+import { CRAFT_MS, RANK_MATERIAL_COST, rankCheck, rankGold, rankMaterials, rareMaterialsText, socketTargets, temperGrade } from '../../persist/crafting.ts'
 import { purseOf } from '../../persist/save.ts'
 import { ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_RANK_MULTIPLIER, modifierRankAt, modifierTemperAt, modifierTextAt, rankName, rankable, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
 import { Help } from '../Help.tsx'
@@ -60,7 +60,7 @@ export function Ranks({ accepts = () => true }: { accepts?: (baseId: string) => 
       <h4>
         Modifier ranks {tokens > 0 ? <Tag kind="good">Free upgrades: {tokens}</Tag> : null}
         <Help label="About ranks">
-          A modifier starts at rank I. Rank II raises its numbers by {rankPercent(2)}% and rank III by {rankPercent(3)}%, for gold by the modifier's level and materials; rank III asks for riftglass, duskiron or cinderite. A paid rank-up takes {CRAFT_MS / 1000} s in the crafting queue. A free upgrade happens at once. The stack cap counts pieces, not ranks.
+          A modifier starts at rank I. Rank II raises its numbers by {rankPercent(2)}% and rank III by {rankPercent(3)}%, for gold by the modifier's level and materials; rank III asks for {rareMaterialsText()}. A paid rank-up takes {CRAFT_MS / 1000} s in the crafting queue. A free upgrade happens at once. The stack cap counts pieces, not ranks.
         </Help>
       </h4>
       {rows.length === 0 ? (

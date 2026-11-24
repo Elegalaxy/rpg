@@ -12,12 +12,13 @@ export const MATERIAL_SELL_PRICE: { readonly [materialId: string]: number } = {
   riftglass: 5,
   duskiron: 8,
   cinderite: 10,
+  bloodstone: 12,
 }
 
 /** Buying a material costs this many times what selling it pays (Step 13.28), so buying never undercuts selling. */
 export const MATERIAL_BUY_MULTIPLIER = 5
 
-/** The materials Greyhaven sells. The rare ones (riftglass, duskiron, cinderite) stay gated by exploring. */
+/** The materials Greyhaven sells. The rare ones (riftglass, duskiron, cinderite, bloodstone) stay gated by exploring. */
 export const BUYABLE_MATERIALS: readonly string[] = ['scrap', 'hide', 'shard', 'witherbark', 'oathsteel']
 
 /** Gold Greyhaven charges for one unit of a buyable material. */

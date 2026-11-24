@@ -44,8 +44,8 @@ describe('pack numbers', () => {
   })
 
   it('takes materials by grade: grade 2 and up for the Satchel, 3 and up for the Field Pack', () => {
-    expect(packMaterials('satchel')).toEqual(['shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron', 'cinderite'])
-    expect(packMaterials('fieldPack')).toEqual(['riftglass', 'duskiron', 'cinderite'])
+    expect(packMaterials('satchel')).toEqual(['shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron', 'cinderite', 'bloodstone'])
+    expect(packMaterials('fieldPack')).toEqual(['riftglass', 'duskiron', 'cinderite', 'bloodstone'])
   })
 
   it('limits stacks only above 4 slots', () => {

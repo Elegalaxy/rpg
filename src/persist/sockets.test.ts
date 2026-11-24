@@ -42,7 +42,7 @@ function stocked(level = 17, item: ItemInstance = keenBow()): SaveData {
 const hero = (save: SaveData) => selectedHero(save)!
 
 describe('open socket', () => {
-  it('costs item level x 40 gold and 8 of riftglass, duskiron or cinderite, paid when queued', () => {
+  it('costs item level x 40 gold and 8 of riftglass, duskiron, cinderite or bloodstone, paid when queued', () => {
     const save = stocked()
     expect(socketGold(17)).toBe(680)
     for (const gem of ['riftglass', 'duskiron', 'cinderite']) {
@@ -52,7 +52,7 @@ describe('open socket', () => {
       expect(purseOf(queued).archive).toEqual([])
       expect(purseOf(queued).craftQueue[0]).toMatchObject({ kind: 'socket', remainingMs: CRAFT_MS, materialId: gem })
     }
-    expect(queueSocket(save, 'hero-1', 'bow', 'scrap')).toEqual({ ok: false, reason: 'A socket needs riftglass, duskiron or cinderite.' })
+    expect(queueSocket(save, 'hero-1', 'bow', 'scrap')).toEqual({ ok: false, reason: 'A socket needs riftglass, duskiron, cinderite or bloodstone.' })
     expect(queueSocket(updatePurse(save, { materials: { riftglass: 7 } }), 'hero-1', 'bow', 'riftglass')).toEqual({ ok: false, reason: 'That needs 8 riftglass. You have 7.' })
     expect(queueSocket(updatePurse(save, { gold: 100 }), 'hero-1', 'bow', 'riftglass')).toEqual({ ok: false, reason: 'That costs 680 gold. You have 100.' })
   })

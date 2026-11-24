@@ -87,6 +87,14 @@ describe('the Sockets panel', () => {
     expect(infuse).toContain('+75%')
   })
 
+  it('shows bloodstone binding the same temper as cinderite, not a sixth point', () => {
+    setup(17, { ...keenBow, socketed: true })
+    commitSave(updatePurse(getSaveStatus().save, { materials: { bloodstone: 20 } }), 'test')
+    const infuse = renderToStaticMarkup(<Sockets />)
+    expect(infuse).toContain('+75%')
+    expect(infuse).not.toContain('+90%')
+  })
+
   it('shows the free upgrade button and tag only with a token, and disables it below level 10', () => {
     setup(17, keenBow)
     expect(renderToStaticMarkup(<Sockets />)).not.toContain('Use free upgrade')

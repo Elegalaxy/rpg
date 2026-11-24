@@ -324,7 +324,7 @@ export const MODIFIER_STACK_CAP = 2
 /** Modifier ranks I to III. A rank multiplies the numeric bonuses of its modifier (GAME_DESIGN §9, "Gold sinks"). */
 export const MODIFIER_RANK_MAX = 3
 export const MODIFIER_RANK_MULTIPLIER: readonly number[] = [1, 1, 1.5, 2.0]
-/** The highest temper: the grade of the best material (cinderite). */
+/** The highest temper: the grade of the best material (cinderite; bloodstone is grade 6 but binds 5). */
 export const MODIFIER_TEMPER_MAX = 5
 /** Each temper point adds this to the multiplier of the modifier's numeric bonuses (GAME_DESIGN §9, "Temper"). */
 export const TEMPER_PER_POINT = 0.15

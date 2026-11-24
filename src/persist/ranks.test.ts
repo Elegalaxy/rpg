@@ -49,7 +49,7 @@ describe('rank up', () => {
     expect(itemName(purseOf(two).archive[0]!)).toBe('Keen II Bow')
     expect(heroOf(two).craftXp).toBe(1)
     // Rank III asks for a rare material.
-    expect(queueRankUp(two, 'hero-1', 'bow', 0, 'scrap')).toEqual({ ok: false, reason: 'Rank III needs riftglass, duskiron or cinderite.' })
+    expect(queueRankUp(two, 'hero-1', 'bow', 0, 'scrap')).toEqual({ ok: false, reason: 'Rank III needs riftglass, duskiron, cinderite or bloodstone.' })
     const three = queueRankUp(two, 'hero-1', 'bow', 0, 'duskiron')
     const queuedThree = ok(three)
     expect(purseOf(queuedThree).gold).toBe(purseOf(two).gold - 60)

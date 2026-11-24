@@ -34,7 +34,7 @@ function ok(result: { ok: true; save: SaveData } | { ok: false; reason: string }
 
 describe('prices', () => {
   it('follows the decided formulas', () => {
-    expect(MATERIAL_SELL_PRICE).toEqual({ shard: 3, hide: 3, scrap: 2, witherbark: 4, oathsteel: 4, riftglass: 5, duskiron: 8, cinderite: 10 })
+    expect(MATERIAL_SELL_PRICE).toEqual({ shard: 3, hide: 3, scrap: 2, witherbark: 4, oathsteel: 4, riftglass: 5, duskiron: 8, cinderite: 10, bloodstone: 12 })
     expect(itemSellPrice(newItem('a', 'weapon-bow', 1))).toBe(5)
     expect(itemSellPrice(newItem('a', 'weapon-bow', 3, 1.1))).toBe(17)
     expect(itemSellPrice(newItem('a', 'weapon-bow', 1, 0.9))).toBe(5)
@@ -259,7 +259,7 @@ describe('buying materials at the Trading Post', () => {
 
   it('refuses rare or unknown materials, bad quantities and short gold', () => {
     const save = heroSave(100)
-    for (const id of ['riftglass', 'duskiron', 'cinderite', 'nonsense']) expect(buyMaterial(save, id, 1).ok).toBe(false)
+    for (const id of ['riftglass', 'duskiron', 'cinderite', 'bloodstone', 'nonsense']) expect(buyMaterial(save, id, 1).ok).toBe(false)
     expect(buyMaterial(save, 'scrap', 0).ok).toBe(false)
     expect(buyMaterial(save, 'scrap', 1.5).ok).toBe(false)
     const short = buyMaterial(save, 'scrap', 11)

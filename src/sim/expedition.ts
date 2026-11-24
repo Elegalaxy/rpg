@@ -144,7 +144,7 @@ export const SAFE_POUCH_ROOM = 5
 /** The bag counts as full when fewer than this much room is free. */
 export const BAG_FULL_ROOM = 4
 /** Material value order for the safe pouch, rarest last. A material not listed ranks below all of these. */
-export const MATERIAL_RARITY: readonly string[] = ['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron', 'cinderite']
+export const MATERIAL_RARITY: readonly string[] = ['scrap', 'hide', 'shard', 'witherbark', 'oathsteel', 'riftglass', 'duskiron', 'cinderite', 'bloodstone']
 export const SUPPLY_SLOT_COUNT = 4
 /** The most supply slots a crafted backpack can reach (GAME_DESIGN §9, Step 13.22). */
 export const MAX_SUPPLY_SLOTS = 6

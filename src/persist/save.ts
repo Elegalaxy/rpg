@@ -82,7 +82,7 @@ export type CraftJob =
       /** Held here while the job runs, like an upgrade's item. */
       item: ItemInstance
       slot?: EquipmentSlotId
-      /** The riftglass, duskiron or cinderite that paid for it. */
+      /** The rare material (riftglass, duskiron, cinderite or bloodstone) that paid for it. */
       materialId: string
       remainingMs: number
       seedIndex: number

@@ -2,7 +2,7 @@ import { enemies } from '../content/enemies.ts'
 import { itemBase, itemName } from '../content/items.ts'
 import { supplyTable } from '../content/supplies.ts'
 import { nodes } from '../content/world.ts'
-import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, appliesToText, modifierRankAt, modifierTemperAt, rankName, rankable, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
+import { EQUIPMENT_SLOT_IDS, ITEM_MODIFIERS, MAX_ITEM_MODIFIERS, MODIFIER_RANK_MAX, MODIFIER_TEMPER_MAX, appliesToText, modifierRankAt, modifierTemperAt, rankName, rankable, classBlock, modifierFits, type EquipmentSlotId, type ItemInstance, type ModifierRequirement } from '../sim/economy.ts'
 import { createRng, deriveSeed, nextFloat } from '../sim/rng.ts'
 
 import { selectedHero } from './character.ts'
@@ -30,7 +30,12 @@ export const SOCKET_GOLD_PER_LEVEL = 40
 /** Units of a rare material an open-socket job costs. */
 export const SOCKET_MATERIAL_COST = 8
 /** The materials a socket can be paid with. */
-export const SOCKET_MATERIALS: readonly string[] = ['riftglass', 'duskiron', 'cinderite']
+export const SOCKET_MATERIALS: readonly string[] = ['riftglass', 'duskiron', 'cinderite', 'bloodstone']
+
+/** "riftglass, duskiron, cinderite or bloodstone", built from `SOCKET_MATERIALS`. */
+export function rareMaterialsText(): string {
+  return `${SOCKET_MATERIALS.slice(0, -1).join(', ')} or ${SOCKET_MATERIALS[SOCKET_MATERIALS.length - 1]}`
+}
 /** Gold per level the modifier needs, to reach rank II and rank III (GAME_DESIGN section 9). */
 export const RANK_GOLD_PER_LEVEL: { readonly [toRank: number]: number } = { 2: 30, 3: 60 }
 /** Units of material a rank-up costs: any material for II, a rare one (`SOCKET_MATERIALS`) for III. */
@@ -42,11 +47,11 @@ export const INFUSE_MATERIAL_COST = 6
 type UpgradeJob = Extract<CraftJob, { kind: 'upgrade' }>
 export const MAX_RANK = 10
 /** Percentage points of quality an upgrade adds, by the material spent (GAME_DESIGN crafting). */
-export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, witherbark: 2, oathsteel: 2, riftglass: 3, duskiron: 4, cinderite: 5 }
+export const UPGRADE_QUALITY_POINTS: { readonly [materialId: string]: number } = { scrap: 0, hide: 1, shard: 2, witherbark: 2, oathsteel: 2, riftglass: 3, duskiron: 4, cinderite: 5, bloodstone: 6 }
 /** An upgrade never lifts quality above this, except with a material that has its own cap. */
 export const UPGRADE_QUALITY_CAP = 1.1
 /** Materials whose upgrades may go higher than `UPGRADE_QUALITY_CAP`. */
-export const UPGRADE_QUALITY_CAP_BY_MATERIAL: { readonly [materialId: string]: number } = { witherbark: 1.1, oathsteel: 1.11, riftglass: 1.12, duskiron: 1.16, cinderite: 1.2 }
+export const UPGRADE_QUALITY_CAP_BY_MATERIAL: { readonly [materialId: string]: number } = { witherbark: 1.1, oathsteel: 1.11, riftglass: 1.12, duskiron: 1.16, cinderite: 1.2, bloodstone: 1.24 }
 
 /** The highest quality an upgrade with this material can reach. */
 export function upgradeCapFor(materialId: string): number {
@@ -65,7 +70,7 @@ export function materialIds(): string[] {
   return Object.keys(MATERIAL_QUALITY)
 }
 
-/** "Pick scrap, hide, shard, witherbark, oathsteel, riftglass, duskiron, or cinderite.", built from the table. */
+/** "Pick scrap, hide, shard, witherbark, oathsteel, riftglass, duskiron, cinderite, or bloodstone.", built from the table. */
 export function pickMaterialText(): string {
   const ids = materialIds()
   return `Pick ${ids.slice(0, -1).join(', ')}, or ${ids[ids.length - 1]}.`
@@ -83,6 +88,7 @@ export const MATERIAL_QUALITY: { readonly [materialId: string]: { low: number; h
   riftglass: { low: 1.02, high: 1.12 },
   duskiron: { low: 1.06, high: 1.16 },
   cinderite: { low: 1.1, high: 1.2 },
+  bloodstone: { low: 1.14, high: 1.24 },
 }
 
 export function proficiencyRank(xp: number): number {
@@ -518,7 +524,7 @@ export function socketCheck(save: SaveData, hero: SavedHero, item: ItemInstance 
   if (low !== null) return low
   if (item.socketed === true) return `${itemName(item)} already has a socket.`
   if (free) return (hero.freeUpgrades ?? 0) > 0 ? null : NO_FREE_UPGRADE
-  if (!SOCKET_MATERIALS.includes(materialId)) return 'A socket needs riftglass, duskiron or cinderite.'
+  if (!SOCKET_MATERIALS.includes(materialId)) return `A socket needs ${rareMaterialsText()}.`
   return spend(hero.purse, materialId, SOCKET_MATERIAL_COST, socketGold(item.itemLevel))
 }
 
@@ -575,7 +581,7 @@ export function rankCheck(save: SaveData, hero: SavedHero, item: ItemInstance | 
     if (toRank > FREE_RANK_MAX) return 'A free upgrade ranks up to II only.'
     return (hero.freeUpgrades ?? 0) > 0 ? null : NO_FREE_UPGRADE
   }
-  if (!rankMaterials(toRank).includes(materialId)) return toRank >= 3 ? 'Rank III needs riftglass, duskiron or cinderite.' : pickMaterialText()
+  if (!rankMaterials(toRank).includes(materialId)) return toRank >= 3 ? `Rank III needs ${rareMaterialsText()}.` : pickMaterialText()
   return spend(hero.purse, materialId, RANK_MATERIAL_COST[toRank] ?? 0, rankGold(id, toRank))
 }
 
@@ -586,10 +592,15 @@ function withRanks(item: ItemInstance, ranks: number[]): ItemInstance {
   return filled.every((rank) => rank === 1) ? rest : { ...rest, modifierRanks: filled }
 }
 
+/** The temper a material binds: its grade, never above the modifier temper maximum (bloodstone is grade 6 and binds 5). */
+export function materialTemper(materialId: string): number {
+  return Math.min(UPGRADE_QUALITY_POINTS[materialId] ?? 0, MODIFIER_TEMPER_MAX)
+}
+
 /** The temper a material binds into a modifier: its grade, or 0 when the modifier has no numbers a temper could raise. */
 export function temperGrade(modifierId: string, materialId: string): number {
   const modifier = ITEM_MODIFIERS[modifierId]
-  return modifier !== undefined && rankable(modifier) ? (UPGRADE_QUALITY_POINTS[materialId] ?? 0) : 0
+  return modifier !== undefined && rankable(modifier) ? materialTemper(materialId) : 0
 }
 
 /** The item with its modifier tempers replaced. A list of only zeros is dropped, so untempered items stay as they were. */
@@ -721,7 +732,7 @@ export function spendFreeUpgrade(save: SaveData, heroId: string, itemId: string,
 
 /** The item a finished socket, infuse or rank job hands back. */
 function afterItemJob(job: Extract<CraftJob, { kind: 'socket' | 'infuse' | 'rank' }>): ItemInstance {
-  // The socket's material also lifts quality as an upgrade would (riftglass +3 up to 112%, duskiron +4 up to 116%, cinderite +5 up to 120%).
+  // The socket's material also lifts quality as an upgrade would (riftglass +3 up to 112%, duskiron +4 up to 116%, cinderite +5 up to 120%, bloodstone +6 up to 124%).
   if (job.kind === 'socket') return { ...job.item, socketed: true, quality: upgradedQuality(job.item.quality, job.materialId) }
   const tempers = job.item.modifiers.map((_id, index) => modifierTemperAt(job.item, index))
   if (job.kind === 'rank') {
