@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { DurabilityGrid, Kpi, KpiRow, ShopRow } from './Kit.tsx'
+import { DurabilityGrid, ImplicitLine, Kpi, KpiRow, ShopRow } from './Kit.tsx'
 
 describe('shop rows', () => {
   it('lays out name, owned badge, effect, cost pills, and buttons without prose', () => {
@@ -77,5 +77,14 @@ describe('stat cards and durability', () => {
     expect(html).toContain('Main Hand')
     expect(html).toContain('Broken')
     expect(html).toContain('90/100')
+  })
+})
+
+describe('the implicit line', () => {
+  it('says Built-in by default and takes another label for a unique signature', () => {
+    expect(renderToStaticMarkup(<ImplicitLine text="+1% maximum HP" />)).toContain('>Built-in</span>')
+    const signature = renderToStaticMarkup(<ImplicitLine label="Signature" text="Echo: +5 magical status resistance" />)
+    expect(signature).toContain('>Signature</span>')
+    expect(signature).not.toContain('Built-in')
   })
 })

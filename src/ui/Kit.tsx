@@ -24,11 +24,11 @@ export function Tag({ kind, children, title, testId }: { kind: TagKind; children
   )
 }
 
-/** An accessory base's built-in stat as a quiet key-value line: label in the muted tier, the figure in tabular numerals. */
-export function ImplicitLine({ text }: { text: string }) {
+/** An accessory base's built-in stat (or a unique's signature, with its own label) as a quiet key-value line: label in the muted tier, the figure in tabular numerals. */
+export function ImplicitLine({ text, label = 'Built-in' }: { text: string; label?: string }) {
   return (
     <small className="item-implicit" data-testid="implicit-line">
-      <span className="item-implicit-label">Built-in</span>
+      <span className="item-implicit-label">{label}</span>
       <span className="item-implicit-value">{text}</span>
     </small>
   )

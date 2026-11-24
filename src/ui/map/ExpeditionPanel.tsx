@@ -28,7 +28,7 @@ import { echoRewardId, echoRewardText } from '../../persist/firstClear.ts'
 import { routes } from '../../content/world.ts'
 import { supplyLock } from '../../persist/crafting.ts'
 import { countNames } from '../town/groupItems.ts'
-import { firstClearPreview, outcomeStats } from '../../persist/world.ts'
+import { firstClearPreview, outcomeStats, uniquePreview } from '../../persist/world.ts'
 import { ContractTrack } from './ContractTrack.tsx'
 import { CLERIC_VOWS } from '../../sim/classes/cleric.ts'
 import { MOMENTUM_CAP, bagIsFull, hpRegenRate, lootCapacityOf, safePouch, type ExpeditionState } from '../../sim/expedition.ts'
@@ -920,6 +920,7 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
   const { save } = useSaveStatus()
   const stats = outcomeStats(expedition, selectedHero(save))
   const firstClears = firstClearPreview(save)
+  const uniques = uniquePreview(save)
   const [error, setError] = useState<string | null>(null)
   const defeated = expedition.outcome === 'defeat'
   const lootTotal = stats.secured.reduce((sum, stack) => sum + stack.quantity, 0)
@@ -973,6 +974,18 @@ function Ended({ expedition }: { expedition: ExpeditionState }) {
               {firstClears.map((reward) => (
                 <Tag key={reward.nodeId} kind="good">
                   {reward.name} +{firstClearRewardText(reward)}
+                </Tag>
+              ))}
+            </span>
+          </div>
+        ) : null}
+        {uniques.length > 0 ? (
+          <div className="pill-line" data-testid="unique-earned">
+            <small className="pill-label">Unique earned</small>
+            <span className="pill-row">
+              {uniques.map((def) => (
+                <Tag key={def.id} kind="gold">
+                  {def.name} (in your archive)
                 </Tag>
               ))}
             </span>

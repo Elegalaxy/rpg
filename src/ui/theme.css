@@ -916,6 +916,11 @@ li.row + li.row {
   font-size: 0.75rem;
 }
 
+.item-from {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
 .item-implicit-value {
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;

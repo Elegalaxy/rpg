@@ -71,3 +71,12 @@ describe('the away banner (Step 13.15)', () => {
     expect(html(hero)).not.toContain('away-banners')
   })
 })
+
+describe('the away unique line (Step 14.6)', () => {
+  it('names the unique items a safe return paid, only when there were some', () => {
+    expect(html({ ...hero, uniques: ['Rootmaw Treads'] })).toContain('New unique item: Rootmaw Treads.')
+    expect(html({ ...hero, uniques: ['Rootmaw Treads', 'Echoing Visor'] })).toContain('New unique item: Rootmaw Treads, Echoing Visor.')
+    expect(html({ ...hero, uniques: ['Rootmaw Treads'] })).toContain('data-testid="away-unique"')
+    expect(html(hero)).not.toContain('away-unique')
+  })
+})

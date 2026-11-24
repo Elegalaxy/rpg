@@ -10,6 +10,8 @@ import { CURSES, HOLLOW_POWER } from '../../sim/races/racialNodes.ts'
 import { ITEM_MODIFIERS, MODIFIER_STACK_CAP } from '../../sim/economy.ts'
 import { HERO_CLASSES } from '../../sim/constants.ts'
 import { HERO_RACES } from '../../sim/progression.ts'
+import { UNIQUE_ITEMS } from '../../sim/uniques.ts'
+
 import { buildGuide, searchGuide } from './guideIndex.ts'
 
 const entries = buildGuide()
@@ -44,6 +46,22 @@ describe('buildGuide', () => {
     for (const id of Object.keys(itemBases)) expect(ids.has(`item-${id}`), id).toBe(true)
     expect(ids.has('topic-gear')).toBe(true)
     expect(ids.has('topic-greyhaven')).toBe(true)
+  })
+
+  it('has a Unique items entry for every unique, with the facts a player needs and no numbers in its prose', () => {
+    for (const def of UNIQUE_ITEMS) {
+      const entry = entries.find((candidate) => candidate.id === `unique-${def.id}`)
+      expect(entry, def.id).toBeDefined()
+      expect(entry?.group).toBe('Unique items')
+      expect(entry?.facts.map((fact) => fact.label)).toEqual(['Source', 'Slot', 'Item level', 'Fixed modifier', 'Signature', 'Earned', 'Sell price'])
+      expect(entry?.facts.find((fact) => fact.label === 'Item level')?.value).toBe(String(def.itemLevel))
+      expect(entry?.facts.find((fact) => fact.label === 'Sell price')?.value).toBe(`${def.itemLevel * 20} gold`)
+      expect(entry?.facts.find((fact) => fact.label === 'Earned')?.value).toBe('First defeat, paid on a safe return, once per hero')
+      expect(entry?.facts.find((fact) => fact.label === 'Source')?.value).toContain(',')
+      expect(/\d/.test([entry?.summary ?? '', ...(entry?.lines ?? []), ...(entry?.prose ?? [])].join(' ')), def.id).toBe(false)
+    }
+    expect(entries.filter((entry) => entry.group === 'Unique items')).toHaveLength(UNIQUE_ITEMS.length)
+    expect(searchGuide(entries, 'Rootmaw Treads', null).some((entry) => entry.id === 'unique-rootmaw-treads')).toBe(true)
   })
 
   it('says every modifier counts at most the stack cap, read from the sim constant', () => {

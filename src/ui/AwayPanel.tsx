@@ -58,6 +58,7 @@ export function AwayReportView({ report }: { report: AwayReport }) {
   const withMaterials = report.heroes.filter((hero) => Object.keys(hero.materials).length > 0)
   const contracts = report.heroes.reduce((sum, hero) => sum + hero.contractsFinished, 0)
   const firstClears = [...new Set(report.heroes.flatMap((hero) => hero.firstClears ?? []))]
+  const uniques = [...new Set(report.heroes.flatMap((hero) => hero.uniques ?? []))]
   const handedIn = report.heroes.reduce((sum, hero) => sum + (hero.contractsHandedIn ?? 0), 0)
   const taken = report.heroes.reduce((sum, hero) => sum + (hero.contractsTaken ?? 0), 0)
   const repairedPieces = report.heroes.reduce((sum, hero) => sum + (hero.repairedPieces ?? 0), 0)
@@ -135,6 +136,7 @@ export function AwayReportView({ report }: { report: AwayReport }) {
           </li>
         ) : null}
         {firstClears.length > 0 ? <li data-testid="away-first-clear">First clear: {firstClears.join(', ')}.</li> : null}
+        {uniques.length > 0 ? <li data-testid="away-unique">New unique item: {uniques.join(', ')}.</li> : null}
         {contracts > 0 ? <li>Contracts finished: {contracts}. Collect them at the Contract Board.</li> : null}
         {report.discovered.length > 0 ? <li>Discovered: {report.discovered.join(', ')}.</li> : null}
       </ul>

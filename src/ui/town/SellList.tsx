@@ -1,6 +1,6 @@
 import { implicitText, itemName } from '../../content/items.ts'
 import { previewEquip } from '../../persist/equipment.ts'
-import { SELL_GROUP_LABELS, SELL_GROUP_ORDER, badgeGroup, heirloomSellBlock, needsSellConfirm, sellGroup, type SellGroup } from '../../persist/sellSafety.ts'
+import { SELL_GROUP_LABELS, SELL_GROUP_ORDER, badgeGroup, heirloomSellBlock, isUnique, needsSellConfirm, sellGroup, UNIQUE_SELL_WARNING, type SellGroup } from '../../persist/sellSafety.ts'
 import type { SaveData, SavedHero } from '../../persist/save.ts'
 import { sellPriceFor } from '../../persist/town.ts'
 import type { ItemInstance } from '../../sim/economy.ts'
@@ -8,6 +8,7 @@ import { ImplicitLine, ShopRow, Tag } from '../Kit.tsx'
 import { equipFromUi, sellItemFromUi } from '../store.ts'
 
 import { GearChanges } from './GearChanges.tsx'
+import { UniqueLines, UniqueTag } from './UniqueLines.tsx'
 import { SellButton } from './SellButton.tsx'
 import { groupItems } from './groupItems.ts'
 
@@ -82,7 +83,7 @@ export function SellList({
                     key={item.id}
                     name={
                       <>
-                        {itemName(item)} {isWorn ? <Tag kind="good">Worn</Tag> : null}
+                        {itemName(item)} <UniqueTag item={item} /> {isWorn ? <Tag kind="good">Worn</Tag> : null}
                         {own !== 'current' || !isWorn ? <GroupBadge group={own} /> : null}
                       </>
                     }
@@ -91,6 +92,7 @@ export function SellList({
                       <>
                         {`${isWorn ? 'Worn' : 'Archive'} · Item level ${item.itemLevel} · Quality ${Math.round(item.quality * 100)}%`}
                         {implicitText(item.baseId, item.itemLevel) === null ? null : <ImplicitLine text={implicitText(item.baseId, item.itemLevel) ?? ''} />}
+                        <UniqueLines item={item} />
                       </>
                     }
                     note={
@@ -117,7 +119,7 @@ export function SellList({
                           disabled={closed}
                           blockedReason={blockedReason}
                           label={isWorn ? `Sell worn ${item.id}` : `Sell ${item.id}`}
-                          confirmLabel={`Confirm sell ${isWorn ? 'worn ' : ''}${item.id} for ${price} gold`}
+                          confirmLabel={`Confirm sell ${isWorn ? 'worn ' : ''}${item.id} for ${price} gold${isUnique(item) ? `. ${UNIQUE_SELL_WARNING}` : ''}`}
                           initialArmed={armedId === item.id}
                           onSell={() => run(sellItemFromUi(item.id), isWorn ? `Sold ${itemName(item)}. Fill the slot before the next expedition.` : `Sold ${itemName(item)}.`)}
                         />

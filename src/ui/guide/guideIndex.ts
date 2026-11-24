@@ -19,7 +19,9 @@ import { LOADOUT_SLOT_COUNT, MAX_LOADOUT_SLOTS } from '../../sim/progression.ts'
 import { ARTISAN_TOKENS, HEAD_START_LEVELS, LEGACY_ZONES, LONG_MEMORY_LEVELS, ZONE_CLEAR_BONUS } from '../../persist/reincarnation.ts'
 import { BOARD_SIZE, MAX_ACTIVE_CONTRACTS } from '../../content/contracts.ts'
 import { itemBases } from '../../content/items.ts'
-import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE } from '../../content/shop.ts'
+import { BUYABLE_MATERIALS, MATERIAL_BUY_PRICE, MATERIAL_SELL_PRICE, uniqueSellPrice } from '../../content/shop.ts'
+import { uniqueSlotLabel, uniqueSourceName, uniqueZoneName } from '../../content/uniques.ts'
+import { UNIQUE_ITEMS, type UniqueItemDef } from '../../sim/uniques.ts'
 import { statuses } from '../../content/statuses.ts'
 import { SUPPLIES, type SupplyDef } from '../../content/supplies.ts'
 import { skills } from '../../content/skills.ts'
@@ -97,6 +99,7 @@ export type GuideEntryId =
   | `supply-${string}`
   | `modifier-${string}`
   | `item-${string}`
+  | `unique-${string}`
   | `topic-${string}`
 
 export type GuideFact = { label: string; value: string }
@@ -450,6 +453,33 @@ function itemEntry(base: ItemBase): GuideEntry {
   }
 }
 
+/** One elite unique (Step 14.6). The summary and lines carry no numbers; the facts hold them. */
+function uniqueEntry(def: UniqueItemDef): GuideEntry {
+  const zone = uniqueZoneName(def)
+  return {
+    id: `unique-${def.id}`,
+    section: 'gear',
+    group: 'Unique items',
+    title: def.name,
+    summary: `A named piece paid once by the ${uniqueSourceName(def)}, with a fixed modifier and a signature bonus.`,
+    facts: [
+      { label: 'Source', value: zone === '' ? uniqueSourceName(def) : `${uniqueSourceName(def)}, ${zone}` },
+      { label: 'Slot', value: uniqueSlotLabel(def) },
+      { label: 'Item level', value: String(def.itemLevel) },
+      { label: 'Fixed modifier', value: ITEM_MODIFIERS[def.modifier]?.name ?? def.modifier },
+      { label: 'Signature', value: `${def.signatureName}: ${def.signatureText}` },
+      { label: 'Earned', value: 'First defeat, paid on a safe return, once per hero' },
+      { label: 'Sell price', value: `${uniqueSellPrice(def)} gold` },
+    ],
+    lines: [
+      'The signature is not a modifier, so it has no stacking limit and ranks and tempers never raise it. It shrinks below the item level shown here until you upgrade the piece.',
+      'Selling it asks twice, and it cannot be earned again.',
+    ],
+    prose: [],
+    links: [{ id: 'topic-gear', label: 'Gear' }],
+  }
+}
+
 function gearFacts(): GuideFact[] {
   return [
     { label: 'Equipment slots', value: 'Main hand, off hand, head, chest, hands, feet, two accessories' },
@@ -542,6 +572,7 @@ export function buildGuide(): GuideEntry[] {
   entries.push(topicEntry('gear'))
   for (const modifier of Object.values(ITEM_MODIFIERS)) entries.push(modifierEntry(modifier))
   for (const base of Object.values(itemBases)) entries.push(itemEntry(base))
+  for (const def of UNIQUE_ITEMS) entries.push(uniqueEntry(def))
   entries.push(topicEntry('greyhaven'))
   entries.push(topicEntry('expeditions'), topicEntry('reincarnation'))
   return entries

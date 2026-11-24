@@ -8,8 +8,10 @@ import { changeKind, previewEquip, statLines, statsFor } from '../../persist/equ
 import { bagCapacity } from '../../persist/bag.ts'
 import { SELL_GROUP_LABELS, SELL_GROUP_ORDER, sellGroup } from '../../persist/sellSafety.ts'
 import { EQUIPMENT_SLOT_IDS, MODIFIER_STACK_CAP, gearGaps, modifierCapNotes, slotsFor, type EquipmentSlotId, type ItemInstance } from '../../sim/economy.ts'
+import { uniqueDef, uniqueSignatureText } from '../../sim/uniques.ts'
 import { Row } from '../Row.tsx'
 import { ImplicitLine, Tag } from '../Kit.tsx'
+import { UniqueLines, UniqueTag } from './UniqueLines.tsx'
 import { QualityHelp } from './QualityHelp.tsx'
 import { groupItems } from './groupItems.ts'
 import { devAddItems, equipFromUi, unequipFromUi, useSaveStatus } from '../store.ts'
@@ -43,7 +45,7 @@ const STAT_LABELS = [
 
 function describeItem(item: ItemInstance): string {
   const implicit = implicitText(item.baseId, item.itemLevel)
-  return `${itemName(item)}, item level ${item.itemLevel}, quality ${Math.round(item.quality * 100)}%, durability ${item.durability}/${item.maxDurability}${implicit === null ? '' : `, built-in ${implicit}`}`
+  return `${itemName(item)}, item level ${item.itemLevel}, quality ${Math.round(item.quality * 100)}%, durability ${item.durability}/${item.maxDurability}${implicit === null ? '' : `, built-in ${implicit}`}${uniqueDef(item.uniqueId) === undefined ? '' : `, unique, signature ${uniqueSignatureText(item)}`}`
 }
 
 /** One piece as a name over muted facts, with worn-down durability called out in colour and text. */
@@ -52,7 +54,9 @@ function ItemFacts({ item }: { item: ItemInstance }) {
   const wear = item.durability <= 0 ? 'bad' : fraction < 0.3 ? 'bad' : fraction < 0.6 ? 'gold' : 'plain'
   return (
     <span className="item-facts" aria-label={describeItem(item)}>
-      <strong>{itemName(item)}</strong>
+      <strong>
+        {itemName(item)} <UniqueTag item={item} />
+      </strong>
       <small className="row-note">
         lvl {item.itemLevel} · {Math.round(item.quality * 100)}% quality <QualityHelp /> ·{' '}
         <Tag kind={wear} title="Durability">
@@ -60,6 +64,7 @@ function ItemFacts({ item }: { item: ItemInstance }) {
         </Tag>
       </small>
       {implicitText(item.baseId, item.itemLevel) === null ? null : <ImplicitLine text={implicitText(item.baseId, item.itemLevel) ?? ''} />}
+      <UniqueLines item={item} />
     </span>
   )
 }

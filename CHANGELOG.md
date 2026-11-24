@@ -13,6 +13,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 - Fixed: a curse kept from an earlier life no longer blocks Start before Cursebound is learned again.
 - Improved: the next-life planner uses + and − on each Legacy purchase, so you can change the plan before you reincarnate.
+- Improved: a unique item shows a Unique tag, its signature bonus and the elite that paid it on the Equipment, Sell and repair rows. The outcome card, a toast and the away report announce a new one, and the Guide has a Unique items group. Swapping gear tells you when a signature is gained or lost. [14.6]
 - New: the first time a hero beats each of the six elites and then gets home safely, that hero is paid one named unique item in the archive, with a fixed modifier and a signature bonus. It can be worn, upgraded, socketed, ranked and kept as an heirloom. Sold, it is gone for good. A run that ends in defeat leaves it due, and older heroes are paid at their next safe return. [14.6]
 
 ## 0.24.0 · 2026-11-24 · Late Frontier

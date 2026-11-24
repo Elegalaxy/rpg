@@ -2,6 +2,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { newItem } from '../../content/items.ts'
+import { uniqueItemFor } from '../../content/uniques.ts'
+import { uniqueDef } from '../../sim/uniques.ts'
 import { selectedHero } from '../../persist/character.ts'
 import { createHero } from '../../persist/roster.ts'
 import { newSave, type SavedHero } from '../../persist/save.ts'
@@ -107,5 +109,32 @@ describe('the built-in stat of accessories (Step 14.4)', () => {
     expect(out).toContain('+0.75% maximum HP')
     expect(out).toContain('+3 points critical damage')
     expect(out.match(/data-testid="implicit-line"/g)).toHaveLength(2)
+  })
+
+  it('marks a unique with a Unique tag, its signature and source, and asks twice with a warning that it cannot be earned again', () => {
+    const { save, hero } = setup()
+    const treads = uniqueItemFor('hero-1', uniqueDef('rootmaw-treads')!, 'warrior')
+    const out = renderToStaticMarkup(<SellList save={save} hero={hero} worn={[]} archived={[treads]} closed={false} run={() => undefined} armedId={treads.id} />)
+    expect(out).toContain('Rootmaw Treads · Nimble')
+    expect(out).toContain('data-testid="unique-tag"')
+    expect(out).toContain('>Unique</span>')
+    expect(out).toContain('Signature')
+    expect(out).toContain("Stalker&#x27;s Step: +3 Evasion, +3 Accuracy")
+    expect(out).toContain('From the Rootmaw Stalker')
+    expect(out).toContain('Confirm sell unique-hero-1-rootmaw-treads for 280 gold. Cannot be earned again')
+    expect(out).toContain('Asks you to confirm before it sells.')
+  })
+
+  it('shows a signature scaled down for a piece below its table level', () => {
+    const { save, hero } = setup()
+    const low = { ...uniqueItemFor('hero-1', uniqueDef('rootmaw-treads')!, 'warrior'), itemLevel: 7 }
+    const out = renderToStaticMarkup(<SellList save={save} hero={hero} worn={[]} archived={[low]} closed={false} run={() => undefined} />)
+    expect(out).toContain('+1.5 Evasion, +1.5 Accuracy')
+  })
+
+  it('shows no unique marks on ordinary gear', () => {
+    const out = html()
+    expect(out).not.toContain('data-testid="unique-tag"')
+    expect(out).not.toContain('Cannot be earned again')
   })
 })

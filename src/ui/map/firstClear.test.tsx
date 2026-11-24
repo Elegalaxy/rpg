@@ -43,6 +43,18 @@ describe('first-clear display', () => {
     expect(renderToStaticMarkup(<ExpeditionPanel />)).not.toContain('data-testid="first-clear"')
   })
 
+  it('the outcome card names a unique due on a safe return, and nothing on a defeat or once paid', () => {
+    commitSave(finished(heroSave({ defeatedEnemyIds: ['rootmaw-stalker'] }), 'returned'), 'test', false)
+    const html = renderToStaticMarkup(<ExpeditionPanel />)
+    expect(html).toContain('data-testid="unique-earned"')
+    expect(html).toContain('Unique earned')
+    expect(html).toContain('Rootmaw Treads (in your archive)')
+    commitSave(finished(heroSave({ defeatedEnemyIds: ['rootmaw-stalker'] }), 'defeat'), 'test', false)
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).not.toContain('data-testid="unique-earned"')
+    commitSave(finished(heroSave({ defeatedEnemyIds: ['rootmaw-stalker'], firstClearIds: ['unique:rootmaw-treads'] }), 'returned'), 'test', false)
+    expect(renderToStaticMarkup(<ExpeditionPanel />)).not.toContain('data-testid="unique-earned"')
+  })
+
   it('the route card shows the reward and whether it is claimed', () => {
     commitSave(heroSave(), 'test', false)
     const open = renderToStaticMarkup(<MapView />)

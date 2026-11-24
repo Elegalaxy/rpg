@@ -1,5 +1,6 @@
 import { developmentItems, itemBase, itemName } from '../content/items.ts'
 import { ITEM_MODIFIERS, modifierRankAt, modifierTemperAt, modifierTextAt, TEMPER_PER_POINT, rankName, equipBlock, equipItem, gearBonusesFor, gearFromEquipment, slotsFor, type EquipmentSlotId, type ItemInstance, type Wearer } from '../sim/economy.ts'
+import { uniqueDef, uniqueSignatureText } from '../sim/uniques.ts'
 import { NODE_HUMAN_CROSS_TRAINING } from '../sim/races/racialNodes.ts'
 import { deriveHeroStats, type HeroDerivedStats } from '../sim/stats.ts'
 import { renaissanceActive } from '../sim/progression.ts'
@@ -128,6 +129,19 @@ function modifierNotes(before: readonly ItemInstance[], after: readonly ItemInst
   for (const key of Object.keys(now)) {
     if ((was[key] ?? 0) < (now[key] ?? 0)) notes.push(`Gains ${label(key)}`)
   }
+  // A unique's signature is not a modifier, so it is told apart (Step 14.6).
+  const signatures = (items: readonly ItemInstance[]) => {
+    const found: { [text: string]: true } = {}
+    for (const item of items) {
+      const def = uniqueDef(item.uniqueId)
+      if (def !== undefined) found[`${def.signatureName} (${uniqueSignatureText(item)})`] = true
+    }
+    return Object.keys(found)
+  }
+  const signaturesBefore = signatures(before)
+  const signaturesAfter = signatures(after)
+  for (const text of signaturesBefore) if (!signaturesAfter.includes(text)) notes.push(`Loses signature: ${text}`)
+  for (const text of signaturesAfter) if (!signaturesBefore.includes(text)) notes.push(`Gains signature: ${text}`)
   return notes
 }
 

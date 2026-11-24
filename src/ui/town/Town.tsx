@@ -40,6 +40,7 @@ import { Contracts } from './Contracts.tsx'
 import { Craft, type CraftPart } from './Craft.tsx'
 import { markRecipesSeen, newRecipeIds, useSeenRecipes } from './enchanterSeen.ts'
 import { SupplyCard } from './SupplyCard.tsx'
+import { UniqueTag } from './UniqueLines.tsx'
 
 export { PLACES, type PlaceId }
 
@@ -212,7 +213,11 @@ function GearShop({ place, startJob = 'buy' }: { place: PlaceDef; startJob?: Gea
         {groupItems(damaged).map(({ item, count }) => (
           <ShopRow
             key={item.id}
-            name={itemName(item)}
+            name={
+              <>
+                {itemName(item)} <UniqueTag item={item} />
+              </>
+            }
             owned={count > 1 ? count : undefined}
             effect={item.durability === 0 ? `Broken · ${item.durability}/${item.maxDurability}` : `Durability ${item.durability}/${item.maxDurability}`}
             costs={[[{ kind: 'gold', amount: repairCost(item) }]]}

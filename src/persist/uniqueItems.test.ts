@@ -9,6 +9,7 @@ import { UNIQUE_ITEMS, uniqueDef } from '../sim/uniques.ts'
 
 import { selectedHero } from './character.ts'
 import { CRAFT_MS, advanceCrafting, grantCraftingKit, queueInfuse, queueRankUp, queueSocket, spendFreeUpgrade } from './crafting.ts'
+import { equipFromArchive, previewEquip } from './equipment.ts'
 import { createHero } from './roster.ts'
 import { assertSaveData, newSave, parseSave, purseOf, serializeSave, updatePurse, type SaveData } from './save.ts'
 import { needsSellConfirm } from './sellSafety.ts'
@@ -148,5 +149,26 @@ describe('unique items: crafting', () => {
     expect(fixed(infused)).toMatchObject({ uniqueId: 'rootmaw-treads', modifiers: ['nimble', 'sturdy'], socketed: true })
     expect(queueInfuse(infused, 'hero-1', treads().id, 'nimble', 'scrap').ok).toBe(false)
     expect(() => assertSaveData(infused)).not.toThrow()
+  })
+})
+
+describe('unique items: equip preview', () => {
+  it('says the signature is gained when a unique replaces a plain piece and lost when it is swapped back', () => {
+    const save = stocked()
+    const gained = previewEquip(save, 'hero-1', treads().id)
+    expect(gained.notes).toContain("Gains signature: Stalker's Step (+3 Evasion, +3 Accuracy)")
+    expect(gained.notes.some((note) => note.startsWith('Gains Nimble'))).toBe(true)
+    const worn = ok(equipFromArchive(save, 'hero-1', treads().id))
+    const plainBoots = { ...selectedHero(worn)!.purse.archive[0]!, id: 'plain-boots', uniqueId: undefined, modifiers: [] as string[] }
+    delete (plainBoots as { uniqueId?: string }).uniqueId
+    const swapped = updatePurse(worn, { archive: [plainBoots] })
+    const lost = previewEquip(swapped, 'hero-1', 'plain-boots')
+    expect(lost.notes).toContain("Loses signature: Stalker's Step (+3 Evasion, +3 Accuracy)")
+  })
+
+  it('names a scaled signature at the item level', () => {
+    const low = treads({ itemLevel: 7 })
+    const preview = previewEquip(stocked(low), 'hero-1', low.id)
+    expect(preview.notes).toContain("Gains signature: Stalker's Step (+1.5 Evasion, +1.5 Accuracy)")
   })
 })
