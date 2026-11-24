@@ -142,6 +142,8 @@ describe('eligibility and currency', () => {
       heroes: first.heroes.map((h) => ({ ...h, bossLossThisLife: true, defeatedEnemyIds: ['echo-knight'], echoRank: 3 })),
     }
     expect(bonusesDue(hero(again)).map((bonus) => bonus.id)).toEqual(['rank:3'])
+    // Rank 3 is a milestone: 15 Legacy instead of 5.
+    expect(bonusesDue(hero(again)).map((bonus) => bonus.amount)).toEqual([15])
   })
 })
 

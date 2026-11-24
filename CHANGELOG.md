@@ -9,7 +9,9 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
+## 0.23.0 · 2026-11-24 · Echo milestones and sockets
+- New: a milestone Echo rank also gives 15 Legacy (instead of 5) at your next reincarnation. [13.53]
+- Improved: the preparation screen shows the reward for Echo rank 1 before you have beaten the Warden. [13.53]
 - Improved: AFK has an On/Off button in preparation, on the run, and in the run dock. Off means nothing starts when you leave with no run.
 - Fixed: opening a socket shows the item's quality before and after, as a percent, the same way a craft does.
 - New: Echo rank 3 and every fifth rank after it are milestones: they pay 3 free upgrades and gold (500 g per rank number) the first time, and the preparation screen shows the next reward. [13.52]

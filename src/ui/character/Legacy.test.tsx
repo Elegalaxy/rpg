@@ -83,7 +83,7 @@ describe('Legacy screen', () => {
     expect(lost).not.toContain('aria-label="Heirloom"')
     const won = show({ echoRank: 5, bossLoss: true })
     expect(won).toContain('Echo ranks 1–5 first unlocked')
-    expect(won).toContain('+25')
+    expect(won).toContain('+45') // ranks 3 and 5 are milestones: 5 + 5 + 15 + 5 + 15
     expect(won).toContain('lost to and defeated the Fractured Warden.')
     const victory = show({ echoRank: 1 })
     expect(victory).toContain('Boss faced this life: defeated the Fractured Warden.')

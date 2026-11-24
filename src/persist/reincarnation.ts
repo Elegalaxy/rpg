@@ -11,6 +11,7 @@ import { wearerOf } from './equipment.ts'
 import { STOCKPILE_COSTS, carriedPurse, carryOver, type CarryOver } from './carryOver.ts'
 import { carriedSetup, type SetupStats } from './pastSetup.ts'
 import { quiverLimit } from './preparation.ts'
+import { isEchoMilestone } from './firstClear.ts'
 import { unionElites } from './remembered.ts'
 import { reachMilestone, type HeroPurchases, type SaveData, type SavedHero } from './save.ts'
 import type { RosterResult } from './roster.ts'
@@ -21,6 +22,8 @@ export const MASTERY_XP_PER_RANK = 0.02
 export const ELITE_BONUS = 3
 export const BOSS_BONUS = 20
 export const RANK_BONUS = 5
+/** Extra Legacy for a milestone Echo rank (Step 13.53), on top of `RANK_BONUS`. */
+export const RANK_MILESTONE_BONUS = 10
 /** Legacy for the first clear of each of the three late zones (Step 13.24). */
 export const ZONE_CLEAR_BONUS = 2
 /** The zones that pay `ZONE_CLEAR_BONUS`, each read from `firstClearIds`. */
@@ -98,7 +101,10 @@ export function bonusesDue(hero: SavedHero): Bonus[] {
     // Reads firstClearIds (paid on a safe return), not clearedNodeIds, so a defeated run cannot bank it early.
     if ((hero.firstClearIds ?? []).includes(nodeId)) add(`zone:${nodeId}`, `First clear of the ${nodes[nodeId]?.name ?? nodeId}`, ZONE_CLEAR_BONUS)
   }
-  for (let rank = 1; rank <= hero.echoRank; rank += 1) add(`rank:${rank}`, `Echo rank ${rank} first unlocked`, RANK_BONUS)
+  for (let rank = 1; rank <= hero.echoRank; rank += 1) {
+    const milestone = isEchoMilestone(rank)
+    add(`rank:${rank}`, `Echo rank ${rank}${milestone ? ' (milestone)' : ''} first unlocked`, milestone ? RANK_BONUS + RANK_MILESTONE_BONUS : RANK_BONUS)
+  }
   return due
 }
 

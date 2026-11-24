@@ -1226,6 +1226,13 @@ Use fixture skills and enemies inside test files where real content doesn't exis
 - Progress:
   - 2026-11-24: Done. `echoReward`, `echoRewardText`, `isEchoMilestone` in `persist/firstClear.ts`; toast and away label say milestone; preparation screen line `echo-next-reward`; Guide sentence; tests.
 
+### Step 13.53: Echo milestone Legacy and the rank 1 hint
+- Status: `done`
+- Depends on: 13.52
+- Goal: user ask 2026-11-24: milestone Echo ranks also pay extra Legacy (+15 instead of +5), and the preparation screen shows the rank 1 reward at rank 0.
+- Progress:
+  - 2026-11-24: Done. `RANK_MILESTONE_BONUS` in `persist/reincarnation.ts`, hint in `ExpeditionPanel.tsx`, tests.
+
 ### Step 13.50: Assassin base tick 10% and a new job for the Venom Edge node
 - Status: `done`
 - Depends on: 13.47, 13.48

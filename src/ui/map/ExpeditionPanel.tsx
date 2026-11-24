@@ -298,7 +298,9 @@ function PreparationForm({ hero }: { hero: SavedHero }) {
               </p>
             )}
           </div>
-        ) : null}
+        ) : nextEchoReward === null ? null : (
+          <p data-testid="echo-next-reward">Beating the Fractured Warden unlocks Echo rank 1: {nextEchoReward}.</p>
+        )}
       </fieldset>
       <fieldset className={groupClass('supply-pack', 'pack')}>
         {legend('pack', 'Pack for the road', `${packedTotal}/${slotCount} packed`)}
