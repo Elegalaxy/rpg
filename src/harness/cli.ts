@@ -22,6 +22,7 @@ import { formatHollowsTable, runHollowsMatrix } from './hollows.ts'
 import { formatCinderTable, runCinderMatrix } from './cinder.ts'
 import { BARRENS_FIGHT_IDS, BARRENS_MODES, BARRENS_TIER_IDS, formatBarrensTable, runBarrensMatrix } from './barrens.ts'
 import { LATE_IDS, formatLateTable, runLateMatrix } from './late.ts'
+import { UNIQUE_MATRIX_IDS, formatUniquesTable, runUniquesMatrix } from './uniques.ts'
 import { ELITE_CELLS, ELITE_IDS, ELITE_MODES, formatElitesTable, runElitesMatrix, type EliteFilter } from './elites.ts'
 import { formatPackTable, runPackMatrix } from './pack.ts'
 import { formatSlotsTable, runSlotsMatrix } from './slots.ts'
@@ -281,8 +282,8 @@ function printExpedition(args: ParsedArgs): void {
 }
 
 function printMatrix(args: ParsedArgs): void {
-  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'barrens' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'slots' && args.matrix !== 'modded' && args.matrix !== 'free' && args.matrix !== 'toxic' && args.matrix !== 'late') {
-    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, barrens, elites, pack, slots, modded, free, toxic, late`)
+  if (args.matrix !== 'reference' && args.matrix !== 'combos' && args.matrix !== 'built' && args.matrix !== 'telegraph' && args.matrix !== 'warden' && args.matrix !== 'causeway' && args.matrix !== 'hollows' && args.matrix !== 'cinder' && args.matrix !== 'barrens' && args.matrix !== 'elites' && args.matrix !== 'pack' && args.matrix !== 'slots' && args.matrix !== 'modded' && args.matrix !== 'free' && args.matrix !== 'toxic' && args.matrix !== 'late' && args.matrix !== 'uniques') {
+    throw new CliError(`unknown matrix '${args.matrix ?? ''}'\nvalid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, barrens, elites, pack, slots, modded, free, toxic, late, uniques`)
   }
   if (args.seed === undefined) throw new CliError('missing --seed')
   if (args.runs === undefined) throw new CliError('matrix requires --runs')
@@ -348,6 +349,15 @@ function printMatrix(args: ParsedArgs): void {
     const rows = runLateMatrix(seed, runs, parseList('--classes', args.classes, HERO_CLASSES), parseList('--tiers', args.tiers, LATE_IDS))
     const elapsedMs = performance.now() - started
     process.stdout.write(formatLateTable(rows))
+    printTiming(rows.length * runs, elapsedMs)
+    return
+  }
+  if (args.matrix === 'uniques') {
+    console.log(`[sim] matrix uniques seed ${seed} runs ${runs}`)
+    const started = performance.now()
+    const rows = runUniquesMatrix(seed, runs, parseList('--classes', args.classes, HERO_CLASSES), parseList('--tiers', args.tiers, UNIQUE_MATRIX_IDS))
+    const elapsedMs = performance.now() - started
+    process.stdout.write(formatUniquesTable(rows))
     printTiming(rows.length * runs, elapsedMs)
     return
   }

@@ -181,7 +181,7 @@ describe('harness CLI', () => {
     const unknown = runCli(['--matrix', 'nope', '--seed', '1', '--runs', '1'])
     expect(unknown.status).toBe(1)
     expect(unknown.stderr).toContain("unknown matrix 'nope'")
-    expect(unknown.stderr).toContain('valid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, barrens, elites')
+    expect(unknown.stderr).toContain('valid matrices: reference, combos, built, telegraph, warden, causeway, hollows, cinder, barrens, elites, pack, slots, modded, free, toxic, late, uniques')
 
     const missingRuns = runCli(['--matrix', 'reference', '--seed', '1'])
     expect(missingRuns.status).toBe(1)
