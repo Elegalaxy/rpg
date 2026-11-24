@@ -1149,7 +1149,7 @@ const serratedRake: EnemySkillDef = {
   canCrit: false,
   effects: [
     { kind: 'damage', school: 'physical', coefficient: 0.9 },
-    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.6, coefficient: 0.12, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.6, coefficient: 0.30, power: 'physical' },
   ],
 }
 
@@ -1255,7 +1255,7 @@ const hemorrhageLash: EnemySkillDef = {
   canCrit: false,
   effects: [
     { kind: 'damage', school: 'physical', coefficient: 1.1 },
-    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.75, coefficient: 0.15, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'bleed', baseChance: 0.75, coefficient: 0.10, power: 'physical' },
   ],
 }
 
@@ -1269,11 +1269,14 @@ const venomBurst: EnemySkillDef = {
   tag: 'venom-burst',
   tags: ['physical', 'attack'],
   canCrit: true,
-  interruptMaxHpFraction: 0.05,
+  interruptMaxHpFraction: 0.04,
   effects: [
     { kind: 'damage', school: 'physical', coefficient: 2.6 },
-    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.15, power: 'physical' },
-    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.15, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.30, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.30, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.30, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.30, power: 'physical' },
+    { kind: 'applyStatus', statusId: 'poison', baseChance: 1, coefficient: 0.30, power: 'physical' },
   ],
 }
 
@@ -1288,16 +1291,17 @@ const summonBarbedStalkers: EnemySkillDef = {
   tags: ['summon'],
   canCrit: false,
   trigger: 'hp',
-  hpFraction: 0.4,
+  hpFraction: 0.5,
   effects: [
-    { kind: 'summon', enemyId: 'barbed-stalker', level: 34 },
-    { kind: 'summon', enemyId: 'barbed-stalker', level: 34 },
+    { kind: 'summon', enemyId: 'barbed-stalker', level: 35 },
+    { kind: 'summon', enemyId: 'barbed-stalker', level: 35 },
   ],
 }
 
 /**
- * Level 38 standard elite. Hemorrhage Lash bleeds, Venom Burst is a 2.5 s wind-up that poisons twice and can be
- * interrupted by a small hit (5%). At 40% HP it summons 2 Barbed Stalkers. No stance. Late enrage. Drops 10 bloodstone.
+ * Level 38 standard elite. Hemorrhage Lash bleeds, Venom Burst is a 2.5 s wind-up that poisons five times (the stack cap) and
+ * can be interrupted by a small hit (4%). At 50% HP it summons 2 level-35 Barbed Stalkers. No stance. Late enrage (90 s).
+ * Drops 10 bloodstone. Numbers tuned in Step 14.5 part 9, GAME_DESIGN "Fifth zone".
  */
 export const briarMatriarch: EnemyDef = {
   id: 'briar-matriarch',
@@ -1307,8 +1311,8 @@ export const briarMatriarch: EnemyDef = {
   elite: true,
   school: 'physical',
   filler: { school: 'physical' },
-  overrides: { maxHp: 6300, power: 78, consistency: 25, actionTime: 2.2 },
-  timePressure: eliteEnrage(100_000),
+  overrides: { maxHp: 6800, power: 72, consistency: 25, actionTime: 2.2 },
+  timePressure: eliteEnrage(90_000),
   traitIds: [HP_SUMMON_TRAIT],
   skills: [hemorrhageLash, venomBurst, summonBarbedStalkers],
   drop: { materialId: 'bloodstone', baseQuantity: 10 },

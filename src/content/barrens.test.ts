@@ -67,7 +67,7 @@ describe('Bloodthorn Barrens enemies', () => {
     expect(barbedStalker.drop).toEqual({ materialId: 'cinderite', baseQuantity: 2 })
     const rake = barbedStalker.skills?.[0]
     expect(rake).toMatchObject({ id: 'serrated-rake', coefficient: 0.9, school: 'physical', cooldownSeconds: 4 })
-    expect(rake?.effects[1]).toMatchObject({ kind: 'applyStatus', statusId: 'bleed', baseChance: 0.6, coefficient: 0.12, power: 'physical' })
+    expect(rake?.effects[1]).toMatchObject({ kind: 'applyStatus', statusId: 'bleed', baseChance: 0.6, coefficient: 0.3, power: 'physical' })
   })
 
   it('gives the Crawler a 2.0 s Caustic Spray that poisons twice and can be interrupted at 25%', () => {
@@ -103,21 +103,24 @@ describe('Bloodthorn Barrens enemies', () => {
     expect(matriarch.level).toBe(38)
     expect(matriarch.elite).toBe(true)
     expect(matriarch.stance).toBeNull()
-    expect(briarMatriarch.overrides).toMatchObject({ maxHp: matriarch.maxHp, consistency: 25, actionTime: 2.2 })
-    expect(briarMatriarch.timePressure).toMatchObject({ intervalMs: 3000, maxStacks: 10, power: 1.1, defense: 0.95, actionSpeed: 1.05 })
+    expect(briarMatriarch.overrides).toMatchObject({ maxHp: 6800, power: 72, consistency: 25, actionTime: 2.2 })
+    expect(matriarch.maxHp).toBe(6800)
+    expect(briarMatriarch.timePressure).toMatchObject({ startMs: 90_000, intervalMs: 3000, maxStacks: 10, power: 1.1, defense: 0.95, actionSpeed: 1.05 })
     expect(briarMatriarch.drop).toEqual({ materialId: 'bloodstone', baseQuantity: 10 })
   })
 
   it('defines Hemorrhage Lash, Venom Burst and the 40% Stalker summon', () => {
     const [lash, burst, summon] = briarMatriarch.skills ?? []
     expect(lash).toMatchObject({ id: 'hemorrhage-lash', coefficient: 1.1, school: 'physical', cooldownSeconds: 6 })
-    expect(lash?.effects[1]).toMatchObject({ statusId: 'bleed', baseChance: 0.75, power: 'physical' })
-    expect(burst).toMatchObject({ id: 'venom-burst', coefficient: 2.6, school: 'physical', telegraphMs: 2500, canCrit: true, cooldownSeconds: 10 })
-    expect(burst?.effects.filter((effect) => effect.kind === 'applyStatus')).toHaveLength(2)
-    expect(summon).toMatchObject({ trigger: 'hp', telegraphMs: 2000 })
+    expect(lash?.effects[1]).toMatchObject({ statusId: 'bleed', baseChance: 0.75, coefficient: 0.1, power: 'physical' })
+    expect(burst).toMatchObject({ id: 'venom-burst', coefficient: 2.6, school: 'physical', telegraphMs: 2500, canCrit: true, cooldownSeconds: 10, interruptMaxHpFraction: 0.04 })
+    const poisons = burst?.effects.filter((effect) => effect.kind === 'applyStatus') ?? []
+    expect(poisons).toHaveLength(5)
+    expect(poisons[0]).toMatchObject({ statusId: 'poison', baseChance: 1, coefficient: 0.3, power: 'physical' })
+    expect(summon).toMatchObject({ trigger: 'hp', hpFraction: 0.5, telegraphMs: 2000 })
     expect(summon?.effects).toEqual([
-      { kind: 'summon', enemyId: 'barbed-stalker', level: 34 },
-      { kind: 'summon', enemyId: 'barbed-stalker', level: 34 },
+      { kind: 'summon', enemyId: 'barbed-stalker', level: 35 },
+      { kind: 'summon', enemyId: 'barbed-stalker', level: 35 },
     ])
   })
 
@@ -134,7 +137,7 @@ describe('Bloodthorn Barrens enemies', () => {
     stepUntil(state, defs, () => state.enemies.filter((enemy) => enemy.defId === 'barbed-stalker').length >= 2, 10_000)
     const stalkers = state.enemies.filter((enemy) => enemy.defId === 'barbed-stalker')
     expect(stalkers).toHaveLength(2)
-    expect(stalkers.every((stalker) => stalker.summon && stalker.xp === 0 && stalker.level === 34)).toBe(true)
+    expect(stalkers.every((stalker) => stalker.summon && stalker.xp === 0 && stalker.level === 35)).toBe(true)
   })
 
   it('lays out the encounters and their drops and gold', () => {

@@ -1257,6 +1257,28 @@ Finding: the classes split into two groups against one elite. The Warrior, Assas
 
 Also noted: the Antidote is worse than a Healing Draught at the Matriarch (prepared minus noantidote: W -2, A -3, R -41, M -29, C -1), so the proposed prepared supply set is a handicap and the Antidote needs a Bleed row (or a better effect) before it is worth the slot.
 
+**Decision 2026-11-24 (user, option 1) and second tuning round.** Allowed beyond the original ranges: Matriarch Power 72 or lower (floor 66), HP 5,800-6,800, status coefficients up to 0.30, stack counts within the status definitions (Poison and Bleed cap at 5 stacks), the Stalker, Crawler and Thornwitch coefficients, and an Antidote Bleed rule. The Antidote already removed Poison and Bleed; the missing piece was a rule row, so `ANTIDOTE_BLEED_ROW` (drink at 3 Bleed stacks) goes right after the Poison row for new heroes when the 12-rule limit has room (a Mage has none), existing heroes get it once after their own Antidote row (hero update `antidote-bleed-rule`; heroes with no Antidote row get nothing), and the Barrens harness tiers carry it (`bleedRow`; every earlier matrix leaves it out so it stays byte-identical).
+
+Chosen numbers (best point found; see the gates below): HP 6,800, Power 72, enrage 90 s, interrupt 4%. Hemorrhage Lash: one Bleed application at 75% base chance, coefficient 0.10. Venom Burst: five Poison applications at 100% (the stack cap), coefficient 0.30. The Barbed Stalker's Serrated Rake Bleed coefficient is 0.30 (it follows the elite; the Crawler and Thornwitch are unchanged). The summon triggers at 50% HP (the planned summon fallback) and the summoned Stalkers are level 35.
+
+Measured (seeds 1 to 3 x 100, rules, mean; seed-1 values where noted; W/A/R/M/C):
+
+| Cell | W | A | R | M | C |
+| --- | --- | --- | --- | --- | --- |
+| Tyrant prepared (ceiling is this +5) | 52 | 96 | 61 | 93 | 45 |
+| Matriarch prepared, chosen numbers | 55 | 96 | 34 | 52 | 51 |
+| Matriarch arrived (seed 1) | 0 | 76 | 1 | 5 | 0 |
+| Matriarch over-levelled (seed 1) | 100 | 100 | 84 | 84 | 99 |
+| Matriarch prepared-crafted (seed 1) | 95 | 100 | 84 | 75 | 83 |
+| Prepared, seed 1 (reference for the rows below) | 54 | 98 | 32 | 49 | 48 |
+| Prepared minus nostaunch (seed 1) | +31 | +3 | +4 | +19 | +14 |
+| Prepared minus blind (seed 1) | +12 | +2 | -3 | +19 | -41 |
+| Prepared minus noantidote (seed 1, record only) | -9 | 0 | -9 | -1 | -24 |
+
+Gate status: (a) median 52, floor 30 met (Ranger 34), one class above 85 (A), ceilings W 55 (57), R 34 (66), M 52 (98), A 96 (101) met, but the Cleric is 51 against a ceiling of 50.3: failed by under one point. (b) arrived at most 25 holds for W, R, M, C (4 of 5); over-levelled is at least 85 for W, A, C but R and M are 84 (one point short); crafted minus plain is +41 / +2 / +52 / +26 / +35, so W, R and C fail the +30 limit. (c) passes for W, M and C (3 needed). (d) fails for the Ranger (-3; the Warrior +12 passes). (e) passes (regular fights 100%; HP lost 15-40% in 6 of 10 cells). (f) passes. The crafted-minus-plain band cannot hold together with the ceilings of (a): the crafted supplies are worth about +30 to +50 on a fight the prepared tier wins half the time, and a harder Matriarch drops the Ranger and Mage under 30. Antidote: still worse than a Draught for the Warrior, Ranger and above all the Cleric (-24), because three Poison stacks come back at once from a five-stack Venom Burst; the rule threshold or the supply itself needs a later look.
+
+How the choice was made (seed-1 prepared rules, wins W/A/R/M/C): Poison and Bleed applications were the strongest lever on the Warrior and Cleric, but Bleed (it ticks on hero actions) hurts the Ranger most, so Bleed was kept at one weak application and Poison went to the cap. Coefficient 0.30 on two applications each gave 85/93/15/42/59 (Ranger far under 30); a third Poison and second Bleed gave 47/66/7/17/37; poison-only extras 76/89/26/25/51; five Poison at 0.30 with a weak Bleed gave 65/89/29/42/44 at interrupt 5%, 67/95/32/61/53 at 4% and 63/58/24/32/42 at 8%. Summon at 50% with level 34 / 35 / 36 / 38 Stalkers gave, roughly (seed 1), W 61 / 56 / 54 / 46 (Ranger 36 / 34 / 30 / 27, Cleric 47 / 53 / 45 / 47); the summon at 45% and a Power of 70 or 71 moved the Warrior up by 8 to 10 points, so Power 72 is the ceiling that keeps the Warrior near its ceiling.
+
 Guards: only a subset ran before the work stopped (see the plan Progress line); no sim file changed apart from the `EXPEDITION_IDS` and `MATERIAL_RARITY` constants and the Swift requirement.
 
 ### Events
