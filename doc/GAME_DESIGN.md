@@ -1214,6 +1214,51 @@ Tuning order: seed-1 grid of HP {5,800; 6,300; 6,800} x Power {72; 78; 84}, then
 
 Risks: barriers (the Mage Mana Ward, the Cleric Ward) and high VIT shrug off Bleed and Poison, so (c) may pass for only 2 or 3 classes; the Antidote only has a Poison row (a Bleed row is a later follow-up).
 
+**Measured 2026-11-24, Step 14.5 part 9 (BLOCKED: the Matriarch cannot meet the bands inside the allowed ranges).** Seeds 1 to 3 x 100 runs, rules, mean, at the proposed numbers (6,300 HP, Power 78, enrage 100 s, status 0.15, interrupt 5%); W/A/R/M/C = Warrior, Assassin, Ranger, Mage, Cleric. XP was scaled by one factor in part 2 (the proposed 2.2 and 1.87 multipliers gave about 62 `barrens-mixed` fights per level at level 37; Crawler and Thornwitch are now 3.4 and the Stalker 2.9, about 40 fights).
+
+| Matriarch / Tyrant prepared (win %) | W | A | R | M | C |
+| --- | --- | --- | --- | --- | --- |
+| Tyrant prepared, same tree (re-measured; band (a) ceiling is this +5) | 52 | 96 | 61 | 93 | 45 |
+| Matriarch prepared | 98 | 95 | 31 | 57 | 96 |
+| Matriarch arrived (seed 1) | 68 | 78 | 16 | 5 | 4 |
+| Matriarch over-levelled (seed 1) | 100 | 100 | 94 | 93 | 100 |
+| Matriarch prepared-crafted (seed 1) | 100 | 100 | 98 | 99 | 100 |
+| Matriarch prepared, blind (seed 1) | 80 | 95 | 25 | 23 | 99 |
+| Prepared-nostaunch (seed 1; prepared 98 / 97 / 28 / 56 / 96) | 89 | 92 | 22 | 49 | 91 |
+| Prepared-noantidote (seed 1, record only) | 100 | 100 | 69 | 85 | 97 |
+
+Gate status at the proposed numbers: (a) fails (median 96 against 50-75; three classes above 85 (W 98, A 95, C 96) against at most 2; Ranger 31 passes the floor of 30 only just; W and C are more than 40 points above their Tyrant ceilings); (b) arrived at most 25 passes for only R, M and C (3 of 4 needed), over-levelled passes, crafted minus plain fails for R (+70) and M (+43); (c) Staunch check +9 / +5 / +6 / +7 / +5, passes for 1 class (3 needed); (d) rules minus blind +18 Warrior passes, Ranger +3 fails; (e) passes (every regular fight 100%, HP lost in the 15-40% band in 6 of 10 cells: barrens-deep for all five classes and barrens-mixed for the Cleric only, barrens-mixed 2-8% for the others); (f) passes; (g) and (h) not completed (see below).
+
+Seed-1 grid, Matriarch prepared rules (wins % W/A/R/M/C):
+
+| HP \ Power | 72 | 78 | 84 |
+| --- | --- | --- | --- |
+| 5,800 | 100/100/66/88/100 | 100/97/42/66/99 | 96/90/26/36/99 |
+| 6,300 | 100/98/43/85/98 | 98/97/28/56/96 | 94/87/17/22/93 |
+| 6,800 | 100/96/35/69/97 | 96/91/19/43/78 | 82/81/11/18/64 |
+
+Then enrage 90 s (the lower end), interrupt 4% and 8%, and the 0.18 status fallback (HP 6,800 unless noted; W/A/R/M/C):
+
+| Power, coefficient, interrupt | Result |
+| --- | --- |
+| 72, 0.15, 5% | 100/96/35/69/74 |
+| 72, 0.18, 5% | 99/95/32/61/65 |
+| 72, 0.18, 8% | 99/67/26/55/65 |
+| 72, 0.18, 4% | 99/99/35/73/72 |
+| 78, 0.18, 8% | 91/42/12/20/40 |
+| 78, 0.18, 4% | 93/97/20/48/48 |
+| 84, 0.18, 4% | 67/86/11/23/35 |
+| 84, 0.18, 8% | 60/20/6/1/24 |
+| HP 6,300, 72, 0.18, 8% | 100/73/37/69/94 |
+
+Exploratory, outside the allowed ranges (HP above 6,800; 90 s, 0.18, 5%): HP 8,500 with Power 66 gives 74/95/19/28/8; HP 8,500 with Power 72 gives 36/73/8/9/3; HP 10,000 with Power 66 gives 4/58/3/0/0.
+
+Finding: the classes split into two groups against one elite. The Warrior, Assassin and Cleric (sustain, life steal, barrier) win 95% or more until Power and HP are far past the planned ranges, while the Ranger and Mage drop under 30% well before the Warrior reaches 60%. No point in the grid, the enrage, interrupt and 0.18 levers puts the median in 50-75 with every class at least 30 and each class under its Tyrant ceiling (W 57, A 101, R 66, M 98, C 50). The Ranger and Mage floor needs Power 72 or lower, the Warrior ceiling needs Power 84 or more. Per the plan the work stops here: Power above 84 needs a user decision, and no band was loosened. Fallbacks used: the XP scale (part 2) and the 0.18 status coefficient (exploration only, not committed). The Matriarch in the code keeps the proposed numbers.
+
+Also noted: the Antidote is worse than a Healing Draught at the Matriarch (prepared minus noantidote: W -2, A -3, R -41, M -29, C -1), so the proposed prepared supply set is a handicap and the Antidote needs a Bleed row (or a better effect) before it is worth the slot.
+
+Guards: only a subset ran before the work stopped (see the plan Progress line); no sim file changed apart from the `EXPEDITION_IDS` and `MATERIAL_RARITY` constants and the Swift requirement.
+
 ### Events
 
 - An event must be completed manually at least once before automation can be enabled for it.
