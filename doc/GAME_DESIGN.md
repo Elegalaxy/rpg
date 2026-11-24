@@ -1517,7 +1517,7 @@ Decided 2026-11-24 (user approved the plan; numbers are proposed and the measure
 | --- | --- | --- | --- | --- | --- |
 | Staunch | +10 physical status resistance (new field `physicalStatusResistanceBonus`; lowers the chance Bleed, Poison and physical-tagged statuses land on the hero by 10 points) | 32 | armor, accessory | 850 gold (`recipeGold`) | Emberwrought Tyrant defeated by any hero |
 | Ruthless | +3 points crit chance, +10 points crit damage | 34 | weapon, accessory | 900 gold | same |
-| Ironbound | +8% max HP | 36 | armor | 950 gold | same |
+| Ironbound | +7% max HP (8% until the Step 14.3 measurement) | 36 | armor | 950 gold | same |
 | Swift | +3 points cooldown reduction, +3 Accuracy | 38 | weapon, accessory | 1,000 gold | same |
 
 Staunch has little use until a level 32 or higher enemy applies Bleed or Poison: no current Cinder Scar enemy does, so it is a modifier for later zones.
@@ -1527,6 +1527,13 @@ Staunch has little use until a level 32 or higher enemy applies Bleed or Poison:
 **Warming Tonic** removes all Chill and Burn, restores 10% of maximum HP, and makes the hero immune to new Burn for 10 seconds (`statusImmunity` effect, supplies only). While immune, a Burn application still draws its roll (the RNG draw order does not change) and is logged `immune`; nothing is applied. A second Tonic sets the end to the later of the two; cleansing does not end it. Price 15 gold (was 12); brew 2 hide + 5 gold (was 4).
 
 Acceptance (seeds 1 to 3 x 100 runs, rules, mean over the seeds): (a) Tyrant prepared stays inside the bands (40 to 85; Warrior and Cleric at least 30) and within +/-8 of the 2026-11-10 numbers (Warrior 35, Assassin 75, Ranger 59, Mage 74, Cleric 43); prepared minus no-Tonic improves on (-3, -5, -8, -4, -8) for at least 3 classes (0 is not required). (b) `--matrix late`: each swapped modifier minus its baseline is at most +8 Tyrant win points for every class; Tempered on an accessory minus prepared is at least -3 averaged over the classes. (c) Guards: reference CSV, warden, causeway, hollows, built and telegraph byte-identical; elites identical apart from Tyrant rows. Fallbacks, each used once and then stop and report: immunity 10 s to 6 s; Ironbound 8% to 7%; Ruthless crit 3 to 2; Swift cooldown reduction 3 to 2.5; Tempered penetration 6 to 5 if over +8, crit 2 to 3 if under -3.
+
+**Measured 2026-11-24** (Step 14.3, seeds 1 to 3 x 100 runs, rules, mean; W/A/R/M/C = Warrior, Assassin, Ranger, Mage, Cleric). Immunity 10 s, nothing else tuned except Ironbound.
+
+- Tyrant prepared (Cinder prepared tier), before Step 14.3 on the same tree: 46 / 93 / 59 / 93 / 41; after (Tonic immunity): 52 / 96 / 61 / 93 / 45, a change of +6 / +3 / +2 / +1 / +4, inside +/-8. The 2026-11-10 reference numbers (35 / 75 / 59 / 74 / 43) and the 40 to 85 bands were already out of reach before this step (Assassin 93, Mage 93 on the pre-step tree; earlier Steps moved the Tyrant cells), so the "stays in bands" half of acceptance (a) cannot be met by this step; the change is judged against the measured pre-step numbers.
+- Prepared minus no-Tonic (the Burn check): -1 / +2 / -7 / +1 / -4 against -3 / -5 / -8 / -4 / -8 before; improved for all 5 classes (3 needed). The Tonic is still slightly worse than a Draught for the Warrior, Ranger and Cleric.
+- `--matrix late`, variant minus baseline in win points (W/A/R/M/C): Ironbound 8% first measured +8.7 / +1.3 / -2.3 / +0.3 / +4.7 (Warrior over +8), so the fallback 7% was used: +1.3 / -0.7 / +1.0 / 0.0 / +3.0. Ruthless +4.0 / +0.7 / +1.0 / +2.3 / +7.3. Swift +0.7 / +1.3 / +2.3 / +0.3 / 0.0. Tempered on an accessory +1.0 / +0.7 / +1.3 / -2.3 / 0.0 (mean +0.1, needs at least -3). Tempered on the weapon instead of Bloodbound (record only) -48 / -17 / -55 / -55 / -21: against the life steal on the weapon, Tempered still loses, the pick is the accessory slot. Staunch on hands and feet instead of Nimble at the Warden -6 / -13 / -15 / -11 / -3 (it only gives up Evasion there; the Warden applies no physical status).
+- Guards at seed 1 x 100: reference CSV, warden, causeway, hollows, built and telegraph are byte-identical to the pre-step run; elites differ only in Tyrant rows. `--expedition cinder-scar` seeds 1 to 5 run cleanly: 0 defeats, 1 retreat per run.
 
 `--matrix late` swaps one modifier into the Prepared tier of the Cinder Scar and of the Warden harness (the harness skips the level gate): Ironbound on head and chest instead of Stalwart; Ruthless on accessory 0 instead of Vicious; Swift on accessory 1 instead of Quick; Tempered on accessory 1 instead of Quick (`tempered-acc`) and on the weapon instead of Bloodbound (`tempered-weapon`, recorded only); Staunch on hands and feet instead of Nimble (Warden prepared). They are not added to the existing Warden or Cinder variant lists.
 
@@ -2455,10 +2462,12 @@ Accessory bases (Step 14.4, decided 2026-11-24). An accessory base may carry one
 | Base | Implicit | At item level 10 / 20 / 30 / 40 |
 |---|---|---|
 | Ring, Charm (starter only) | none | none |
-| Amulet | +0.05% max HP per item level | 0.5% / 1% / 1.5% / 2% |
-| Talisman | +0.2 points crit damage per item level | +2 / +4 / +6 / +8 points |
+| Amulet | +0.025% max HP per item level (0.05% until the 14.4 measurement) | 0.25% / 0.5% / 0.75% / 1% |
+| Talisman | +0.1 points crit damage per item level (0.2 until the 14.4 measurement) | +1 / +2 / +3 / +4 points |
 
 Every modifier that fits an accessory fits both new bases. Greyhaven's shop and the Craft screen sell and craft the Amulet and the Talisman at the usual base price (item level x 10 gold) and craft cost; the Ring and the Charm are starter-only, no longer sold or craftable (owned ones keep working). Reference and harness heroes keep zero-stat accessories, so every earlier matrix is unchanged. Power bound (seeds 1 to 3 x 100 runs, rules, mean): Warden prepared and Cinder Tyrant prepared with an Amulet and a Talisman at the tier's level, minus the plain tier, at most +8 win points per class; if not, halve the per-level numbers once, re-measure, then stop and report. Measured with `--matrix late` (`warden-trinkets`, `cinder-trinkets`).
+
+**Measured 2026-11-24** (Step 14.4, seeds 1 to 3 x 100 runs, rules, mean; trinkets minus plain tier, win points W/A/R/M/C). At the proposed numbers (0.05% and 0.2 per level): Cinder Tyrant prepared +0.3 / 0.0 / -0.3 / +0.3 / +2.0, Warden prepared +11.0 / +1.3 / +3.7 / +7.3 / +2.0 (Warrior over +8). Halved once as the rule says: Cinder -1.0 / -0.7 / -0.7 / +0.3 / +6.3, Warden +4.0 / -0.3 / 0.0 / +6.0 / +2.3, inside the bound. Guards (reference CSV, warden, causeway, hollows, built, telegraph, elites) are byte-identical to the pre-14.3 run apart from the Tyrant rows 14.3 moved on purpose.
 
 Quality:
 

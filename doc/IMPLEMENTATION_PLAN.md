@@ -1639,7 +1639,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-24: Checked, nothing to change. Hunter's Mark is the HM-R skill in `content/skills.ts` (Step 13.40, commit 7dd99d8). The Venom Edge node stays a pure connector node with no numbers, as decided in 13.50; revisit only if the boss cap rules change.
 
 ### Step 14.3: Late modifiers, Tempered fix, Warming Tonic Burn immunity
-- Status: `in progress`
+- Status: `done` (with the Tyrant band note below)
 - Depends on: 14.2
 - Goal: the Warming Tonic gives 10 s of Burn immunity, Tempered stops being a trap pick, and four late modifiers (Staunch, Ruthless, Ironbound, Swift) unlock on the first Emberwrought Tyrant defeat. Rules, numbers and acceptance gates in GAME_DESIGN "Late modifiers and Cinder fixes (Step 14.3)".
 - Parts: P1 docs; P2 Tonic immunity (sim and content); P3 physical status resistance, the four modifiers, Tempered numbers; P4 `--matrix late` harness and measurement; P5 close step and HANDOFF.
@@ -1647,9 +1647,10 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-24: P1 done (docs).
   - 2026-11-24: P2 code done: `statusImmunity` effect (sim types, skills validation, supply use in `combat.ts`, `tryApplyStatus` logs `immune` after the roll draw), Warming Tonic content and price, tests in `statusImmunity.test.ts`. Measurement below.
   - 2026-11-24: P3 code done: `physicalStatusResistanceBonus` (economy, stats, hero `physicalStatusResistance` in `combat.ts`, a stat row in `persist/equipment.ts`), Staunch, Ruthless, Ironbound and Swift in `ITEM_MODIFIERS`, Tempered 0.06 on weapons and accessories. Tests in `modifiers.test.ts`, `crafting.test.ts`, `legacySaves.test.ts`, `equipment.test.ts`, `statusImmunity.test.ts`.
+  - 2026-11-24: P4 and P5 done. `src/harness/late.ts` and `--matrix late` (with `--classes` and `--tiers` filters). Measured (numbers in GAME_DESIGN "Late modifiers and Cinder fixes"): Tonic immunity moves Tyrant prepared by +6 / +3 / +2 / +1 / +4 (inside +/-8) and the Tonic check improves for all 5 classes. Fallback used once: Ironbound 8% to 7% (Warrior was +8.7). Tyrant prepared on the pre-step tree was already 46 / 93 / 59 / 93 / 41, outside the 40 to 85 bands and the 2026-11-10 numbers, so that half of the acceptance could not be met by this step and is recorded as a pre-existing drift (a rebalance of the Tyrant cells is a separate decision). Guards byte-identical; cinder-scar expedition seeds 1 to 5 clean, 0 defeats.
 
 ### Step 14.4: Amulet and Talisman accessory bases
-- Status: `in progress`
+- Status: `done`
 - Depends on: 14.3
 - Goal: two new accessory bases with one implicit stat each (Amulet: max HP; Talisman: crit damage), sold and crafted from now on, with Ring and Charm starter-only. Rules in GAME_DESIGN section 9 "Accessory bases (Step 14.4)".
 - Parts: P1 docs; P2 sim and content (types, bases, `gearBonusesFor`, persist callers, starter-only); P3 UI implicit line, browser-checked; P4 `--matrix late` trinket variants and numbers.
@@ -1657,6 +1658,7 @@ Use fixture skills and enemies inside test files where real content doesn't exis
   - 2026-11-24: P1 done (docs).
   - 2026-11-24: P2 done: accessory base variant (`implicit`, `starterOnly`), `implicitBonuses`, `addStatBonuses`, `gearBonusesFor` in `sim/economy.ts`; `accessory-amulet` and `accessory-talisman` in `content/items.ts` with `implicitText`; `shopStock` skips starter-only bases and carries `implicit`; `buyItem` and `craftCheck` refuse them; `persist/equipment.ts` and `persist/expeditionSetup.ts` use `gearBonusesFor`; Craft list and Guide item entries updated. Tests: `content/accessoryBases.test.ts`, `equipment.test.ts`, `town.test.ts`, `crafting.test.ts`.
   - 2026-11-24: P3 done: `ImplicitLine` in `ui/Kit.tsx` (muted label, tabular figure, existing tokens), shown on Town buy rows (`ShopEntry.implicit`), Sell rows and worn-gear rows; Jeweler blurb and Guide line say amulets and talismans. Browser-checked on the dev server at 1280 and 375 wide (buy row, Sell row, Equipment row; no horizontal overflow; the label stacks above the figure on the phone). Test in `SellList.test.tsx`.
+  - 2026-11-24: P4 done: `warden-trinkets` and `cinder-trinkets` in `--matrix late`. At the proposed per-level numbers Warden prepared Warrior was +11.0 (bound +8), so the per-level numbers were halved once (Amulet 0.025% max HP, Talisman 0.1 points crit damage per item level): Warden +4.0 / -0.3 / 0.0 / +6.0 / +2.3, Cinder -1.0 / -0.7 / -0.7 / +0.3 / +6.3. Guards byte-identical.
 
 ## 8. Risks, and what would reveal them early
 
