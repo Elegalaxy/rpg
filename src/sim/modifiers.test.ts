@@ -133,7 +133,7 @@ describe('the Causeway modifiers', () => {
     expect(ITEM_MODIFIERS.hallowed).toMatchObject({ minLevel: 16, bonus: { equipmentHealingPower: 10 }, requires: { discoveryId: 'node:drowned-causeway' } })
     expect(ITEM_MODIFIERS.rending).toMatchObject({ minLevel: 18, bonus: { armorPenetrationBonus: 0.06, magicalPenetrationBonus: 0.06 }, requires: { discoveryId: 'node:drowned-causeway' } })
     expect(ITEM_MODIFIERS.siphoning).toMatchObject({ minLevel: 20, bonus: { lifestealFraction: 0.03 }, requires: { enemyId: 'tidebound-colossus' } })
-    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(18)
+    expect(Object.keys(ITEM_MODIFIERS)).toHaveLength(22)
     const hallowed = ITEM_MODIFIERS.hallowed!
     const rending = ITEM_MODIFIERS.rending!
     const siphoning = ITEM_MODIFIERS.siphoning!
@@ -239,7 +239,7 @@ describe('the Cinder Scar modifiers', () => {
     })
     expect(ITEM_MODIFIERS.tempered).toMatchObject({
       minLevel: 28,
-      bonus: { armorPenetrationBonus: 0.04, magicalPenetrationBonus: 0.04, critChanceBonus: 0.02 },
+      bonus: { armorPenetrationBonus: 0.06, magicalPenetrationBonus: 0.06, critChanceBonus: 0.02 },
       recipeGold: 700,
       requires: { discoveryId: 'node:cinder-scar' },
     })
@@ -249,11 +249,24 @@ describe('the Cinder Scar modifiers', () => {
       recipeGold: 800,
       requires: { enemyId: 'emberwrought-tyrant' },
     })
+    for (const [id, minLevel, recipeGold, bonus] of [
+      ['staunch', 32, 850, { physicalStatusResistanceBonus: 10 }],
+      ['ruthless', 34, 900, { critChanceBonus: 0.03, critDamageBonus: 0.1 }],
+      ['ironbound', 36, 950, { maxHpBonus: 0.07 }],
+      ['swift', 38, 1000, { cooldownReductionBonus: 0.03, accuracyBonus: 3 }],
+    ] as const) {
+      expect(ITEM_MODIFIERS[id]).toMatchObject({ minLevel, recipeGold, bonus, requires: { enemyId: 'emberwrought-tyrant' } })
+    }
+    const lateFits = (id: string): boolean[] => [sword, shield, chest, ring].map((base) => modifierFits(ITEM_MODIFIERS[id]!, base))
+    expect(lateFits('staunch')).toEqual([false, false, true, true])
+    expect(lateFits('ruthless')).toEqual([true, false, false, true])
+    expect(lateFits('ironbound')).toEqual([false, false, true, false])
+    expect(lateFits('swift')).toEqual([true, false, false, true])
     const emberward = ITEM_MODIFIERS.emberward!
     const tempered = ITEM_MODIFIERS.tempered!
     const kindled = ITEM_MODIFIERS.kindled!
     expect([chest, head, ring, sword, shield].map((base) => modifierFits(emberward, base))).toEqual([true, true, true, false, false])
-    expect([sword, ring, shield, chest].map((base) => modifierFits(tempered, base))).toEqual([true, false, false, false])
+    expect([sword, ring, shield, chest].map((base) => modifierFits(tempered, base))).toEqual([true, true, false, false])
     expect([shield, ring, sword, chest].map((base) => modifierFits(kindled, base))).toEqual([true, true, false, false])
     expect(appliesToText(emberward)).toBe('armor and accessories')
   })
@@ -264,12 +277,37 @@ describe('the Cinder Scar modifiers', () => {
     const ward = deriveHeroStats({ ...input, ...statBonusesFor(worn({ head: ['emberward'] })) })
     expect(ward.magicalStatusResistance).toBe(10)
     const temper = deriveHeroStats({ ...input, ...statBonusesFor(worn({ mainHand: ['tempered'] })) })
-    expect(temper.armorPenetration).toBeCloseTo(plain.armorPenetration + 0.04, 10)
-    expect(temper.magicalPenetration).toBeCloseTo(plain.magicalPenetration + 0.04, 10)
+    expect(temper.armorPenetration).toBeCloseTo(plain.armorPenetration + 0.06, 10)
+    expect(temper.magicalPenetration).toBeCloseTo(plain.magicalPenetration + 0.06, 10)
     expect(temper.critChance).toBeCloseTo(plain.critChance + 0.02, 10)
     const kindle = deriveHeroStats({ ...input, ...statBonusesFor(worn({ offHand: ['kindled'] })) })
     expect(kindle.healingPower).toBeCloseTo(plain.healingPower + 8, 10)
     expect(kindle.maxHp / plain.maxHp).toBeCloseTo(1.05, 10)
+  })
+
+  it('add the late modifiers to the derived stats', () => {
+    const plain = deriveHeroStats(input)
+    expect(plain.physicalStatusResistance).toBe(0)
+    const staunch = deriveHeroStats({ ...input, ...statBonusesFor(worn({ chest: ['staunch'] })) })
+    expect(staunch.physicalStatusResistance).toBe(10)
+    expect(staunch.magicalStatusResistance).toBe(0)
+    const ruthless = deriveHeroStats({ ...input, ...statBonusesFor(worn({ mainHand: ['ruthless'] })) })
+    expect(ruthless.critChance).toBeCloseTo(plain.critChance + 0.03, 10)
+    expect(ruthless.critDamage).toBeCloseTo(plain.critDamage + 0.1, 10)
+    const ironbound = deriveHeroStats({ ...input, ...statBonusesFor(worn({ chest: ['ironbound'] })) })
+    expect(ironbound.maxHp / plain.maxHp).toBeCloseTo(1.07, 10)
+    const swift = deriveHeroStats({ ...input, ...statBonusesFor(worn({ mainHand: ['swift'] })) })
+    expect(swift.cooldownReduction).toBeCloseTo(plain.cooldownReduction + 0.03, 10)
+    expect(swift.accuracy).toBeCloseTo(plain.accuracy + 3, 10)
+    const accessory = deriveHeroStats({ ...input, ...statBonusesFor(worn({ accessory0: ['tempered'] })) })
+    expect(accessory.critChance).toBeCloseTo(plain.critChance + 0.02, 10)
+  })
+
+  it('scale the physical status resistance with rank and respect the stack cap', () => {
+    expect(modifierTextAt(ITEM_MODIFIERS.staunch!, 3)).toBe('+20 physical status resistance')
+    const gear = worn({ head: ['staunch'], chest: ['staunch'], accessory0: ['staunch'] })
+    expect(statBonusesFor(gear).physicalStatusResistanceBonus).toBe(20)
+    expect(modifierCapNotes(gear)).toEqual(['Staunch is on 3 pieces, but only 2 count.'])
   })
 
   it('respect the two-piece stack cap for Emberward', () => {

@@ -2514,7 +2514,7 @@ function actorFromHero(setup: CombatSetup, defs: GameDefs): CombatHero {
     vitality: hero.attributes.vitality,
     spirit: hero.attributes.spirit,
     statusPotency: 0,
-    physicalStatusResistance: 0,
+    physicalStatusResistance: derived.physicalStatusResistance,
     magicalStatusResistance: derived.magicalStatusResistance,
     boss: false,
     elite: false,

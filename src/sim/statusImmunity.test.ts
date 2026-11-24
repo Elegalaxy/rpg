@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createCombat, stepCombat } from './combat.ts'
 import { formatEvent } from './log.ts'
 import { assertSkillBook } from './skills.ts'
-import { tryApplyStatus } from './statuses.ts'
+import { statusResistance, tryApplyStatus } from './statuses.ts'
 import type { HeroStatInput } from './stats.ts'
 import type { CombatSetup, CombatState, EnemyDef, GameDefs, SkillDef, StatusAttemptEvent, SupplyUseEvent } from './types.ts'
 
@@ -166,5 +166,17 @@ describe('status immunity', () => {
     expect(() => assertSkillBook({ x: { ...base, effects: [{ ...effect, statusIds: [] }] } })).toThrow()
     expect(() => assertSkillBook({ x: { ...base, supply: true, effects: [effect] } })).not.toThrow()
     expect(() => assertSkillBook({ x: { ...base, supply: true, effects: [{ kind: 'damage', school: 'physical', coefficient: 1 }] } })).toThrow()
+  })
+})
+
+describe('physical status resistance from gear', () => {
+  it('reaches the hero in combat and lowers physical status chances only', () => {
+    const defs = defsWith()
+    const plain = createCombat(warriorSetup(), defs, 7)
+    const setup = warriorSetup()
+    const staunch = createCombat({ ...setup, hero: { ...setup.hero, statBonuses: { physicalStatusResistanceBonus: 10 } } }, defs, 7)
+    expect(staunch.hero.physicalStatusResistance).toBe(10)
+    expect(statusResistance(staunch.hero, 'physical') - statusResistance(plain.hero, 'physical')).toBe(10)
+    expect(statusResistance(staunch.hero, 'magical')).toBe(statusResistance(plain.hero, 'magical'))
   })
 })

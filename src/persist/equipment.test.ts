@@ -261,6 +261,21 @@ describe('what equipping changes', () => {
     expect(lines['Magical status resistance']).toBe(10)
   })
 
+  it('shows the physical status resistance from Staunch', () => {
+    const save = heroSave()
+    const plain = Object.fromEntries(statLines(statsFor(hero(save))!).map((line) => [line.label, line.value]))
+    expect(plain['Physical status resistance']).toBe(0)
+    const staunch = {
+      ...save,
+      heroes: save.heroes.map((h) => ({
+        ...h,
+        equipment: { ...h.equipment, accessory0: { ...h.equipment.accessory0!, modifiers: ['staunch'] } },
+      })),
+    }
+    const lines = Object.fromEntries(statLines(statsFor(hero(staunch))!).map((line) => [line.label, line.value]))
+    expect(lines['Physical status resistance']).toBe(10)
+  })
+
   it('previews the same numbers the equip then produces', () => {
     const save = withItems(heroSave(), developmentItems(1, 1))
     for (const id of ['dev-1', 'dev-2', 'dev-3', 'dev-6']) {

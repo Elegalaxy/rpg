@@ -281,6 +281,8 @@ export type StatBonuses = {
   lifestealFraction?: number
   /** Added to the hero's magical status resistance, in points. 10 lowers the chance a magical status lands by 10 points. */
   magicalStatusResistanceBonus?: number
+  /** Added to the hero's physical status resistance, in points. 10 lowers the chance Bleed, Poison and other physical statuses land by 10 points. */
+  physicalStatusResistanceBonus?: number
 }
 
 export type ItemModifier = {
@@ -344,7 +346,7 @@ export function bonusFactor(rank: number, temper = 0): number | undefined {
 }
 
 /** Flat point bonuses keep one decimal when scaled; every other bonus is a fraction and keeps four. */
-const FLAT_BONUS_KEYS: readonly string[] = ['accuracyBonus', 'evasionBonus', 'equipmentHealingPower', 'magicalStatusResistanceBonus']
+const FLAT_BONUS_KEYS: readonly string[] = ['accuracyBonus', 'evasionBonus', 'equipmentHealingPower', 'magicalStatusResistanceBonus', 'physicalStatusResistanceBonus']
 
 /** One bonus value at a rank and temper. Rank I with no temper (and anything unknown) returns the value untouched. */
 export function scaledBonus(key: string, value: number, rank: number, temper = 0): number {
@@ -391,7 +393,7 @@ export function modifierFits(modifier: ItemModifier, base: ItemBase): boolean {
   return true
 }
 
-/** The eighteen modifiers: six first-playable (G8), three from Batch C, three gated ones from the Drowned Causeway, three from the Rift Hollows and three from the Cinder Scar. Percent values are fractions: 0.02 is 2 points. */
+/** The twenty-two modifiers: six first-playable (G8), three from Batch C, three gated ones from the Drowned Causeway, three from the Rift Hollows, three from the Cinder Scar and four late ones unlocked by the Emberwrought Tyrant. Percent values are fractions: 0.02 is 2 points. */
 export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
   keen: { id: 'keen', name: 'Keen', minLevel: 1, bonus: { critChanceBonus: 0.02 }, text: '+2 points critical chance', appliesTo: ['weapon', 'accessory'] },
   precise: { id: 'precise', name: 'Precise', minLevel: 1, bonus: { accuracyBonus: 3 }, text: '+3 Accuracy', appliesTo: ['weapon', 'offHand', 'accessory'] },
@@ -487,9 +489,9 @@ export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
     id: 'tempered',
     name: 'Tempered',
     minLevel: 28,
-    bonus: { armorPenetrationBonus: 0.04, magicalPenetrationBonus: 0.04, critChanceBonus: 0.02 },
-    text: '+4 points armor and magical penetration, +2 points critical chance',
-    appliesTo: ['weapon'],
+    bonus: { armorPenetrationBonus: 0.06, magicalPenetrationBonus: 0.06, critChanceBonus: 0.02 },
+    text: '+6 points armor and magical penetration, +2 points critical chance',
+    appliesTo: ['weapon', 'accessory'],
     recipeGold: 700,
     requires: { discoveryId: 'node:cinder-scar' },
   },
@@ -501,6 +503,46 @@ export const ITEM_MODIFIERS: { readonly [id: string]: ItemModifier } = {
     text: '+5% maximum HP, +8 Healing Power',
     appliesTo: ['offHand', 'accessory'],
     recipeGold: 800,
+    requires: { enemyId: 'emberwrought-tyrant' },
+  },
+  staunch: {
+    id: 'staunch',
+    name: 'Staunch',
+    minLevel: 32,
+    bonus: { physicalStatusResistanceBonus: 10 },
+    text: '+10 physical status resistance',
+    appliesTo: ['armor', 'accessory'],
+    recipeGold: 850,
+    requires: { enemyId: 'emberwrought-tyrant' },
+  },
+  ruthless: {
+    id: 'ruthless',
+    name: 'Ruthless',
+    minLevel: 34,
+    bonus: { critChanceBonus: 0.03, critDamageBonus: 0.1 },
+    text: '+3 points critical chance, +10 points critical damage',
+    appliesTo: ['weapon', 'accessory'],
+    recipeGold: 900,
+    requires: { enemyId: 'emberwrought-tyrant' },
+  },
+  ironbound: {
+    id: 'ironbound',
+    name: 'Ironbound',
+    minLevel: 36,
+    bonus: { maxHpBonus: 0.07 },
+    text: '+7% maximum HP',
+    appliesTo: ['armor'],
+    recipeGold: 950,
+    requires: { enemyId: 'emberwrought-tyrant' },
+  },
+  swift: {
+    id: 'swift',
+    name: 'Swift',
+    minLevel: 38,
+    bonus: { cooldownReductionBonus: 0.03, accuracyBonus: 3 },
+    text: '+3 points cooldown reduction, +3 Accuracy',
+    appliesTo: ['weapon', 'accessory'],
+    recipeGold: 1000,
     requires: { enemyId: 'emberwrought-tyrant' },
   },
 }

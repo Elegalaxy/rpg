@@ -48,6 +48,7 @@ export function statLines(stats: HeroDerivedStats): StatLine[] {
     { label: 'Magical penetration', value: Math.round(stats.magicalPenetration * 1000) / 10, unit: '%' },
     { label: 'Life steal', value: Math.round(stats.lifestealFraction * 1000) / 10, unit: '%' },
     { label: 'Magical status resistance', value: stats.magicalStatusResistance, unit: '' },
+    { label: 'Physical status resistance', value: stats.physicalStatusResistance, unit: '' },
     { label: 'Cooldown reduction', value: Math.round(stats.cooldownReduction * 1000) / 10, unit: '%' },
     { label: 'Base action time', value: stats.actionTime, unit: ' s' },
   ]

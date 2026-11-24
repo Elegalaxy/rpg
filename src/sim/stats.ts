@@ -162,6 +162,8 @@ export type HeroStatInput = {
   lifestealFraction?: number
   /** Added to the hero's magical status resistance, in points. */
   magicalStatusResistanceBonus?: number
+  /** Added to the hero's physical status resistance, in points. */
+  physicalStatusResistanceBonus?: number
   /** Racial branch nodes that change derived stats. Omitted applies none. */
   racialNodeIds?: readonly string[]
   /** Human Renaissance is active. */
@@ -191,6 +193,8 @@ export type HeroDerivedStats = {
   lifestealFraction: number
   /** Spirit is added in combat; this is the gear part, in points. */
   magicalStatusResistance: number
+  /** Vitality is added in combat; this is the gear part, in points. */
+  physicalStatusResistance: number
 }
 
 export type EnemyStatOverrides = {
@@ -684,6 +688,7 @@ export function deriveHeroStats(input: HeroStatInput): HeroDerivedStats {
     healingReceivedBonus: healingReceivedBonus(attributes.vitality),
     lifestealFraction: optionalBonus(input.lifestealFraction, 'lifesteal fraction'),
     magicalStatusResistance: optionalBonus(input.magicalStatusResistanceBonus, 'magical status resistance bonus'),
+    physicalStatusResistance: optionalBonus(input.physicalStatusResistanceBonus, 'physical status resistance bonus'),
   }
 }
 
