@@ -27,12 +27,12 @@ describe('the uniques matrix', () => {
 
   it('scales a signature down above the tier level and adds the Talisman implicit only for the Matriarch unique', () => {
     const colossus = uniqueBonuses(['tidebound-carapace'], 20)
-    expect(colossus.lifestealFraction).toBeCloseTo(0.02 * (20 / 22), 4)
-    expect(uniqueBonuses(['tidebound-carapace'], 30).lifestealFraction).toBe(0.02)
+    expect(colossus.lifestealFraction).toBeCloseTo(0.01 * (20 / 22), 4)
+    expect(uniqueBonuses(['tidebound-carapace'], 30).lifestealFraction).toBe(0.01)
     const matriarch = uniqueBonuses(['briarheart-talisman'], 38)
     expect(matriarch.physicalStatusResistanceBonus).toBe(10)
     expect(matriarch.critDamageBonus).toBeCloseTo(0.038, 4)
-    expect(uniqueBonuses(['tidebound-carapace'], 20, 0.5).lifestealFraction).toBeCloseTo(0.01 * (20 / 22), 4)
+    expect(uniqueBonuses(['tidebound-carapace'], 20, 0.5).lifestealFraction).toBeCloseTo(0.005 * (20 / 22), 3)
   })
 
   it('builds a setup for every class and zone, and the uniques raise the bonuses over the baseline', () => {
@@ -52,4 +52,27 @@ describe('the uniques matrix', () => {
     expect(formatUniquesTable(rows)).toContain('warden-colossus minus warden-prepared')
     expect(UNIQUE_MATRIX_IDS).toContain('matriarch-u-all')
   }, 60_000)
+
+  it('has a signature-only and a modifier-only diagnostic for every gated cell, all record only', () => {
+    const gated = UNIQUE_VARIANTS.filter((entry) => !entry.recordOnly)
+    for (const cell of gated) {
+      const sig = UNIQUE_VARIANTS.find((entry) => entry.id === `${cell.id}-sig`)
+      const mod = UNIQUE_VARIANTS.find((entry) => entry.id === `${cell.id}-mod`)
+      expect(sig?.recordOnly, cell.id).toBe(true)
+      expect(mod?.recordOnly, cell.id).toBe(true)
+      expect(sig?.uniques).toEqual(cell.uniques)
+    }
+  })
+
+  it('applies only the signature, or only the modifiers, for the diagnostics', () => {
+    const plain = uniqueSetup('warrior', 'warden', [], 'p')
+    const signature = uniqueSetup('warrior', 'warden', ['tidebound-carapace'], 's', 1, 'signature')
+    const modifier = uniqueSetup('warrior', 'warden', ['tidebound-carapace'], 'm', 1, 'modifier')
+    const both = uniqueSetup('warrior', 'warden', ['tidebound-carapace'], 'b')
+    expect(signature.hero.statBonuses?.lifestealFraction).toBeGreaterThan(0)
+    expect(signature.hero.statBonuses?.maxHpBonus).toBe(plain.hero.statBonuses?.maxHpBonus)
+    expect(modifier.hero.statBonuses?.lifestealFraction).toBe(plain.hero.statBonuses?.lifestealFraction)
+    expect(modifier.hero.statBonuses?.maxHpBonus).toBeGreaterThan(plain.hero.statBonuses?.maxHpBonus ?? 0)
+    expect(both.hero.statBonuses?.lifestealFraction).toBe(signature.hero.statBonuses?.lifestealFraction)
+  })
 })

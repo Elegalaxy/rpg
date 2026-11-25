@@ -2784,6 +2784,34 @@ Rules:
 
 Bands (measured with `--matrix uniques`, rules mode, seeds 1 to 3 x 100, mean): every non-record single-unique cell minus its prepared baseline is at most +8 win points for every class (the Warden prepared bound), and the all-six row minus prepared is at most +30 for every class. Cells: Warden prepared (level 20): each of the Colossus, Reaver, Tyrant and Matriarch uniques alone (heirloom-scaled at level 20 over item level) and all six together; Reaver prepared: Colossus; Tyrant prepared: Reaver, plus all six as a record; Matriarch prepared: Tyrant and all six, record only (its gates are accepted exceptions). One-time fallback: halve the failing unique's signature, re-measure, then stop and report. The Warden Warrior is the likely trip.
 
+**Measured 2026-11-25** (`--matrix uniques`, seeds 1 to 3 x 100 runs, rules, mean; unique cell minus its prepared baseline in win points, W/A/R/M/C). Prepared baselines: Warden 40.7 / 24.0 / 48.3 / 37.3 / 46.3, Reaver 41.3 / 80.3 / 80.7 / 80.0 / 59.7, Tyrant 52.0 / 96.0 / 61.0 / 93.3 / 45.3, Matriarch 55.3 / 96.0 / 33.7 / 52.3 / 51.3. A `*` marks a gate that fails.
+
+| Cell | At the proposed signatures | After the one-time fallback (Colossus, Reaver and Tyrant signatures halved) | Bound |
+|---|---|---|---|
+| Warden + Colossus | +50.0 / +36.7 / +30.7 / +32.3 / +21.0 \* | +29.3 / +29.3 / +19.7 / +23.7 / +11.0 \* | +8 |
+| Warden + Reaver | +59.0 / +72.3 / +49.0 / +53.3 / +42.7 \* | +58.7 / +70.3 / +49.7 / +52.0 / +43.7 \* | +8 |
+| Warden + Tyrant | +28.0 / +19.0 / +9.0 / +23.0 / +47.0 \* | +27.7 / +14.7 / +7.7 / +20.3 / +43.0 \* | +8 |
+| Warden + Matriarch | +4.3 / +4.0 / -2.0 / -1.0 / -4.7 | +4.3 / +4.0 / -2.0 / -1.0 / -4.7 | +8 |
+| Warden + all six | +59.3 / +76.0 / +51.7 / +62.7 / +53.7 \* | +59.3 / +76.0 / +51.7 / +61.7 / +53.7 \* | +30 |
+| Reaver + Colossus | +32.7 / +6.3 / +11.3 / +14.0 / +11.7 \* | +18.0 / +4.7 / +7.0 / +5.7 / +3.0 \* | +8 |
+| Tyrant + Reaver | +8.3 / +0.3 / +4.7 / +1.7 / +12.7 \* | +3.7 / +0.3 / +0.7 / +0.7 / +4.3 | +8 |
+
+Record only, at the proposed signatures: Warden + Rootmaw +9.7 / +11.7 / +13.3 / +7.7 / +5.3, Warden + Echo +0.7 / +9.7 / -1.3 / -4.3 / -7.3, Tyrant + all six +43.7 / +3.7 / +35.0 / +6.3 / +40.0, Matriarch + Tyrant +20.0 / +0.7 / +7.7 / +4.7 / +3.7, Matriarch + all six +44.3 / +4.0 / +59.0 / +32.3 / +37.0.
+
+Split of the gated cells after the fallback (signature only, then fixed modifier only, same cells):
+
+| Cell | Signature only | Fixed modifier only |
+|---|---|---|
+| Warden + Colossus | +27.0 / +20.0 / +13.7 / +20.0 / +10.7 | +11.3 / +4.3 / +4.3 / +6.0 / -3.0 |
+| Warden + Reaver | +5.7 / +4.0 / +6.3 / +4.0 / +4.7 | +59.0 / +69.3 / +48.7 / +50.0 / +40.3 |
+| Warden + Tyrant | +5.3 / -1.7 / -0.3 / +1.3 / -2.3 | +23.7 / +15.3 / +5.7 / +20.3 / +45.3 |
+| Warden + Matriarch | +11.0 / +2.3 / +2.3 / +7.0 / -2.7 | -2.7 / -3.0 / -6.3 / -4.7 / -4.3 |
+| Warden + all six | +43.7 / +55.0 / +33.7 / +37.3 / +27.3 | +59.3 / +73.7 / +51.0 / +56.0 / +52.7 |
+| Reaver + Colossus | +18.0 / +4.7 / +7.0 / +5.7 / +3.0 | none (the tier already wears Stalwart) |
+| Tyrant + Reaver | +3.7 / +0.3 / +0.7 / +0.7 / +4.3 | none (the tier already wears Bloodbound) |
+
+Result: the gates fail after the fallback. The Warden cells fail mainly because of the fixed modifiers (Bloodbound and Kindled on a level 20 tier that never wears them; halving signatures cannot move them), and the Colossus lifesteal still moves the Warden and the Reaver Warrior above the bound at 1%. The halved values are the ones now in the code; the six-unique table above shows the proposed ones. A design decision is needed before the step can close.
+
 ## 10. Reincarnation and Long-Term Progression
 
 ### Trigger

@@ -45,8 +45,8 @@ describe('uniqueSignature', () => {
     const treads = unique('rootmaw-treads', 7)
     expect(uniqueSignature(treads)).toEqual({ evasionBonus: 1.5, accuracyBonus: 1.5 })
     const fang = unique('hollowmaw-fang', 20, 'sword')
-    expect(uniqueSignature(fang)).toEqual({ critChanceBonus: 0.0154, critDamageBonus: 0.1154 })
-    expect(uniqueSignatureText(fang)).toBe('+1.5 points critical chance, +11.5 points critical damage')
+    expect(uniqueSignature(fang)).toEqual({ critChanceBonus: 0.0077, critDamageBonus: 0.0577 })
+    expect(uniqueSignatureText(fang)).toBe('+0.8 point critical chance, +5.8 points critical damage')
     expect(uniqueSignatureText(treads)).toBe('+1.5 Evasion, +1.5 Accuracy')
   })
 
@@ -89,7 +89,7 @@ describe('gearBonusesFor with uniques', () => {
   it('counts a signature at its scaled strength for an item below the table level', () => {
     const equipment = emptyEquipment()
     equipment.chest = unique('tidebound-carapace', 11, 'chest')
-    expect(gearBonusesFor(equipment, lookup).lifestealFraction).toBe(0.01)
+    expect(gearBonusesFor(equipment, lookup).lifestealFraction).toBe(0.005)
   })
 
   it('works in the accessory slot', () => {

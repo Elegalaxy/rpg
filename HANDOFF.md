@@ -1,15 +1,16 @@
 # Project Handoff State
 
-- **Last Updated By:** Claude Code implementer (2026-11-24, Step 14.5 parts 9 and 10, gates partly open)
-- **Current Goal:** Step 14.5, fifth Frontier zone "Bloodthorn Barrens" (levels 34-40). All content, harness, world, bloodstone, Swift move, Salvage/Legacy and an Antidote Bleed rule are in and pushed. The Briar Matriarch is at the best point found after the user's option-1 round; four gates are still open (below). Changelog lines are closed under `## 0.24.0 · 2026-11-24 · Late Frontier`.
+- **Last Updated By:** Claude Code implementer (2026-11-25, Step 14.6, stopped at a failed balance gate)
+- **Current Goal:** Step 14.6 "Elite uniques". P1 to P6 are built and tested. P1 and P2 are on `origin/main`; P3 to P6 and the measurement commit are LOCAL ONLY on branch `uniques` in `../rpg-worktrees/uniques` (not pushed). P7 is not done.
 - **Recent Changes & Files Touched:**
-  - Antidote Bleed rule: `ANTIDOTE_BLEED_ROW` + `withAntidoteBleedRow` (`content/supplies.ts`), added by `startingRules` when the 12-rule limit has room (a Mage has none), hero update `antidote-bleed-rule` (`persist/heroUpdates.ts`), harness tier flag `bleedRow` (Barrens tiers on, all earlier matrices off), `--modes` filter on `--matrix barrens`.
-  - Matriarch (`content/enemies.ts`): 6,800 HP, Power 72, enrage 90 s, interrupt 4%, Lash one Bleed at 0.10, Venom Burst five Poison at 0.30, Stalker Bleed 0.30, summon at 50% with level-35 Stalkers. XP: Crawler/Thornwitch 3.4, Stalker 2.9.
-  - Guards at seed 1 x 100 against a fresh pre-change baseline: reference, warden, causeway, hollows, cinder, built, telegraph, late byte-identical; elites see the plan Progress line.
-- **Active Decisions / Constraints:**
-  - Never remove `// admin code`. One commit per part, pushed to `origin/main`; every game change adds a `CHANGELOG.md` line. `npm test` rewrites the scenarios snapshot: restore it (`git checkout --`).
-  - Do not run measurements at the same time as the full `npm test`. A filtered `--matrix elites --elites matriarch --tiers prepared --modes rules --runs 100` takes about 70 s.
-- **Open gates (Matriarch prepared 55 / 96 / 34 / 52 / 51, Tyrant 52 / 96 / 61 / 93 / 45):** (a) Cleric 51 against a ceiling of 50.3; (b) over-levelled Ranger and Mage 84 (need 85) and crafted minus plain +41 / +2 / +52 / +26 / +35 (limit +30); (d) Ranger rules minus blind -3 (need +10). (c) passes (+31 / +3 / +4 / +19 / +14), (e) and (f) pass. The crafted-minus-plain band and the ceilings of (a) pull in opposite directions (a harder Matriarch drops the Ranger and Mage under 30).
-- **Risks:** Antidote is still worse than a Draught at the Matriarch for the Cleric (-24), Warrior and Ranger (-9); Swift is unbuyable for accounts that beat the Tyrant but not the Matriarch and have not learned it; the Matriarch hits the Ranger hardest through Poison and Bleed.
-- **Not verified:** a live fight with Bleed on the hero card (the Browser pane was hidden earlier, the loop did not advance).
-- **Exact Next Step:** Decide the open gates: accept (b) crafted-minus-plain and (d) Ranger as exceptions, allow Power above 72 with a Ranger/Mage sustain fix, or rework the Antidote (its rule threshold at 3 stacks wastes it against five-stack Venom Burst). Then record the decision in GAME_DESIGN and close Step 14.5.
+  - Items: `sim/uniques.ts` (table, signature), `gearBonusesFor` (`sim/economy.ts`), `content/uniques.ts`, `itemName`, fixed sell price (`content/shop.ts`), `uniqueId` save check, sell confirm (`persist/sellSafety.ts`).
+  - Award: `persist/uniques.ts`, `settleExpedition` and `uniquePreview` (`persist/world.ts`), moments, offline summary, Notices.
+  - UI: `ui/town/UniqueLines.tsx`, Equipment, Sell and repair rows, outcome card, AwayPanel, Guide group "Unique items", signature notes in `persist/equipment.ts`.
+  - Harness: `--matrix uniques` with record-only signature-only and modifier-only cells.
+  - Fallback used: Colossus, Reaver and Tyrant signatures halved (Colossus 1% lifesteal, Reaver +1 crit / +7.5 crit damage, Tyrant +5 magic resist / +2 pens).
+- **Open gates (after the fallback, seeds 1-3 x 100, worst class):** Warden + Colossus +29.3, + Reaver +70.3, + Tyrant +43.0 (bound +8); Warden + all six +76 (bound +30); Reaver + Colossus +18.0 (Warrior, bound +8). Passing: Warden + Matriarch +4.3, Tyrant + Reaver +4.3. Full tables in GAME_DESIGN section 9 "Elite uniques (Step 14.6)".
+- **Cause:** the Warden failures come mainly from the fixed modifiers (Bloodbound, Kindled on a level 20 tier that never wears them), which halving a signature cannot move; Colossus lifesteal is still strong at 1%.
+- **Guards:** reference, warden, causeway, hollows, cinder, barrens, built, telegraph, late, elites (seed 1 x 100) byte-identical to the pre-step run.
+- **Active Decisions / Constraints:** Never remove `// admin code`. One commit per part. `npm test` rewrites the scenarios snapshot: restore it. Matriarch tuning is not to be touched. The `legacy-stepper` worktree belongs to another chat.
+- **Not verified:** outcome card, toast and away line in a browser (unit-tested only); unique rows were browser-checked at 1280 and 375.
+- **Exact Next Step:** User decides: (1) accept the Warden cells as exceptions (they test later-zone modifiers on earlier content), (2) change the gate to signature-only cells, or (3) redesign the fixed modifiers or signatures. Then push the local commits, close the plan Status and the `## Unreleased` changelog lines, and remove the worktree and branch.

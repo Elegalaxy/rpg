@@ -32,7 +32,11 @@ export type UniqueVariant = {
   recordOnly: boolean
   /** The signature of a unique is multiplied by this (the halving fallback). 1 is the table value. */
   signatureFactor?: number
+  /** Diagnostics: only the signature (the tier's modifiers stay) or only the fixed modifiers (no signature). Absent means both, as worn. */
+  part?: UniquePart
 }
+
+export type UniquePart = 'signature' | 'modifier'
 
 const wardenPrepared = (): WardenTier => WARDEN_TIERS.find((tier) => tier.id === 'prepared')!
 const hollowsPrepared = (): WardenTier => HOLLOWS_TIERS.find((tier) => tier.id === 'prepared')!
@@ -57,12 +61,30 @@ export const UNIQUE_BASELINE_IDS: { readonly [zone in UniqueZone]: string } = {
 const ALL_IDS: readonly string[] = UNIQUE_ITEMS.map((def) => def.id)
 const ID_BY_ENEMY = (enemyId: string): string => UNIQUE_ITEMS.find((def) => def.enemyId === enemyId)!.id
 
-const variant = (id: string, zone: UniqueZone, uniques: readonly string[], recordOnly = false): UniqueVariant => ({ id, zone, baseline: UNIQUE_BASELINE_IDS[zone], uniques, recordOnly })
+const variant = (id: string, zone: UniqueZone, uniques: readonly string[], recordOnly = false, part?: UniquePart): UniqueVariant => ({
+  id,
+  zone,
+  baseline: UNIQUE_BASELINE_IDS[zone],
+  uniques,
+  recordOnly,
+  ...(part === undefined ? {} : { part }),
+})
 
 const COLOSSUS = ID_BY_ENEMY('tidebound-colossus')
 const REAVER = ID_BY_ENEMY('hollowmaw-reaver')
 const TYRANT = ID_BY_ENEMY('emberwrought-tyrant')
 const MATRIARCH = ID_BY_ENEMY('briar-matriarch')
+
+/** The cells with a gate; each also gets a signature-only and a modifier-only diagnostic. */
+const GATED_CELLS: readonly { id: string; zone: UniqueZone; uniques: readonly string[] }[] = [
+  { id: 'warden-colossus', zone: 'warden', uniques: [COLOSSUS] },
+  { id: 'warden-reaver', zone: 'warden', uniques: [REAVER] },
+  { id: 'warden-tyrant', zone: 'warden', uniques: [TYRANT] },
+  { id: 'warden-matriarch', zone: 'warden', uniques: [MATRIARCH] },
+  { id: 'warden-u-all', zone: 'warden', uniques: ALL_IDS },
+  { id: 'reaver-colossus', zone: 'reaver', uniques: [COLOSSUS] },
+  { id: 'tyrant-reaver', zone: 'tyrant', uniques: [REAVER] },
+]
 
 /** The cells. The Warden also gets the two early uniques, record only. */
 export const UNIQUE_VARIANTS: readonly UniqueVariant[] = [
@@ -78,6 +100,11 @@ export const UNIQUE_VARIANTS: readonly UniqueVariant[] = [
   variant('tyrant-u-all', 'tyrant', ALL_IDS, true),
   variant('matriarch-tyrant', 'matriarch', [TYRANT], true),
   variant('matriarch-u-all', 'matriarch', ALL_IDS, true),
+  // Diagnostics, record only: the same cells with only the signature, and with only the fixed modifiers.
+  ...GATED_CELLS.flatMap((cell) => [
+    variant(`${cell.id}-sig`, cell.zone, cell.uniques, true, 'signature'),
+    variant(`${cell.id}-mod`, cell.zone, cell.uniques, true, 'modifier'),
+  ]),
 ]
 
 export type UniqueRow = {
@@ -148,8 +175,8 @@ export function uniqueBonuses(uniqueIds: readonly string[], level: number, facto
 }
 
 /** The fight of a zone for a class, with the uniques worn. An empty list is the plain prepared tier. */
-export function uniqueSetup(classId: HeroClass, zone: UniqueZone, uniqueIds: readonly string[], id: string, factor = 1): CombatSetup {
-  const tier = uniqueIds.length === 0 ? { ...UNIQUE_BASELINE_TIERS[zone](), id } : uniqueTier(zone, uniqueIds, id)
+export function uniqueSetup(classId: HeroClass, zone: UniqueZone, uniqueIds: readonly string[], id: string, factor = 1, part?: UniquePart): CombatSetup {
+  const tier = uniqueIds.length === 0 || part === 'signature' ? { ...UNIQUE_BASELINE_TIERS[zone](), id } : uniqueTier(zone, uniqueIds, id)
   const setup =
     zone === 'warden'
       ? wardenSetup(classId, tier)
@@ -158,7 +185,7 @@ export function uniqueSetup(classId: HeroClass, zone: UniqueZone, uniqueIds: rea
         : zone === 'tyrant'
           ? cinderSetup(classId, tier, CINDER_FIGHTS.find((fight) => fight.id === 'tyrant')!, 'rules')
           : barrensSetup(classId, tier, BARRENS_FIGHTS.find((fight) => fight.id === 'matriarch')!, 'rules')
-  if (uniqueIds.length === 0) return setup
+  if (uniqueIds.length === 0 || part === 'modifier') return setup
   return { ...setup, hero: { ...setup.hero, statBonuses: addStatBonuses(setup.hero.statBonuses ?? {}, uniqueBonuses(uniqueIds, tier.level, factor)) } }
 }
 
@@ -195,7 +222,7 @@ export function runUniquesMatrix(seed: number, runs: number, classes: readonly H
         zone: entry.zone,
         baseline: entry.baseline,
         recordOnly: entry.recordOnly,
-        ...measure(uniqueSetup(classId, entry.zone, entry.uniques, entry.id, entry.signatureFactor ?? factor), seed, runs),
+        ...measure(uniqueSetup(classId, entry.zone, entry.uniques, entry.id, entry.signatureFactor ?? factor, entry.part), seed, runs),
       })
     }
   }

@@ -61,8 +61,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     slot: 'chest',
     modifier: 'stalwart',
     signatureName: 'Undertow',
-    signature: { lifestealFraction: 0.02 },
-    signatureText: 'Heals 2% of damage dealt',
+    signature: { lifestealFraction: 0.01 },
+    signatureText: 'Heals 1% of damage dealt',
   },
   {
     id: 'hollowmaw-fang',
@@ -72,8 +72,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     slot: 'mainHand',
     modifier: 'bloodbound',
     signatureName: 'Gorge',
-    signature: { critChanceBonus: 0.02, critDamageBonus: 0.15 },
-    signatureText: '+2 points critical chance, +15 points critical damage',
+    signature: { critChanceBonus: 0.01, critDamageBonus: 0.075 },
+    signatureText: '+1 point critical chance, +7.5 points critical damage',
   },
   {
     id: 'emberwrought-heart',
@@ -83,8 +83,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     slot: 'offHand',
     modifier: 'kindled',
     signatureName: 'Banked Fire',
-    signature: { magicalStatusResistanceBonus: 10, armorPenetrationBonus: 0.04, magicalPenetrationBonus: 0.04 },
-    signatureText: '+10 magical status resistance, +4 points armor and magical penetration',
+    signature: { magicalStatusResistanceBonus: 5, armorPenetrationBonus: 0.02, magicalPenetrationBonus: 0.02 },
+    signatureText: '+5 magical status resistance, +2 points armor and magical penetration',
   },
   {
     id: 'briarheart-talisman',
