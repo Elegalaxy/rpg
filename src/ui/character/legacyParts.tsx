@@ -21,6 +21,7 @@ import {
   skillSeedCost,
   type LegacyPreview,
   type NextLife,
+  type PlannedPurchase,
   type PurchaseKind,
 } from '../../persist/reincarnation.ts'
 import type { SetupStats } from '../../persist/pastSetup.ts'
@@ -202,20 +203,31 @@ export function whyNot(row: PurchaseRow, hero: SavedHero, blockedReason: string 
   return null
 }
 
-/** The purchase tables, one per group. `now` buys on the spot; `plan` stages a purchase for the next life. */
+/** How many times this plan still includes that purchase. Past-life buys are not in the plan, so they cannot be removed. */
+export function plannedCount(plan: readonly PlannedPurchase[], kind: PurchaseKind, attribute?: AttributeKey): number {
+  return plan.filter((item) => item.kind === kind && (attribute === undefined ? item.attribute === undefined : item.attribute === attribute)).length
+}
+
+/** The purchase tables, one per group. `now` buys on the spot; `plan` stages a purchase for the next life with + and −. */
 export function PurchaseTables({
   hero,
   mode,
   blockedReason,
+  plan = [],
   onBuy,
+  onRemove,
 }: {
   hero: SavedHero
   mode: 'now' | 'plan'
   blockedReason: string | null
+  /** Staged purchases, so − can be turned off when that row has none left to take back. */
+  plan?: readonly PlannedPurchase[]
   onBuy: (row: PurchaseRow, attribute?: AttributeKey) => void
+  onRemove?: (row: PurchaseRow, attribute?: AttributeKey) => void
 }) {
   const rows = purchaseRows(hero, carryOver(hero).percent)
   const verb = mode === 'now' ? 'Buy' : 'Plan'
+  const stepping = mode === 'plan' && onRemove !== undefined
   return (
     <>
       {PURCHASE_GROUPS.map((group) => (
@@ -232,7 +244,7 @@ export function PurchaseTables({
                 <th scope="col" className="num">
                   Bought
                 </th>
-                <th scope="col">{verb}</th>
+                <th scope="col">{stepping ? '+ / −' : verb}</th>
               </tr>
             </thead>
             <tbody>
@@ -249,21 +261,59 @@ export function PurchaseTables({
                       <td>
                         {row.controls === 'attributes' ? (
                           <span className="legacy-buttons">
-                            {ATTRIBUTES.map((attribute) => (
-                              <button
-                                key={attribute}
-                                type="button"
-                                disabled={why !== null}
-                                aria-label={`${verb} ${attribute} seed`}
-                                onClick={() => onBuy(row, attribute)}
-                              >
-                                +1 {attribute} ({hero.purchases.attributeSeeds[attribute]})
-                              </button>
-                            ))}
+                            {ATTRIBUTES.map((attribute) =>
+                              stepping ? (
+                                <span key={attribute} className="legacy-step">
+                                  <button
+                                    type="button"
+                                    disabled={plannedCount(plan, row.kind, attribute) < 1}
+                                    aria-label={`Remove one ${attribute} seed`}
+                                    onClick={() => onRemove(row, attribute)}
+                                  >
+                                    −
+                                  </button>
+                                  <span>
+                                    {attribute} ({hero.purchases.attributeSeeds[attribute]})
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={why !== null}
+                                    aria-label={`Add one ${attribute} seed`}
+                                    onClick={() => onBuy(row, attribute)}
+                                  >
+                                    +
+                                  </button>
+                                </span>
+                              ) : (
+                                <button
+                                  key={attribute}
+                                  type="button"
+                                  disabled={why !== null}
+                                  aria-label={`${verb} ${attribute} seed`}
+                                  onClick={() => onBuy(row, attribute)}
+                                >
+                                  +1 {attribute} ({hero.purchases.attributeSeeds[attribute]})
+                                </button>
+                              ),
+                            )}
+                          </span>
+                        ) : stepping ? (
+                          <span className="legacy-step">
+                            <button
+                              type="button"
+                              disabled={plannedCount(plan, row.kind) < 1}
+                              aria-label={`Remove one ${row.name}`}
+                              onClick={() => onRemove(row)}
+                            >
+                              −
+                            </button>
+                            <button type="button" disabled={why !== null} aria-label={`Add ${row.name}`} onClick={() => onBuy(row)}>
+                              +
+                            </button>
                           </span>
                         ) : (
                           <button type="button" disabled={why !== null} aria-label={`${verb} ${row.name}`} onClick={() => onBuy(row)}>
-                            {mode === 'now' ? 'Buy' : 'Add'}
+                            Buy
                           </button>
                         )}
                         {why !== null ? (

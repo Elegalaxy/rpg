@@ -88,6 +88,19 @@ describe('NextLifePlanner', () => {
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Begin new life…/)
   })
 
+  it('raises and lowers a planned purchase with plus and minus', () => {
+    const planned = show({ legacy: 100 }, { initialPlan: [{ kind: 'stockpile' }] })
+    expect(planned).toContain('aria-label="Add Stockpile II"')
+    expect(planned).toContain('aria-label="Remove one Stockpile II"')
+    expect(planned).not.toContain('disabled="" aria-label="Remove one Stockpile II"')
+    const empty = show({ legacy: 100 })
+    expect(empty).toContain('disabled="" aria-label="Remove one Stockpile I"')
+    expect(empty).toContain('aria-label="Add Stockpile I"')
+    expect(empty).toContain('aria-label="Remove one strength seed"')
+    expect(empty).toContain('aria-label="Add one strength seed"')
+    expect(empty).not.toContain('>Add<')
+  })
+
   it('words plan rows for the new life, not as applying now', () => {
     const html = show({ legacy: 100 })
     expect(html).toContain('From the new life on')

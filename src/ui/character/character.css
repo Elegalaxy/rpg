@@ -433,6 +433,12 @@
 .legacy-buttons {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.legacy-step {
+  display: inline-flex;
+  align-items: center;
   gap: var(--s1);
 }
 

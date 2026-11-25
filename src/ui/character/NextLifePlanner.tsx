@@ -15,6 +15,7 @@ import {
 import type { SaveData, SavedHero } from '../../persist/save.ts'
 
 import { EQUIPMENT_SLOT_IDS, type ItemInstance } from '../../sim/economy.ts'
+import { debugLog } from '../debug.ts'
 import { Kpi, KpiRow } from '../Kit.tsx'
 import { reincarnateFromUi, saveNextLifePlanFromUi } from '../store.ts'
 
@@ -107,7 +108,29 @@ export function NextLifePlanner({
       return
     }
     setError(null)
-    update([...activePlan, item], shownPicks)
+    debugLog('[ui]', 'plan purchase', { action: 'add', kind, attribute: attribute ?? null, count: activePlan.length + 1 })
+    update([...activePlan, item], shownPicks.slice(0, heirloomAllowance(tried.hero)))
+  }
+
+  function remove(kind: PlannedPurchase['kind'], attribute?: AttributeKey): void {
+    let index = -1
+    for (let cursor = activePlan.length - 1; cursor >= 0; cursor -= 1) {
+      const item = activePlan[cursor]
+      if (item !== undefined && item.kind === kind && item.attribute === attribute) {
+        index = cursor
+        break
+      }
+    }
+    if (index < 0) return
+    const nextPlan = activePlan.filter((_, cursor) => cursor !== index)
+    const tried = stageNextLife(hero, nextPlan)
+    if (!tried.ok) {
+      setError(tried.reason)
+      return
+    }
+    setError(null)
+    debugLog('[ui]', 'plan purchase', { action: 'remove', kind, attribute: attribute ?? null, count: nextPlan.length })
+    update(nextPlan, shownPicks.slice(0, heirloomAllowance(tried.hero)))
   }
 
   function begin(): void {
@@ -160,8 +183,15 @@ export function NextLifePlanner({
       </div>
 
       <h3>2. Spend Legacy</h3>
-      <p className="legacy-hint">Stockpile, heirloom slots and Head Start change what you keep. Buy them here, before the new life starts.</p>
-      <PurchaseTables hero={planned} mode="plan" blockedReason={null} onBuy={(row, attribute) => add(row.kind, attribute)} />
+      <p className="legacy-hint">Use + and − to raise or lower a purchase. The preview updates, and nothing is spent until you begin the new life.</p>
+      <PurchaseTables
+        hero={planned}
+        mode="plan"
+        blockedReason={null}
+        plan={activePlan}
+        onBuy={(row, attribute) => add(row.kind, attribute)}
+        onRemove={(row, attribute) => remove(row.kind, attribute)}
+      />
       {activePlan.length > 0 ? (
         <div className="legacy-plan-list" data-testid="plan-list">
           <p>
