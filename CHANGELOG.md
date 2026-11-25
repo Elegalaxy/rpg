@@ -11,6 +11,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ## Unreleased
 
+- Fixed: a curse kept from an earlier life no longer blocks Start before Cursebound is learned again.
 - Improved: the next-life planner uses + and − on each Legacy purchase, so you can change the plan before you reincarnate.
 
 ## 0.24.0 · 2026-11-24 · Late Frontier

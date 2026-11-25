@@ -72,6 +72,12 @@ describe('preparation', () => {
       errors: ['Only an Undead with Cursebound can carry a curse.'],
     })
     const undead = hero(heroSave('warrior', 'undead'))
+    const carried = { ...undead, curse: 'soul-debt' }
+    expect(checkPreparation(carried, draftFor(carried))).toMatchObject({ ok: true, hero: { curse: 'soul-debt' } })
+    expect(checkPreparation(undead, { ...draftFor(undead), curse: 'soul-debt' })).toMatchObject({
+      ok: false,
+      errors: ['Only an Undead with Cursebound can carry a curse.'],
+    })
     const bound = {
       ...undead,
       progress: { ...undead.progress, allocatedNodeIds: ['undead-patient-killer', 'undead-soul-harvest', 'undead-cursebound'] },

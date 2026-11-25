@@ -192,11 +192,15 @@ export function checkPreparation(hero: SavedHero, draft: PreparationDraft): Prep
     if (!(CLERIC_VOWS as readonly string[]).includes(draft.vow)) errors.push('Pick a vow: Zeal, Endurance, or Temperance.')
     else vow = draft.vow
   }
-  let curse: string | null = null
-  if (draft.curse !== '') {
-    if (!canPickCurse(hero)) errors.push('Only an Undead with Cursebound can carry a curse.')
+  // A curse from an earlier life stays on the hero after the skill web resets. It does nothing until
+  // Cursebound is learned again, and it must not block leaving town while the picker is hidden.
+  let curse: string | null = hero.curse
+  if (canPickCurse(hero)) {
+    if (draft.curse === '') curse = null
     else if (!(CURSES as readonly string[]).includes(draft.curse)) errors.push('Pick one of the three curses, or none.')
     else curse = draft.curse
+  } else if (draft.curse !== '' && draft.curse !== (hero.curse ?? '')) {
+    errors.push('Only an Undead with Cursebound can carry a curse.')
   }
   let specialAmmo = hero.specialAmmo
   if (hero.classId === 'ranger') {

@@ -234,7 +234,7 @@ export const curseGuide: Record<Curse, CurseGuideEntry> = {
 }
 
 export const CURSE_GENERAL_NOTE =
-  'A curse is chosen in town and locked for the expedition. It does nothing unless Cursebound is learned. Choosing none is allowed.'
+  'A curse is chosen in town and locked for the expedition. It does nothing unless Cursebound is learned. Choosing none is allowed. A curse from an earlier life stays chosen after reincarnation and does not block leaving town until Cursebound is learned again.'
 
 export const statusGuide: Record<string, { summary: string }> = {
   bleed: { summary: 'Damage over time that triggers when the target acts, so fast enemies bleed more often. Each stack lasts for a few of the target’s actions.' },
