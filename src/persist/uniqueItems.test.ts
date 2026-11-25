@@ -120,7 +120,7 @@ describe('unique items: save and sell', () => {
 
   it('adds the signature of a worn unique to the hero stats through gearBonusesFor', () => {
     const equipment = { ...selectedHero(stocked())!.equipment, feet: treads() }
-    expect(gearBonusesFor(equipment, itemBase).accuracyBonus).toBe(3)
+    expect(gearBonusesFor(equipment, itemBase).accuracyBonus).toBe(1.5)
   })
 })
 
@@ -140,7 +140,7 @@ describe('unique items: crafting', () => {
     const paid = advanceCrafting(ok(queueRankUp(stocked(), 'hero-1', treads().id, 0, 'scrap')), CRAFT_MS).save
     expect(fixed(paid)).toMatchObject({ uniqueId: 'rootmaw-treads', modifiers: ['nimble'], modifierRanks: [2] })
     const equipment = { ...heroOf(stocked()).equipment, feet: fixed(paid) }
-    expect(gearBonusesFor(equipment, itemBase).accuracyBonus).toBe(3)
+    expect(gearBonusesFor(equipment, itemBase).accuracyBonus).toBe(1.5)
   })
 
   it('infuses a second modifier into slot 1 and never replaces the fixed one', () => {
@@ -156,19 +156,19 @@ describe('unique items: equip preview', () => {
   it('says the signature is gained when a unique replaces a plain piece and lost when it is swapped back', () => {
     const save = stocked()
     const gained = previewEquip(save, 'hero-1', treads().id)
-    expect(gained.notes).toContain("Gains signature: Stalker's Step (+3 Evasion, +3 Accuracy)")
+    expect(gained.notes).toContain("Gains signature: Stalker's Step (+1.5 Evasion, +1.5 Accuracy)")
     expect(gained.notes.some((note) => note.startsWith('Gains Nimble'))).toBe(true)
     const worn = ok(equipFromArchive(save, 'hero-1', treads().id))
     const plainBoots = { ...selectedHero(worn)!.purse.archive[0]!, id: 'plain-boots', uniqueId: undefined, modifiers: [] as string[] }
     delete (plainBoots as { uniqueId?: string }).uniqueId
     const swapped = updatePurse(worn, { archive: [plainBoots] })
     const lost = previewEquip(swapped, 'hero-1', 'plain-boots')
-    expect(lost.notes).toContain("Loses signature: Stalker's Step (+3 Evasion, +3 Accuracy)")
+    expect(lost.notes).toContain("Loses signature: Stalker's Step (+1.5 Evasion, +1.5 Accuracy)")
   })
 
   it('names a scaled signature at the item level', () => {
     const low = treads({ itemLevel: 7 })
     const preview = previewEquip(stocked(low), 'hero-1', low.id)
-    expect(preview.notes).toContain("Gains signature: Stalker's Step (+1.5 Evasion, +1.5 Accuracy)")
+    expect(preview.notes).toContain("Gains signature: Stalker's Step (+0.8 Evasion, +0.8 Accuracy)")
   })
 })

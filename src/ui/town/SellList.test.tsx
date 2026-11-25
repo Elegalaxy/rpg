@@ -119,7 +119,7 @@ describe('the built-in stat of accessories (Step 14.4)', () => {
     expect(out).toContain('data-testid="unique-tag"')
     expect(out).toContain('>Unique</span>')
     expect(out).toContain('Signature')
-    expect(out).toContain("Stalker&#x27;s Step: +3 Evasion, +3 Accuracy")
+    expect(out).toContain("Stalker&#x27;s Step: +1.5 Evasion, +1.5 Accuracy")
     expect(out).toContain('From the Rootmaw Stalker')
     expect(out).toContain('Confirm sell unique-hero-1-rootmaw-treads for 280 gold. Cannot be earned again')
     expect(out).toContain('Asks you to confirm before it sells.')
@@ -129,7 +129,7 @@ describe('the built-in stat of accessories (Step 14.4)', () => {
     const { save, hero } = setup()
     const low = { ...uniqueItemFor('hero-1', uniqueDef('rootmaw-treads')!, 'warrior'), itemLevel: 7 }
     const out = renderToStaticMarkup(<SellList save={save} hero={hero} worn={[]} archived={[low]} closed={false} run={() => undefined} />)
-    expect(out).toContain('+1.5 Evasion, +1.5 Accuracy')
+    expect(out).toContain('+0.8 Evasion, +0.8 Accuracy')
   })
 
   it('shows no unique marks on ordinary gear', () => {

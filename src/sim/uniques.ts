@@ -39,8 +39,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     slot: 'feet',
     modifier: 'nimble',
     signatureName: "Stalker's Step",
-    signature: { evasionBonus: 3, accuracyBonus: 3 },
-    signatureText: '+3 Evasion, +3 Accuracy',
+    signature: { evasionBonus: 1.5, accuracyBonus: 1.5 },
+    signatureText: '+1.5 Evasion, +1.5 Accuracy',
   },
   {
     id: 'echoing-visor',
@@ -50,8 +50,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     slot: 'head',
     modifier: 'sturdy',
     signatureName: 'Echo',
-    signature: { cooldownReductionBonus: 0.02, magicalStatusResistanceBonus: 5 },
-    signatureText: '+2 points cooldown reduction, +5 magical status resistance',
+    signature: { cooldownReductionBonus: 0.01, magicalStatusResistanceBonus: 2.5 },
+    signatureText: '+1 point cooldown reduction, +2.5 magical status resistance',
   },
   {
     id: 'tidebound-carapace',
@@ -61,8 +61,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     slot: 'chest',
     modifier: 'stalwart',
     signatureName: 'Undertow',
-    signature: { lifestealFraction: 0.01 },
-    signatureText: 'Heals 1% of damage dealt',
+    signature: { maxHpBonus: 0.02, physicalStatusResistanceBonus: 1.5 },
+    signatureText: '+2% maximum HP, +1.5 physical status resistance',
   },
   {
     id: 'hollowmaw-fang',
@@ -83,8 +83,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     slot: 'offHand',
     modifier: 'kindled',
     signatureName: 'Banked Fire',
-    signature: { magicalStatusResistanceBonus: 5, armorPenetrationBonus: 0.02, magicalPenetrationBonus: 0.02 },
-    signatureText: '+5 magical status resistance, +2 points armor and magical penetration',
+    signature: { magicalStatusResistanceBonus: 10, armorPenetrationBonus: 0.04, magicalPenetrationBonus: 0.04 },
+    signatureText: '+10 magical status resistance, +4 points armor and magical penetration',
   },
   {
     id: 'briarheart-talisman',
@@ -95,8 +95,8 @@ export const UNIQUE_ITEMS: readonly UniqueItemDef[] = [
     baseId: 'accessory-talisman',
     modifier: 'staunch',
     signatureName: 'Thornblood',
-    signature: { physicalStatusResistanceBonus: 10, maxHpBonus: 0.03 },
-    signatureText: '+10 physical status resistance, +3% maximum HP',
+    signature: { physicalStatusResistanceBonus: 5, maxHpBonus: 0.015 },
+    signatureText: '+5 physical status resistance, +1.5% maximum HP',
   },
 ]
 

@@ -18,6 +18,9 @@ import { WARDEN_TIERS, wardenSetup, type WardenTier } from './warden.ts'
  * the tier's modifier in its slot (an accessory in accessory1) and its signature is added to the stat bonuses at the tier's level
  * (the item level follows the hero, so a unique above the tier level is scaled down). The Matriarch's Talisman adds its implicit too.
  * Every cell is read against the unchanged prepared tier of its zone. Measurements only.
+ *
+ * Gates (decision 2026-11-25) apply at a unique's own zone tier and later. At the level 20 Warden tier a later-zone unique is
+ * gated on its signature-only cell, and every Warden cell that carries a later-zone fixed modifier is record only.
  */
 export type UniqueZone = 'warden' | 'reaver' | 'tyrant' | 'matriarch'
 
@@ -75,8 +78,8 @@ const REAVER = ID_BY_ENEMY('hollowmaw-reaver')
 const TYRANT = ID_BY_ENEMY('emberwrought-tyrant')
 const MATRIARCH = ID_BY_ENEMY('briar-matriarch')
 
-/** The cells with a gate; each also gets a signature-only and a modifier-only diagnostic. */
-const GATED_CELLS: readonly { id: string; zone: UniqueZone; uniques: readonly string[] }[] = [
+/** The cells that also get a signature-only and a modifier-only split. */
+const SPLIT_CELLS: readonly { id: string; zone: UniqueZone; uniques: readonly string[] }[] = [
   { id: 'warden-colossus', zone: 'warden', uniques: [COLOSSUS] },
   { id: 'warden-reaver', zone: 'warden', uniques: [REAVER] },
   { id: 'warden-tyrant', zone: 'warden', uniques: [TYRANT] },
@@ -86,23 +89,26 @@ const GATED_CELLS: readonly { id: string; zone: UniqueZone; uniques: readonly st
   { id: 'tyrant-reaver', zone: 'tyrant', uniques: [REAVER] },
 ]
 
-/** The cells. The Warden also gets the two early uniques, record only. */
+/** The split cells whose signature-only half is gated: the later-zone uniques at the Warden tier. */
+const GATED_SIGNATURE_CELLS: readonly string[] = ['warden-colossus', 'warden-reaver', 'warden-tyrant', 'warden-matriarch']
+
+/** The cells. A gated cell is one that is not record only. */
 export const UNIQUE_VARIANTS: readonly UniqueVariant[] = [
-  variant('warden-rootmaw', 'warden', [ID_BY_ENEMY('rootmaw-stalker')], true),
-  variant('warden-echo', 'warden', [ID_BY_ENEMY('echo-knight')], true),
-  variant('warden-colossus', 'warden', [COLOSSUS]),
-  variant('warden-reaver', 'warden', [REAVER]),
-  variant('warden-tyrant', 'warden', [TYRANT]),
-  variant('warden-matriarch', 'warden', [MATRIARCH]),
-  variant('warden-u-all', 'warden', ALL_IDS),
+  variant('warden-rootmaw', 'warden', [ID_BY_ENEMY('rootmaw-stalker')]),
+  variant('warden-echo', 'warden', [ID_BY_ENEMY('echo-knight')]),
+  variant('warden-colossus', 'warden', [COLOSSUS], true),
+  variant('warden-reaver', 'warden', [REAVER], true),
+  variant('warden-tyrant', 'warden', [TYRANT], true),
+  variant('warden-matriarch', 'warden', [MATRIARCH], true),
+  variant('warden-u-all', 'warden', ALL_IDS, true),
   variant('reaver-colossus', 'reaver', [COLOSSUS]),
   variant('tyrant-reaver', 'tyrant', [REAVER]),
   variant('tyrant-u-all', 'tyrant', ALL_IDS, true),
   variant('matriarch-tyrant', 'matriarch', [TYRANT], true),
   variant('matriarch-u-all', 'matriarch', ALL_IDS, true),
-  // Diagnostics, record only: the same cells with only the signature, and with only the fixed modifiers.
-  ...GATED_CELLS.flatMap((cell) => [
-    variant(`${cell.id}-sig`, cell.zone, cell.uniques, true, 'signature'),
+  // The same cells with only the signature (gated at the Warden for later-zone uniques), and with only the fixed modifiers.
+  ...SPLIT_CELLS.flatMap((cell) => [
+    variant(`${cell.id}-sig`, cell.zone, cell.uniques, !GATED_SIGNATURE_CELLS.includes(cell.id), 'signature'),
     variant(`${cell.id}-mod`, cell.zone, cell.uniques, true, 'modifier'),
   ]),
 ]

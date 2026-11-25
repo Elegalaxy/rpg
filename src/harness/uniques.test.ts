@@ -7,9 +7,18 @@ import { UNIQUE_ITEMS } from '../sim/uniques.ts'
 import { UNIQUE_BASELINE_IDS, UNIQUE_MATRIX_IDS, UNIQUE_VARIANTS, formatUniquesTable, runUniquesMatrix, uniqueBonuses, uniqueSetup, uniqueTier } from './uniques.ts'
 
 describe('the uniques matrix', () => {
-  it('has the cells of the plan: gated single uniques, all-six rows, and record-only cells', () => {
+  it('gates the early uniques and the later-zone signatures at the Warden, and the later tiers; the rest is record only', () => {
     const gated = UNIQUE_VARIANTS.filter((entry) => !entry.recordOnly).map((entry) => entry.id)
-    expect(gated).toEqual(['warden-colossus', 'warden-reaver', 'warden-tyrant', 'warden-matriarch', 'warden-u-all', 'reaver-colossus', 'tyrant-reaver'])
+    expect(gated).toEqual([
+      'warden-rootmaw',
+      'warden-echo',
+      'reaver-colossus',
+      'tyrant-reaver',
+      'warden-colossus-sig',
+      'warden-reaver-sig',
+      'warden-tyrant-sig',
+      'warden-matriarch-sig',
+    ])
     expect(UNIQUE_VARIANTS.filter((entry) => entry.recordOnly).map((entry) => entry.id)).toContain('matriarch-u-all')
     for (const entry of UNIQUE_VARIANTS) expect(UNIQUE_BASELINE_IDS[entry.zone]).toBe(entry.baseline)
   })
@@ -27,12 +36,13 @@ describe('the uniques matrix', () => {
 
   it('scales a signature down above the tier level and adds the Talisman implicit only for the Matriarch unique', () => {
     const colossus = uniqueBonuses(['tidebound-carapace'], 20)
-    expect(colossus.lifestealFraction).toBeCloseTo(0.01 * (20 / 22), 4)
-    expect(uniqueBonuses(['tidebound-carapace'], 30).lifestealFraction).toBe(0.01)
+    expect(colossus.maxHpBonus).toBeCloseTo(0.02 * (20 / 22), 4)
+    expect(colossus.physicalStatusResistanceBonus).toBe(1.4)
+    expect(uniqueBonuses(['tidebound-carapace'], 30).maxHpBonus).toBe(0.02)
     const matriarch = uniqueBonuses(['briarheart-talisman'], 38)
-    expect(matriarch.physicalStatusResistanceBonus).toBe(10)
+    expect(matriarch.physicalStatusResistanceBonus).toBe(5)
     expect(matriarch.critDamageBonus).toBeCloseTo(0.038, 4)
-    expect(uniqueBonuses(['tidebound-carapace'], 20, 0.5).lifestealFraction).toBeCloseTo(0.005 * (20 / 22), 3)
+    expect(uniqueBonuses(['tidebound-carapace'], 20, 0.5).maxHpBonus).toBeCloseTo(0.01 * (20 / 22), 3)
   })
 
   it('builds a setup for every class and zone, and the uniques raise the bonuses over the baseline', () => {
@@ -53,15 +63,15 @@ describe('the uniques matrix', () => {
     expect(UNIQUE_MATRIX_IDS).toContain('matriarch-u-all')
   }, 60_000)
 
-  it('has a signature-only and a modifier-only diagnostic for every gated cell, all record only', () => {
-    const gated = UNIQUE_VARIANTS.filter((entry) => !entry.recordOnly)
-    for (const cell of gated) {
-      const sig = UNIQUE_VARIANTS.find((entry) => entry.id === `${cell.id}-sig`)
-      const mod = UNIQUE_VARIANTS.find((entry) => entry.id === `${cell.id}-mod`)
-      expect(sig?.recordOnly, cell.id).toBe(true)
-      expect(mod?.recordOnly, cell.id).toBe(true)
-      expect(sig?.uniques).toEqual(cell.uniques)
+  it('splits the cells into signature-only and modifier-only halves, with the modifier half always record only', () => {
+    const mods = UNIQUE_VARIANTS.filter((entry) => entry.part === 'modifier')
+    expect(mods.length).toBeGreaterThan(0)
+    for (const mod of mods) {
+      const cell = mod.id.replace(/-mod$/, '')
+      expect(mod.recordOnly, cell).toBe(true)
+      expect(UNIQUE_VARIANTS.find((entry) => entry.id === `${cell}-sig`)?.uniques, cell).toEqual(mod.uniques)
     }
+    expect(UNIQUE_VARIANTS.find((entry) => entry.id === 'warden-u-all-sig')?.recordOnly).toBe(true)
   })
 
   it('applies only the signature, or only the modifiers, for the diagnostics', () => {
@@ -69,10 +79,9 @@ describe('the uniques matrix', () => {
     const signature = uniqueSetup('warrior', 'warden', ['tidebound-carapace'], 's', 1, 'signature')
     const modifier = uniqueSetup('warrior', 'warden', ['tidebound-carapace'], 'm', 1, 'modifier')
     const both = uniqueSetup('warrior', 'warden', ['tidebound-carapace'], 'b')
-    expect(signature.hero.statBonuses?.lifestealFraction).toBeGreaterThan(0)
-    expect(signature.hero.statBonuses?.maxHpBonus).toBe(plain.hero.statBonuses?.maxHpBonus)
-    expect(modifier.hero.statBonuses?.lifestealFraction).toBe(plain.hero.statBonuses?.lifestealFraction)
+    expect(signature.hero.statBonuses?.physicalStatusResistanceBonus ?? 0).toBeGreaterThan(plain.hero.statBonuses?.physicalStatusResistanceBonus ?? 0)
+    expect(modifier.hero.statBonuses?.physicalStatusResistanceBonus).toBe(plain.hero.statBonuses?.physicalStatusResistanceBonus)
     expect(modifier.hero.statBonuses?.maxHpBonus).toBeGreaterThan(plain.hero.statBonuses?.maxHpBonus ?? 0)
-    expect(both.hero.statBonuses?.lifestealFraction).toBe(signature.hero.statBonuses?.lifestealFraction)
+    expect(both.hero.statBonuses?.physicalStatusResistanceBonus).toBe(signature.hero.statBonuses?.physicalStatusResistanceBonus)
   })
 })

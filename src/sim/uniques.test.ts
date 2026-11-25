@@ -36,18 +36,18 @@ describe('unique table', () => {
 describe('uniqueSignature', () => {
   it('is the full signature at the table level and above, whatever the quality, rank or temper', () => {
     const treads = unique('rootmaw-treads', 14)
-    expect(uniqueSignature(treads)).toEqual({ evasionBonus: 3, accuracyBonus: 3 })
-    expect(uniqueSignature({ ...treads, itemLevel: 30, quality: 0.9, modifierRanks: [3], modifierTempers: [5] })).toEqual({ evasionBonus: 3, accuracyBonus: 3 })
+    expect(uniqueSignature(treads)).toEqual({ evasionBonus: 1.5, accuracyBonus: 1.5 })
+    expect(uniqueSignature({ ...treads, itemLevel: 30, quality: 0.9, modifierRanks: [3], modifierTempers: [5] })).toEqual({ evasionBonus: 1.5, accuracyBonus: 1.5 })
     expect(uniqueScale({ ...treads, itemLevel: 30 })).toBe(1)
   })
 
   it('scales by item level over table level and rounds flat keys to one decimal and fractions to four', () => {
     const treads = unique('rootmaw-treads', 7)
-    expect(uniqueSignature(treads)).toEqual({ evasionBonus: 1.5, accuracyBonus: 1.5 })
+    expect(uniqueSignature(treads)).toEqual({ evasionBonus: 0.8, accuracyBonus: 0.8 })
     const fang = unique('hollowmaw-fang', 20, 'sword')
     expect(uniqueSignature(fang)).toEqual({ critChanceBonus: 0.0077, critDamageBonus: 0.0577 })
     expect(uniqueSignatureText(fang)).toBe('+0.8 point critical chance, +5.8 points critical damage')
-    expect(uniqueSignatureText(treads)).toBe('+1.5 Evasion, +1.5 Accuracy')
+    expect(uniqueSignatureText(treads)).toBe('+0.8 Evasion, +0.8 Accuracy')
   })
 
   it('is empty for a plain item or an unknown id', () => {
@@ -63,7 +63,7 @@ describe('gearBonusesFor with uniques', () => {
   it('adds the signature of a worn unique on top of its modifier', () => {
     const equipment = emptyEquipment()
     equipment.feet = unique('rootmaw-treads', 14)
-    expect(gearBonusesFor(equipment, lookup)).toEqual({ evasionBonus: 6, accuracyBonus: 3 })
+    expect(gearBonusesFor(equipment, lookup)).toEqual({ evasionBonus: 4.5, accuracyBonus: 1.5 })
   })
 
   it('is unchanged without a uniqueId and ignores an unknown one', () => {
@@ -83,21 +83,22 @@ describe('gearBonusesFor with uniques', () => {
     equipment.head = { id: 'h2', baseId: 'helm', itemLevel: 10, quality: 1, durability: 100, maxDurability: 100, modifiers: ['nimble'] }
     expect(MODIFIER_STACK_CAP).toBe(2)
     expect(statBonusesFor(equipment).evasionBonus).toBe(6)
-    expect(gearBonusesFor(equipment, lookup).evasionBonus).toBe(9)
+    expect(gearBonusesFor(equipment, lookup).evasionBonus).toBe(7.5)
   })
 
   it('counts a signature at its scaled strength for an item below the table level', () => {
     const equipment = emptyEquipment()
     equipment.chest = unique('tidebound-carapace', 11, 'chest')
-    expect(gearBonusesFor(equipment, lookup).lifestealFraction).toBe(0.005)
+    expect(gearBonusesFor(equipment, lookup).maxHpBonus).toBeCloseTo(0.06 + 0.01, 10)
+    expect(gearBonusesFor(equipment, lookup).physicalStatusResistanceBonus).toBe(0.8)
   })
 
   it('works in the accessory slot', () => {
     const equipment = emptyEquipment()
     equipment.accessory1 = unique('briarheart-talisman', 38, 'talisman')
     const total = gearBonusesFor(equipment, lookup)
-    expect(total.physicalStatusResistanceBonus).toBe(20)
-    expect(total.maxHpBonus).toBe(0.03)
+    expect(total.physicalStatusResistanceBonus).toBe(15)
+    expect(total.maxHpBonus).toBe(0.015)
     expect(slotsFor(bases.talisman!)).toContain('accessory1')
     expect(modifierFits(ITEM_MODIFIERS.staunch!, bases.talisman!)).toBe(true)
   })

@@ -2822,6 +2822,23 @@ Result: the gates fail after the fallback. The Warden cells fail mainly because 
 - The halved Reaver and Tyrant signatures return to the proposed values only if their gated cells pass at those values; otherwise they stay halved.
 - A gated cell that still fails after one halving of its signature stops the step.
 
+**Measured 2026-11-25 under the decision** (seeds 1 to 3 x 100 runs, rules, mean; win points over the prepared baseline, W/A/R/M/C; a `*` marks a failing gate). "First run" has the proposed Rootmaw, Echo, new Undertow and Matriarch signatures with Reaver and Tyrant still halved. "After one halving" halves Rootmaw, Echo, Undertow and Thornblood and returns the Tyrant to its proposed values (its only gated cell passed at them: +5.0 / +0.3 / -0.3 / +2.7 / -1.3). The Reaver stays halved (Tyrant + Reaver failed at the proposed values).
+
+| Gated cell (+8) | First run | After one halving |
+|---|---|---|
+| Warden + Rootmaw | +9.7 / +11.7 / +13.3 / +7.7 / +5.3 \* | +1.3 / +2.7 / +3.7 / +3.3 / +3.3 |
+| Warden + Echo | +0.7 / +9.7 / -1.3 / -4.3 / -7.3 \* | +0.7 / 0.0 / +0.3 / +0.3 / -8.0 |
+| Reaver + Colossus | +16.3 / +6.3 / +5.0 / +6.3 / +2.7 \* | +6.3 / +2.3 / +4.0 / +5.7 / +1.0 |
+| Tyrant + Reaver | +3.7 / +0.3 / +0.7 / +0.7 / +4.3 | +3.7 / +0.3 / +0.7 / +0.7 / +4.3 |
+| Warden + Colossus, signature only | +13.0 / +11.3 / +7.7 / +12.3 / +8.0 \* | +10.3 / +4.3 / +3.7 / +6.0 / -4.7 \* |
+| Warden + Reaver, signature only | +5.7 / +4.0 / +6.3 / +4.0 / +4.7 | +5.7 / +4.0 / +6.3 / +4.0 / +4.7 |
+| Warden + Tyrant, signature only | +5.3 / -1.7 / -0.3 / +1.3 / -2.3 | +5.0 / +0.3 / -0.3 / +2.7 / -1.3 |
+| Warden + Matriarch, signature only | +11.0 / +2.3 / +2.3 / +7.0 / -2.7 \* | +9.3 / -0.3 / +2.0 / +7.0 / +1.0 \* |
+
+Signatures now in the code: Stalker's Step +1.5 Evasion and +1.5 Accuracy; Echo +1 point cooldown reduction and +2.5 magical status resistance; Undertow +2% maximum HP and +1.5 physical status resistance; Gorge +1 point critical chance and +7.5 points critical damage; Banked Fire as proposed; Thornblood +5 physical status resistance and +1.5% maximum HP. Record-only cells were not measured again after these values.
+
+Result: two gated cells still fail after one halving (Warden + Colossus signature Warrior +10.3, Warden + Matriarch signature Warrior +9.3, bound +8), so the step is stopped again. Two notes for the decision, neither used to pass a gate. The Matriarch "signature only" cell also adds the Talisman base's built-in critical damage; with the signature alone the Warrior reads +6.0 on the gate seeds. On nine other seeds (4 to 12, Warrior only) the two failing cells read +8.6 (Colossus) and +4.7 (Matriarch, +1.8 without the built-in stat).
+
 ## 10. Reincarnation and Long-Term Progression
 
 ### Trigger
