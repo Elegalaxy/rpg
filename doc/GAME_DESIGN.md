@@ -2767,7 +2767,7 @@ Decided 2026-11-24 (user approved; numbers are proposals and the measurement gat
 |---|---|---|---|---|---|
 | Rootmaw Stalker (Withered Grove) | Rootmaw Treads | feet | 14 | Nimble | Stalker's Step: +3 Evasion, +3 Accuracy |
 | Echo Knight (Fallen Bastion) | Echoing Visor | head | 16 | Sturdy | Echo: +2 points cooldown reduction, +5 magical status resistance |
-| Tidebound Colossus (Drowned Causeway) | Tidebound Carapace | chest | 22 | Stalwart | Undertow: heals 2% of damage dealt |
+| Tidebound Colossus (Drowned Causeway) | Tidebound Carapace | chest | 22 | Stalwart | Undertow: +4% maximum HP, +3 physical status resistance (decision 2026-11-25; first proposal: heals 2% of damage dealt) |
 | Hollowmaw Reaver (Rift Hollows) | Hollowmaw Fang | main hand | 26 | Bloodbound | Gorge: +2 points critical chance, +15 points critical damage |
 | Emberwrought Tyrant (Cinder Scar) | Emberwrought Heart | off hand | 32 | Kindled | Banked Fire: +10 magical status resistance, +4 points armor and magical penetration |
 | Briar Matriarch (Bloodthorn Barrens) | Briarheart Talisman | accessory (Talisman base, its implicit applies too) | 38 | Staunch | Thornblood: +10 physical status resistance, +3% maximum HP |
@@ -2782,7 +2782,7 @@ Rules:
 - Award: a hero's defeated elites of this life (not the remembered ones from earlier lives) that are not in its first-clear ledger as `unique:<id>` are paid when an expedition settles with the outcome returned. The item goes to the archive and the ledger id is recorded. An elite beaten on a run that ends in defeat stays due. If the hero already holds an item with that unique id, only the ledger id is recorded. Each unique is paid once per hero ever; a sold or lost one is gone. Old saves are paid retroactively at the next safe return.
 - An unknown unique id loads as a plain item with the base name and no signature.
 
-Bands (measured with `--matrix uniques`, rules mode, seeds 1 to 3 x 100, mean): every non-record single-unique cell minus its prepared baseline is at most +8 win points for every class (the Warden prepared bound), and the all-six row minus prepared is at most +30 for every class. Cells: Warden prepared (level 20): each of the Colossus, Reaver, Tyrant and Matriarch uniques alone (heirloom-scaled at level 20 over item level) and all six together; Reaver prepared: Colossus; Tyrant prepared: Reaver, plus all six as a record; Matriarch prepared: Tyrant and all six, record only (its gates are accepted exceptions). One-time fallback: halve the failing unique's signature, re-measure, then stop and report. The Warden Warrior is the likely trip.
+Bands as first proposed (superseded for the gates by the decision below; measured with `--matrix uniques`, rules mode, seeds 1 to 3 x 100, mean): every non-record single-unique cell minus its prepared baseline is at most +8 win points for every class (the Warden prepared bound), and the all-six row minus prepared is at most +30 for every class. Cells: Warden prepared (level 20): each of the Colossus, Reaver, Tyrant and Matriarch uniques alone (heirloom-scaled at level 20 over item level) and all six together; Reaver prepared: Colossus; Tyrant prepared: Reaver, plus all six as a record; Matriarch prepared: Tyrant and all six, record only (its gates are accepted exceptions). One-time fallback: halve the failing unique's signature, re-measure, then stop and report. The Warden Warrior is the likely trip.
 
 **Measured 2026-11-25** (`--matrix uniques`, seeds 1 to 3 x 100 runs, rules, mean; unique cell minus its prepared baseline in win points, W/A/R/M/C). Prepared baselines: Warden 40.7 / 24.0 / 48.3 / 37.3 / 46.3, Reaver 41.3 / 80.3 / 80.7 / 80.0 / 59.7, Tyrant 52.0 / 96.0 / 61.0 / 93.3 / 45.3, Matriarch 55.3 / 96.0 / 33.7 / 52.3 / 51.3. A `*` marks a gate that fails.
 
@@ -2811,6 +2811,16 @@ Split of the gated cells after the fallback (signature only, then fixed modifier
 | Tyrant + Reaver | +3.7 / +0.3 / +0.7 / +0.7 / +4.3 | none (the tier already wears Bloodbound) |
 
 Result: the gates fail after the fallback. The Warden cells fail mainly because of the fixed modifiers (Bloodbound and Kindled on a level 20 tier that never wears them; halving signatures cannot move them), and the Colossus lifesteal still moves the Warden and the Reaver Warrior above the bound at 1%. The halved values are the ones now in the code; the six-unique table above shows the proposed ones. A design decision is needed before the step can close.
+
+**Decision 2026-11-25** (user, option 1, after the failed gates above):
+
+- Each unique's +8 and all-six +30 gates apply only at its own zone tier and later tiers, where a hero can earn and wear it.
+- At the level 20 Warden tier, a unique from a later zone (Colossus, Reaver, Tyrant, Matriarch) is gated on its signature-only cell (+8). Every Warden cell that includes a later-zone fixed modifier is record only, and so is the all-six Warden row (a hero keeps at most three heirlooms).
+- Rootmaw Treads and Echoing Visor (zones at or below the Warden) keep the original Warden gate (+8 on the full cell).
+- Reaver + Colossus and Tyrant + Reaver stay gated at +8. The Matriarch tier cells stay record only.
+- Tidebound Carapace's signature changes from lifesteal to +4% maximum HP and +3 physical status resistance. The name Undertow is kept.
+- The halved Reaver and Tyrant signatures return to the proposed values only if their gated cells pass at those values; otherwise they stay halved.
+- A gated cell that still fails after one halving of its signature stops the step.
 
 ## 10. Reincarnation and Long-Term Progression
 
