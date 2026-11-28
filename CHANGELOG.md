@@ -9,8 +9,7 @@ Design numbers live in `doc/GAME_DESIGN.md` and step status in `doc/IMPLEMENTATI
 
 ---
 
-## Unreleased
-
+## 0.25.0 · 2026-11-28 · Elite uniques
 - Fixed: a curse kept from an earlier life no longer blocks Start before Cursebound is learned again.
 - Improved: the next-life planner uses + and − on each Legacy purchase, so you can change the plan before you reincarnate.
 - Improved: a unique item shows a Unique tag, its signature bonus and the elite that paid it on the Equipment, Sell and repair rows. The outcome card, a toast and the away report announce a new one, and the Guide has a Unique items group. Swapping gear tells you when a signature is gained or lost. [14.6]
