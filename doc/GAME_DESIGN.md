@@ -2839,6 +2839,12 @@ Signatures now in the code: Stalker's Step +1.5 Evasion and +1.5 Accuracy; Echo 
 
 Result: two gated cells still fail after one halving (Warden + Colossus signature Warrior +10.3, Warden + Matriarch signature Warrior +9.3, bound +8), so the step is stopped again. Two notes for the decision, neither used to pass a gate. The Matriarch "signature only" cell also adds the Talisman base's built-in critical damage; with the signature alone the Warrior reads +6.0 on the gate seeds. On nine other seeds (4 to 12, Warrior only) the two failing cells read +8.6 (Colossus) and +4.7 (Matriarch, +1.8 without the built-in stat).
 
+**Final decision 2026-11-28** (user):
+
+- The Warden + Matriarch cell is judged on the signature alone: every signature-only cell leaves out the Talisman base's built-in critical damage.
+- The Warden + Colossus signature cell is accepted as a recorded exception (Warrior +10.3 on seeds 1 to 3, +8.6 over 900 further runs on seeds 4 to 12; bound +8).
+- The current signature values stay.
+
 ## 10. Reincarnation and Long-Term Progression
 
 ### Trigger
