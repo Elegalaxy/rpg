@@ -2845,6 +2845,8 @@ Result: two gated cells still fail after one halving (Warden + Colossus signatur
 - The Warden + Colossus signature cell is accepted as a recorded exception (Warrior +10.3 on seeds 1 to 3, +8.6 over 900 further runs on seeds 4 to 12; bound +8).
 - The current signature values stay.
 
+**Measured 2026-11-28** (seeds 1 to 3 x 100 runs, rules, mean): Warden + Matriarch, signature alone, +6.0 / +0.3 / +2.3 / +5.3 / +0.3 (W/A/R/M/C), inside +8: pass. With the accepted Colossus exception every gate of the step is settled.
+
 ## 10. Reincarnation and Long-Term Progression
 
 ### Trigger

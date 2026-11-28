@@ -45,6 +45,17 @@ describe('the uniques matrix', () => {
     expect(uniqueBonuses(['tidebound-carapace'], 20, 0.5).maxHpBonus).toBeCloseTo(0.01 * (20 / 22), 3)
   })
 
+  it('leaves the Talisman built-in stat out of the signature-only cell', () => {
+    const plain = uniqueSetup('warrior', 'warden', [], 'p')
+    const signature = uniqueSetup('warrior', 'warden', ['briarheart-talisman'], 's', 1, 'signature')
+    const worn = uniqueSetup('warrior', 'warden', ['briarheart-talisman'], 'w')
+    expect(signature.hero.statBonuses?.critDamageBonus).toBe(plain.hero.statBonuses?.critDamageBonus)
+    expect(signature.hero.statBonuses?.physicalStatusResistanceBonus ?? 0).toBeGreaterThan(plain.hero.statBonuses?.physicalStatusResistanceBonus ?? 0)
+    expect(uniqueBonuses(['briarheart-talisman'], 20, 1, false).critDamageBonus).toBeUndefined()
+    expect(uniqueBonuses(['briarheart-talisman'], 20).critDamageBonus).toBeCloseTo(0.02, 4)
+    expect(worn.hero.statBonuses).toBeDefined()
+  })
+
   it('builds a setup for every class and zone, and the uniques raise the bonuses over the baseline', () => {
     for (const classId of HERO_CLASSES) {
       for (const zone of Object.keys(UNIQUE_BASELINE_IDS) as (keyof typeof UNIQUE_BASELINE_IDS)[]) {

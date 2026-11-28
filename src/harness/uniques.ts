@@ -16,7 +16,8 @@ import { WARDEN_TIERS, wardenSetup, type WardenTier } from './warden.ts'
 /**
  * Elite uniques (Step 14.6). A hero wears the named uniques on top of a zone's prepared tier: each unique's fixed modifier replaces
  * the tier's modifier in its slot (an accessory in accessory1) and its signature is added to the stat bonuses at the tier's level
- * (the item level follows the hero, so a unique above the tier level is scaled down). The Matriarch's Talisman adds its implicit too.
+ * (the item level follows the hero, so a unique above the tier level is scaled down). The Matriarch's Talisman adds its implicit too, except in the
+ * signature-only cells, which measure the signature alone (decision 2026-11-28).
  * Every cell is read against the unchanged prepared tier of its zone. Measurements only.
  *
  * Gates (decision 2026-11-25) apply at a unique's own zone tier and later. At the level 20 Warden tier a later-zone unique is
@@ -168,14 +169,14 @@ export function uniqueTier(zone: UniqueZone, uniqueIds: readonly string[], id: s
   return { ...tier, id, label: `${tier.label}, ${id}`, modifiers }
 }
 
-/** The signature bonuses of the uniques worn at a level, plus the Talisman implicit for the Matriarch unique. */
-export function uniqueBonuses(uniqueIds: readonly string[], level: number, factor = 1): StatBonuses {
+/** The signature bonuses of the uniques worn at a level, plus the Talisman implicit for the Matriarch unique unless `implicit` is false. */
+export function uniqueBonuses(uniqueIds: readonly string[], level: number, factor = 1, implicit = true): StatBonuses {
   let total: StatBonuses = {}
   for (const uniqueId of uniqueIds) {
     const item = wornAt(uniqueId, level)
     total = addStatBonuses(total, halved(uniqueSignature(item), factor))
     const base = uniqueDef(uniqueId)?.baseId
-    if (base !== undefined) total = addStatBonuses(total, implicitBonuses(itemBase(base), level))
+    if (implicit && base !== undefined) total = addStatBonuses(total, implicitBonuses(itemBase(base), level))
   }
   return total
 }
@@ -192,7 +193,7 @@ export function uniqueSetup(classId: HeroClass, zone: UniqueZone, uniqueIds: rea
           ? cinderSetup(classId, tier, CINDER_FIGHTS.find((fight) => fight.id === 'tyrant')!, 'rules')
           : barrensSetup(classId, tier, BARRENS_FIGHTS.find((fight) => fight.id === 'matriarch')!, 'rules')
   if (uniqueIds.length === 0 || part === 'modifier') return setup
-  return { ...setup, hero: { ...setup.hero, statBonuses: addStatBonuses(setup.hero.statBonuses ?? {}, uniqueBonuses(uniqueIds, tier.level, factor)) } }
+  return { ...setup, hero: { ...setup.hero, statBonuses: addStatBonuses(setup.hero.statBonuses ?? {}, uniqueBonuses(uniqueIds, tier.level, factor, part !== 'signature')) } }
 }
 
 function measure(setup: CombatSetup, seed: number, runs: number): { winRate: number; hpLost: number } {
